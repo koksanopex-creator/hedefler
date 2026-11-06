@@ -53,7 +53,8 @@ class SsoC extends Controller
             try {
                 $deptRow = \Illuminate\Support\Facades\DB::table("{$centralDb}.departments")->where('id', $centralUser['department_id'])->first();
                 $deptName = $deptRow?->name;
-            } catch (\Throwable $e) {}
+            } catch (\Throwable $e) {
+            }
         }
 
         $centralUser['department_name'] = $deptName;
@@ -75,12 +76,13 @@ class SsoC extends Controller
         $hedeflerAppId = null;
         try {
             $hedeflerAppId = \Illuminate\Support\Facades\DB::table("{$centralDb}.applications")
-                ->where(function($q) {
+                ->where(function ($q) {
                     $q->whereIn('code', ['hedefler', 'hedefler-uygulamasi'])
-                      ->orWhere('code', 'like', '%hedef%');
+                        ->orWhere('code', 'like', '%hedef%');
                 })
                 ->value('id');
-        } catch (\Throwable $e) {}
+        } catch (\Throwable $e) {
+        }
         $hedeflerAppId = $hedeflerAppId ?? 14;
 
         $centralAppUser = null;
@@ -90,7 +92,8 @@ class SsoC extends Controller
                 ->where('application_id', $hedeflerAppId)
                 ->whereNull('deleted_at')
                 ->first();
-        } catch (\Throwable $e) {}
+        } catch (\Throwable $e) {
+        }
 
         $isCentralApproved = $centralAppUser && $centralAppUser->status === 'approved' && $centralAppUser->is_active;
 
@@ -109,7 +112,8 @@ class SsoC extends Controller
                         ->where('user_id', $localUser->id)
                         ->where('id', '!=', session()->getId())
                         ->delete();
-                } catch (\Exception $e) {}
+                } catch (\Exception $e) {
+                }
             }
 
             session([
@@ -299,9 +303,9 @@ class SsoC extends Controller
                 'X-App-Key' => $apiKey,
                 'Accept' => 'application/json'
             ])->post($internalHttpUrl . '/api/internal/uygulama-basvuru-durum', [
-                'email' => $user->email,
-                'status' => 'pending'
-            ]);
+                        'email' => $user->email,
+                        'status' => 'pending'
+                    ]);
         } catch (\Exception $e) {
             Log::warning('Merkezi API webhook uyarısı: ' . $e->getMessage());
         }
@@ -363,12 +367,16 @@ class SsoC extends Controller
             $state = 'account_passive';
         } elseif ($applicationsClosed && (!$lastApp || $lastApp->status !== 'pending')) {
             $state = 'applications_closed';
-        } elseif (($localUser && $localUser->approval_status === 'rejected' && $localUser->rejection_type === 'permanent') ||
-                  ($lastApp && $lastApp->status === 'rejected' && $lastApp->rejection_type === 'permanent')) {
+        } elseif (
+            ($localUser && $localUser->approval_status === 'rejected' && $localUser->rejection_type === 'permanent') ||
+            ($lastApp && $lastApp->status === 'rejected' && $lastApp->rejection_type === 'permanent')
+        ) {
             $state = 'permanent_rejection';
             $rejectionReason = $localUser?->rejection_reason ?? $lastApp?->rejection_reason;
-        } elseif (($localUser && $localUser->approval_status === 'rejected' && $localUser->rejection_type === 'correctable') ||
-                  ($lastApp && $lastApp->status === 'rejected' && $lastApp->rejection_type === 'correctable')) {
+        } elseif (
+            ($localUser && $localUser->approval_status === 'rejected' && $localUser->rejection_type === 'correctable') ||
+            ($lastApp && $lastApp->status === 'rejected' && $lastApp->rejection_type === 'correctable')
+        ) {
             $state = 'correctable_rejection';
             $rejectionReason = $localUser?->rejection_reason ?? $lastApp?->rejection_reason;
         } elseif ($localUser && empty($localUser->role_id) && $localUser->approval_status === 'pending_role') {
