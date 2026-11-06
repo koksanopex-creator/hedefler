@@ -49,6 +49,10 @@ return [
             'local_domain' => env('MAIL_EHLO_DOMAIN', parse_url((string) env('APP_URL', 'http://localhost'), PHP_URL_HOST)),
         ],
 
+        'microsoft-graph' => [
+            'transport' => 'microsoft-graph',
+        ],
+
         'ses' => [
             'transport' => 'ses',
         ],
@@ -111,8 +115,8 @@ return [
     */
 
     'from' => [
-        'address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),
-        'name' => env('MAIL_FROM_NAME', env('APP_NAME', 'Laravel')),
+        'address' => env('MAIL_FROM_ADDRESS', 'kys@koksan.com'),
+        'name' => env('MAIL_FROM_NAME', 'KÖKSAN HEDEFLER SİSTEMİ'),
     ],
 
 ];
