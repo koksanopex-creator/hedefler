@@ -47,10 +47,13 @@ class SsoC extends Controller
             return redirect($centralUrl)->with('error', 'Kullanıcı bilgisi alınamadı.');
         }
 
+        $centralDb = env('CENTRAL_DB_DATABASE', 'merkezi_auth_db');
         $deptName = $centralUser['department']['name'] ?? null;
         if (!$deptName && !empty($centralUser['department_id'])) {
-            $deptRow = \Illuminate\Support\Facades\DB::table('merkezi_app.departments')->where('id', $centralUser['department_id'])->first();
-            $deptName = $deptRow?->name;
+            try {
+                $deptRow = \Illuminate\Support\Facades\DB::table("{$centralDb}.departments")->where('id', $centralUser['department_id'])->first();
+                $deptName = $deptRow?->name;
+            } catch (\Throwable $e) {}
         }
 
         $centralUser['department_name'] = $deptName;
@@ -68,12 +71,26 @@ class SsoC extends Controller
         $localUser = UserM::where('email', $centralUser['email'])->first();
 
         // MERKEZİ APİ YETKİ KONTROLÜ: Kullanıcı Merkezi API'de Hedefler uygulamasına atanmış ve onaylı mı?
-        $hedeflerAppId = \Illuminate\Support\Facades\DB::table('merkezi_app.applications')->where('code', 'hedefler')->value('id') ?? 14;
-        $centralAppUser = \Illuminate\Support\Facades\DB::table('merkezi_app.app_users')
-            ->where('user_id', $centralUser['id'])
-            ->where('application_id', $hedeflerAppId)
-            ->whereNull('deleted_at')
-            ->first();
+        $centralDb = env('CENTRAL_DB_DATABASE', 'merkezi_auth_db');
+        $hedeflerAppId = null;
+        try {
+            $hedeflerAppId = \Illuminate\Support\Facades\DB::table("{$centralDb}.applications")
+                ->where(function($q) {
+                    $q->whereIn('code', ['hedefler', 'hedefler-uygulamasi'])
+                      ->orWhere('code', 'like', '%hedef%');
+                })
+                ->value('id');
+        } catch (\Throwable $e) {}
+        $hedeflerAppId = $hedeflerAppId ?? 14;
+
+        $centralAppUser = null;
+        try {
+            $centralAppUser = \Illuminate\Support\Facades\DB::table("{$centralDb}.app_users")
+                ->where('user_id', $centralUser['id'])
+                ->where('application_id', $hedeflerAppId)
+                ->whereNull('deleted_at')
+                ->first();
+        } catch (\Throwable $e) {}
 
         $isCentralApproved = $centralAppUser && $centralAppUser->status === 'approved' && $centralAppUser->is_active;
 
@@ -197,8 +214,9 @@ class SsoC extends Controller
         $centralUser = session('sso_user_data');
         $centralUrl = rtrim(config('services.central_sso.url', env('CENTRAL_SSO_URL', 'http://localhost:8001')), '/');
 
+        $appCode = env('CENTRAL_SSO_APP_CODE', 'hedefler-uygulamasi');
         if (!$centralUser) {
-            return redirect($centralUrl . '/sso-entry?app_code=hedefler');
+            return redirect($centralUrl . '/sso-entry?app_code=' . $appCode);
         }
 
         // Başvurular kapalı mı?
@@ -229,8 +247,9 @@ class SsoC extends Controller
         $centralUser = session('sso_user_data');
         $centralUrl = rtrim(config('services.central_sso.url', env('CENTRAL_SSO_URL', 'http://localhost:8001')), '/');
 
+        $appCode = env('CENTRAL_SSO_APP_CODE', 'hedefler-uygulamasi');
         if (!$centralUser) {
-            return redirect($centralUrl . '/sso-entry?app_code=hedefler');
+            return redirect($centralUrl . '/sso-entry?app_code=' . $appCode);
         }
 
         $basvurularAcik = SettingS::get('basvurular_acik', true);

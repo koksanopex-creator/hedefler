@@ -149,8 +149,15 @@ class UserC extends Controller
             // 2. Merkezi API üzerinde hedefler erişimini pasife al
             if (!empty($user->central_user_id)) {
                 try {
-                    $hedeflerAppId = \Illuminate\Support\Facades\DB::table('merkezi_app.applications')->where('code', 'hedefler')->value('id') ?? 14;
-                    \Illuminate\Support\Facades\DB::table('merkezi_app.app_users')
+                    $centralDb = env('CENTRAL_DB_DATABASE', 'merkezi_auth_db');
+                    $hedeflerAppId = \Illuminate\Support\Facades\DB::table("{$centralDb}.applications")
+                        ->where(function($q) {
+                            $q->whereIn('code', ['hedefler', 'hedefler-uygulamasi'])
+                              ->orWhere('code', 'like', '%hedef%');
+                        })
+                        ->value('id') ?? 14;
+
+                    \Illuminate\Support\Facades\DB::table("{$centralDb}.app_users")
                         ->where('user_id', $user->central_user_id)
                         ->where('application_id', $hedeflerAppId)
                         ->update([
@@ -167,8 +174,15 @@ class UserC extends Controller
             // Aktife alındıysa Merkezi API'de de onayla/aktif et
             if (!empty($user->central_user_id)) {
                 try {
-                    $hedeflerAppId = \Illuminate\Support\Facades\DB::table('merkezi_app.applications')->where('code', 'hedefler')->value('id') ?? 14;
-                    \Illuminate\Support\Facades\DB::table('merkezi_app.app_users')
+                    $centralDb = env('CENTRAL_DB_DATABASE', 'merkezi_auth_db');
+                    $hedeflerAppId = \Illuminate\Support\Facades\DB::table("{$centralDb}.applications")
+                        ->where(function($q) {
+                            $q->whereIn('code', ['hedefler', 'hedefler-uygulamasi'])
+                              ->orWhere('code', 'like', '%hedef%');
+                        })
+                        ->value('id') ?? 14;
+
+                    \Illuminate\Support\Facades\DB::table("{$centralDb}.app_users")
                         ->where('user_id', $user->central_user_id)
                         ->where('application_id', $hedeflerAppId)
                         ->update([

@@ -19,24 +19,38 @@ class UserSyncC extends Controller
     {
         $centralUrl = rtrim(config('services.central_sso.url', env('CENTRAL_SSO_URL', 'http://localhost:8001')), '/');
         
-        // Merkezi veritabanından Hedefler uygulamasına atanmış kullanıcıları çek
-        $appId = DB::table('merkezi_app.applications')->where('code', 'hedefler')->value('id') ?? 14;
+        $centralDb = env('CENTRAL_DB_DATABASE', 'merkezi_auth_db');
+        $appId = null;
+        try {
+            $appId = DB::table("{$centralDb}.applications")
+                ->where(function($q) {
+                    $q->whereIn('code', ['hedefler', 'hedefler-uygulamasi'])
+                      ->orWhere('code', 'like', '%hedef%');
+                })
+                ->value('id');
+        } catch (\Throwable $e) {}
+        $appId = $appId ?? 14;
 
-        $centralAppUsers = DB::table('merkezi_app.app_users')
-            ->join('merkezi_app.users', 'app_users.user_id', '=', 'users.id')
-            ->leftJoin('merkezi_app.departments', 'users.department_id', '=', 'departments.id')
-            ->where('app_users.application_id', $appId)
-            ->whereNull('app_users.deleted_at')
-            ->select(
-                'users.id as central_id',
-                'users.first_name',
-                'users.last_name',
-                'users.email',
-                'departments.name as department_name',
-                'app_users.status as app_status',
-                'app_users.created_at as assigned_at'
-            )
-            ->get();
+        $centralAppUsers = collect();
+        try {
+            $centralAppUsers = DB::table("{$centralDb}.app_users")
+                ->join("{$centralDb}.users", 'app_users.user_id', '=', 'users.id')
+                ->leftJoin("{$centralDb}.departments", 'users.department_id', '=', 'departments.id')
+                ->where('app_users.application_id', $appId)
+                ->whereNull('app_users.deleted_at')
+                ->select(
+                    'users.id as central_id',
+                    'users.first_name',
+                    'users.last_name',
+                    'users.email',
+                    'departments.name as department_name',
+                    'app_users.status as app_status',
+                    'app_users.created_at as assigned_at'
+                )
+                ->get();
+        } catch (\Throwable $e) {
+            Log::warning('UserSync index central database query error: ' . $e->getMessage());
+        }
 
         // Yerel kullanıcıları email ile indeksle
         $localUsers = UserM::with(['role', 'group'])->get()->keyBy(fn($u) => strtolower(trim($u->email)));
@@ -84,12 +98,16 @@ class UserSyncC extends Controller
             'group_id' => 'nullable|exists:groups,id',
         ]);
 
+        $centralDb = env('CENTRAL_DB_DATABASE', 'merkezi_auth_db');
         // Merkezi kullanıcıyı bul
-        $cu = DB::table('merkezi_app.users')
-            ->leftJoin('merkezi_app.departments', 'users.department_id', '=', 'departments.id')
-            ->where('users.id', $centralId)
-            ->select('users.*', 'departments.name as department_name')
-            ->first();
+        $cu = null;
+        try {
+            $cu = DB::table("{$centralDb}.users")
+                ->leftJoin("{$centralDb}.departments", 'users.department_id', '=', 'departments.id')
+                ->where('users.id', $centralId)
+                ->select('users.*', 'departments.name as department_name')
+                ->first();
+        } catch (\Throwable $e) {}
 
         if (!$cu) {
             return back()->with('error', 'Merkezi API kullanıcısı bulunamadı.');
@@ -115,18 +133,28 @@ class UserSyncC extends Controller
         $user->save();
 
         // Merkezi API'deki app_users durumunu da 'approved' yap
-        $centralAdminId = auth()->user()?->central_user_id ?? 172;
-        $appId = DB::table('merkezi_app.applications')->where('code', 'hedefler')->value('id') ?? 14;
-        DB::table('merkezi_app.app_users')->updateOrInsert(
-            ['user_id' => $cu->id, 'application_id' => $appId],
-            [
-                'status' => 'approved',
-                'is_active' => 1,
-                'approved_at' => now(),
-                'approved_by' => $centralAdminId,
-                'updated_at' => now(),
-            ]
-        );
+        try {
+            $centralAdminId = auth()->user()?->central_user_id ?? 172;
+            $appId = DB::table("{$centralDb}.applications")
+                ->where(function($q) {
+                    $q->whereIn('code', ['hedefler', 'hedefler-uygulamasi'])
+                      ->orWhere('code', 'like', '%hedef%');
+                })
+                ->value('id') ?? 14;
+
+            DB::table("{$centralDb}.app_users")->updateOrInsert(
+                ['user_id' => $cu->id, 'application_id' => $appId],
+                [
+                    'status' => 'approved',
+                    'is_active' => 1,
+                    'approved_at' => now(),
+                    'approved_by' => $centralAdminId,
+                    'updated_at' => now(),
+                ]
+            );
+        } catch (\Throwable $e) {
+            Log::warning('UserSync assignRole app_users error: ' . $e->getMessage());
+        }
 
         $roleName = RoleM::find($request->role_id)->name;
         return back()->with('success', "{$fullName} kullanıcısına '{$roleName}' rolü başarıyla tanımlandı ve sisteme dahil edildi.");
@@ -137,10 +165,16 @@ class UserSyncC extends Controller
      */
     public function syncAll()
     {
-        $centralUsers = DB::table('merkezi_app.users')
-            ->leftJoin('merkezi_app.departments', 'users.department_id', '=', 'departments.id')
-            ->select('users.id', 'users.first_name', 'users.last_name', 'users.email', 'departments.name as department_name')
-            ->get();
+        $centralDb = env('CENTRAL_DB_DATABASE', 'merkezi_auth_db');
+        $centralUsers = collect();
+        try {
+            $centralUsers = DB::table("{$centralDb}.users")
+                ->leftJoin("{$centralDb}.departments", 'users.department_id', '=', 'departments.id')
+                ->select('users.id', 'users.first_name', 'users.last_name', 'users.email', 'departments.name as department_name')
+                ->get();
+        } catch (\Throwable $e) {
+            Log::warning('UserSync syncAll error: ' . $e->getMessage());
+        }
 
         $updatedCount = 0;
         foreach ($centralUsers as $cu) {

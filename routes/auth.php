@@ -16,7 +16,8 @@ Route::middleware('guest')->group(function () {
     // Standart login iptal edildi -> Merkezi SSO'ya yönlendirme
     Route::get('login', function () {
         $centralUrl = rtrim(env('CENTRAL_SSO_URL', 'http://localhost:8001'), '/');
-        $params = ['app_code' => 'hedefler'];
+        $appCode = env('CENTRAL_SSO_APP_CODE', 'hedefler-uygulamasi');
+        $params = ['app_code' => $appCode];
         if (request()->filled('intended')) {
             $params['intended'] = request('intended');
         }
