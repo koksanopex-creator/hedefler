@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('guest')->group(function () {
     // Standart login iptal edildi -> Merkezi SSO'ya yönlendirme
     Route::get('login', function () {
-        $centralUrl = rtrim(env('CENTRAL_SSO_URL', 'http://localhost:8001'), '/');
+        $centralUrl = rtrim(env('CENTRAL_SSO_URL', 'https://kys.koksan.com/merkezi_yonetim_sistemi'), '/');
         $appCode = env('CENTRAL_SSO_APP_CODE', 'hedefler-uygulamasi');
         $params = ['app_code' => $appCode];
         if (request()->filled('intended')) {

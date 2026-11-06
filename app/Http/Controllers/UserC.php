@@ -118,7 +118,7 @@ class UserC extends Controller
         $roles = RoleM::all();
         $groups = GroupM::where('is_active', true)->get();
         $user->load('managedGroups');
-        $centralUrl = rtrim(config('services.central_sso.url', env('CENTRAL_SSO_URL', 'http://localhost:8001')), '/');
+        $centralUrl = rtrim(config('services.central_sso.url', env('CENTRAL_SSO_URL', 'https://kys.koksan.com/merkezi_yonetim_sistemi')), '/');
         return view('users.edit', compact('user', 'roles', 'groups', 'centralUrl'));
     }
 

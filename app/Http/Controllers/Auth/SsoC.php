@@ -19,21 +19,22 @@ class SsoC extends Controller
     public function login(Request $request)
     {
         $token = $request->query('token');
-        $centralUrl = rtrim(config('services.central_sso.url', env('CENTRAL_SSO_URL', 'http://localhost:8001')), '/');
+        $centralUrl = rtrim(config('services.central_sso.url', env('CENTRAL_SSO_URL', 'https://kys.koksan.com/merkezi_yonetim_sistemi')), '/');
         $internalHttpUrl = str_replace('localhost', '127.0.0.1', $centralUrl);
+        $appCode = env('CENTRAL_SSO_APP_CODE', 'hedefler-uygulamasi');
 
         if (!$token) {
-            return redirect($centralUrl . '/sso-entry?app_code=hedefler');
+            return redirect($centralUrl . '/sso-entry?app_code=' . $appCode);
         }
 
         // Token Doğrulama
         try {
-            $response = Http::timeout(6)->get($internalHttpUrl . '/api/auth/verify-sso-token', [
+            $response = Http::withoutVerifying()->timeout(6)->get($internalHttpUrl . '/api/auth/verify-sso-token', [
                 'token' => $token
             ]);
         } catch (\Exception $e) {
             Log::error('SSO Doğrulama isteği hatası: ' . $e->getMessage());
-            return redirect($centralUrl)->with('error', 'Merkezi oturum sunucusuna bağlanılamadı.');
+            return redirect($centralUrl)->with('error', 'Merkezi oturum sunucusuna bağlanılamadı: ' . $e->getMessage());
         }
 
         if ($response->failed()) {
@@ -216,7 +217,7 @@ class SsoC extends Controller
     public function basvuru()
     {
         $centralUser = session('sso_user_data');
-        $centralUrl = rtrim(config('services.central_sso.url', env('CENTRAL_SSO_URL', 'http://localhost:8001')), '/');
+        $centralUrl = rtrim(config('services.central_sso.url', env('CENTRAL_SSO_URL', 'https://kys.koksan.com/merkezi_yonetim_sistemi')), '/');
 
         $appCode = env('CENTRAL_SSO_APP_CODE', 'hedefler-uygulamasi');
         if (!$centralUser) {
@@ -249,7 +250,7 @@ class SsoC extends Controller
     public function basvuruKaydet(Request $request)
     {
         $centralUser = session('sso_user_data');
-        $centralUrl = rtrim(config('services.central_sso.url', env('CENTRAL_SSO_URL', 'http://localhost:8001')), '/');
+        $centralUrl = rtrim(config('services.central_sso.url', env('CENTRAL_SSO_URL', 'https://kys.koksan.com/merkezi_yonetim_sistemi')), '/');
 
         $appCode = env('CENTRAL_SSO_APP_CODE', 'hedefler-uygulamasi');
         if (!$centralUser) {
@@ -299,7 +300,7 @@ class SsoC extends Controller
         $internalHttpUrl = str_replace('localhost', '127.0.0.1', $centralUrl);
 
         try {
-            Http::timeout(5)->withHeaders([
+            Http::withoutVerifying()->timeout(5)->withHeaders([
                 'X-App-Key' => $apiKey,
                 'Accept' => 'application/json'
             ])->post($internalHttpUrl . '/api/internal/uygulama-basvuru-durum', [
@@ -319,7 +320,7 @@ class SsoC extends Controller
     public function onayBekliyor()
     {
         $centralUser = session('sso_user_data');
-        $centralUrl = rtrim(config('services.central_sso.url', env('CENTRAL_SSO_URL', 'http://localhost:8001')), '/');
+        $centralUrl = rtrim(config('services.central_sso.url', env('CENTRAL_SSO_URL', 'https://kys.koksan.com/merkezi_yonetim_sistemi')), '/');
 
         if (!$centralUser) {
             // Oturumu olan yerel kullanıcı varsa onu baz al
@@ -397,7 +398,7 @@ class SsoC extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        $centralUrl = rtrim(config('services.central_sso.url', env('CENTRAL_SSO_URL', 'http://localhost:8001')), '/');
+        $centralUrl = rtrim(config('services.central_sso.url', env('CENTRAL_SSO_URL', 'https://kys.koksan.com/merkezi_yonetim_sistemi')), '/');
         return redirect($centralUrl . '/dashboard');
     }
 }

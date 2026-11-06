@@ -15,7 +15,7 @@ class ProfileC extends Controller
      */
     public function edit(Request $request): View
     {
-        $centralUrl = rtrim(config('services.central_sso.url', env('CENTRAL_SSO_URL', 'http://localhost:8001')), '/');
+        $centralUrl = rtrim(config('services.central_sso.url', env('CENTRAL_SSO_URL', 'https://kys.koksan.com/merkezi_yonetim_sistemi')), '/');
 
         return view('profile.edit', [
             'user' => $request->user(),

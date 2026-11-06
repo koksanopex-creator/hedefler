@@ -168,7 +168,7 @@ class SsoApplicationC extends Controller
      */
     private function notifyCentralApi(string $email, string $status)
     {
-        $centralUrl = rtrim(config('services.central_sso.url', env('CENTRAL_SSO_URL', 'http://localhost:8001')), '/');
+        $centralUrl = rtrim(config('services.central_sso.url', env('CENTRAL_SSO_URL', 'https://kys.koksan.com/merkezi_yonetim_sistemi')), '/');
         $internalHttpUrl = str_replace('localhost', '127.0.0.1', $centralUrl);
         $apiKey = env('CENTRAL_SSO_API_KEY', 'N15T2CN4PdhJjVLQhusCuW3GTb9Kt1kfi3mW5jOZo0tjdtuTQVbotJIwPfVKHCLQ');
 
