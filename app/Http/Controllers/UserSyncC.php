@@ -178,10 +178,13 @@ class UserSyncC extends Controller
 
         $updatedCount = 0;
         foreach ($centralUsers as $cu) {
-            $user = UserM::where('email', $cu->email)->first();
+            $user = UserM::where('central_user_id', $cu->id)
+                ->orWhere('email', $cu->email)
+                ->first();
             if ($user) {
                 $user->update([
                     'name' => trim($cu->first_name . ' ' . $cu->last_name),
+                    'email' => $cu->email,
                     'central_user_id' => $cu->id,
                     'central_department' => $cu->department_name,
                 ]);

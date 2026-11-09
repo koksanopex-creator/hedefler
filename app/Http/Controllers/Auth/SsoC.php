@@ -72,7 +72,9 @@ class SsoC extends Controller
             session(['url.intended' => $request->query('intended')]);
         }
 
-        $localUser = UserM::where('email', $centralUser['email'])->first();
+        $localUser = UserM::where('central_user_id', $centralUser['id'])
+            ->orWhere('email', $centralUser['email'])
+            ->first();
 
         // MERKEZİ APİ YETKİ KONTROLÜ: Kullanıcı Merkezi API'de Hedefler uygulamasına atanmış ve onaylı mı?
         $centralDb = env('CENTRAL_DB_DATABASE') ?: (
@@ -147,7 +149,7 @@ class SsoC extends Controller
 
         // SENARYO 1: Kullanıcı HEDEFLER veritabanında mevcut
         if ($localUser) {
-            // İsim ve Merkezi ID senkronizasyonu
+            // İsim, E-posta, Bölüm ve Merkezi ID senkronizasyonu
             $fullName = trim(($centralUser['first_name'] ?? '') . ' ' . ($centralUser['last_name'] ?? ''));
             $updates = [
                 'central_user_id' => $centralUser['id'],
@@ -155,6 +157,9 @@ class SsoC extends Controller
             ];
             if (!empty($fullName) && $localUser->name !== $fullName) {
                 $updates['name'] = $fullName;
+            }
+            if (!empty($centralUser['email']) && $localUser->email !== $centralUser['email']) {
+                $updates['email'] = $centralUser['email'];
             }
             $localUser->update($updates);
 
@@ -246,7 +251,9 @@ class SsoC extends Controller
         }
 
         // Kesin red kontrolü
-        $localUser = UserM::where('email', $centralUser['email'])->first();
+        $localUser = UserM::where('central_user_id', $centralUser['id'])
+            ->orWhere('email', $centralUser['email'])
+            ->first();
         if ($localUser && $localUser->approval_status === 'rejected' && $localUser->rejection_type === 'permanent') {
             return redirect()->route('sso.onay_bekliyor');
         }
