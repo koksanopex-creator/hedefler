@@ -118,17 +118,17 @@
 
                     <!-- Tablo -->
                     <div class="w-full overflow-x-auto">
-                        <table class="w-full min-w-full divide-y divide-gray-100/70 text-left">
+                        <table class="w-full text-left border-collapse" style="min-width: 1050px;">
                             <thead>
-                                <tr class="bg-gray-50/50">
-                                    <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap min-w-[240px]">Kullanıcı Adı</th>
-                                    <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap min-w-[230px]">E-Posta</th>
-                                    <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap min-w-[170px]">Gruptaki Konumu / Rol</th>
+                                <tr class="bg-gray-50/50 border-b border-gray-100">
+                                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap" style="min-width: 280px; width: 280px;">Kullanıcı Adı</th>
+                                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap" style="min-width: 260px; width: 260px;">E-Posta</th>
+                                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap" style="min-width: 190px; width: 190px;">Gruptaki Konumu / Rol</th>
                                     @if($canManage)
-                                        <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap min-w-[160px]">Sistem Rolü</th>
-                                        <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap min-w-[160px]">Yetki Kapsamı</th>
-                                        <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap w-[90px]">Durum</th>
-                                        <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-right text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap w-[90px]">İşlemler</th>
+                                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap" style="min-width: 160px; width: 160px;">Sistem Rolü</th>
+                                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap" style="min-width: 160px; width: 160px;">Yetki Kapsamı</th>
+                                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap text-center" style="min-width: 90px; width: 90px;">Durum</th>
+                                        <th class="px-4 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap" style="min-width: 90px; width: 90px;">İşlemler</th>
                                     @endif
                                 </tr>
                             </thead>
@@ -140,34 +140,34 @@
                                         $displayName = $maskName ? 'Yönetim' : $user->name;
                                     @endphp
                                     <tr class="hover:bg-purple-50/30 transition-colors">
-                                        <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 whitespace-nowrap min-w-[240px]">
+                                        <td class="px-4 py-3.5 whitespace-nowrap" style="min-width: 280px; width: 280px;">
                                             <div class="flex items-center gap-3">
                                                 <div class="h-10 w-10 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-white font-bold shadow-sm shrink-0">
                                                     {{ substr($displayName, 0, 1) }}
                                                 </div>
-                                                <div>
+                                                <div class="min-w-0">
                                                     @if($maskName)
-                                                        <span class="text-sm font-bold text-gray-900">{{ $displayName }}</span>
+                                                        <span class="text-sm font-bold text-gray-900 block truncate">{{ $displayName }}</span>
                                                     @else
-                                                        <a href="{{ route('users.profile', $user->id) }}" class="text-sm font-bold text-gray-900 hover:text-indigo-600 transition-colors flex items-center gap-1 group">
-                                                            <span>{{ $displayName }}</span>
-                                                            <svg class="w-3.5 h-3.5 text-gray-400 group-hover:text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                                                        <a href="{{ route('users.profile', $user->id) }}" class="text-sm font-bold text-gray-900 hover:text-indigo-600 transition-colors inline-flex items-center gap-1 group">
+                                                            <span class="truncate">{{ $displayName }}</span>
+                                                            <svg class="w-3.5 h-3.5 text-gray-400 group-hover:text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
                                                         </a>
                                                     @endif
                                                     <span class="text-[11px] font-medium text-purple-600 block mt-0.5">Üst Düzey Yönetici</span>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-sm text-gray-700 font-medium whitespace-nowrap min-w-[230px]">
-                                            <a href="mailto:{{ $user->email }}" class="hover:text-indigo-600 hover:underline">{{ $user->email }}</a>
+                                        <td class="px-4 py-3.5 text-sm text-gray-700 font-medium whitespace-nowrap" style="min-width: 260px; width: 260px;">
+                                            <a href="mailto:{{ $user->email }}" class="hover:text-indigo-600 hover:underline inline-block">{{ $user->email }}</a>
                                         </td>
-                                        <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 whitespace-nowrap">
+                                        <td class="px-4 py-3.5 whitespace-nowrap" style="min-width: 190px; width: 190px;">
                                             <span class="px-3 py-1 inline-flex text-xs font-bold rounded-full bg-purple-50 text-purple-700 border border-purple-200">
                                                 Sistem ve Genel Yönetim
                                             </span>
                                         </td>
                                         @if($canManage)
-                                            <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 whitespace-nowrap">
+                                            <td class="px-4 py-3.5 whitespace-nowrap" style="min-width: 160px; width: 160px;">
                                                 @if($user->role?->slug === 'sistem_yoneticisi')
                                                     <span class="px-3 py-1 inline-flex text-xs font-bold rounded-full bg-purple-100 text-purple-800 border border-purple-200">
                                                         🛡️ {{ $user->role->name }}
@@ -178,20 +178,20 @@
                                                     </span>
                                                 @endif
                                             </td>
-                                            <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 whitespace-nowrap text-xs text-gray-600 font-semibold">
+                                            <td class="px-4 py-3.5 whitespace-nowrap text-xs text-gray-600 font-semibold" style="min-width: 160px; width: 160px;">
                                                 <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700">
-                                                    <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                                    <svg class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                                                     Tüm Sistem (Genel)
                                                 </span>
                                             </td>
-                                            <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 whitespace-nowrap">
+                                            <td class="px-4 py-3.5 whitespace-nowrap text-center" style="min-width: 90px; width: 90px;">
                                                 @if($user->is_active)
                                                     <span class="px-3 py-1 inline-flex text-xs font-bold rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">Aktif</span>
                                                 @else
                                                     <span class="px-3 py-1 inline-flex text-xs font-bold rounded-full bg-gray-100 text-gray-700">Pasif</span>
                                                 @endif
                                             </td>
-                                            <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 whitespace-nowrap text-right text-sm">
+                                            <td class="px-4 py-3.5 whitespace-nowrap text-right text-sm" style="min-width: 90px; width: 90px;">
                                                 <div class="inline-flex items-center justify-end gap-1">
                                                     <a href="{{ route('users.edit', $user) }}" class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-purple-50 text-purple-700 hover:bg-purple-600 hover:text-white transition-all shadow-xs border border-purple-100" title="Düzenle">
                                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
@@ -255,16 +255,16 @@
 
                         <!-- Grup Tablosu (Üstte Yönetici, Altta Üyeler) -->
                         <div class="w-full overflow-x-auto">
-                            <table class="w-full min-w-full divide-y divide-gray-100 text-left">
+                            <table class="w-full text-left border-collapse" style="min-width: 1050px;">
                                 <thead>
-                                    <tr class="bg-gray-50/50">
-                                        <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap min-w-[260px]">Kullanıcı Adı</th>
-                                        <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap min-w-[240px]">E-Posta</th>
-                                        <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap min-w-[180px]">Gruptaki Konumu / Rol</th>
-                                        <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap min-w-[220px]">Bağlı Olduğu Grup</th>
+                                    <tr class="bg-gray-50/50 border-b border-gray-100">
+                                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap" style="min-width: 280px; width: 280px;">Kullanıcı Adı</th>
+                                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap" style="min-width: 260px; width: 260px;">E-Posta</th>
+                                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap" style="min-width: 190px; width: 190px;">Gruptaki Konumu / Rol</th>
+                                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap" style="min-width: 210px; width: 210px;">Bağlı Olduğu Grup</th>
                                         @if($canManage)
-                                            <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap w-[90px]">Durum</th>
-                                            <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-right text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap w-[90px]">İşlemler</th>
+                                            <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap text-center" style="min-width: 90px; width: 90px;">Durum</th>
+                                            <th class="px-4 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap" style="min-width: 90px; width: 90px;">İşlemler</th>
                                         @endif
                                     </tr>
                                 </thead>
@@ -277,25 +277,25 @@
                                             $maskName = $isTargetSuperAdmin && !$isSuperAdmin;
                                             $displayName = $maskName ? 'Yönetim' : $manager->name;
                                         @endphp
-                                        <tr class="bg-gradient-to-r from-amber-50/60 via-indigo-50/30 to-white hover:bg-amber-50/80 transition-colors border-b border-indigo-100">
-                                            <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 whitespace-nowrap min-w-[260px]">
+                                        <tr class="bg-gradient-to-r from-amber-50/70 via-indigo-50/30 to-white hover:bg-amber-50/90 transition-colors border-b border-indigo-100">
+                                            <td class="px-4 py-3.5 whitespace-nowrap" style="min-width: 280px; width: 280px;">
                                                 <div class="flex items-center gap-3">
                                                     <div class="relative shrink-0">
-                                                        <div class="h-10 w-10 rounded-full bg-gradient-to-br from-amber-400 to-indigo-600 flex items-center justify-center text-white font-bold shadow-md border-2 border-white">
+                                                        <div class="h-10 w-10 rounded-full bg-gradient-to-br from-amber-400 to-indigo-600 flex items-center justify-center text-white font-bold shadow-md border-2 border-white shrink-0">
                                                             {{ substr($displayName, 0, 1) }}
                                                         </div>
                                                         <div class="absolute -top-1 -right-1 bg-amber-400 text-white p-0.5 rounded-full text-[10px] shadow-xs" title="Grup Yöneticisi">
                                                             👑
                                                         </div>
                                                     </div>
-                                                    <div>
-                                                        <div class="text-sm font-extrabold text-gray-900 flex items-center flex-wrap gap-1.5">
+                                                    <div class="min-w-0">
+                                                        <div class="text-sm font-extrabold text-gray-900 flex items-center gap-1.5 flex-wrap">
                                                             @if($maskName)
-                                                                <span>{{ $displayName }}</span>
+                                                                <span class="truncate">{{ $displayName }}</span>
                                                             @else
-                                                                <a href="{{ route('users.profile', $manager->id) }}" class="hover:text-indigo-600 transition-colors flex items-center gap-1 group">
-                                                                    <span>{{ $displayName }}</span>
-                                                                    <svg class="w-3.5 h-3.5 text-gray-400 group-hover:text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                                                                <a href="{{ route('users.profile', $manager->id) }}" class="hover:text-indigo-600 transition-colors inline-flex items-center gap-1 group">
+                                                                    <span class="truncate">{{ $displayName }}</span>
+                                                                    <svg class="w-3.5 h-3.5 text-gray-400 group-hover:text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
                                                                 </a>
                                                             @endif
                                                             <span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-full border border-amber-200 shrink-0">
@@ -306,29 +306,29 @@
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-sm text-gray-700 font-medium whitespace-nowrap min-w-[240px]">
-                                                <a href="mailto:{{ $manager->email }}" class="hover:text-indigo-600 hover:underline">{{ $manager->email }}</a>
+                                            <td class="px-4 py-3.5 text-sm text-gray-700 font-medium whitespace-nowrap" style="min-width: 260px; width: 260px;">
+                                                <a href="mailto:{{ $manager->email }}" class="hover:text-indigo-600 hover:underline inline-block">{{ $manager->email }}</a>
                                             </td>
-                                            <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 whitespace-nowrap min-w-[180px]">
+                                            <td class="px-4 py-3.5 whitespace-nowrap" style="min-width: 190px; width: 190px;">
                                                 <span class="px-3 py-1 inline-flex text-xs font-bold rounded-full bg-indigo-100 text-indigo-800 border border-indigo-200">
                                                     {{ $manager->role->name ?? 'Veri Giriş Yöneticisi' }}
                                                 </span>
                                             </td>
-                                            <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-xs font-semibold text-indigo-700 whitespace-nowrap min-w-[220px]">
+                                            <td class="px-4 py-3.5 text-xs font-semibold text-indigo-700 whitespace-nowrap" style="min-width: 210px; width: 210px;">
                                                 <div class="flex items-center gap-1.5">
                                                     <svg class="w-4 h-4 text-indigo-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
                                                     <span>{{ $group->name }} (Yönettiği Grup)</span>
                                                 </div>
                                             </td>
                                             @if($canManage)
-                                                <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 whitespace-nowrap">
+                                                <td class="px-4 py-3.5 whitespace-nowrap text-center" style="min-width: 90px; width: 90px;">
                                                     @if($manager->is_active)
                                                         <span class="px-3 py-1 inline-flex text-xs font-bold rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">Aktif</span>
                                                     @else
                                                         <span class="px-3 py-1 inline-flex text-xs font-bold rounded-full bg-gray-100 text-gray-700">Pasif</span>
                                                     @endif
                                                 </td>
-                                                <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 whitespace-nowrap text-right text-sm">
+                                                <td class="px-4 py-3.5 whitespace-nowrap text-right text-sm" style="min-width: 90px; width: 90px;">
                                                     <div class="inline-flex items-center justify-end gap-1">
                                                         <a href="{{ route('users.edit', $manager) }}" class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-600 hover:text-white transition-all shadow-xs border border-indigo-100" title="Düzenle">
                                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
@@ -354,55 +354,59 @@
                                     @endforelse
 
                                     <!-- 2. GRUP ÜYELERİ / VERİ GİRİŞİ (YÖNETİCİNİN ALTINDA) -->
-                                    @forelse($group->users as $member)
+                                    @php
+                                        $managerIds = $group->managers->pluck('id')->toArray();
+                                        $regularMembers = $group->users->filter(fn($u) => !in_array($u->id, $managerIds));
+                                    @endphp
+                                    @forelse($regularMembers as $member)
                                         @php
                                             $isTargetSuperAdmin = ($member->role && $member->role->slug === 'sistem_yoneticisi') || $member->id === 1;
                                             $maskName = $isTargetSuperAdmin && !$isSuperAdmin;
                                             $displayName = $maskName ? 'Yönetim' : $member->name;
                                         @endphp
                                         <tr class="hover:bg-gray-50/70 transition-colors">
-                                            <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 whitespace-nowrap min-w-[260px]">
+                                            <td class="px-4 py-3.5 whitespace-nowrap" style="min-width: 280px; width: 280px;">
                                                 <div class="flex items-center gap-3 pl-3">
                                                     <svg class="w-4 h-4 text-gray-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
                                                     <div class="h-9 w-9 rounded-full bg-gradient-to-br from-slate-100 to-indigo-100 flex items-center justify-center text-indigo-600 font-bold border border-white shadow-xs shrink-0">
                                                         {{ substr($displayName, 0, 1) }}
                                                     </div>
-                                                    <div>
+                                                    <div class="min-w-0">
                                                         @if($maskName)
-                                                            <div class="text-sm font-bold text-gray-900">{{ $displayName }}</div>
+                                                            <div class="text-sm font-bold text-gray-900 truncate">{{ $displayName }}</div>
                                                         @else
-                                                            <a href="{{ route('users.profile', $member->id) }}" class="text-sm font-bold text-gray-900 hover:text-indigo-600 transition-colors flex items-center gap-1 group">
-                                                                <span>{{ $displayName }}</span>
-                                                                <svg class="w-3.5 h-3.5 text-gray-400 group-hover:text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                                                            <a href="{{ route('users.profile', $member->id) }}" class="text-sm font-bold text-gray-900 hover:text-indigo-600 transition-colors inline-flex items-center gap-1 group">
+                                                                <span class="truncate">{{ $displayName }}</span>
+                                                                <svg class="w-3.5 h-3.5 text-gray-400 group-hover:text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
                                                             </a>
                                                         @endif
                                                         <span class="text-[11px] font-medium text-gray-400 block mt-0.5">Grup Üyesi</span>
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-sm text-gray-600 font-medium whitespace-nowrap min-w-[240px]">
-                                                <a href="mailto:{{ $member->email }}" class="hover:text-indigo-600 hover:underline">{{ $member->email }}</a>
+                                            <td class="px-4 py-3.5 text-sm text-gray-700 font-medium whitespace-nowrap" style="min-width: 260px; width: 260px;">
+                                                <a href="mailto:{{ $member->email }}" class="hover:text-indigo-600 hover:underline inline-block">{{ $member->email }}</a>
                                             </td>
-                                            <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 whitespace-nowrap min-w-[180px]">
+                                            <td class="px-4 py-3.5 whitespace-nowrap" style="min-width: 190px; width: 190px;">
                                                 <span class="px-3 py-1 inline-flex text-xs font-semibold rounded-full bg-slate-100 text-slate-700 border border-slate-200">
                                                     {{ $member->role->name ?? 'Veri Girişi' }}
                                                 </span>
                                             </td>
-                                            <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-xs text-gray-600 font-medium whitespace-nowrap min-w-[220px]">
+                                            <td class="px-4 py-3.5 text-xs text-gray-600 font-medium whitespace-nowrap" style="min-width: 210px; width: 210px;">
                                                 <div class="flex items-center gap-1.5">
                                                     <span class="w-2 h-2 rounded-full bg-indigo-400 shrink-0"></span>
                                                     <span>{{ $group->name }}</span>
                                                 </div>
                                             </td>
                                             @if($canManage)
-                                                <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 whitespace-nowrap">
+                                                <td class="px-4 py-3.5 whitespace-nowrap text-center" style="min-width: 90px; width: 90px;">
                                                     @if($member->is_active)
                                                         <span class="px-3 py-1 inline-flex text-xs font-bold rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">Aktif</span>
                                                     @else
                                                         <span class="px-3 py-1 inline-flex text-xs font-bold rounded-full bg-gray-100 text-gray-700">Pasif</span>
                                                     @endif
                                                 </td>
-                                                <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 whitespace-nowrap text-right text-sm">
+                                                <td class="px-4 py-3.5 whitespace-nowrap text-right text-sm" style="min-width: 90px; width: 90px;">
                                                     <div class="inline-flex items-center justify-end gap-1">
                                                         <a href="{{ route('users.edit', $member) }}" class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gray-50 text-gray-600 hover:bg-indigo-600 hover:text-white transition-all shadow-xs border border-gray-100" title="Düzenle">
                                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
@@ -451,15 +455,15 @@
                             </span>
                         </div>
                         <div class="w-full overflow-x-auto">
-                            <table class="w-full min-w-full divide-y divide-gray-100 text-left">
+                            <table class="w-full text-left border-collapse" style="min-width: 1050px;">
                                 <thead>
-                                    <tr class="bg-gray-50/50">
-                                        <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap min-w-[260px]">Kullanıcı Adı</th>
-                                        <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap min-w-[240px]">E-Posta</th>
-                                        <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap min-w-[180px]">Gruptaki Konumu / Rol</th>
+                                    <tr class="bg-gray-50/50 border-b border-gray-100">
+                                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap" style="min-width: 280px; width: 280px;">Kullanıcı Adı</th>
+                                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap" style="min-width: 260px; width: 260px;">E-Posta</th>
+                                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap" style="min-width: 190px; width: 190px;">Gruptaki Konumu / Rol</th>
                                         @if($canManage)
-                                            <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap w-[90px]">Durum</th>
-                                            <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-right text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap w-[90px]">İşlemler</th>
+                                            <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap text-center" style="min-width: 90px; width: 90px;">Durum</th>
+                                            <th class="px-4 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap" style="min-width: 90px; width: 90px;">İşlemler</th>
                                         @endif
                                     </tr>
                                 </thead>
@@ -471,41 +475,41 @@
                                             $displayName = $maskName ? 'Yönetim' : $user->name;
                                         @endphp
                                         <tr class="hover:bg-amber-50/20 transition-colors">
-                                            <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 whitespace-nowrap min-w-[260px]">
+                                            <td class="px-4 py-3.5 whitespace-nowrap" style="min-width: 280px; width: 280px;">
                                                 <div class="flex items-center gap-3">
                                                     <div class="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-700 font-bold shrink-0">
                                                         {{ substr($displayName, 0, 1) }}
                                                     </div>
-                                                    <div>
+                                                    <div class="min-w-0">
                                                         @if($maskName)
-                                                            <div class="text-sm font-bold text-gray-900">{{ $displayName }}</div>
+                                                            <div class="text-sm font-bold text-gray-900 truncate">{{ $displayName }}</div>
                                                         @else
-                                                            <a href="{{ route('users.profile', $user->id) }}" class="text-sm font-bold text-gray-900 hover:text-indigo-600 transition-colors flex items-center gap-1 group">
-                                                                <span>{{ $displayName }}</span>
-                                                                <svg class="w-3.5 h-3.5 text-gray-400 group-hover:text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                                                            <a href="{{ route('users.profile', $user->id) }}" class="text-sm font-bold text-gray-900 hover:text-indigo-600 transition-colors inline-flex items-center gap-1 group">
+                                                                <span class="truncate">{{ $displayName }}</span>
+                                                                <svg class="w-3.5 h-3.5 text-gray-400 group-hover:text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
                                                             </a>
                                                         @endif
                                                         <span class="text-[11px] font-medium text-gray-400 block mt-0.5">Bağımsız Kullanıcı</span>
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-sm text-gray-700 font-medium whitespace-nowrap min-w-[240px]">
-                                                <a href="mailto:{{ $user->email }}" class="hover:text-indigo-600 hover:underline">{{ $user->email }}</a>
+                                            <td class="px-4 py-3.5 text-sm text-gray-700 font-medium whitespace-nowrap" style="min-width: 260px; width: 260px;">
+                                                <a href="mailto:{{ $user->email }}" class="hover:text-indigo-600 hover:underline inline-block">{{ $user->email }}</a>
                                             </td>
-                                            <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 whitespace-nowrap">
+                                            <td class="px-4 py-3.5 whitespace-nowrap" style="min-width: 190px; width: 190px;">
                                                 <span class="px-3 py-1 inline-flex text-xs font-bold rounded-full bg-gray-100 text-gray-700 border border-gray-200">
                                                     {{ $user->role->name ?? 'Bağımsız' }}
                                                 </span>
                                             </td>
                                             @if($canManage)
-                                                <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 whitespace-nowrap">
+                                                <td class="px-4 py-3.5 whitespace-nowrap text-center" style="min-width: 90px; width: 90px;">
                                                     @if($user->is_active)
                                                         <span class="px-3 py-1 inline-flex text-xs font-bold rounded-full bg-emerald-100 text-emerald-800">Aktif</span>
                                                     @else
                                                         <span class="px-3 py-1 inline-flex text-xs font-bold rounded-full bg-gray-100 text-gray-700">Pasif</span>
                                                     @endif
                                                 </td>
-                                                <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 whitespace-nowrap text-right text-sm">
+                                                <td class="px-4 py-3.5 whitespace-nowrap text-right text-sm" style="min-width: 90px; width: 90px;">
                                                     <div class="inline-flex items-center justify-end gap-1">
                                                         <a href="{{ route('users.edit', $user) }}" class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-600 hover:text-white transition-all shadow-xs border border-indigo-100" title="Düzenle">
                                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
@@ -536,17 +540,17 @@
             <!-- ========================================== -->
             <div x-show="view === 'flat'" class="backdrop-blur-xl bg-white/70 border border-white/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] sm:rounded-3xl overflow-hidden" style="display: none;">
                 <div class="w-full overflow-x-auto p-3 sm:p-5">
-                    <table class="w-full min-w-full border-collapse text-left">
+                    <table class="w-full text-left border-collapse" style="min-width: 1100px;">
                         <thead>
-                            <tr class="bg-gray-50/50">
-                                <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-widest border-b border-gray-200/50 whitespace-nowrap min-w-[240px]">Kullanıcı Adı</th>
-                                <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-widest border-b border-gray-200/50 whitespace-nowrap min-w-[230px]">Email</th>
-                                <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-widest border-b border-gray-200/50 whitespace-nowrap min-w-[200px]">Grup</th>
-                                <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-widest border-b border-gray-200/50 whitespace-nowrap min-w-[170px]">Gruptaki Konumu / Rol</th>
+                            <tr class="bg-gray-50/50 border-b border-gray-100">
+                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-widest whitespace-nowrap" style="min-width: 280px; width: 280px;">Kullanıcı Adı</th>
+                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-widest whitespace-nowrap" style="min-width: 260px; width: 260px;">Email</th>
+                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-widest whitespace-nowrap" style="min-width: 200px; width: 200px;">Grup</th>
+                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-widest whitespace-nowrap" style="min-width: 180px; width: 180px;">Gruptaki Konumu / Rol</th>
                                 @if($canManage)
-                                    <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-widest border-b border-gray-200/50 whitespace-nowrap min-w-[150px]">Sistem Rolü</th>
-                                    <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-widest border-b border-gray-200/50 whitespace-nowrap w-[90px]">Durum</th>
-                                    <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-right text-xs font-bold text-gray-500 uppercase tracking-widest border-b border-gray-200/50 whitespace-nowrap w-[90px]">İşlemler</th>
+                                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-widest whitespace-nowrap" style="min-width: 150px; width: 150px;">Sistem Rolü</th>
+                                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-widest whitespace-nowrap text-center" style="min-width: 90px; width: 90px;">Durum</th>
+                                    <th class="px-4 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-widest whitespace-nowrap" style="min-width: 90px; width: 90px;">İşlemler</th>
                                 @endif
                             </tr>
                         </thead>
@@ -558,35 +562,35 @@
                                     $displayName = $maskName ? 'Yönetim' : $user->name;
                                 @endphp
                                 <tr class="group hover:bg-white/80 transition-all duration-300 rounded-2xl">
-                                    <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 whitespace-nowrap min-w-[240px]">
+                                    <td class="px-4 py-3.5 whitespace-nowrap" style="min-width: 280px; width: 280px;">
                                         <div class="flex items-center">
                                             <div class="h-9 w-9 flex-shrink-0">
                                                 <div class="h-9 w-9 rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center text-indigo-600 font-bold border border-white shadow-sm shrink-0">
                                                     {{ substr($displayName, 0, 1) }}
                                                 </div>
                                             </div>
-                                            <div class="ml-3">
+                                            <div class="ml-3 min-w-0">
                                                 @if($maskName)
-                                                    <div class="text-sm font-bold text-gray-900">{{ $displayName }}</div>
+                                                    <div class="text-sm font-bold text-gray-900 truncate">{{ $displayName }}</div>
                                                 @else
-                                                    <a href="{{ route('users.profile', $user->id) }}" class="text-sm font-bold text-gray-900 group-hover:text-indigo-600 transition-colors flex items-center gap-1">
-                                                        <span>{{ $displayName }}</span>
-                                                        <svg class="w-3.5 h-3.5 text-gray-400 group-hover:text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                                                    <a href="{{ route('users.profile', $user->id) }}" class="text-sm font-bold text-gray-900 group-hover:text-indigo-600 transition-colors inline-flex items-center gap-1">
+                                                        <span class="truncate">{{ $displayName }}</span>
+                                                        <svg class="w-3.5 h-3.5 text-gray-400 group-hover:text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
                                                     </a>
                                                 @endif
                                             </div>
                                         </div>
                                     </td>
-                                    <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-sm text-gray-700 font-medium whitespace-nowrap min-w-[230px]">
-                                        <a href="mailto:{{ $user->email }}" class="hover:text-indigo-600 hover:underline">{{ $user->email }}</a>
+                                    <td class="px-4 py-3.5 text-sm text-gray-700 font-medium whitespace-nowrap" style="min-width: 260px; width: 260px;">
+                                        <a href="mailto:{{ $user->email }}" class="hover:text-indigo-600 hover:underline inline-block">{{ $user->email }}</a>
                                     </td>
-                                    <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-sm text-gray-600 font-medium whitespace-nowrap min-w-[200px]">
+                                    <td class="px-4 py-3.5 text-sm text-gray-600 font-medium whitespace-nowrap" style="min-width: 200px; width: 200px;">
                                         <div class="flex items-center gap-2">
                                             <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-                                            <span>{{ $user->group->name ?? 'Bağımsız' }}</span>
+                                            <span class="truncate">{{ $user->group->name ?? 'Bağımsız' }}</span>
                                         </div>
                                     </td>
-                                    <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 whitespace-nowrap">
+                                    <td class="px-4 py-3.5 whitespace-nowrap" style="min-width: 180px; width: 180px;">
                                         @if($user->managedGroups->isNotEmpty())
                                             <span class="px-3 py-1 inline-flex text-xs font-bold rounded-full bg-amber-100 text-amber-800 border border-amber-200">
                                                 👑 GRUP YÖNETİCİSİ
@@ -602,19 +606,19 @@
                                         @endif
                                     </td>
                                     @if($canManage)
-                                        <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 whitespace-nowrap">
+                                        <td class="px-4 py-3.5 whitespace-nowrap" style="min-width: 150px; width: 150px;">
                                             <span class="px-3 py-1 inline-flex text-xs font-semibold rounded-full bg-indigo-50/80 text-indigo-700 border border-indigo-100/50 shadow-sm backdrop-blur-sm">
                                                 {{ $user->role->name ?? '-' }}
                                             </span>
                                         </td>
-                                        <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 whitespace-nowrap">
+                                        <td class="px-4 py-3.5 whitespace-nowrap text-center" style="min-width: 90px; width: 90px;">
                                             @if($user->is_active)
                                                 <span class="px-3 py-1 inline-flex text-xs font-bold rounded-full bg-gradient-to-r from-emerald-400 to-green-500 text-white shadow-xs">Aktif</span>
                                             @else
                                                 <span class="px-3 py-1 inline-flex text-xs font-bold rounded-full bg-gradient-to-r from-slate-400 to-gray-500 text-white shadow-xs">Pasif</span>
                                             @endif
                                         </td>
-                                        <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 whitespace-nowrap text-right text-sm font-medium">
+                                        <td class="px-4 py-3.5 whitespace-nowrap text-right text-sm font-medium" style="min-width: 90px; width: 90px;">
                                             <div class="inline-flex items-center justify-end gap-1">
                                                 <a href="{{ route('users.edit', $user) }}" class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gray-50 text-gray-600 hover:bg-indigo-600 hover:text-white transition-all shadow-xs border border-gray-100" title="Düzenle">
                                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>

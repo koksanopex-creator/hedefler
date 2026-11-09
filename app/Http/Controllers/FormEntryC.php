@@ -192,6 +192,18 @@ class FormEntryC extends Controller
             : "Yeni form verisi oluşturuldu ve onaya gönderildi: [{$formTemplate->name}] (Giriş Tarihi: {$dateFormatted})";
         $this->activityLogService->log($actionName, $desc, $entry);
 
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => $status === 'draft' ? 'Taslak başarıyla kaydedildi.' : 'Veri girişi kaydedildi.',
+                'entry_id' => $entry->id,
+                'edit_url' => route('form-entries.edit', $entry),
+                'update_url' => route('form-entries.update', $entry),
+                'status' => $status,
+                'saved_at' => now()->format('H:i:s'),
+            ]);
+        }
+
         if ($status === 'draft') {
             return redirect()->route('form-entries.edit', $entry)->with('success', 'Taslak başarıyla kaydedildi.');
         }
@@ -482,6 +494,18 @@ class FormEntryC extends Controller
         }
 
         $this->activityLogService->log('form_entry.update', $logDesc, $formEntry);
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => $status === 'draft' ? 'Taslak başarıyla güncellendi.' : 'Veri başarıyla güncellendi.',
+                'entry_id' => $formEntry->id,
+                'edit_url' => route('form-entries.edit', $formEntry),
+                'update_url' => route('form-entries.update', $formEntry),
+                'status' => $status,
+                'saved_at' => now()->format('H:i:s'),
+            ]);
+        }
 
         if ($status === 'submitted') {
             \App\Services\NotificationS::dispatch('form.submitted', [
@@ -1035,6 +1059,26 @@ class FormEntryC extends Controller
                     }
 
                     $val = (string) $rawValue;
+
+                    // Sayısal alanlarda veya sayısal değerlerde IEEE 754 float taşmalarını ve hassasiyet bozulmalarını temizle
+                    // Örn: 622641.5094339623 -> 622641.51, 336734.69387755106 -> 336734.69, 219648.00000000003 -> 219648, 16.500000000000004 -> 16.5
+                    if ($field->type === 'number' || is_numeric($rawValue)) {
+                        if (is_numeric($rawValue)) {
+                            $num = (float) $rawValue;
+                            if (abs($num - round($num)) < 0.00001) {
+                                $val = (string) round($num);
+                            } else {
+                                $val = (string) round($num, 2);
+                            }
+                        } elseif (is_string($rawValue)) {
+                            $trimmed = trim($rawValue);
+                            // Türkçe format (örn. 336.734,69 veya 622.641,51)
+                            if (preg_match('/^-?\d{1,3}(\.\d{3})*,\d+$/', $trimmed)) {
+                                $num = (float) str_replace(['.', ','], ['', '.'], $trimmed);
+                                $val = (string) round($num, 2);
+                            }
+                        }
+                    }
 
                     if (trim($val) !== '') {
                         $isEmptyRow = false;

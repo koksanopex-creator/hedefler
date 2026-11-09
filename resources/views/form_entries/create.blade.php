@@ -42,19 +42,29 @@
         .table-scroll-container::-webkit-scrollbar-thumb:hover {
             background: #4f46e5;
         }
+
+        /* Veri girişi ekranında üst başlık ve padding optimizasyonu: Tablo maksimum dikey alanı kullansın */
+        header.bg-white.shadow {
+            padding-top: 0.5rem !important;
+            padding-bottom: 0.5rem !important;
+        }
+        header.bg-white.shadow .py-6 {
+            padding-top: 0.25rem !important;
+            padding-bottom: 0.25rem !important;
+        }
     </style>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-1.5">
             <div>
-                <h2 class="font-extrabold text-xl sm:text-2xl text-gray-900 tracking-tight">
+                <h2 class="font-extrabold text-lg sm:text-xl text-gray-900 tracking-tight">
                     {{ $formTemplate->name }} - Veri Girişi
                 </h2>
             </div>
-            <div class="text-sm text-gray-500 flex flex-col items-start sm:items-end">
-                <span class="text-xs sm:text-sm">Tarih: {{ $date ?? now()->format('Y-m-d') }}</span>
+            <div class="text-xs text-gray-500 flex flex-wrap items-center gap-2 sm:gap-3">
+                <span>Tarih: {{ $date ?? now()->format('Y-m-d') }}</span>
                 @if(isset($existingEntry) && $existingEntry->status === 'draft')
-                    <span class="text-xs text-indigo-500 font-bold mt-1">
-                        Son Kaydedilme: {{ $existingEntry->updated_at->format('d.m.Y H:i') }} (Taslak)
+                    <span class="text-indigo-600 font-semibold">
+                        Son Kayıt: {{ $existingEntry->updated_at->format('d.m.Y H:i') }} (Taslak)
                     </span>
                 @endif
             </div>
@@ -88,13 +98,13 @@
         }
     @endphp
 
-    <div class="py-2 sm:py-3"
+    <div class="py-1.5 sm:py-2"
         x-data="formEntryApp({{ json_encode($fieldsToRender) }}, {{ $formTemplate->show_row_totals ? 'true' : 'false' }}, {{ json_encode($masterDataTree ?? []) }}, {{ json_encode($currentUserScope ?? ['is_admin' => true, 'is_manager' => true, 'allowed_user_ids' => [], 'allowed_user_names' => []]) }}, {{ json_encode($usersList ?? []) }}, {{ $formTemplate->id }}, {{ json_encode($pinnedColumns ?? ['left' => [], 'right' => []]) }})">
         <div :class="isWide ? 'w-full px-2 sm:px-4' : 'max-w-full mx-auto px-4 sm:px-6 lg:px-8'" class="transition-all duration-200">
 
             @if(session('success'))
-                <div class="bg-green-50 text-green-800 p-4 rounded-xl mb-6 shadow-sm border border-green-200 flex items-center" role="alert">
-                    <svg class="w-6 h-6 mr-3 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="bg-green-50 text-green-800 p-3 rounded-lg mb-2 shadow-xs border border-green-200 flex items-center text-xs sm:text-sm" role="alert">
+                    <svg class="w-5 h-5 mr-2 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
                     <div>
@@ -104,8 +114,8 @@
             @endif
 
             @if(session('error'))
-                <div class="bg-red-50 text-red-800 p-4 rounded-xl mb-6 shadow-sm border border-red-200 flex items-center" role="alert">
-                    <svg class="w-6 h-6 mr-3 text-red-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="bg-red-50 text-red-800 p-3 rounded-lg mb-2 shadow-xs border border-red-200 flex items-center text-xs sm:text-sm" role="alert">
+                    <svg class="w-5 h-5 mr-2 text-red-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
                     </svg>
                     <div>
@@ -115,14 +125,14 @@
             @endif
 
             @if(isset($errors) && $errors->any())
-                <div class="bg-red-50 text-red-800 p-4 rounded-xl mb-6 shadow-sm border border-red-200" role="alert">
-                    <div class="flex items-center mb-2 font-semibold text-red-700">
-                        <svg class="w-5 h-5 mr-2 text-red-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <div class="bg-red-50 text-red-800 p-3 rounded-lg mb-2 shadow-xs border border-red-200 text-xs sm:text-sm" role="alert">
+                    <div class="flex items-center mb-1 font-semibold text-red-700">
+                        <svg class="w-4 h-4 mr-1.5 text-red-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
                         </svg>
                         Lütfen aşağıdaki hataları kontrol ediniz:
                     </div>
-                    <ul class="list-disc list-inside space-y-1 text-xs sm:text-sm text-red-700 ml-2">
+                    <ul class="list-disc list-inside space-y-0.5 text-xs text-red-700 ml-2">
                         @foreach($errors->all() as $error)
                             <li>{{ $error }}</li>
                         @endforeach
@@ -133,24 +143,22 @@
             @if($existingEntry)
                 @php
                     $statusMap = [
-                        'draft' => 'TASLAK',
-                        'submitted' => 'ONAY BEKLİYOR',
-                        'approved' => 'ONAYLANDI',
-                        'rejected' => 'REDDEDİLDİ',
-                        'revised' => 'REVİZE EDİLDİ',
+                        'draft' => 'Taslak',
+                        'submitted' => 'Onay Bekliyor',
+                        'approved' => 'Onaylandı',
+                        'rejected' => 'Reddedildi',
+                        'revised' => 'Revize Edildi',
                     ];
-                    $entryStatusLabel = $statusMap[strtolower($existingEntry->status)] ?? strtoupper($existingEntry->status);
+                    $entryStatusLabel = $statusMap[strtolower($existingEntry->status)] ?? $existingEntry->status;
                 @endphp
                 <div
-                    class="bg-blue-50 text-blue-700 p-4 rounded-lg mb-6 shadow-sm border border-blue-200 flex items-center">
-                    <svg class="w-6 h-6 mr-3 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                    <div>
-                        <p class="font-semibold">Düzenleme Modu</p>
-                        <p class="text-sm">Şu anda sistemde <strong class="bg-blue-100 text-blue-900 px-2 py-0.5 rounded font-bold">{{ $entryStatusLabel }}</strong>
-                            durumundaki bir formu düzenliyorsunuz.</p>
+                    class="bg-blue-50/90 text-blue-700 px-3.5 py-1.5 rounded-lg mb-2 shadow-xs border border-blue-200 flex items-center justify-between text-xs sm:text-sm">
+                    <div class="flex items-center gap-2">
+                        <svg class="w-4 h-4 text-blue-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <span><strong>Düzenleme Modu:</strong> Şu anda sistemde <span class="bg-blue-100 text-blue-900 px-2 py-0.5 rounded font-bold">{{ $entryStatusLabel }}</span> durumundaki formu düzenliyorsunuz.</span>
                     </div>
                 </div>
             @endif
@@ -170,8 +178,9 @@
                 <input type="hidden" name="action" id="form_action_input" value="draft">
                 <input type="hidden" name="rows_json" id="form_rows_json_input" value="">
 
-                <div :class="isFullscreen ? 'fixed inset-0 z-[999999] bg-white flex flex-col w-screen h-screen overflow-hidden m-0 p-0' : 'bg-white shadow-xl sm:rounded-lg border border-gray-200 flex flex-col transition-all'"
-                     :style="isFullscreen ? 'position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; width: 100vw !important; height: 100vh !important; z-index: 9999999 !important; margin: 0 !important; padding: 0 !important;' : 'height: calc(100vh - 250px); max-height: calc(100vh - 250px); min-height: 420px;'">
+                <div x-ref="mainCardContainer"
+                     :class="isFullscreen ? 'fixed inset-0 z-[999999] bg-white flex flex-col w-screen h-screen overflow-hidden m-0 p-0' : 'bg-white shadow-xl sm:rounded-lg border border-gray-200 flex flex-col transition-all'"
+                     :style="isFullscreen ? 'position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; width: 100vw !important; height: 100vh !important; z-index: 9999999 !important; margin: 0 !important; padding: 0 !important;' : 'height: ' + normalCardHeight + '; max-height: ' + normalCardHeight + '; min-height: 320px;'">
                     
                     <!-- Üst Eylem & Hızlı Satır Çubuğu (Top Action Bar - Konumu Asla Aşağı Kaymaz) -->
                     <div class="px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 flex-shrink-0 transition-colors"
@@ -187,6 +196,47 @@
                             @if(isset($existingEntry) && $existingEntry->status === 'draft')
                                 <span x-show="isFullscreen" class="text-xs text-amber-400 font-semibold hidden md:inline">&bull; Taslak Modu</span>
                             @endif
+
+                            <!-- Otomatik Taslak Kayıt Rozeti -->
+                            <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all"
+                                 :class="{
+                                     'bg-emerald-500/20 text-emerald-200 border-emerald-400/30': isFullscreen && autoSaveStatus === 'saved',
+                                     'bg-emerald-50 text-emerald-700 border-emerald-200': !isFullscreen && autoSaveStatus === 'saved',
+                                     'bg-amber-500/20 text-amber-200 border-amber-400/30': isFullscreen && autoSaveStatus === 'saving',
+                                     'bg-amber-50 text-amber-700 border-amber-200': !isFullscreen && autoSaveStatus === 'saving',
+                                     'bg-rose-500/20 text-rose-200 border-rose-400/30': isFullscreen && autoSaveStatus === 'error',
+                                     'bg-rose-50 text-rose-700 border-rose-200': !isFullscreen && autoSaveStatus === 'error',
+                                     'bg-slate-800 text-slate-400 border-slate-700': isFullscreen && autoSaveStatus === 'idle' && !hasUnsavedChanges,
+                                     'bg-slate-100 text-slate-600 border-slate-200': !isFullscreen && autoSaveStatus === 'idle' && !hasUnsavedChanges,
+                                     'bg-blue-500/20 text-blue-200 border-blue-400/30': isFullscreen && autoSaveStatus === 'idle' && hasUnsavedChanges,
+                                     'bg-blue-50 text-blue-700 border-blue-200': !isFullscreen && autoSaveStatus === 'idle' && hasUnsavedChanges
+                                 }"
+                                 :title="autoSaveLastTime ? 'Son kayıt: ' + autoSaveLastTime : 'Otomatik taslak kaydetme koruması aktif'">
+                                <template x-if="autoSaveStatus === 'saving'">
+                                    <span class="flex items-center gap-1.5">
+                                        <svg class="animate-spin w-3 h-3 text-amber-500" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+                                        <span class="hidden sm:inline">Taslak Kaydediliyor...</span>
+                                    </span>
+                                </template>
+                                <template x-if="autoSaveStatus === 'saved'">
+                                    <span class="flex items-center gap-1.5">
+                                        <svg class="w-3.5 h-3.5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                        <span x-text="'Taslak Kaydedildi (' + autoSaveLastTime + ')'"></span>
+                                    </span>
+                                </template>
+                                <template x-if="autoSaveStatus === 'error'">
+                                    <span class="flex items-center gap-1.5 text-rose-500">
+                                        <span>⚠️</span>
+                                        <span class="hidden sm:inline">Kayıt Başarısız</span>
+                                    </span>
+                                </template>
+                                <template x-if="autoSaveStatus === 'idle'">
+                                    <span class="flex items-center gap-1.5">
+                                        <span class="w-1.5 h-1.5 rounded-full" :class="hasUnsavedChanges ? 'bg-amber-400 animate-pulse' : 'bg-slate-400'"></span>
+                                        <span x-text="hasUnsavedChanges ? 'Kaydedilmemiş Değişiklik' : (autoSaveLastTime ? 'Taslak Kaydedildi (' + autoSaveLastTime + ')' : 'Otomatik Taslak Aktif')"></span>
+                                    </span>
+                                </template>
+                            </div>
                         </div>
 
                         <div class="flex items-center gap-2">
@@ -254,11 +304,11 @@
 
                             <!-- Tam Ekrandayken Hızlı Kaydet & Gönder Butonları (Üst Bar) -->
                             <div x-show="isFullscreen" class="flex items-center gap-1.5 pl-1.5 border-l border-slate-700">
-                                <button type="button" @click="submitForm('draft')" :disabled="isSubmitting"
+                                <button type="button" @click="saveDraftAjax(false)" :disabled="isSubmitting || isAutoSaving"
                                     class="bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white font-bold py-1.5 px-2.5 rounded-lg text-xs shadow-xs transition flex items-center gap-1 cursor-pointer border border-slate-700"
                                     title="Taslak Olarak Kaydet">
                                     <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
-                                    <span class="hidden md:inline">Taslak Kaydet</span>
+                                    <span class="hidden md:inline" x-text="isAutoSaving ? 'Kaydediliyor...' : 'Taslak Kaydet'"></span>
                                 </button>
                                 <button type="button" @click="submitForm('submit')" :disabled="isSubmitting"
                                     class="bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold py-1.5 px-3 rounded-lg text-xs shadow-xs transition flex items-center gap-1 cursor-pointer"
@@ -822,19 +872,19 @@
 
                         <div class="flex space-x-3">
                             <button type="button"
-                                @click="submitForm('draft')"
-                                :disabled="isSubmitting"
-                                :class="{'opacity-50 cursor-not-allowed': isSubmitting}"
+                                @click="saveDraftAjax(false)"
+                                :disabled="isSubmitting || isAutoSaving"
+                                :class="{'opacity-50 cursor-not-allowed': isSubmitting || isAutoSaving}"
                                 class="bg-white hover:bg-gray-100 active:bg-gray-200 text-gray-700 font-semibold py-2 px-6 border border-gray-300 rounded-lg shadow-sm transition-colors cursor-pointer select-none inline-flex items-center justify-center min-w-[170px]"
                                 title="Formu zorunlu alan kontrolü olmadan taslak olarak kaydeder (Daha sonra devam edebilirsiniz)">
-                                <span x-show="isSubmitting && submittingAction === 'draft'" class="inline-flex items-center">
+                                <span x-show="isAutoSaving || (isSubmitting && submittingAction === 'draft')" class="inline-flex items-center">
                                     <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-gray-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                     </svg>
                                     <span>Taslak Kaydediliyor...</span>
                                 </span>
-                                <span x-show="!isSubmitting || submittingAction !== 'draft'">Taslak Olarak Kaydet</span>
+                                <span x-show="!isAutoSaving && (!isSubmitting || submittingAction !== 'draft')">Taslak Olarak Kaydet</span>
                             </button>
                             <button type="button"
                                 @click="submitForm('submit')"
@@ -870,8 +920,8 @@
                  x-transition:leave="transition ease-in duration-200"
                  x-transition:leave-start="opacity-100"
                  x-transition:leave-end="opacity-0"
-                 class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm"
-                 style="display: none;">
+                 class="fixed inset-0 z-[99999999] flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm"
+                 style="display: none; z-index: 99999999 !important;">
                 
                 <div class="bg-white rounded-2xl shadow-2xl border border-gray-100 p-6 sm:p-8 w-full max-w-md transform transition-all text-center">
                     <!-- İkon / Animasyon -->
@@ -959,8 +1009,8 @@
                  x-transition:leave="transition ease-in duration-150"
                  x-transition:leave-start="opacity-100 scale-100"
                  x-transition:leave-end="opacity-0 scale-95"
-                 class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
-                 style="display: none;"
+                 class="fixed inset-0 z-[99999999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+                 style="display: none; z-index: 99999999 !important;"
                  @click.away="if (!isFillingColumn) showFillConfirmModal = false"
                  @keydown.escape.window="if (!isFillingColumn) showFillConfirmModal = false">
                 
@@ -1089,8 +1139,8 @@
                  x-transition:leave="transition ease-in duration-150"
                  x-transition:leave-start="opacity-100 scale-100"
                  x-transition:leave-end="opacity-0 scale-95"
-                 class="fixed inset-0 z-[100000] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs"
-                 style="display: none;"
+                 class="fixed inset-0 z-[99999999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs"
+                 style="display: none; z-index: 99999999 !important;"
                  @click.away="showConfirmModal = false"
                  @keydown.escape.window="showConfirmModal = false">
                 
@@ -1195,6 +1245,15 @@
                 history: [],
                 isWide: false,
                 isFullscreen: false,
+                normalCardHeight: 'calc(100vh - 180px)',
+                autoSaveStatus: 'idle', // 'idle' | 'saving' | 'saved' | 'error'
+                autoSaveLastTime: @if(isset($existingEntry) && $existingEntry->status === 'draft') '{{ $existingEntry->updated_at->format("H:i") }}' @else null @endif,
+                hasUnsavedChanges: false,
+                isAutoSaving: false,
+                entryId: {{ $existingEntry ? $existingEntry->id : 'null' }},
+                saveUrl: '{{ $existingEntry ? route('form-entries.update', $existingEntry) : route('form-entries.store', $formTemplate) }}',
+                isEditMode: {{ $existingEntry ? 'true' : 'false' }},
+                autoSaveInterval: null,
                 showConfirmModal: false,
                 confirmModalData: {
                     type: '',
@@ -1500,6 +1559,23 @@
                     });
                 },
 
+                updateCardHeight() {
+                    if (this.isFullscreen) return;
+                    this.$nextTick(() => {
+                        const el = this.$refs.mainCardContainer;
+                        if (!el) return;
+                        const rect = el.getBoundingClientRect();
+                        const docTop = rect.top + window.scrollY;
+                        // Ekranın en altına 8px pay bırakarak kart yüksekliğini dinamik hesaplar: Butonlar ve yatay scroll her zaman ekranda sabit kalır
+                        const available = Math.floor(window.innerHeight - docTop - 8);
+                        if (available >= 300) {
+                            this.normalCardHeight = available + 'px';
+                        } else {
+                            this.normalCardHeight = '420px';
+                        }
+                    });
+                },
+
                 setColumnPin(fieldId, side) {
                     const numId = Number(fieldId);
                     if (!this.pinnedColumns || typeof this.pinnedColumns !== 'object') {
@@ -1725,6 +1801,7 @@
                     }
 
                     this.isFillingColumn = true;
+                    this.hasUnsavedChanges = true;
                     this.fillProgressPct = 0;
                     this.fillProgressText = 'İşlem başlatılıyor...';
                     this.saveHistory();
@@ -1884,6 +1961,7 @@
 
                 executeClearColumn(fieldId) {
                     this.saveHistory();
+                    this.hasUnsavedChanges = true;
                     this.rows.forEach(r => {
                         if (r.values) r.values[fieldId] = '';
                     });
@@ -1916,8 +1994,29 @@
                     }
 
                     this.updatePinnedOffsets();
+                    this.updateCardHeight();
                     window.addEventListener('resize', () => {
                         this.updatePinnedOffsets();
+                        this.updateCardHeight();
+                    });
+                    setTimeout(() => this.updateCardHeight(), 50);
+                    setTimeout(() => this.updateCardHeight(), 250);
+                    setTimeout(() => this.updateCardHeight(), 600);
+
+                    // Otomatik Taslak Kaydetme: Her 45 saniyede bir kaydedilmemiş değişiklik varsa arka planda sessizce kaydeder
+                    this.autoSaveInterval = setInterval(() => {
+                        if (this.hasUnsavedChanges && !this.isAutoSaving && !this.isSubmitting && !this.isUploading) {
+                            this.saveDraftAjax(true);
+                        }
+                    }, 45000);
+
+                    // Sayfadan ayrılma veya sekme kapatma koruması
+                    window.addEventListener('beforeunload', (e) => {
+                        if (this.hasUnsavedChanges && !this.isSubmitting) {
+                            e.preventDefault();
+                            e.returnValue = 'Kaydedilmemiş değişiklikleriniz bulunmaktadır. Ayrılmak istediğinize emin misiniz?';
+                            return e.returnValue;
+                        }
                     });
 
                     @if($existingEntry && $existingEntry->rows->count() > 0)
@@ -2054,6 +2153,7 @@
                         this.rows = this.history.pop();
                         this.updateRowMaps();
                         this.calculateTotals();
+                        this.hasUnsavedChanges = true;
                         this.showToast('İşlem geri alındı. (Hafızada kalan: ' + this.history.length + ' işlem)');
                     }
                 },
@@ -2075,6 +2175,7 @@
                 },
 
                 addRow(count = 1) {
+                    this.hasUnsavedChanges = true;
                     const numToAdd = Math.max(1, parseInt(count) || 1);
                     const newRows = [];
                     for (let i = 0; i < numToAdd; i++) {
@@ -2097,6 +2198,7 @@
                     this.isWide = !this.isWide;
                     this.$nextTick(() => {
                         this.updatePinnedOffsets();
+                        this.updateCardHeight();
                     });
                 },
 
@@ -2119,6 +2221,7 @@
                     }
                     this.$nextTick(() => {
                         this.updatePinnedOffsets();
+                        this.updateCardHeight();
                     });
                 },
 
@@ -2185,6 +2288,7 @@
                 executeDeleteRow(index) {
                     if (index >= 0 && index < this.rows.length) {
                         this.saveHistory();
+                        this.hasUnsavedChanges = true;
                         this.rows.splice(index, 1);
                         if (this.rows.length === 0) {
                             this.addRow(1);
@@ -2229,6 +2333,7 @@
 
                 executeClearAll() {
                     this.saveHistory();
+                    this.hasUnsavedChanges = true;
                     this.rows = [];
                     this.addRow(1);
                     this.calculateTotals();
@@ -2403,6 +2508,90 @@
 
                     if (form) {
                         HTMLFormElement.prototype.submit.call(form);
+                    }
+                },
+
+                async saveDraftAjax(isSilent = true, callback = null) {
+                    if (this.isAutoSaving || this.isSubmitting || this.isUploading) return;
+                    if (!this.rows || this.rows.length === 0) return;
+
+                    // Tabloda en az bir hücre dolu mu kontrol et
+                    let hasData = false;
+                    for (let r of this.rows) {
+                        if (r.values && Object.values(r.values).some(v => v !== null && v !== undefined && String(v).trim() !== '')) {
+                            hasData = true;
+                            break;
+                        }
+                    }
+                    if (!hasData) return;
+
+                    this.isAutoSaving = true;
+                    this.autoSaveStatus = 'saving';
+
+                    try {
+                        const rowsData = this.rows.map(r => r.values);
+                        const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                        const payload = {
+                            entry_date: '{{ $date }}',
+                            action: 'draft',
+                            rows_json: JSON.stringify(rowsData),
+                            _token: token
+                        };
+
+                        if (this.isEditMode && this.entryId) {
+                            payload._method = 'PUT';
+                        }
+
+                        const response = await fetch(this.saveUrl, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'X-CSRF-TOKEN': token
+                            },
+                            body: JSON.stringify(payload)
+                        });
+
+                        const data = await response.json();
+
+                        if (response.ok && data.success) {
+                            this.autoSaveStatus = 'saved';
+                            this.autoSaveLastTime = data.saved_at || new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+                            this.hasUnsavedChanges = false;
+
+                            // Eğer create modundaysak sunucudan gelen entry_id ile edit moduna geç ve URL'yi güncelle
+                            if (!this.isEditMode && data.entry_id) {
+                                this.entryId = data.entry_id;
+                                this.isEditMode = true;
+                                if (data.update_url) this.saveUrl = data.update_url;
+                                if (data.edit_url) {
+                                    window.history.replaceState({ entry_id: data.entry_id }, '', data.edit_url);
+                                }
+                            }
+
+                            if (!isSilent) {
+                                this.showToast('✓ ' + (data.message || 'Taslak başarıyla kaydedildi.'));
+                            }
+                            if (typeof callback === 'function') callback(null, data);
+                        } else {
+                            this.autoSaveStatus = 'error';
+                            if (!isSilent) {
+                                this.showToast('⚠️ Taslak kaydedilemedi: ' + (data.message || 'Bilinmeyen hata'), 'error');
+                            }
+                            if (typeof callback === 'function') callback(new Error(data.message || 'Hata'));
+                        }
+                    } catch (err) {
+                        console.error('AutoSave draft error:', err);
+                        this.autoSaveStatus = 'error';
+                        if (typeof callback === 'function') callback(err);
+                    } finally {
+                        this.isAutoSaving = false;
+                        setTimeout(() => {
+                            if (this.autoSaveStatus === 'saved' && !this.hasUnsavedChanges) {
+                                this.autoSaveStatus = 'idle';
+                            }
+                        }, 5000);
                     }
                 },
 
@@ -2905,6 +3094,7 @@
                     let input = e.target;
                     let raw = input.value;
                     let row = this.getRow(rowOrIndex);
+                    this.hasUnsavedChanges = true;
 
                     if (!raw || !raw.trim()) {
                         if (row && row.values) row.values[fieldId] = '';
@@ -3388,6 +3578,14 @@
                                                             } else if (map.has(nVal)) {
                                                                 r.values[f.id] = map.get(nVal);
                                                             }
+                                                        } else if (f.type === 'number') {
+                                                            let clean = this.parseRawNumber(val);
+                                                            let num = parseFloat(clean);
+                                                            if (!isNaN(num)) {
+                                                                r.values[f.id] = Math.abs(num - Math.round(num)) < 0.00001 ? String(Math.round(num)) : String(parseFloat(num.toFixed(2)));
+                                                            } else {
+                                                                r.values[f.id] = clean;
+                                                            }
                                                         }
                                                     }
                                                 });
@@ -3431,14 +3629,21 @@
 
                                                     this.uploadProgress = '100';
                                                     this.uploadStep = 4;
-                                                    this.uploadStatusText = `Tamamlandı! ${totalRows} satır başarıyla aktarıldı.`;
+                                                    this.uploadStatusText = `Tamamlandı! ${totalRows} satır aktarıldı, taslak olarak kaydediliyor...`;
 
-                                                    setTimeout(() => {
-                                                        this.showUploadModal = false;
-                                                        this.isUploading = false;
-                                                        this.isLargeDataset = false;
-                                                        this.showToast(`✓ ${totalRows} satır başarıyla içe aktarıldı.`);
-                                                    }, 450);
+                                                    this.hasUnsavedChanges = false;
+                                                    this.saveDraftAjax(true, (err, res) => {
+                                                        setTimeout(() => {
+                                                            this.showUploadModal = false;
+                                                            this.isUploading = false;
+                                                            this.isLargeDataset = false;
+                                                            if (!err) {
+                                                                this.showToast(`✓ ${totalRows} satır içe aktarıldı ve taslak olarak kaydedildi.`);
+                                                            } else {
+                                                                this.showToast(`✓ ${totalRows} satır başarıyla içe aktarıldı.`);
+                                                            }
+                                                        }, 500);
+                                                    });
                                                 }
                                             };
 
