@@ -787,52 +787,52 @@
 
                     <!-- Bottom Toolbar (En altta her zaman sabit & hazır) -->
                     <div
-                        class="px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-50/95 backdrop-blur-xs border-t border-gray-200 flex flex-col md:flex-row justify-between items-center gap-2 sm:gap-4 flex-shrink-0 sticky bottom-0 z-30 shadow-[0_-4px_16px_rgba(0,0,0,0.06)]"
+                        class="px-3 sm:px-4 py-1.5 sm:py-2 bg-gray-50/95 backdrop-blur-xs border-t border-gray-200 flex flex-row justify-between items-center gap-2 flex-shrink-0 sticky bottom-0 z-30 shadow-[0_-4px_16px_rgba(0,0,0,0.06)]"
                         :class="isFullscreen ? 'shadow-lg bg-slate-100 border-slate-300' : 'sm:rounded-b-lg'">
-                        <div class="flex flex-wrap items-center gap-2">
+                        <div class="flex items-center gap-1.5 sm:gap-2 flex-wrap lg:flex-nowrap">
                             <!-- Seri Satır Ekle (Alt Bar) -->
                             <div class="inline-flex rounded-lg shadow-xs select-none">
                                 <button type="button" @mousedown.prevent @click="addRow(1)"
-                                    class="bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-semibold py-2 px-4 rounded-l-lg shadow-sm transition flex items-center select-none !cursor-pointer">
-                                    <svg class="w-5 h-5 mr-1 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    class="bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-semibold py-1.5 px-3 rounded-l-lg shadow-xs transition flex items-center gap-1 select-none text-xs !cursor-pointer">
+                                    <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                                     </svg>
                                     <span class="pointer-events-none">Satır Ekle</span>
                                 </button>
                                 <button type="button" @mousedown.prevent @click="addRow(5)"
-                                    class="bg-indigo-700 hover:bg-indigo-800 active:bg-indigo-900 text-indigo-100 font-bold py-2 px-2.5 border-l border-indigo-500 text-xs transition select-none !cursor-pointer"
+                                    class="bg-indigo-700 hover:bg-indigo-800 active:bg-indigo-900 text-indigo-100 font-bold py-1.5 px-2 border-l border-indigo-500 text-xs transition select-none !cursor-pointer"
                                     title="5 Satır Ekle">
                                     +5
                                 </button>
                                 <button type="button" @mousedown.prevent @click="addRow(10)"
-                                    class="bg-indigo-700 hover:bg-indigo-800 active:bg-indigo-900 text-indigo-100 font-bold py-2 px-2.5 rounded-r-lg border-l border-indigo-500 text-xs transition select-none !cursor-pointer"
+                                    class="bg-indigo-700 hover:bg-indigo-800 active:bg-indigo-900 text-indigo-100 font-bold py-1.5 px-2 rounded-r-lg border-l border-indigo-500 text-xs transition select-none !cursor-pointer"
                                     title="10 Satır Ekle">
                                     +10
                                 </button>
                             </div>
 
                             <button type="button" @click.stop="promptClearAll()"
-                                class="bg-white hover:bg-red-50 text-red-600 font-semibold py-2 px-4 border border-red-200 rounded-lg shadow-sm transition flex items-center cursor-pointer select-none">
+                                class="bg-white hover:bg-red-50 text-red-600 font-semibold py-1.5 px-3 border border-red-200 rounded-lg shadow-xs transition flex items-center text-xs cursor-pointer select-none">
                                 Tümünü Temizle
                             </button>
 
                             <button type="button" @mousedown.prevent @click="undo()" x-show="history.length > 0"
-                                class="bg-white hover:bg-orange-50 text-orange-600 font-semibold py-2 px-4 border border-orange-200 rounded-lg shadow-sm transition flex items-center select-none !cursor-pointer"
+                                class="bg-white hover:bg-orange-50 text-orange-600 font-semibold py-1.5 px-2.5 border border-orange-200 rounded-lg shadow-xs transition flex items-center gap-1 text-xs select-none !cursor-pointer"
                                 style="display: none;"
                                 :title="'Geri Al (Kayıtlı: ' + history.length + ' işlem, Maksimum 50 işlem saklanır)'">
-                                <svg class="w-5 h-5 mr-1 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path>
                                 </svg>
                                 <span class="pointer-events-none" x-text="'Geri Al (' + history.length + ')'"></span>
                             </button>
 
-                            <div class="h-8 border-l border-gray-300 mx-1 hidden md:block"></div>
+                            <div class="h-5 border-l border-gray-300 mx-0.5 hidden xl:block"></div>
 
                             <a href="{{ route('form-templates.download-empty', $formTemplate) }}"
-                                class="bg-white hover:bg-green-50 text-green-700 font-semibold py-2 px-4 border border-green-200 rounded-lg shadow-sm transition flex items-center">
-                                <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                class="bg-white hover:bg-green-50 text-green-700 font-semibold py-1.5 px-3 border border-green-200 rounded-lg shadow-xs transition flex items-center gap-1 text-xs">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
                                 </svg>
@@ -840,8 +840,8 @@
                             </a>
 
                             <button type="button" @click="$refs.excelInput.click()" :disabled="isUploading"
-                                class="bg-white hover:bg-indigo-50 text-indigo-700 font-semibold py-2 px-4 border border-indigo-200 rounded-lg shadow-sm transition flex items-center cursor-pointer">
-                                <svg class="w-5 h-5 mr-1 group-hover:scale-110 transition-transform" fill="none"
+                                class="bg-white hover:bg-indigo-50 text-indigo-700 font-semibold py-1.5 px-3 border border-indigo-200 rounded-lg shadow-xs transition flex items-center gap-1 text-xs cursor-pointer">
+                                <svg class="w-4 h-4 group-hover:scale-110 transition-transform" fill="none"
                                     stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
@@ -853,7 +853,7 @@
 
                             <!-- Tam Ekran Butonu (Alt Bar) -->
                             <button type="button" @click="toggleFullscreen()"
-                                class="bg-white hover:bg-gray-100 text-gray-700 font-semibold py-2 px-3.5 border border-gray-300 rounded-lg shadow-sm transition flex items-center gap-1.5 cursor-pointer"
+                                class="bg-white hover:bg-gray-100 text-gray-700 font-semibold py-1.5 px-3 border border-gray-300 rounded-lg shadow-xs transition flex items-center gap-1.5 cursor-pointer text-xs"
                                 :title="isFullscreen ? 'Tam Ekrandan Çık (ESC)' : 'Tam Ekran Modu (ESC)'">
                                 <template x-if="!isFullscreen">
                                     <span class="flex items-center gap-1.5 text-xs font-bold">
@@ -870,15 +870,15 @@
                             </button>
                         </div>
 
-                        <div class="flex space-x-3">
+                        <div class="flex items-center space-x-2 flex-shrink-0">
                             <button type="button"
                                 @click="saveDraftAjax(false)"
                                 :disabled="isSubmitting || isAutoSaving"
                                 :class="{'opacity-50 cursor-not-allowed': isSubmitting || isAutoSaving}"
-                                class="bg-white hover:bg-gray-100 active:bg-gray-200 text-gray-700 font-semibold py-2 px-6 border border-gray-300 rounded-lg shadow-sm transition-colors cursor-pointer select-none inline-flex items-center justify-center min-w-[170px]"
+                                class="bg-white hover:bg-gray-100 active:bg-gray-200 text-gray-700 font-semibold py-1.5 px-3.5 border border-gray-300 rounded-lg shadow-xs transition-colors cursor-pointer select-none inline-flex items-center justify-center text-xs"
                                 title="Formu zorunlu alan kontrolü olmadan taslak olarak kaydeder (Daha sonra devam edebilirsiniz)">
                                 <span x-show="isAutoSaving || (isSubmitting && submittingAction === 'draft')" class="inline-flex items-center">
-                                    <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-gray-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <svg class="animate-spin -ml-1 mr-1.5 h-3.5 w-3.5 text-gray-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                     </svg>
@@ -890,10 +890,10 @@
                                 @click="submitForm('submit')"
                                 :disabled="isSubmitting"
                                 :class="{'opacity-50 cursor-not-allowed': isSubmitting}"
-                                class="bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-bold py-2 px-8 rounded-lg shadow-md transition-colors cursor-pointer select-none inline-flex items-center justify-center min-w-[150px]"
+                                class="bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-bold py-1.5 px-4 rounded-lg shadow-xs transition-colors cursor-pointer select-none inline-flex items-center justify-center text-xs"
                                 title="Formu doğrular ve onaya gönderir">
                                 <span x-show="isSubmitting && submittingAction === 'submit'" class="inline-flex items-center">
-                                    <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <svg class="animate-spin -ml-1 mr-1.5 h-3.5 w-3.5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                     </svg>
