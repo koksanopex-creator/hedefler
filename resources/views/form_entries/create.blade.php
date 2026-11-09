@@ -614,27 +614,39 @@
                                                         $rawYears = array_values(array_unique($rawYears));
                                                         sort($rawYears);
                                                     @endphp
-                                                    <select
-                                                        :id="'cell_' + rIndex + '_{{ $fId }}'"
-                                                        :data-field-id="'{{ $fId }}'"
-                                                        :data-row-index="rIndex"
-                                                        :required="isFieldRequired(fields[{{ $colIndex }}], row)"
-                                                        x-model="row.values['{{ $fId }}']"
-                                                        @paste="handlePaste($event, rIndex, {{ $colIndex }})"
-                                                        @change="calculateTotals()"
-                                                        :title="getCellDisabledReason(fields[{{ $colIndex }}], row)"
-                                                        class="w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm transition-colors"
-                                                        :class="{ 'bg-indigo-50 border-indigo-300 text-indigo-700 font-bold': row.values['{{ $fId }}'], 'bg-white border-gray-300 text-gray-700': !row.values['{{ $fId }}'], 'border-l-4 border-l-red-500': isFieldRequired(fields[{{ $colIndex }}], row) && !{{ $fRequired ? 'true' : 'false' }} }">
-                                                        <option value="">Yıl Seçiniz...</option>
-                                                        @foreach ($rawYears as $y)
-                                                            @php
-                                                                $lbl = (string)$y;
-                                                                if ($y === $currentYear + 1) $lbl .= ' (Hedef Yılı)';
-                                                                elseif ($y === $currentYear) $lbl .= ' (Bu Yıl)';
-                                                            @endphp
-                                                            <option value="{{ $y }}">{{ $lbl }}</option>
-                                                        @endforeach
-                                                    </select>
+                                                    <div class="relative w-full" :title="getCellDisabledReason(fields[{{ $colIndex }}], row)">
+                                                        <select
+                                                            :id="'cell_' + rIndex + '_{{ $fId }}'"
+                                                            :data-field-id="'{{ $fId }}'"
+                                                            :data-row-index="rIndex"
+                                                            :required="isFieldRequired(fields[{{ $colIndex }}], row)"
+                                                            x-model="row.values['{{ $fId }}']"
+                                                            @paste="handlePaste($event, rIndex, {{ $colIndex }})"
+                                                            @keydown.delete.prevent="clearSelect(row, '{{ $fId }}', fields[{{ $colIndex }}])"
+                                                            @keydown.backspace.prevent="clearSelect(row, '{{ $fId }}', fields[{{ $colIndex }}])"
+                                                            @change="calculateTotals()"
+                                                            :title="getCellDisabledReason(fields[{{ $colIndex }}], row)"
+                                                            class="w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm transition-colors pr-7"
+                                                            :class="{ 'bg-indigo-50 border-indigo-300 text-indigo-700 font-bold': row.values['{{ $fId }}'], 'bg-white border-gray-300 text-gray-700': !row.values['{{ $fId }}'], 'border-l-4 border-l-red-500': isFieldRequired(fields[{{ $colIndex }}], row) && !{{ $fRequired ? 'true' : 'false' }} }">
+                                                            <option value="">Yıl Seçiniz...</option>
+                                                            @foreach ($rawYears as $y)
+                                                                @php
+                                                                    $lbl = (string)$y;
+                                                                    if ($y === $currentYear + 1) $lbl .= ' (Hedef Yılı)';
+                                                                    elseif ($y === $currentYear) $lbl .= ' (Bu Yıl)';
+                                                                @endphp
+                                                                <option value="{{ $y }}">{{ $lbl }}</option>
+                                                            @endforeach
+                                                        </select>
+                                                        <button type="button"
+                                                            x-show="row.values['{{ $fId }}']"
+                                                            @click.stop.prevent="clearSelect(row, '{{ $fId }}', fields[{{ $colIndex }}])"
+                                                            tabindex="-1"
+                                                            title="Seçimi Temizle (Delete veya Backspace ile de silebilirsiniz)"
+                                                            class="absolute right-6 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-gray-200/90 hover:bg-rose-500 hover:text-white text-gray-500 flex items-center justify-center text-[10px] font-black transition z-10 cursor-pointer shadow-2xs">
+                                                            &times;
+                                                        </button>
+                                                    </div>
                                                 @elseif ($fType === 'select')
                                                     @php
                                                         $selectOpts = $field->options ?? [];
@@ -642,25 +654,37 @@
                                                             $selectOpts = json_decode($selectOpts, true) ?? [];
                                                         }
                                                     @endphp
-                                                    <select
-                                                        :id="'cell_' + rIndex + '_{{ $fId }}'"
-                                                        :data-field-id="'{{ $fId }}'"
-                                                        :data-row-index="rIndex"
-                                                        :required="isFieldRequired(fields[{{ $colIndex }}], row)"
-                                                        x-model="row.values['{{ $fId }}']"
-                                                        @paste="handlePaste($event, rIndex, {{ $colIndex }})"
-                                                        @keydown.ctrl.v.prevent="handleSelectPaste($event, rIndex, {{ $colIndex }})"
-                                                        @change="calculateTotals()"
-                                                        :title="getCellDisabledReason(fields[{{ $colIndex }}], row)"
-                                                        class="w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm transition-colors"
-                                                        :class="{ 'bg-indigo-50 border-indigo-300 text-indigo-700 font-bold': row.values['{{ $fId }}'], 'bg-white border-gray-300 text-gray-700': !row.values['{{ $fId }}'], 'border-l-4 border-l-red-500': isFieldRequired(fields[{{ $colIndex }}], row) && !{{ $fRequired ? 'true' : 'false' }} }">
-                                                        <option value="">Seçiniz...</option>
-                                                        @if (is_array($selectOpts))
-                                                            @foreach ($selectOpts as $k => $opt)
-                                                                <option value="{{ is_numeric($k) ? $opt : $k }}">{{ $opt }}</option>
-                                                            @endforeach
-                                                        @endif
-                                                    </select>
+                                                    <div class="relative w-full" :title="getCellDisabledReason(fields[{{ $colIndex }}], row)">
+                                                        <select
+                                                            :id="'cell_' + rIndex + '_{{ $fId }}'"
+                                                            :data-field-id="'{{ $fId }}'"
+                                                            :data-row-index="rIndex"
+                                                            :required="isFieldRequired(fields[{{ $colIndex }}], row)"
+                                                            x-model="row.values['{{ $fId }}']"
+                                                            @paste="handlePaste($event, rIndex, {{ $colIndex }})"
+                                                            @keydown.ctrl.v.prevent="handleSelectPaste($event, rIndex, {{ $colIndex }})"
+                                                            @keydown.delete.prevent="clearSelect(row, '{{ $fId }}', fields[{{ $colIndex }}])"
+                                                            @keydown.backspace.prevent="clearSelect(row, '{{ $fId }}', fields[{{ $colIndex }}])"
+                                                            @change="calculateTotals()"
+                                                            :title="getCellDisabledReason(fields[{{ $colIndex }}], row)"
+                                                            class="w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm transition-colors pr-7"
+                                                            :class="{ 'bg-indigo-50 border-indigo-300 text-indigo-700 font-bold': row.values['{{ $fId }}'], 'bg-white border-gray-300 text-gray-700': !row.values['{{ $fId }}'], 'border-l-4 border-l-red-500': isFieldRequired(fields[{{ $colIndex }}], row) && !{{ $fRequired ? 'true' : 'false' }} }">
+                                                            <option value="">Seçiniz...</option>
+                                                            @if (is_array($selectOpts))
+                                                                @foreach ($selectOpts as $k => $opt)
+                                                                    <option value="{{ is_numeric($k) ? $opt : $k }}">{{ $opt }}</option>
+                                                                @endforeach
+                                                            @endif
+                                                        </select>
+                                                        <button type="button"
+                                                            x-show="row.values['{{ $fId }}']"
+                                                            @click.stop.prevent="clearSelect(row, '{{ $fId }}', fields[{{ $colIndex }}])"
+                                                            tabindex="-1"
+                                                            title="Seçimi Temizle (Delete veya Backspace ile de silebilirsiniz)"
+                                                            class="absolute right-6 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-gray-200/90 hover:bg-rose-500 hover:text-white text-gray-500 flex items-center justify-center text-[10px] font-black transition z-10 cursor-pointer shadow-2xs">
+                                                            &times;
+                                                        </button>
+                                                    </div>
                                                 @elseif ($fType === 'master_data')
                                                     <div class="relative w-full" :title="getCellDisabledReason(fields[{{ $colIndex }}], row)">
                                                         <select
@@ -670,10 +694,12 @@
                                                             :required="isFieldRequired(fields[{{ $colIndex }}], row)"
                                                             x-model="row.values['{{ $fId }}']"
                                                             @paste="handlePaste($event, rIndex, {{ $colIndex }})"
+                                                            @keydown.delete.prevent="clearSelect(row, '{{ $fId }}', fields[{{ $colIndex }}])"
+                                                            @keydown.backspace.prevent="clearSelect(row, '{{ $fId }}', fields[{{ $colIndex }}])"
                                                             @change="handleMasterDataChange(row, '{{ $fId }}'); calculateTotals()"
                                                             :title="getCellDisabledReason(fields[{{ $colIndex }}], row)"
                                                             :disabled="isMasterDataDisabled(row, fields[{{ $colIndex }}])"
-                                                            class="w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm transition-colors"
+                                                            class="w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm transition-colors pr-7"
                                                             :class="{ 
                                                                 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed': isMasterDataDisabled(row, fields[{{ $colIndex }}]),
                                                                 'bg-indigo-50 border-indigo-300 text-indigo-700 font-bold': !isMasterDataDisabled(row, fields[{{ $colIndex }}]) && row.values['{{ $fId }}'], 
@@ -687,6 +713,14 @@
                                                                     :selected="row.values['{{ $fId }}'] == opt.name"></option>
                                                             </template>
                                                         </select>
+                                                        <button type="button"
+                                                            x-show="row.values['{{ $fId }}'] && !isMasterDataDisabled(row, fields[{{ $colIndex }}])"
+                                                            @click.stop.prevent="clearSelect(row, '{{ $fId }}', fields[{{ $colIndex }}])"
+                                                            tabindex="-1"
+                                                            title="Seçimi Temizle (Delete veya Backspace ile de silebilirsiniz)"
+                                                            class="absolute right-6 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-gray-200/90 hover:bg-rose-500 hover:text-white text-gray-500 flex items-center justify-center text-[10px] font-black transition z-10 cursor-pointer shadow-2xs">
+                                                            &times;
+                                                        </button>
                                                     </div>
                                                 @elseif ($fType === 'auto_user')
                                                     <div :title="getCellDisabledReason(fields[{{ $colIndex }}], row)">
@@ -698,22 +732,34 @@
                                                             class="w-full rounded-md border-gray-200 bg-gray-100 text-gray-500 shadow-sm text-sm cursor-not-allowed">
                                                     </div>
                                                 @elseif ($fType === 'user_list')
-                                                    <select
-                                                        :id="'cell_' + rIndex + '_{{ $fId }}'"
-                                                        :data-field-id="'{{ $fId }}'"
-                                                        :data-row-index="rIndex"
-                                                        :required="isFieldRequired(fields[{{ $colIndex }}], row)"
-                                                        x-model="row.values['{{ $fId }}']"
-                                                        @paste="handlePaste($event, rIndex, {{ $colIndex }})"
-                                                        @change="calculateTotals()"
-                                                        :title="getCellDisabledReason(fields[{{ $colIndex }}], row)"
-                                                        class="w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm transition-colors"
-                                                        :class="{ 'bg-indigo-50 border-indigo-300 text-indigo-700 font-bold': row.values['{{ $fId }}'], 'bg-white border-gray-300 text-gray-700': !row.values['{{ $fId }}'], 'border-l-4 border-l-red-500': isFieldRequired(fields[{{ $colIndex }}], row) && !{{ $fRequired ? 'true' : 'false' }} }">
-                                                        <option value="">Kullanıcı Seçiniz...</option>
-                                                        <template x-for="u in getUserListOptions(row, fields[{{ $colIndex }}])" :key="u.id">
-                                                            <option :value="u.name" x-text="u.name" :selected="row.values['{{ $fId }}'] == u.name"></option>
-                                                        </template>
-                                                    </select>
+                                                    <div class="relative w-full" :title="getCellDisabledReason(fields[{{ $colIndex }}], row)">
+                                                        <select
+                                                            :id="'cell_' + rIndex + '_{{ $fId }}'"
+                                                            :data-field-id="'{{ $fId }}'"
+                                                            :data-row-index="rIndex"
+                                                            :required="isFieldRequired(fields[{{ $colIndex }}], row)"
+                                                            x-model="row.values['{{ $fId }}']"
+                                                            @paste="handlePaste($event, rIndex, {{ $colIndex }})"
+                                                            @keydown.delete.prevent="clearSelect(row, '{{ $fId }}', fields[{{ $colIndex }}])"
+                                                            @keydown.backspace.prevent="clearSelect(row, '{{ $fId }}', fields[{{ $colIndex }}])"
+                                                            @change="calculateTotals()"
+                                                            :title="getCellDisabledReason(fields[{{ $colIndex }}], row)"
+                                                            class="w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm transition-colors pr-7"
+                                                            :class="{ 'bg-indigo-50 border-indigo-300 text-indigo-700 font-bold': row.values['{{ $fId }}'], 'bg-white border-gray-300 text-gray-700': !row.values['{{ $fId }}'], 'border-l-4 border-l-red-500': isFieldRequired(fields[{{ $colIndex }}], row) && !{{ $fRequired ? 'true' : 'false' }} }">
+                                                            <option value="">Kullanıcı Seçiniz...</option>
+                                                            <template x-for="u in getUserListOptions(row, fields[{{ $colIndex }}])" :key="u.id">
+                                                                <option :value="u.name" x-text="u.name" :selected="row.values['{{ $fId }}'] == u.name"></option>
+                                                            </template>
+                                                        </select>
+                                                        <button type="button"
+                                                            x-show="row.values['{{ $fId }}']"
+                                                            @click.stop.prevent="clearSelect(row, '{{ $fId }}', fields[{{ $colIndex }}])"
+                                                            tabindex="-1"
+                                                            title="Seçimi Temizle (Delete veya Backspace ile de silebilirsiniz)"
+                                                            class="absolute right-6 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-gray-200/90 hover:bg-rose-500 hover:text-white text-gray-500 flex items-center justify-center text-[10px] font-black transition z-10 cursor-pointer shadow-2xs">
+                                                            &times;
+                                                        </button>
+                                                    </div>
                                                 @endif
 
                                                 <!-- Excel Doldurma Noktası (Fill Handle) -->
@@ -2875,6 +2921,20 @@
                             }
                         });
                     }
+                },
+
+                clearSelect(rowOrIndex, fieldId, field) {
+                    let row = this.getRow(rowOrIndex);
+                    if (!row || !row.values) return;
+
+                    row.values[fieldId] = '';
+                    this.hasUnsavedChanges = true;
+
+                    if (field && field.type === 'master_data') {
+                        this.handleMasterDataChange(row, fieldId);
+                    }
+
+                    this.calculateTotals();
                 },
 
                 calculateTotals() {
