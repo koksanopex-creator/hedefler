@@ -559,6 +559,7 @@
                                                             :required="isFieldRequired(fields[{{ $colIndex }}], row) && !isFieldCalculated(fields[{{ $colIndex }}], row)"
                                                             :value="formatInputDisplay(row.values['{{ $fId }}'])"
                                                             @input="handleNumberInput($event, rIndex, '{{ $fId }}')"
+                                                            @blur="handleNumberBlur($event, rIndex, '{{ $fId }}')"
                                                             @paste="handlePaste($event, rIndex, {{ $colIndex }})"
                                                             @dblclick="if (!isFieldCalculated(fields[{{ $colIndex }}], row)) promptFillDown(row, '{{ $fId }}')"
                                                             :title="getCellDisabledReason(fields[{{ $colIndex }}], row)"
@@ -2991,59 +2992,74 @@
                     this.filteredTotals = newFilteredTotals;
                 },
 
+                combineAndRound(isNegative, intPart, decPart) {
+                    if (!decPart) return (isNegative ? '-' : '') + (intPart || '0');
+                    if (decPart.length > 2) {
+                        let num = parseFloat(intPart + '.' + decPart);
+                        if (!isNaN(num)) {
+                            let rounded = Math.round(num * 100) / 100;
+                            let parts = rounded.toFixed(2).split('.');
+                            return (isNegative ? '-' : '') + parts[0] + '.' + parts[1];
+                        }
+                    }
+                    return (isNegative ? '-' : '') + (intPart || '0') + '.' + decPart;
+                },
+
                 parseRawNumber(val) {
                     if (val === undefined || val === null || val === '') return '';
                     let str = String(val).trim();
                     if (str === '' || str === '-') return '';
 
                     let isNegative = str.startsWith('-');
-                    if (isNegative) str = str.substring(1);
+                    if (isNegative) str = str.substring(1).trim();
 
-                    // Hem virgül hem nokta varsa (Örn: 1.250,50 veya 1,250.50)
+                    // 1. Hem virgül hem nokta varsa (Örn: 4.582.478,846985 veya 1,250.50)
                     if (str.includes(',') && str.includes('.')) {
                         let lastComma = str.lastIndexOf(',');
                         let lastDot = str.lastIndexOf('.');
                         if (lastComma > lastDot) {
-                            // Türkçe format: 1.250,50 -> nokta binlik, virgül ondalık
+                            // Türkçe format: nokta binlik, virgül ondalık
                             let intPart = str.substring(0, lastComma).replace(/\D/g, '') || '0';
                             let decPart = str.substring(lastComma + 1).replace(/\D/g, '');
-                            return (isNegative ? '-' : '') + intPart + (decPart !== '' ? '.' + decPart : '');
+                            return this.combineAndRound(isNegative, intPart, decPart);
                         } else {
-                            // US format: 1,250.50 -> virgül binlik, nokta ondalık
+                            // US format: virgül binlik, nokta ondalık
                             let intPart = str.substring(0, lastDot).replace(/\D/g, '') || '0';
                             let decPart = str.substring(lastDot + 1).replace(/\D/g, '');
-                            return (isNegative ? '-' : '') + intPart + (decPart !== '' ? '.' + decPart : '');
+                            return this.combineAndRound(isNegative, intPart, decPart);
                         }
                     }
 
-                    // Sadece virgül varsa (Örn: 16,50 veya 1250,50)
+                    // 2. Sadece virgül varsa (Örn: 1257870,685 veya 4582,5) -> Virgül KESİNLİKLE küsürattır!
                     if (str.includes(',')) {
-                        let parts = str.replace(/[^\d,]/g, '').split(',');
+                        let parts = str.split(',');
                         let intPart = parts[0].replace(/\D/g, '') || '0';
                         let decPart = parts.slice(1).join('').replace(/\D/g, '');
-                        return (isNegative ? '-' : '') + intPart + (decPart !== '' ? '.' + decPart : '');
+                        return this.combineAndRound(isNegative, intPart, decPart);
                     }
 
-                    // Sadece nokta varsa (Örn: SAP'den 16.50000000, 622641.51 veya binlik 1.250.000)
+                    // 3. Sadece nokta varsa
                     if (str.includes('.')) {
                         let parts = str.split('.');
-                        // Birden fazla nokta varsa KESİNLİKLE binlik ayırıcıdır (Örn: 1.250.000)
+                        // Çoklu nokta (Örn: 4.582.478 veya 1.000.000) -> KESİNLİKLE BİNLİK AYIRICIDIR (TAM SAYI)!
                         if (parts.length > 2) {
-                            return (isNegative ? '-' : '') + str.replace(/\D/g, '');
+                            let clean = str.replace(/\D/g, '');
+                            return clean ? ((isNegative ? '-' : '') + clean) : '';
                         }
-                        // Tek nokta varsa:
-                        // Noktadan sonraki basamak sayısı 3 değilse (örn: 1, 2, 4, 5, 6, 7, 8 basamak) KESİNLİKLE ondalık noktasıdır (SAP/Excel)!
-                        if (parts[1].length !== 3) {
-                            let intPart = parts[0].replace(/\D/g, '') || '0';
-                            let decPart = parts[1].replace(/\D/g, '');
-                            return (isNegative ? '-' : '') + intPart + (decPart !== '' ? '.' + decPart : '');
+                        // Tek nokta ve tam 3 basamak (Örn: 4.582 veya 1.250) -> BİNLİK AYIRICI (TAM SAYI)!
+                        if (parts[1].length === 3 && parts[0].length >= 1 && parts[0].length <= 3) {
+                            let clean = parts[0].replace(/\D/g, '') + parts[1].replace(/\D/g, '');
+                            return clean ? ((isNegative ? '-' : '') + clean) : '';
                         }
-                        // Tek nokta ve tam 3 basamak varsa (Örn: 1.250):
-                        return (isNegative ? '-' : '') + str.replace(/\D/g, '');
+                        // Ham float (Örn: 622641.51 veya 336734.69 veya 16.5) -> ONDALIK NOKTASI
+                        let intPart = parts[0].replace(/\D/g, '') || '0';
+                        let decPart = parts[1].replace(/\D/g, '');
+                        return this.combineAndRound(isNegative, intPart, decPart);
                     }
 
+                    // 4. Nokta veya virgül yoksa (Düz tam sayı: 4582478 veya 4500000)
                     let clean = str.replace(/\D/g, '');
-                    return isNegative ? '-' + clean : clean;
+                    return clean ? ((isNegative ? '-' : '') + clean) : '';
                 },
 
                 formatInputDisplay(val) {
@@ -3054,38 +3070,28 @@
                     let isNegative = str.startsWith('-');
                     if (isNegative) str = str.substring(1);
 
-                    let hasComma = str.includes(',');
-                    let hasDot = str.includes('.');
-
                     let intPart = '';
                     let decPart = null;
 
-                    if (hasComma && hasDot) {
-                        let lastComma = str.lastIndexOf(',');
-                        let lastDot = str.lastIndexOf('.');
-                        if (lastComma > lastDot) {
-                            intPart = str.substring(0, lastComma).replace(/\D/g, '') || '0';
-                            decPart = str.substring(lastComma + 1).replace(/\D/g, '');
-                        } else {
-                            intPart = str.substring(0, lastDot).replace(/\D/g, '') || '0';
-                            decPart = str.substring(lastDot + 1).replace(/\D/g, '');
-                        }
-                    } else if (hasComma) {
-                        let parts = str.replace(/[^\d,]/g, '').split(',');
-                        intPart = parts[0] || '0';
-                        decPart = parts.length > 1 ? parts.slice(1).join('') : '';
-                    } else if (hasDot) {
+                    if (str.includes(',')) {
+                        let parts = str.split(',');
+                        intPart = parts[0].replace(/\D/g, '') || '0';
+                        decPart = parts.length > 1 ? parts.slice(1).join('').replace(/\D/g, '') : '';
+                    } else if (str.includes('.')) {
                         let parts = str.split('.');
-                        if (parts.length === 2 && parts[1].length !== 3 && !isNaN(parseInt(parts[0]))) {
+                        if (parts.length > 2) {
+                            intPart = str.replace(/\D/g, '') || '0';
+                            decPart = null;
+                        } else if (parts[1].length === 3 && parts[0].length >= 1 && parts[0].length <= 3 && !isNaN(parts[0])) {
+                            intPart = parts[0].replace(/\D/g, '') + parts[1].replace(/\D/g, '');
+                            decPart = null;
+                        } else {
                             intPart = parts[0].replace(/\D/g, '') || '0';
                             decPart = parts[1].replace(/\D/g, '');
-                        } else if (parts.length > 2) {
-                            intPart = str.replace(/\D/g, '') || '0';
-                        } else {
-                            intPart = str.replace(/\D/g, '') || '0';
                         }
                     } else {
                         intPart = str.replace(/\D/g, '') || '0';
+                        decPart = null;
                     }
 
                     if (intPart.length > 1 && intPart.startsWith('0')) {
@@ -3094,17 +3100,22 @@
 
                     let formattedInt = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
                     let res = (isNegative ? '-' : '') + formattedInt;
+
                     if (decPart !== null) {
-                        // Eğer SAP/Excel'den gereksiz kuyruk sıfırları geldiyse (örn: 50000000 -> 50)
-                        let cleanDec = decPart;
-                        if (cleanDec.length > 2 && /0+$/.test(cleanDec)) {
-                            cleanDec = cleanDec.replace(/0+$/, '');
-                            if (cleanDec.length === 1) cleanDec += '0';
+                        if (decPart.length > 2) {
+                            let num = parseFloat(intPart + '.' + decPart);
+                            if (!isNaN(num)) {
+                                let rounded = Math.round(num * 100) / 100;
+                                let rParts = rounded.toFixed(2).split('.');
+                                let rInt = rParts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+                                return (isNegative ? '-' : '') + rInt + ',' + rParts[1];
+                            }
                         }
-                        res += ',' + cleanDec;
-                    } else if (str.endsWith(',') || str.endsWith('.')) {
+                        res += ',' + decPart;
+                    } else if (String(val).endsWith(',')) {
                         res += ',';
                     }
+
                     return res;
                 },
 
@@ -3120,47 +3131,102 @@
                         return;
                     }
 
+                    // Numpad nokta tuşuna basıldığında ve henüz virgül yoksa virgüle dönüştür
                     if (raw.endsWith('.') && !raw.slice(0, -1).includes(',')) {
                         raw = raw.slice(0, -1) + ',';
                     }
 
-                    let cleanRaw = this.parseRawNumber(raw);
-                    if (row && row.values) row.values[fieldId] = cleanRaw;
-
-                    let isNegative = raw.startsWith('-');
+                    let isNegative = raw.trim().startsWith('-');
                     let hasComma = raw.includes(',');
-                    let parts = raw.replace(/[^\d,]/g, '').split(',');
-                    let intPart = parts[0] || '0';
-                    if (intPart.length > 1 && intPart.startsWith('0')) {
-                        intPart = intPart.replace(/^0+/, '') || '0';
+                    let intDigits = '';
+                    let decDigits = null;
+
+                    if (hasComma) {
+                        let parts = raw.split(',');
+                        intDigits = parts[0].replace(/\D/g, '');
+                        decDigits = parts.slice(1).join('').replace(/\D/g, '');
+                    } else {
+                        // Virgül yoksa TÜM RAKAMLAR TAM SAYIDIR (noktalar binlik ayracıdır)
+                        intDigits = raw.replace(/\D/g, '');
+                        decDigits = null;
                     }
-                    let decPart = hasComma && parts.length > 1 ? parts.slice(1).join('') : null;
 
-                    let formattedInt = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-                    let formattedDisplay = (isNegative ? '-' : '') + formattedInt + (hasComma ? ',' + (decPart !== null ? decPart : '') : '');
+                    // Küsürat 2 basamaktan fazlaysa (yapıştırma durumunda) 3. basamağa göre yuvarla
+                    if (decDigits && decDigits.length > 2) {
+                        let rounded = this.combineAndRound(isNegative, intDigits, decDigits);
+                        let rParts = rounded.split('.');
+                        intDigits = rParts[0].replace(/\D/g, '');
+                        decDigits = rParts.length > 1 ? rParts[1] : '';
+                    }
 
-                    let cursorPos = input.selectionStart;
-                    let digitsBefore = raw.substring(0, cursorPos).replace(/\D/g, '').length;
+                    if (intDigits.length > 1 && intDigits.startsWith('0')) {
+                        intDigits = intDigits.replace(/^0+/, '') || '0';
+                    }
+
+                    let formattedInt = intDigits.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+                    let formattedDisplay = (isNegative ? '-' : '') + formattedInt + (hasComma ? ',' + (decDigits !== null ? decDigits : '') : '');
+
+                    // Model değerini güncelle (tam sayı ise tamsayı, ondalık varsa noktalı ondalık veya devam eden virgül)
+                    let cleanStored = (isNegative ? '-' : '') + (intDigits || '') + (hasComma ? (decDigits !== null && decDigits !== '' ? '.' + decDigits : ',') : '');
+                    if (row && row.values) row.values[fieldId] = cleanStored;
+
+                    // İmleç pozisyonunu koru
+                    let cursorPos = input.selectionStart || 0;
+                    let rawBeforeCursor = raw.substring(0, cursorPos);
+                    let digitsBeforeCursor = rawBeforeCursor.replace(/\D/g, '').length;
+                    let cursorWasAfterComma = hasComma && cursorPos > raw.indexOf(',');
+                    let decDigitsBeforeCursor = cursorWasAfterComma 
+                        ? rawBeforeCursor.substring(raw.indexOf(',') + 1).replace(/\D/g, '').length 
+                        : 0;
 
                     input.value = formattedDisplay;
 
-                    let count = 0;
                     let newPos = formattedDisplay.length;
-                    for (let i = 0; i < formattedDisplay.length; i++) {
-                        if (/\d/.test(formattedDisplay[i])) {
-                            count++;
+                    if (cursorWasAfterComma) {
+                        let commaIdx = formattedDisplay.indexOf(',');
+                        if (commaIdx !== -1) {
+                            newPos = commaIdx + 1 + decDigitsBeforeCursor;
                         }
-                        if (count === digitsBefore) {
-                            newPos = i + 1;
-                            break;
+                    } else {
+                        let digitCount = 0;
+                        for (let i = 0; i < formattedDisplay.length; i++) {
+                            if (formattedDisplay[i] === ',') {
+                                newPos = i;
+                                break;
+                            }
+                            if (/\d/.test(formattedDisplay[i])) {
+                                digitCount++;
+                                if (digitCount === digitsBeforeCursor) {
+                                    newPos = i + 1;
+                                    break;
+                                }
+                            }
+                        }
+                        if (digitsBeforeCursor === 0) {
+                            newPos = (isNegative && formattedDisplay.startsWith('-')) ? 1 : 0;
                         }
                     }
-                    if (hasComma && cursorPos > raw.indexOf(',')) {
-                        newPos = formattedDisplay.indexOf(',') + 1 + Math.max(0, cursorPos - raw.indexOf(',') - 1);
-                    }
+
                     if (newPos > formattedDisplay.length) newPos = formattedDisplay.length;
                     input.setSelectionRange(newPos, newPos);
 
+                    this.calculateTotals();
+                },
+
+                handleNumberBlur(e, rowOrIndex, fieldId) {
+                    let input = e.target;
+                    let raw = input.value;
+                    let row = this.getRow(rowOrIndex);
+                    if (!raw || !raw.trim()) {
+                        if (row && row.values) row.values[fieldId] = '';
+                        input.value = '';
+                        this.calculateTotals();
+                        return;
+                    }
+
+                    let clean = this.parseRawNumber(raw);
+                    if (row && row.values) row.values[fieldId] = clean;
+                    input.value = this.formatInputDisplay(clean);
                     this.calculateTotals();
                 },
 
