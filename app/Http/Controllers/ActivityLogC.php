@@ -277,7 +277,7 @@ class ActivityLogC extends Controller
     {
         $user = $request->user();
 
-        if (!$user || $user->isYonetim() || !$user->isSuperAdmin()) {
+        if (!$user || $user->isYonetim() || (!$user->isSuperAdmin() && !$user->hasPermission('settings.manage'))) {
             abort(403, 'Denetim loglarını silme yetkiniz bulunmamaktadır. Bu işlem sadece Sistem Yöneticisi tarafından gerçekleştirilebilir.');
         }
 
