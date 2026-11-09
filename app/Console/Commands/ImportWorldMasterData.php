@@ -244,3 +244,4 @@ class ImportWorldMasterData extends Command
         return 0;
     }
 }
+

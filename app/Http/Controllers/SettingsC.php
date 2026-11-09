@@ -11,7 +11,18 @@ class SettingsC extends Controller
     public function index()
     {
         $formRevisionEnabled = \App\Services\SettingS::get('form_revision_enabled', true);
-        return view('settings.index', compact('formRevisionEnabled'));
+        $customLogoExists = Storage::disk('public')->exists('logo.png');
+        $activityLogsCount = \App\Models\ActivityLogM::count();
+        $notificationLogsCount = \App\Models\NotificationLogM::count();
+        $notificationEventsCount = \App\Models\NotificationEventM::count();
+
+        return view('settings.index', compact(
+            'formRevisionEnabled',
+            'customLogoExists',
+            'activityLogsCount',
+            'notificationLogsCount',
+            'notificationEventsCount'
+        ));
     }
 
     public function updateGeneral(Request $request, ActivityLogS $activityLogService)
@@ -38,5 +49,15 @@ class SettingsC extends Controller
         }
 
         return redirect()->back()->with('success', 'Sistem logosu başarıyla güncellendi.');
+    }
+
+    public function removeLogo(ActivityLogS $activityLogService)
+    {
+        if (Storage::disk('public')->exists('logo.png')) {
+            Storage::disk('public')->delete('logo.png');
+            $activityLogService->log('settings.logo', 'Sistem logosu varsayılana sıfırlandı.');
+        }
+
+        return redirect()->back()->with('success', 'Sistem logosu başarıyla varsayılan haline sıfırlandı.');
     }
 }

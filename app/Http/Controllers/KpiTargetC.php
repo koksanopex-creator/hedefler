@@ -66,10 +66,12 @@ class KpiTargetC extends Controller
      */
     private function getAccessibleGroups(UserM $user)
     {
+        $baseQuery = GroupM::where('is_active', true)->with(['managers', 'users'])->orderBy('name');
+
         if ($this->permissionService->hasPermission($user, 'kpi_targets.view_all') ||
             $this->permissionService->hasPermission($user, 'kpi_targets.manage') ||
             $user->role?->slug === 'sistem_yoneticisi') {
-            return GroupM::where('is_active', true)->orderBy('name')->get();
+            return $baseQuery->get();
         }
 
         if ($this->permissionService->hasPermission($user, 'kpi_targets.view_group') || $user->managedGroups->isNotEmpty()) {
@@ -77,12 +79,12 @@ class KpiTargetC extends Controller
             $allGroupIds = array_unique(array_filter(array_merge([$user->group_id], $managedGroupIds)));
 
             if (!empty($allGroupIds)) {
-                return GroupM::whereIn('id', $allGroupIds)->where('is_active', true)->orderBy('name')->get();
+                return $baseQuery->whereIn('id', $allGroupIds)->get();
             }
         }
 
         if ($user->group_id) {
-            return GroupM::where('id', $user->group_id)->where('is_active', true)->get();
+            return $baseQuery->where('id', $user->group_id)->get();
         }
 
         return collect();
@@ -275,7 +277,7 @@ class KpiTargetC extends Controller
             'assignee_type' => 'required|in:user,group,manager',
             'assignee_id' => 'nullable|integer',
             'assignee_ids' => 'nullable|array',
-            'assignee_ids.*' => 'integer|exists:users,id',
+            'assignee_ids.*' => 'integer',
             'target_value' => 'required|numeric|min:0.01',
             'unit' => 'required|string|max:50',
             'criteria' => 'nullable|array',
@@ -291,12 +293,13 @@ class KpiTargetC extends Controller
         $accessibleUserIds = $this->getAccessibleUsers($user)->pluck('id')->toArray();
         $accessibleGroupIds = $this->getAccessibleGroups($user)->pluck('id')->toArray();
 
-        if ($validated['assignee_type'] === 'user') {
-            $assigneeIds = $request->input('assignee_ids', []);
-            if (empty($assigneeIds) && $request->filled('assignee_id')) {
-                $assigneeIds = [(int) $request->input('assignee_id')];
-            }
+        $assigneeIds = $request->input('assignee_ids', []);
+        if (empty($assigneeIds) && $request->filled('assignee_id')) {
+            $assigneeIds = [(int) $request->input('assignee_id')];
+        }
+        $assigneeIds = array_values(array_unique(array_filter(array_map('intval', (array) $assigneeIds))));
 
+        if ($validated['assignee_type'] === 'user') {
             if (empty($assigneeIds)) {
                 return back()->withInput()->withErrors(['assignee_ids' => 'Lütfen hedefin atanacağı en az bir personel seçiniz.']);
             }
@@ -331,24 +334,77 @@ class KpiTargetC extends Controller
                 ->with('success', 'KPI Hedefi başarıyla oluşturuldu. Şimdi aylık periyot dağılımını belirleyebilir veya eşit bırakabilirsiniz.');
         }
 
-        // Grup veya Yönetici ataması
-        if (empty($validated['assignee_id'])) {
-            return back()->withInput()->withErrors(['assignee_id' => 'Lütfen hedefin atanacağı grubu seçiniz.']);
+        if ($validated['assignee_type'] === 'group') {
+            if (empty($assigneeIds)) {
+                return back()->withInput()->withErrors(['assignee_ids' => 'Lütfen hedefin atanacağı en az bir grup / departman seçiniz.']);
+            }
+
+            if (!$isGlobalView) {
+                foreach ($assigneeIds as $gid) {
+                    if (!in_array($gid, $accessibleGroupIds)) {
+                        return back()->withInput()->withErrors(['assignee_ids' => 'Yetki kapsamınız dışındaki bir gruba hedef atayamazsınız.']);
+                    }
+                }
+            }
+
+            // Birden fazla grup seçilmişse toplu hedef oluştur
+            if (count($assigneeIds) > 1) {
+                $batchData = $validated;
+                $batchData['distribute_evenly'] = $request->boolean('distribute_evenly', true);
+                $createdTargets = $this->kpiService->createTargetsBatch($batchData, $assigneeIds, $user);
+
+                return redirect()->route('kpi-targets.index')
+                    ->with('success', 'Toplam ' . count($createdTargets) . ' gruba / departmana KPI Hedefi başarıyla tanımlandı ve atandı.');
+            }
+
+            // Tek grup seçilmişse
+            $validated['assignee_id'] = $assigneeIds[0];
+            $target = $this->kpiService->createTarget($validated, $user);
+
+            if ($request->boolean('distribute_evenly')) {
+                return redirect()->route('kpi-targets.index')
+                    ->with('success', 'Grup KPI Hedefi başarıyla oluşturuldu ve aylara eşit olarak dağıtıldı.');
+            }
+
+            return redirect()->route('kpi-targets.distribute', $target->id)
+                ->with('success', 'Grup KPI Hedefi başarıyla oluşturuldu. Şimdi aylık periyot dağılımını belirleyebilir veya eşit bırakabilirsiniz.');
         }
 
-        if (!$isGlobalView && !in_array($validated['assignee_id'], $accessibleGroupIds)) {
-            return back()->withInput()->withErrors(['assignee_id' => 'Yetki kapsamınız dışındaki bir gruba hedef atayamazsınız.']);
+        if ($validated['assignee_type'] === 'manager') {
+            if (empty($assigneeIds)) {
+                return back()->withInput()->withErrors(['assignee_ids' => 'Lütfen hedefin atanacağı en az bir grup yöneticisi seçiniz.']);
+            }
+
+            if (!$isGlobalView) {
+                foreach ($assigneeIds as $gid) {
+                    if (!in_array($gid, $accessibleGroupIds)) {
+                        return back()->withInput()->withErrors(['assignee_ids' => 'Yetki kapsamınız dışındaki bir grup yöneticisine hedef atayamazsınız.']);
+                    }
+                }
+            }
+
+            // Birden fazla yönetici seçilmişse toplu hedef oluştur
+            if (count($assigneeIds) > 1) {
+                $batchData = $validated;
+                $batchData['distribute_evenly'] = $request->boolean('distribute_evenly', true);
+                $createdTargets = $this->kpiService->createTargetsBatch($batchData, $assigneeIds, $user);
+
+                return redirect()->route('kpi-targets.index')
+                    ->with('success', 'Toplam ' . count($createdTargets) . ' grup yöneticisine KPI Hedefi başarıyla tanımlandı ve atandı.');
+            }
+
+            // Tek yönetici seçilmişse
+            $validated['assignee_id'] = $assigneeIds[0];
+            $target = $this->kpiService->createTarget($validated, $user);
+
+            if ($request->boolean('distribute_evenly')) {
+                return redirect()->route('kpi-targets.index')
+                    ->with('success', 'Grup Yöneticisi KPI Hedefi başarıyla oluşturuldu ve aylara eşit olarak dağıtıldı.');
+            }
+
+            return redirect()->route('kpi-targets.distribute', $target->id)
+                ->with('success', 'Grup Yöneticisi KPI Hedefi başarıyla oluşturuldu. Şimdi aylık periyot dağılımını belirleyebilir veya eşit bırakabilirsiniz.');
         }
-
-        $target = $this->kpiService->createTarget($validated, $user);
-
-        if ($request->boolean('distribute_evenly')) {
-            return redirect()->route('kpi-targets.index')
-                ->with('success', 'KPI Hedefi başarıyla oluşturuldu ve aylara eşit olarak dağıtıldı.');
-        }
-
-        return redirect()->route('kpi-targets.distribute', $target->id)
-            ->with('success', 'KPI Hedefi başarıyla oluşturuldu. Şimdi aylık periyot dağılımını belirleyebilir veya eşit bırakabilirsiniz.');
     }
 
     /**

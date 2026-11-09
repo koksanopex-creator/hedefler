@@ -359,8 +359,10 @@
                         </div>
 
                         {{-- Hidden inputs for selected users --}}
-                        <template x-for="uid in selectedUsers" :key="uid">
-                            <input type="hidden" name="assignee_ids[]" :value="uid">
+                        <template x-if="assigneeType === 'user'">
+                            <template x-for="uid in selectedUsers" :key="'usr-' + uid">
+                                <input type="hidden" name="assignee_ids[]" :value="uid">
+                            </template>
                         </template>
 
                         {{-- Validation uyarısı --}}
@@ -370,20 +372,210 @@
                         </div>
                     </div>
 
-                    {{-- 2. Grup Listesi (Tek Seçim) --}}
-                    <div x-show="assigneeType === 'group' || assigneeType === 'manager'" class="pt-2">
-                        <label class="block text-xs font-bold text-gray-700 mb-1">
-                            <span x-show="assigneeType === 'group'">Atanacak Grup / Departman</span>
-                            <span x-show="assigneeType === 'manager'">Yöneticisi Olduğu Grup</span>
-                            <span class="text-rose-500">*</span>
-                        </label>
-                        <select name="assignee_id" :disabled="assigneeType === 'user'"
-                            class="w-full text-sm rounded-xl border-gray-200 focus:border-indigo-500 focus:ring-indigo-500">
-                            <option value="">-- Grup Seçiniz --</option>
-                            @foreach($groups as $g)
-                                <option value="{{ $g->id }}">{{ $g->name }} (Yönetici: {{ $g->managers->first()->name ?? 'Tanımlanmamış' }})</option>
-                            @endforeach
-                        </select>
+                    {{-- 2. Grup / Departman Çoklu Seçim Arayüzü --}}
+                    <div x-show="assigneeType === 'group'" class="space-y-3 pt-2">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                            <label class="block text-xs font-bold text-gray-700">
+                                Hedefin Atanacağı Grup(lar) / Departman(lar) <span class="text-rose-500">*</span>
+                                <span class="text-gray-400 font-normal ml-1">(1 veya birden fazla grup seçebilirsiniz)</span>
+                            </label>
+
+                            {{-- Hızlı Seçim Butonları --}}
+                            <div class="flex items-center gap-2">
+                                <button type="button" @click="selectAllGroups()"
+                                    class="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1 rounded-lg transition">
+                                    Tüm Grupları Seç
+                                </button>
+                                <button type="button" @click="clearSelectedGroups()"
+                                    class="text-[11px] font-bold text-gray-500 hover:text-rose-700 bg-gray-100 hover:bg-rose-50 px-2.5 py-1 rounded-lg transition"
+                                    x-show="selectedGroups.length > 0">
+                                    Seçimi Temizle
+                                </button>
+                            </div>
+                        </div>
+
+                        {{-- Arama Kutusu --}}
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                            </span>
+                            <input type="text" x-model="groupSearch" placeholder="Grup veya departman adı ile ara..."
+                                class="w-full text-xs pl-9 pr-3 py-2 rounded-xl border-gray-200 focus:border-indigo-500 focus:ring-indigo-500">
+                        </div>
+
+                        {{-- Seçilen Grupların Rozetleri --}}
+                        <div x-show="selectedGroups.length > 0" class="p-3 bg-indigo-50/60 rounded-xl border border-indigo-100 space-y-2">
+                            <div class="flex items-center justify-between text-xs">
+                                <span class="font-extrabold text-indigo-900 flex items-center gap-1.5">
+                                    <span class="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-pulse"></span>
+                                    <span x-text="selectedGroups.length + ' Grup / Departman Seçildi'"></span>
+                                </span>
+                                <span class="text-[11px] text-indigo-600 font-medium">Seçilen her departman için ayrı hedef karnesi açılacaktır.</span>
+                            </div>
+
+                            <div class="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto pt-1">
+                                <template x-for="gid in selectedGroups" :key="'grp-badge-' + gid">
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-white text-indigo-800 border border-indigo-200 shadow-2xs">
+                                        <span x-text="getGroupName(gid)"></span>
+                                        <button type="button" @click="toggleGroup(gid)" class="text-indigo-400 hover:text-rose-600 transition ml-0.5">
+                                            &times;
+                                        </button>
+                                    </span>
+                                </template>
+                            </div>
+                        </div>
+
+                        {{-- Grup Listesi (Scrollable) --}}
+                        <div class="border border-gray-200 rounded-xl overflow-hidden shadow-2xs">
+                            <div class="max-h-56 overflow-y-auto divide-y divide-gray-100 bg-white">
+                                <template x-for="g in filteredGroups" :key="'grp-' + g.id">
+                                    <div @click="toggleGroup(g.id)"
+                                        class="px-3.5 py-2.5 flex items-center justify-between cursor-pointer transition select-none hover:bg-indigo-50/50"
+                                        :class="selectedGroups.includes(g.id) ? 'bg-indigo-50/70 font-semibold' : ''">
+                                        <div class="flex items-center gap-3 min-w-0">
+                                            <input type="checkbox" :checked="selectedGroups.includes(g.id)"
+                                                @click.stop="toggleGroup(g.id)"
+                                                class="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500 cursor-pointer">
+                                            
+                                            <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                                            </div>
+
+                                            <div class="min-w-0">
+                                                <div class="text-xs text-gray-900 font-bold truncate" x-text="g.name"></div>
+                                                <div class="text-[11px] text-gray-500 truncate" x-text="'Yönetici: ' + g.manager_name"></div>
+                                            </div>
+                                        </div>
+
+                                        <span class="text-[10px] px-2.5 py-1 rounded-full font-semibold shrink-0 ml-2"
+                                            :class="selectedGroups.includes(g.id) ? 'bg-indigo-200/80 text-indigo-900' : 'bg-gray-100 text-gray-600'"
+                                            x-text="g.members_count + ' Personel'">
+                                        </span>
+                                    </div>
+                                </template>
+
+                                <div x-show="filteredGroups.length === 0" class="p-6 text-center text-xs text-gray-400">
+                                    Aramanıza uygun grup / departman bulunamadı.
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Hidden inputs for selected groups --}}
+                        <template x-if="assigneeType === 'group'">
+                            <template x-for="gid in selectedGroups" :key="'h-grp-' + gid">
+                                <input type="hidden" name="assignee_ids[]" :value="gid">
+                            </template>
+                        </template>
+
+                        {{-- Validation uyarısı --}}
+                        <div x-show="selectedGroups.length === 0" class="text-[11px] text-amber-600 font-medium flex items-center gap-1">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                            <span>Lütfen hedefin atanacağı en az bir grup / departman seçiniz.</span>
+                        </div>
+                    </div>
+
+                    {{-- 3. Grup Yöneticisi Çoklu Seçim Arayüzü --}}
+                    <div x-show="assigneeType === 'manager'" class="space-y-3 pt-2">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                            <label class="block text-xs font-bold text-gray-700">
+                                Hedefin Atanacağı Grup Yöneticileri <span class="text-rose-500">*</span>
+                                <span class="text-gray-400 font-normal ml-1">(1 veya birden fazla yönetici seçebilirsiniz)</span>
+                            </label>
+
+                            {{-- Hızlı Seçim Butonları --}}
+                            <div class="flex items-center gap-2">
+                                <button type="button" @click="selectAllManagers()"
+                                    class="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1 rounded-lg transition">
+                                    Tüm Yöneticileri Seç
+                                </button>
+                                <button type="button" @click="clearSelectedManagers()"
+                                    class="text-[11px] font-bold text-gray-500 hover:text-rose-700 bg-gray-100 hover:bg-rose-50 px-2.5 py-1 rounded-lg transition"
+                                    x-show="selectedManagers.length > 0">
+                                    Seçimi Temizle
+                                </button>
+                            </div>
+                        </div>
+
+                        {{-- Arama Kutusu --}}
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                            </span>
+                            <input type="text" x-model="managerSearch" placeholder="Yönetici adı veya grup adı ile ara..."
+                                class="w-full text-xs pl-9 pr-3 py-2 rounded-xl border-gray-200 focus:border-indigo-500 focus:ring-indigo-500">
+                        </div>
+
+                        {{-- Seçilen Yöneticilerin Rozetleri --}}
+                        <div x-show="selectedManagers.length > 0" class="p-3 bg-indigo-50/60 rounded-xl border border-indigo-100 space-y-2">
+                            <div class="flex items-center justify-between text-xs">
+                                <span class="font-extrabold text-indigo-900 flex items-center gap-1.5">
+                                    <span class="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-pulse"></span>
+                                    <span x-text="selectedManagers.length + ' Grup Yöneticisi Seçildi'"></span>
+                                </span>
+                                <span class="text-[11px] text-indigo-600 font-medium">Seçilen her yönetici için ekibiyle kümülatif hedef kaydı açılacaktır.</span>
+                            </div>
+
+                            <div class="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto pt-1">
+                                <template x-for="gid in selectedManagers" :key="'mgr-badge-' + gid">
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-white text-indigo-800 border border-indigo-200 shadow-2xs">
+                                        <span x-text="getManagerDisplayName(gid)"></span>
+                                        <button type="button" @click="toggleManager(gid)" class="text-indigo-400 hover:text-rose-600 transition ml-0.5">
+                                            &times;
+                                        </button>
+                                    </span>
+                                </template>
+                            </div>
+                        </div>
+
+                        {{-- Yönetici Listesi (Scrollable) --}}
+                        <div class="border border-gray-200 rounded-xl overflow-hidden shadow-2xs">
+                            <div class="max-h-56 overflow-y-auto divide-y divide-gray-100 bg-white">
+                                <template x-for="g in filteredManagers" :key="'mgr-' + g.id">
+                                    <div @click="g.has_manager && toggleManager(g.id)"
+                                        class="px-3.5 py-2.5 flex items-center justify-between transition select-none"
+                                        :class="!g.has_manager ? 'opacity-50 cursor-not-allowed bg-gray-50' : (selectedManagers.includes(g.id) ? 'bg-indigo-50/70 font-semibold cursor-pointer' : 'cursor-pointer hover:bg-indigo-50/50')">
+                                        <div class="flex items-center gap-3 min-w-0">
+                                            <input type="checkbox" :checked="selectedManagers.includes(g.id)"
+                                                :disabled="!g.has_manager"
+                                                @click.stop="g.has_manager && toggleManager(g.id)"
+                                                class="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500 cursor-pointer disabled:cursor-not-allowed">
+                                            
+                                            <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs"
+                                                :class="g.has_manager ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-200 text-gray-500'"
+                                                x-text="g.has_manager ? g.manager_name.substring(0, 1).toUpperCase() : '?'">
+                                            </div>
+
+                                            <div class="min-w-0">
+                                                <div class="text-xs text-gray-900 font-bold truncate" x-text="g.manager_name"></div>
+                                                <div class="text-[11px] text-gray-500 truncate" x-text="g.name + ' Grubu Yöneticisi'"></div>
+                                            </div>
+                                        </div>
+
+                                        <span class="text-[10px] px-2.5 py-1 rounded-full font-semibold shrink-0 ml-2"
+                                            :class="selectedManagers.includes(g.id) ? 'bg-indigo-200/80 text-indigo-900' : 'bg-gray-100 text-gray-600'"
+                                            x-text="g.members_count + ' Kişilik Ekip'">
+                                        </span>
+                                    </div>
+                                </template>
+
+                                <div x-show="filteredManagers.length === 0" class="p-6 text-center text-xs text-gray-400">
+                                    Aramanıza uygun yönetici bulunamadı.
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Hidden inputs for selected managers --}}
+                        <template x-if="assigneeType === 'manager'">
+                            <template x-for="gid in selectedManagers" :key="'h-mgr-' + gid">
+                                <input type="hidden" name="assignee_ids[]" :value="gid">
+                            </template>
+                        </template>
+
+                        {{-- Validation uyarısı --}}
+                        <div x-show="selectedManagers.length === 0" class="text-[11px] text-amber-600 font-medium flex items-center gap-1">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                            <span>Lütfen hedefin atanacağı en az bir grup yöneticisi seçiniz.</span>
+                        </div>
                     </div>
 
                     {{-- İsteğe Bağlı Üst Hedef --}}
@@ -412,7 +604,10 @@
                         İptal
                     </a>
                     <button type="submit"
-                        :disabled="isSubmitting || (assigneeType === 'user' && selectedUsers.length === 0)"
+                        :disabled="isSubmitting || 
+                            (assigneeType === 'user' && selectedUsers.length === 0) || 
+                            (assigneeType === 'group' && selectedGroups.length === 0) || 
+                            (assigneeType === 'manager' && selectedManagers.length === 0)"
                         class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-sm rounded-xl shadow-md transition hover:shadow-lg inline-flex items-center gap-2">
                         <span x-show="!isSubmitting">Hedefi Kaydet ve Devam Et →</span>
                         <span x-show="isSubmitting" class="inline-flex items-center gap-1.5">
@@ -486,6 +681,89 @@
             getUserName(id) {
                 const u = this.allUsers.find(x => x.id === id);
                 return u ? u.name : id;
+            },
+
+            // Grup Çoklu Seçim State
+            groupSearch: '',
+            selectedGroups: [],
+            allGroups: [
+                @foreach($groups as $g)
+                {
+                    id: {{ $g->id }},
+                    name: @json($g->name),
+                    manager_name: @json($g->managers->first()->name ?? 'Yönetici Tanımlanmamış'),
+                    has_manager: {{ $g->managers->isNotEmpty() ? 'true' : 'false' }},
+                    members_count: {{ $g->users->count() }}
+                },
+                @endforeach
+            ],
+
+            get filteredGroups() {
+                const s = this.groupSearch.trim().toLowerCase();
+                return this.allGroups.filter(g => !s || g.name.toLowerCase().includes(s) || g.manager_name.toLowerCase().includes(s));
+            },
+
+            toggleGroup(id) {
+                const idx = this.selectedGroups.indexOf(id);
+                if (idx > -1) {
+                    this.selectedGroups.splice(idx, 1);
+                } else {
+                    this.selectedGroups.push(id);
+                }
+            },
+
+            selectAllGroups() {
+                this.filteredGroups.forEach(g => {
+                    if (!this.selectedGroups.includes(g.id)) {
+                        this.selectedGroups.push(g.id);
+                    }
+                });
+            },
+
+            clearSelectedGroups() {
+                this.selectedGroups = [];
+            },
+
+            getGroupName(id) {
+                const g = this.allGroups.find(x => x.id === id);
+                return g ? g.name : id;
+            },
+
+            // Grup Yöneticisi Çoklu Seçim State
+            managerSearch: '',
+            selectedManagers: [],
+
+            get filteredManagers() {
+                const s = this.managerSearch.trim().toLowerCase();
+                return this.allGroups.filter(g => {
+                    return !s || g.name.toLowerCase().includes(s) || g.manager_name.toLowerCase().includes(s);
+                });
+            },
+
+            toggleManager(id) {
+                const idx = this.selectedManagers.indexOf(id);
+                if (idx > -1) {
+                    this.selectedManagers.splice(idx, 1);
+                } else {
+                    this.selectedManagers.push(id);
+                }
+            },
+
+            selectAllManagers() {
+                this.filteredManagers.forEach(g => {
+                    if (g.has_manager && !this.selectedManagers.includes(g.id)) {
+                        this.selectedManagers.push(g.id);
+                    }
+                });
+            },
+
+            clearSelectedManagers() {
+                this.selectedManagers = [];
+            },
+
+            getManagerDisplayName(id) {
+                const g = this.allGroups.find(x => x.id === id);
+                return g ? (g.manager_name + ' (' + g.name + ')') : id;
             },
 
             // Kriter / Kırılım ve Master Data Cascading State
