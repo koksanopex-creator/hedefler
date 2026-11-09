@@ -149,7 +149,8 @@
                 <input type="hidden" name="action" id="form_action_input" value="draft">
                 <input type="hidden" name="rows_json" id="form_rows_json_input" value="">
 
-                <div :class="isFullscreen ? 'fixed inset-0 z-[99999] bg-white flex flex-col w-screen h-screen overflow-hidden m-0 p-0' : 'bg-white shadow-xl sm:rounded-lg border border-gray-200 flex flex-col transition-all'">
+                <div :class="isFullscreen ? 'fixed inset-0 z-[999999] bg-white flex flex-col w-screen h-screen overflow-hidden m-0 p-0' : 'bg-white shadow-xl sm:rounded-lg border border-gray-200 flex flex-col transition-all'"
+                     :style="isFullscreen ? 'position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; width: 100vw !important; height: 100vh !important; z-index: 9999999 !important; margin: 0 !important; padding: 0 !important;' : ''">
                     
                     <!-- Üst Eylem & Hızlı Satır Çubuğu (Top Action Bar - Konumu Asla Aşağı Kaymaz) -->
                     <div class="px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 flex-shrink-0 transition-colors"
@@ -2770,6 +2771,24 @@
                     let isNegative = str.startsWith('-');
                     if (isNegative) str = str.substring(1);
 
+                    // Hem virgül hem nokta varsa (Örn: 1.250,50 veya 1,250.50)
+                    if (str.includes(',') && str.includes('.')) {
+                        let lastComma = str.lastIndexOf(',');
+                        let lastDot = str.lastIndexOf('.');
+                        if (lastComma > lastDot) {
+                            // Türkçe format: 1.250,50 -> nokta binlik, virgül ondalık
+                            let intPart = str.substring(0, lastComma).replace(/\D/g, '') || '0';
+                            let decPart = str.substring(lastComma + 1).replace(/\D/g, '');
+                            return (isNegative ? '-' : '') + intPart + (decPart !== '' ? '.' + decPart : '');
+                        } else {
+                            // US format: 1,250.50 -> virgül binlik, nokta ondalık
+                            let intPart = str.substring(0, lastDot).replace(/\D/g, '') || '0';
+                            let decPart = str.substring(lastDot + 1).replace(/\D/g, '');
+                            return (isNegative ? '-' : '') + intPart + (decPart !== '' ? '.' + decPart : '');
+                        }
+                    }
+
+                    // Sadece virgül varsa (Örn: 16,50 veya 1250,50)
                     if (str.includes(',')) {
                         let parts = str.replace(/[^\d,]/g, '').split(',');
                         let intPart = parts[0].replace(/\D/g, '') || '0';
@@ -2777,11 +2796,21 @@
                         return (isNegative ? '-' : '') + intPart + (decPart !== '' ? '.' + decPart : '');
                     }
 
+                    // Sadece nokta varsa (Örn: SAP'den 16.50000000, 622641.51 veya binlik 1.250.000)
                     if (str.includes('.')) {
                         let parts = str.split('.');
-                        if (parts.length === 2 && parts[1].length <= 2) {
-                            return (isNegative ? '-' : '') + parts[0].replace(/\D/g, '') + '.' + parts[1].replace(/\D/g, '');
+                        // Birden fazla nokta varsa KESİNLİKLE binlik ayırıcıdır (Örn: 1.250.000)
+                        if (parts.length > 2) {
+                            return (isNegative ? '-' : '') + str.replace(/\D/g, '');
                         }
+                        // Tek nokta varsa:
+                        // Noktadan sonraki basamak sayısı 3 değilse (örn: 1, 2, 4, 5, 6, 7, 8 basamak) KESİNLİKLE ondalık noktasıdır (SAP/Excel)!
+                        if (parts[1].length !== 3) {
+                            let intPart = parts[0].replace(/\D/g, '') || '0';
+                            let decPart = parts[1].replace(/\D/g, '');
+                            return (isNegative ? '-' : '') + intPart + (decPart !== '' ? '.' + decPart : '');
+                        }
+                        // Tek nokta ve tam 3 basamak varsa (Örn: 1.250):
                         return (isNegative ? '-' : '') + str.replace(/\D/g, '');
                     }
 
@@ -2803,15 +2832,27 @@
                     let intPart = '';
                     let decPart = null;
 
-                    if (hasComma) {
+                    if (hasComma && hasDot) {
+                        let lastComma = str.lastIndexOf(',');
+                        let lastDot = str.lastIndexOf('.');
+                        if (lastComma > lastDot) {
+                            intPart = str.substring(0, lastComma).replace(/\D/g, '') || '0';
+                            decPart = str.substring(lastComma + 1).replace(/\D/g, '');
+                        } else {
+                            intPart = str.substring(0, lastDot).replace(/\D/g, '') || '0';
+                            decPart = str.substring(lastDot + 1).replace(/\D/g, '');
+                        }
+                    } else if (hasComma) {
                         let parts = str.replace(/[^\d,]/g, '').split(',');
                         intPart = parts[0] || '0';
                         decPart = parts.length > 1 ? parts.slice(1).join('') : '';
                     } else if (hasDot) {
                         let parts = str.split('.');
-                        if (parts.length === 2 && parts[1].length <= 2 && !isNaN(parseInt(parts[0]))) {
+                        if (parts.length === 2 && parts[1].length !== 3 && !isNaN(parseInt(parts[0]))) {
                             intPart = parts[0].replace(/\D/g, '') || '0';
                             decPart = parts[1].replace(/\D/g, '');
+                        } else if (parts.length > 2) {
+                            intPart = str.replace(/\D/g, '') || '0';
                         } else {
                             intPart = str.replace(/\D/g, '') || '0';
                         }
@@ -2826,7 +2867,13 @@
                     let formattedInt = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
                     let res = (isNegative ? '-' : '') + formattedInt;
                     if (decPart !== null) {
-                        res += ',' + decPart;
+                        // Eğer SAP/Excel'den gereksiz kuyruk sıfırları geldiyse (örn: 50000000 -> 50)
+                        let cleanDec = decPart;
+                        if (cleanDec.length > 2 && /0+$/.test(cleanDec)) {
+                            cleanDec = cleanDec.replace(/0+$/, '');
+                            if (cleanDec.length === 1) cleanDec += '0';
+                        }
+                        res += ',' + cleanDec;
                     } else if (str.endsWith(',') || str.endsWith('.')) {
                         res += ',';
                     }

@@ -1024,8 +1024,12 @@ class FormEntryC extends Controller
                 foreach ($fields as $field) {
                     $cellValue = $sheet->getCell([$colIndex, $row])->getFormattedValue();
 
-                    // Hesaplama alanı falan olabilir diye raw değere de bakalım
-                    $rawValue = $sheet->getCell([$colIndex, $row])->getValue();
+                    // Hesaplama alanı veya formül olabilir diye hesaplanmış değere bakalım
+                    try {
+                        $rawValue = $sheet->getCell([$colIndex, $row])->getCalculatedValue();
+                    } catch (\Throwable $e) {
+                        $rawValue = $sheet->getCell([$colIndex, $row])->getValue();
+                    }
                     if ($rawValue instanceof \PhpOffice\PhpSpreadsheet\RichText\RichText) {
                         $rawValue = $rawValue->getPlainText();
                     }
