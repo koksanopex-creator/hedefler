@@ -2514,8 +2514,18 @@
                 },
 
                 async saveDraftAjax(isSilent = true, callback = null) {
-                    if (this.isAutoSaving || this.isSubmitting || this.isUploading) return;
-                    if (!this.rows || this.rows.length === 0) return;
+                    if (this.isAutoSaving || this.isSubmitting) {
+                        if (typeof callback === 'function') callback(null, { skipped: true });
+                        return;
+                    }
+                    if (this.isUploading) {
+                        if (typeof callback === 'function') callback(null, { skipped: true });
+                        return;
+                    }
+                    if (!this.rows || this.rows.length === 0) {
+                        if (typeof callback === 'function') callback(null, { skipped: true });
+                        return;
+                    }
 
                     // Tabloda en az bir hücre dolu mu kontrol et
                     let hasData = false;
@@ -2525,7 +2535,10 @@
                             break;
                         }
                     }
-                    if (!hasData) return;
+                    if (!hasData) {
+                        if (typeof callback === 'function') callback(null, { skipped: true });
+                        return;
+                    }
 
                     this.isAutoSaving = true;
                     this.autoSaveStatus = 'saving';
@@ -2540,18 +2553,21 @@
                             _token: token
                         };
 
+                        const headers = {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRF-TOKEN': token
+                        };
+
                         if (this.isEditMode && this.entryId) {
                             payload._method = 'PUT';
+                            headers['X-HTTP-METHOD-OVERRIDE'] = 'PUT';
                         }
 
                         const response = await fetch(this.saveUrl, {
                             method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Accept': 'application/json',
-                                'X-Requested-With': 'XMLHttpRequest',
-                                'X-CSRF-TOKEN': token
-                            },
+                            headers: headers,
                             body: JSON.stringify(payload)
                         });
 
@@ -3631,20 +3647,21 @@
 
                                                     this.uploadProgress = '100';
                                                     this.uploadStep = 4;
-                                                    this.uploadStatusText = `Tamamlandı! ${totalRows} satır aktarıldı, taslak olarak kaydediliyor...`;
+                                                    this.uploadStatusText = `Tamamlandı! ${totalRows} satır başarıyla aktarıldı.`;
+                                                    this.isUploading = false;
 
-                                                    this.hasUnsavedChanges = false;
+                                                    setTimeout(() => {
+                                                        this.showUploadModal = false;
+                                                        this.isLargeDataset = false;
+                                                    }, 450);
+
+                                                    this.hasUnsavedChanges = true;
                                                     this.saveDraftAjax(true, (err, res) => {
-                                                        setTimeout(() => {
-                                                            this.showUploadModal = false;
-                                                            this.isUploading = false;
-                                                            this.isLargeDataset = false;
-                                                            if (!err) {
-                                                                this.showToast(`✓ ${totalRows} satır içe aktarıldı ve taslak olarak kaydedildi.`);
-                                                            } else {
-                                                                this.showToast(`✓ ${totalRows} satır başarıyla içe aktarıldı.`);
-                                                            }
-                                                        }, 500);
+                                                        if (!err) {
+                                                            this.showToast(`✓ ${totalRows} satır içe aktarıldı ve taslak olarak kaydedildi.`);
+                                                        } else {
+                                                            this.showToast(`✓ ${totalRows} satır başarıyla içe aktarıldı.`);
+                                                        }
                                                     });
                                                 }
                                             };
