@@ -69,7 +69,7 @@
 
     <div class="py-6 sm:py-10"
         x-data="formEntryApp({{ json_encode($fieldsToRender) }}, {{ $formTemplate->show_row_totals ? 'true' : 'false' }}, {{ json_encode($masterDataTree ?? []) }}, {{ json_encode($currentUserScope ?? ['is_admin' => true, 'is_manager' => true, 'allowed_user_ids' => [], 'allowed_user_names' => []]) }}, {{ json_encode($usersList ?? []) }}, {{ $formTemplate->id }}, {{ json_encode($pinnedColumns ?? ['left' => [], 'right' => []]) }})">
-        <div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
+        <div :class="isWide ? 'w-full px-2 sm:px-4' : 'max-w-full mx-auto px-4 sm:px-6 lg:px-8'" class="transition-all duration-200">
 
             @if(session('success'))
                 <div class="bg-green-50 text-green-800 p-4 rounded-xl mb-6 shadow-sm border border-green-200 flex items-center" role="alert">
@@ -110,6 +110,16 @@
             @endif
 
             @if($existingEntry)
+                @php
+                    $statusMap = [
+                        'draft' => 'TASLAK',
+                        'submitted' => 'ONAY BEKLİYOR',
+                        'approved' => 'ONAYLANDI',
+                        'rejected' => 'REDDEDİLDİ',
+                        'revised' => 'REVİZE EDİLDİ',
+                    ];
+                    $entryStatusLabel = $statusMap[strtolower($existingEntry->status)] ?? strtoupper($existingEntry->status);
+                @endphp
                 <div
                     class="bg-blue-50 text-blue-700 p-4 rounded-lg mb-6 shadow-sm border border-blue-200 flex items-center">
                     <svg class="w-6 h-6 mr-3 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -118,7 +128,7 @@
                     </svg>
                     <div>
                         <p class="font-semibold">Düzenleme Modu</p>
-                        <p class="text-sm">Şu anda sistemde <strong>{{ strtoupper($existingEntry->status) }}</strong>
+                        <p class="text-sm">Şu anda sistemde <strong class="bg-blue-100 text-blue-900 px-2 py-0.5 rounded font-bold">{{ $entryStatusLabel }}</strong>
                             durumundaki bir formu düzenliyorsunuz.</p>
                     </div>
                 </div>
@@ -139,7 +149,7 @@
                 <input type="hidden" name="action" id="form_action_input" value="draft">
                 <input type="hidden" name="rows_json" id="form_rows_json_input" value="">
 
-                <div :class="isFullscreen ? 'fixed inset-0 z-40 bg-white flex flex-col w-screen h-screen overflow-hidden' : 'bg-white shadow-xl sm:rounded-lg border border-gray-200 flex flex-col transition-all'">
+                <div :class="isFullscreen ? 'fixed inset-0 z-[99999] bg-white flex flex-col w-screen h-screen overflow-hidden m-0 p-0' : 'bg-white shadow-xl sm:rounded-lg border border-gray-200 flex flex-col transition-all'">
                     
                     <!-- Üst Eylem & Hızlı Satır Çubuğu (Top Action Bar - Konumu Asla Aşağı Kaymaz) -->
                     <div class="px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 flex-shrink-0 transition-colors"
@@ -159,40 +169,53 @@
 
                         <div class="flex items-center gap-2">
                             <!-- Seri Satır Ekle (Üst bar - mouse pozisyonu sabit kalır) -->
-                            <div class="inline-flex rounded-lg shadow-xs">
-                                <button type="button" @click="addRow(1)"
-                                    class="bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-bold py-1.5 px-3 rounded-l-lg text-xs shadow-xs transition flex items-center gap-1 active:scale-95 cursor-pointer"
+                            <div class="inline-flex rounded-lg shadow-xs select-none">
+                                <button type="button" @mousedown.prevent @click="addRow(1)"
+                                    class="bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-bold py-1.5 px-3 rounded-l-lg text-xs shadow-xs transition flex items-center gap-1 select-none !cursor-pointer"
                                     title="1 Satır Ekle">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
-                                    <span>+ Satır Ekle</span>
+                                    <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                                    <span class="pointer-events-none">+ Satır Ekle</span>
                                 </button>
-                                <button type="button" @click="addRow(5)"
-                                    class="bg-indigo-700 hover:bg-indigo-800 active:bg-indigo-900 text-indigo-100 font-bold py-1.5 px-2 border-l border-indigo-500 text-xs transition active:scale-95 cursor-pointer"
+                                <button type="button" @mousedown.prevent @click="addRow(5)"
+                                    class="bg-indigo-700 hover:bg-indigo-800 active:bg-indigo-900 text-indigo-100 font-bold py-1.5 px-2 border-l border-indigo-500 text-xs transition select-none !cursor-pointer"
                                     title="Hızlıca 5 Satır Ekle">
                                     +5
                                 </button>
-                                <button type="button" @click="addRow(10)"
-                                    class="bg-indigo-700 hover:bg-indigo-800 active:bg-indigo-900 text-indigo-100 font-bold py-1.5 px-2 rounded-r-lg border-l border-indigo-500 text-xs transition active:scale-95 cursor-pointer"
+                                <button type="button" @mousedown.prevent @click="addRow(10)"
+                                    class="bg-indigo-700 hover:bg-indigo-800 active:bg-indigo-900 text-indigo-100 font-bold py-1.5 px-2 rounded-r-lg border-l border-indigo-500 text-xs transition select-none !cursor-pointer"
                                     title="Hızlıca 10 Satır Ekle">
                                     +10
                                 </button>
                             </div>
 
-                            <button type="button" @click="undo()" x-show="history.length > 0"
-                                class="py-1.5 px-2.5 rounded-lg text-xs font-bold transition flex items-center gap-1 border cursor-pointer"
+                            <!-- Geri Al Butonu (Üst Bar) -->
+                            <button type="button" @mousedown.prevent @click="undo()" x-show="history.length > 0"
+                                class="py-1.5 px-2.5 rounded-lg text-xs font-bold transition flex items-center gap-1 border select-none !cursor-pointer"
                                 :class="isFullscreen ? 'bg-slate-800 hover:bg-slate-700 text-orange-400 border-slate-700' : 'bg-white hover:bg-orange-50 text-orange-600 border-orange-200'"
-                                style="display: none;" title="Geri Al (Son işlemi geri alır)">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg>
-                                <span class="hidden sm:inline">Geri Al</span>
+                                style="display: none;"
+                                :title="'Geri Al (Kayıtlı: ' + history.length + ' işlem, Maksimum 50 işlem saklanır)'">
+                                <svg class="w-3.5 h-3.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg>
+                                <span class="pointer-events-none" x-text="'Geri Al (' + history.length + ')'"></span>
                             </button>
 
                             <div class="h-5 border-l mx-1" :class="isFullscreen ? 'border-slate-700' : 'border-gray-300'"></div>
+
+                            <!-- Geniş Ekran Geçiş Butonu -->
+                            <button type="button" @click="toggleWide()"
+                                class="py-1.5 px-2.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-xs border cursor-pointer select-none"
+                                :class="isWide ? 'bg-indigo-100 text-indigo-800 border-indigo-300 ring-1 ring-indigo-400/40' : (isFullscreen ? 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700' : 'bg-white hover:bg-gray-100 text-gray-700 border-gray-300')"
+                                :title="isWide ? 'Standart Genişliğe Dön' : 'Geniş Ekran Modu (Tam Genişlik)'">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+                                </svg>
+                                <span class="hidden sm:inline" x-text="isWide ? 'Standart Ekran' : 'Geniş Ekran'"></span>
+                            </button>
 
                             <!-- Tam Ekran Geçiş Butonu -->
                             <button type="button" @click="toggleFullscreen()"
                                 class="py-1.5 px-3 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-xs border cursor-pointer select-none"
                                 :class="isFullscreen ? 'bg-rose-600 hover:bg-rose-700 text-white border-rose-500 ring-2 ring-rose-400/40' : 'bg-white hover:bg-gray-100 text-gray-700 border-gray-300'"
-                                :title="isFullscreen ? 'Tam Ekrandan Çık (ESC tuşuna da basabilirsiniz)' : 'Geniş / Tam Ekran Veri Giriş Modu'">
+                                :title="isFullscreen ? 'Tam Ekrandan Çık (ESC tuşuna da basabilirsiniz)' : 'Tam Ekran Veri Giriş Modu'">
                                 <template x-if="!isFullscreen">
                                     <span class="flex items-center gap-1.5">
                                         <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg>
@@ -206,12 +229,28 @@
                                     </span>
                                 </template>
                             </button>
+
+                            <!-- Tam Ekrandayken Hızlı Kaydet & Gönder Butonları (Üst Bar) -->
+                            <div x-show="isFullscreen" class="flex items-center gap-1.5 pl-1.5 border-l border-slate-700">
+                                <button type="button" @click="submitForm('draft')" :disabled="isSubmitting"
+                                    class="bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white font-bold py-1.5 px-2.5 rounded-lg text-xs shadow-xs transition flex items-center gap-1 cursor-pointer border border-slate-700"
+                                    title="Taslak Olarak Kaydet">
+                                    <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
+                                    <span class="hidden md:inline">Taslak Kaydet</span>
+                                </button>
+                                <button type="button" @click="submitForm('submit')" :disabled="isSubmitting"
+                                    class="bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold py-1.5 px-3 rounded-lg text-xs shadow-xs transition flex items-center gap-1 cursor-pointer"
+                                    title="Onaya Gönder">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                    <span>Onaya Gönder</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
 
                     <div x-ref="tableContainer"
-                        :class="isFullscreen ? 'flex-1 overflow-auto w-full' : 'overflow-auto w-full pb-2 min-h-[380px] h-[60vh] max-h-[72vh]'">
-                        <table class="min-w-full divide-y divide-gray-200">
+                        :class="isFullscreen ? 'flex-1 overflow-auto w-full bg-white relative' : 'overflow-auto w-full pb-2 min-h-[380px] h-[60vh] max-h-[72vh] bg-white relative'">
+                        <table class="min-w-full divide-y divide-gray-200 border-separate border-spacing-0">
                             <thead class="bg-gray-800 sticky top-0 z-20 shadow-md">
                                 <tr>
                                     <th
@@ -352,10 +391,10 @@
                                                                     </svg>
                                                                 </button>
 
-                                                                <!-- Bu Sütunu Temizle -->
-                                                                <button type="button" @click="clearColumn(field.id)"
-                                                                    class="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-400 hover:bg-gray-700/70 transition-all p-1 rounded"
-                                                                    title="Bu Sütunu Temizle">
+                                                                <!-- Bu Sütunu Temizle (Modal Onaylı) -->
+                                                                <button type="button" @click="promptClearColumn(field.id)"
+                                                                    class="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-400 hover:bg-gray-700/70 transition-all p-1 rounded cursor-pointer"
+                                                                    title="Bu Sütundaki Verileri Temizle">
                                                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor"
                                                                         viewBox="0 0 24 24">
                                                                         <path stroke-linecap="round" stroke-linejoin="round"
@@ -615,10 +654,10 @@
                                         @endforeach
 
                                         <td class="w-16 px-4 py-2 whitespace-nowrap text-center sticky right-0 z-10 bg-white group-hover:bg-indigo-50 border-l border-gray-200 shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.06)]">
-                                            <button type="button" @click="removeRow(row)"
+                                            <button type="button" @click="promptDeleteRow(row)"
                                                 class="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-2 rounded-full transition cursor-pointer"
-                                                title="Satırı Sil" x-show="rows.length > 1">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor"
+                                                title="Satırı Sil (Doluysa Onay İster)" x-show="rows.length > 1">
+                                                <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor"
                                                     viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round"
                                                         stroke-width="2"
@@ -677,43 +716,44 @@
                     <!-- Bottom Toolbar -->
                     <div
                         class="p-4 bg-gray-50 border-t border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4 flex-shrink-0"
-                        :class="isFullscreen ? 'shadow-lg' : 'sm:rounded-b-lg'">
+                        :class="isFullscreen ? 'shadow-lg bg-slate-100 border-slate-300' : 'sm:rounded-b-lg'">
                         <div class="flex flex-wrap items-center gap-2">
                             <!-- Seri Satır Ekle (Alt Bar) -->
-                            <div class="inline-flex rounded-lg shadow-xs">
-                                <button type="button" @click="addRow(1)"
-                                    class="bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-semibold py-2 px-4 rounded-l-lg shadow-sm transition flex items-center cursor-pointer">
-                                    <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div class="inline-flex rounded-lg shadow-xs select-none">
+                                <button type="button" @mousedown.prevent @click="addRow(1)"
+                                    class="bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-semibold py-2 px-4 rounded-l-lg shadow-sm transition flex items-center select-none !cursor-pointer">
+                                    <svg class="w-5 h-5 mr-1 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                                     </svg>
-                                    Satır Ekle
+                                    <span class="pointer-events-none">Satır Ekle</span>
                                 </button>
-                                <button type="button" @click="addRow(5)"
-                                    class="bg-indigo-700 hover:bg-indigo-800 active:bg-indigo-900 text-indigo-100 font-bold py-2 px-2.5 border-l border-indigo-500 text-xs transition cursor-pointer"
+                                <button type="button" @mousedown.prevent @click="addRow(5)"
+                                    class="bg-indigo-700 hover:bg-indigo-800 active:bg-indigo-900 text-indigo-100 font-bold py-2 px-2.5 border-l border-indigo-500 text-xs transition select-none !cursor-pointer"
                                     title="5 Satır Ekle">
                                     +5
                                 </button>
-                                <button type="button" @click="addRow(10)"
-                                    class="bg-indigo-700 hover:bg-indigo-800 active:bg-indigo-900 text-indigo-100 font-bold py-2 px-2.5 rounded-r-lg border-l border-indigo-500 text-xs transition cursor-pointer"
+                                <button type="button" @mousedown.prevent @click="addRow(10)"
+                                    class="bg-indigo-700 hover:bg-indigo-800 active:bg-indigo-900 text-indigo-100 font-bold py-2 px-2.5 rounded-r-lg border-l border-indigo-500 text-xs transition select-none !cursor-pointer"
                                     title="10 Satır Ekle">
                                     +10
                                 </button>
                             </div>
 
-                            <button type="button" @click="clearAll()"
-                                class="bg-white hover:bg-red-50 text-red-600 font-semibold py-2 px-4 border border-red-200 rounded-lg shadow-sm transition flex items-center cursor-pointer">
+                            <button type="button" @click="promptClearAll()"
+                                class="bg-white hover:bg-red-50 text-red-600 font-semibold py-2 px-4 border border-red-200 rounded-lg shadow-sm transition flex items-center cursor-pointer select-none">
                                 Tümünü Temizle
                             </button>
 
-                            <button type="button" @click="undo()" x-show="history.length > 0"
-                                class="bg-white hover:bg-orange-50 text-orange-600 font-semibold py-2 px-4 border border-orange-200 rounded-lg shadow-sm transition flex items-center cursor-pointer"
-                                style="display: none;">
-                                <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <button type="button" @mousedown.prevent @click="undo()" x-show="history.length > 0"
+                                class="bg-white hover:bg-orange-50 text-orange-600 font-semibold py-2 px-4 border border-orange-200 rounded-lg shadow-sm transition flex items-center select-none !cursor-pointer"
+                                style="display: none;"
+                                :title="'Geri Al (Kayıtlı: ' + history.length + ' işlem, Maksimum 50 işlem saklanır)'">
+                                <svg class="w-5 h-5 mr-1 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path>
                                 </svg>
-                                Geri Al
+                                <span class="pointer-events-none" x-text="'Geri Al (' + history.length + ')'"></span>
                             </button>
 
                             <div class="h-8 border-l border-gray-300 mx-1 hidden md:block"></div>
@@ -742,7 +782,7 @@
                             <!-- Tam Ekran Butonu (Alt Bar) -->
                             <button type="button" @click="toggleFullscreen()"
                                 class="bg-white hover:bg-gray-100 text-gray-700 font-semibold py-2 px-3.5 border border-gray-300 rounded-lg shadow-sm transition flex items-center gap-1.5 cursor-pointer"
-                                :title="isFullscreen ? 'Tam Ekrandan Çık (ESC)' : 'Geniş / Tam Ekran Modu (ESC)'">
+                                :title="isFullscreen ? 'Tam Ekrandan Çık (ESC)' : 'Tam Ekran Modu (ESC)'">
                                 <template x-if="!isFullscreen">
                                     <span class="flex items-center gap-1.5 text-xs font-bold">
                                         <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg>
@@ -1019,6 +1059,71 @@
                 </div>
             </div>
 
+            <!-- Evrensel Veri Temizleme & Silme Onay Modalı (Custom Confirmation Modal) -->
+            <div x-show="showConfirmModal"
+                 x-transition:enter="transition ease-out duration-200"
+                 x-transition:enter-start="opacity-0 scale-95"
+                 x-transition:enter-end="opacity-100 scale-100"
+                 x-transition:leave="transition ease-in duration-150"
+                 x-transition:leave-start="opacity-100 scale-100"
+                 x-transition:leave-end="opacity-0 scale-95"
+                 class="fixed inset-0 z-[100000] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs"
+                 style="display: none;"
+                 @click.away="showConfirmModal = false"
+                 @keydown.escape.window="showConfirmModal = false">
+                
+                <div class="bg-white rounded-2xl shadow-2xl border border-gray-100 p-6 max-w-md w-full">
+                    <div class="flex items-start gap-4">
+                        <div class="w-12 h-12 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center flex-shrink-0">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <h3 class="text-base font-bold text-gray-900" x-text="confirmModalData.title"></h3>
+                            <p class="text-xs text-gray-500 mt-0.5" x-text="confirmModalData.subtitle"></p>
+
+                            <div class="mt-4 p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-900 leading-relaxed"
+                                 x-html="confirmModalData.message">
+                            </div>
+
+                            <!-- Bilgi Rozetleri -->
+                            <div class="mt-3 flex flex-wrap items-center gap-2">
+                                <template x-if="confirmModalData.filledCount !== undefined && confirmModalData.filledCount !== null">
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                                        <svg class="w-3.5 h-3.5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                        <span x-text="'Dolu Hücre: ' + confirmModalData.filledCount + ' Adet'"></span>
+                                    </span>
+                                </template>
+                                <template x-if="confirmModalData.rowCount !== undefined && confirmModalData.rowCount !== null">
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-800 border border-blue-200">
+                                        <span x-text="'Satır Sayısı: ' + confirmModalData.rowCount"></span>
+                                    </span>
+                                </template>
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium text-gray-500 bg-gray-100">
+                                    ↩ Geri alınabilir (50 işlem)
+                                </span>
+                            </div>
+
+                            <div class="mt-6 flex justify-end gap-2.5">
+                                <button type="button" @click="showConfirmModal = false"
+                                    class="px-4 py-2 text-xs font-semibold text-gray-700 bg-white hover:bg-gray-100 border border-gray-300 rounded-lg transition cursor-pointer">
+                                    Vazgeç
+                                </button>
+                                <button type="button" @click="executeConfirm()"
+                                    class="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 active:bg-rose-800 rounded-lg shadow-sm transition flex items-center gap-1.5 cursor-pointer">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                    <span x-text="confirmModalData.confirmBtnText"></span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Excel Fill Toast Notification -->
             <div x-show="toastMessage"
                  x-transition:enter="transition ease-out duration-250"
@@ -1066,7 +1171,22 @@
                 totals: {},
                 filteredTotals: {},
                 history: [],
+                isWide: false,
                 isFullscreen: false,
+                showConfirmModal: false,
+                confirmModalData: {
+                    type: '',
+                    title: '',
+                    subtitle: '',
+                    message: '',
+                    confirmBtnText: 'Evet, Temizle',
+                    fieldId: null,
+                    fieldName: '',
+                    filledCount: 0,
+                    rowCount: 0,
+                    rowIndex: null,
+                    rowNumber: null
+                },
                 isUploading: false,
                 showUploadModal: false,
                 uploadModalTitle: 'Excel Dosyası İçe Aktarılıyor',
@@ -1706,13 +1826,48 @@
                 },
 
                 clearColumn(fieldId) {
-                    if (confirm('Bu sütundaki tüm verileri temizlemek istediğinize emin misiniz?')) {
-                        this.saveHistory();
-                        this.rows.forEach(r => {
-                            r.values[fieldId] = '';
-                        });
-                        this.calculateTotals();
+                    this.promptClearColumn(fieldId);
+                },
+
+                promptClearColumn(fieldId) {
+                    const field = this.fields.find(f => f.id == fieldId);
+                    const fieldName = field ? (field.label || field.name) : 'Sütun';
+
+                    // Bu sütundaki dolu hücre sayısını hesapla
+                    let filledCount = 0;
+                    for (let i = 0; i < this.rows.length; i++) {
+                        const val = this.rows[i].values ? this.rows[i].values[fieldId] : null;
+                        if (val !== undefined && val !== null && String(val).trim() !== '') {
+                            filledCount++;
+                        }
                     }
+
+                    this.confirmModalData = {
+                        type: 'column',
+                        title: 'Sütun Verilerini Temizle',
+                        subtitle: `"${fieldName}" sütunu için temizleme onayı`,
+                        fieldId: fieldId,
+                        fieldName: fieldName,
+                        filledCount: filledCount,
+                        rowCount: this.rows.length,
+                        message: filledCount > 0
+                            ? `Bu sütunda <strong>${filledCount} adet</strong> hücrede veri girişi bulunmaktadır. Sütundaki tüm veriler silinecektir. Devam etmek istiyor musunuz?`
+                            : `Bu sütunda henüz herhangi bir veri girişi bulunmamaktadır. Temizlemek istiyor musunuz?`,
+                        confirmBtnText: 'Evet, Sütunu Temizle',
+                        rowIndex: null,
+                        rowNumber: null
+                    };
+                    this.showConfirmModal = true;
+                },
+
+                executeClearColumn(fieldId) {
+                    this.saveHistory();
+                    this.rows.forEach(r => {
+                        if (r.values) r.values[fieldId] = '';
+                    });
+                    this.calculateTotals();
+                    this.showConfirmModal = false;
+                    this.showToast(`✓ "${this.confirmModalData.fieldName}" sütunu temizlendi.`);
                 },
 
                 init() {
@@ -1868,7 +2023,7 @@
                 },
 
                 saveHistory() {
-                    if (this.history.length > 20) this.history.shift();
+                    if (this.history.length >= 50) this.history.shift();
                     this.history.push(JSON.parse(JSON.stringify(this.rows)));
                 },
 
@@ -1877,6 +2032,7 @@
                         this.rows = this.history.pop();
                         this.updateRowMaps();
                         this.calculateTotals();
+                        this.showToast('İşlem geri alındı. (Hafızada kalan: ' + this.history.length + ' işlem)');
                     }
                 },
 
@@ -1898,15 +2054,27 @@
 
                 addRow(count = 1) {
                     const numToAdd = Math.max(1, parseInt(count) || 1);
+                    const newRows = [];
                     for (let i = 0; i < numToAdd; i++) {
-                        this.rows.push(this.createEmptyRowObject());
+                        newRows.push(this.createEmptyRowObject());
                     }
+                    this.rows.push(...newRows);
                     this.updateRowMaps();
-                    this.calculateTotals();
+
+                    // Boş satır eklendiğinde genel toplamlar değişmez (boş değer 0'dır), bu yüzden formül döngüsünü çalıştırmaya gerek yoktur
+                    if (this.$refs.tableContainer) {
+                        requestAnimationFrame(() => {
+                            if (this.$refs.tableContainer) {
+                                this.$refs.tableContainer.scrollTop = this.$refs.tableContainer.scrollHeight;
+                            }
+                        });
+                    }
+                },
+
+                toggleWide() {
+                    this.isWide = !this.isWide;
                     this.$nextTick(() => {
-                        if (this.$refs.tableContainer) {
-                            this.$refs.tableContainer.scrollTop = this.$refs.tableContainer.scrollHeight;
-                        }
+                        this.updatePinnedOffsets();
                     });
                 },
 
@@ -1914,12 +2082,29 @@
                     this.isFullscreen = !this.isFullscreen;
                     if (this.isFullscreen) {
                         document.body.classList.add('overflow-hidden');
+                        try {
+                            if (document.documentElement.requestFullscreen && !document.fullscreenElement) {
+                                document.documentElement.requestFullscreen().catch(() => {});
+                            }
+                        } catch(e) {}
                     } else {
                         document.body.classList.remove('overflow-hidden');
+                        try {
+                            if (document.exitFullscreen && document.fullscreenElement) {
+                                document.exitFullscreen().catch(() => {});
+                            }
+                        } catch(e) {}
                     }
+                    this.$nextTick(() => {
+                        this.updatePinnedOffsets();
+                    });
                 },
 
                 handleEscapeKey() {
+                    if (this.showConfirmModal) {
+                        this.showConfirmModal = false;
+                        return;
+                    }
                     if (this.showFillConfirmModal) {
                         if (!this.isFillingColumn) this.showFillConfirmModal = false;
                         return;
@@ -1934,20 +2119,108 @@
                 },
 
                 removeRow(rowOrIndex) {
+                    this.promptDeleteRow(rowOrIndex);
+                },
+
+                promptDeleteRow(rowOrIndex) {
                     let index = this.getRowIndex(rowOrIndex);
+                    if (index < 0 || index >= this.rows.length) return;
+                    const row = this.rows[index];
+
+                    // Satırdaki dolu alan sayısını hesapla
+                    let filledCount = 0;
+                    const rowValues = row.values || {};
+                    for (const fId in rowValues) {
+                        const val = rowValues[fId];
+                        if (val !== undefined && val !== null && String(val).trim() !== '') {
+                            filledCount++;
+                        }
+                    }
+
+                    if (filledCount === 0) {
+                        // Satır tamamen boşsa doğrudan sil
+                        this.executeDeleteRow(index);
+                        this.showToast('Boş satır silindi.');
+                        return;
+                    }
+
+                    this.confirmModalData = {
+                        type: 'row',
+                        title: 'Satırı Sil',
+                        subtitle: `Satır #${index + 1} için silme onayı`,
+                        rowIndex: index,
+                        rowNumber: index + 1,
+                        filledCount: filledCount,
+                        rowCount: this.rows.length,
+                        message: `Bu satırda <strong>${filledCount} adet</strong> alanda girilmiş veri bulunmaktadır. Satırı silmek istediğinize emin misiniz?`,
+                        confirmBtnText: 'Evet, Satırı Sil',
+                        fieldId: null,
+                        fieldName: ''
+                    };
+                    this.showConfirmModal = true;
+                },
+
+                executeDeleteRow(index) {
                     if (index >= 0 && index < this.rows.length) {
                         this.saveHistory();
                         this.rows.splice(index, 1);
+                        if (this.rows.length === 0) {
+                            this.addRow(1);
+                        }
                         this.updateRowMaps();
                         this.calculateTotals();
                     }
+                    this.showConfirmModal = false;
                 },
 
                 clearAll() {
-                    if (confirm('Tüm satırları silmek istediğinize emin misiniz?')) {
-                        this.saveHistory();
-                        this.rows = [];
-                        this.addRow();
+                    this.promptClearAll();
+                },
+
+                promptClearAll() {
+                    let totalFilled = 0;
+                    for (let i = 0; i < this.rows.length; i++) {
+                        const rowValues = this.rows[i].values || {};
+                        for (const fId in rowValues) {
+                            const val = rowValues[fId];
+                            if (val !== undefined && val !== null && String(val).trim() !== '') {
+                                totalFilled++;
+                            }
+                        }
+                    }
+
+                    this.confirmModalData = {
+                        type: 'all',
+                        title: 'Tüm Tabloyu Temizle',
+                        subtitle: 'Tüm satır ve verilerin temizlenmesi',
+                        fieldId: null,
+                        fieldName: '',
+                        filledCount: totalFilled,
+                        rowCount: this.rows.length,
+                        message: `Formdaki tüm satırlar silinecektir. Toplam <strong>${this.rows.length} satır</strong> ve <strong>${totalFilled} adet veri girişi</strong> temizlenecektir. Devam etmek istiyor musunuz?`,
+                        confirmBtnText: 'Evet, Tümünü Temizle',
+                        rowIndex: null,
+                        rowNumber: null
+                    };
+                    this.showConfirmModal = true;
+                },
+
+                executeClearAll() {
+                    this.saveHistory();
+                    this.rows = [];
+                    this.addRow(1);
+                    this.calculateTotals();
+                    this.showConfirmModal = false;
+                    this.showToast('✓ Tüm satırlar temizlendi ve yeni bir satır açıldı.');
+                },
+
+                executeConfirm() {
+                    if (this.confirmModalData.type === 'column') {
+                        this.executeClearColumn(this.confirmModalData.fieldId);
+                    } else if (this.confirmModalData.type === 'row') {
+                        this.executeDeleteRow(this.confirmModalData.rowIndex);
+                    } else if (this.confirmModalData.type === 'all') {
+                        this.executeClearAll();
                     }
                 },
 
