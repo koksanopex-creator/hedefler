@@ -928,24 +928,147 @@
 
             <!-- Form İşlem Geçmişi (Log Tablosu) -->
             @if(isset($canViewLogs) && $canViewLogs)
-                <div x-data="{ showAllLogs: false }"
+                @php
+                    $distinctUsers = $logs->map(function($l) {
+                        return [
+                            'id' => $l->user_id ? (string)$l->user_id : 'system',
+                            'name' => $l->user ? $l->user->name : 'Sistem'
+                        ];
+                    })->unique('id')->sortBy('name');
+
+                    $distinctActions = $logs->map(function($l) {
+                        return [
+                            'slug' => (string) $l->action,
+                            'label' => $l->action_label
+                        ];
+                    })->unique('slug')->sortBy('label');
+                @endphp
+                <div x-data="{ 
+                    searchQuery: '',
+                    selectedUser: '',
+                    selectedDate: '',
+                    selectedAction: '',
+                    showAllLogs: false, 
+                    showLogModal: false, 
+                    activeLogDetail: { date: '', user: '', action: '', badgeClass: '', description: '' },
+                    logsMeta: [
+                        @foreach($logs as $index => $log)
+                        {
+                            index: {{ $index }},
+                            userId: '{{ $log->user_id ?? 'system' }}',
+                            dateStr: '{{ $log->created_at->format('Y-m-d') }}',
+                            action: '{{ $log->action }}',
+                            searchable: @js(mb_strtolower($log->created_at->format('d.m.Y H:i:s') . ' ' . ($log->user->name ?? 'Sistem') . ' ' . $log->action_label . ' ' . $log->description))
+                        },
+                        @endforeach
+                    ],
+                    get filteredLogs() {
+                        return this.logsMeta.filter(item => {
+                            if (this.selectedUser && this.selectedUser !== item.userId) return false;
+                            if (this.selectedDate && this.selectedDate !== item.dateStr) return false;
+                            if (this.selectedAction && this.selectedAction !== item.action) return false;
+                            if (this.searchQuery) {
+                                const q = this.searchQuery.toLowerCase().trim();
+                                if (!item.searchable.includes(q)) return false;
+                            }
+                            return true;
+                        });
+                    },
+                    get isFiltering() {
+                        return Boolean(this.searchQuery || this.selectedUser || this.selectedDate || this.selectedAction);
+                    },
+                    isRowVisible(index) {
+                        const match = this.filteredLogs.some(item => item.index === index);
+                        if (!match) return false;
+                        if (!this.isFiltering && !this.showAllLogs && index >= 10) return false;
+                        return true;
+                    },
+                    resetFilters() {
+                        this.searchQuery = '';
+                        this.selectedUser = '';
+                        this.selectedDate = '';
+                        this.selectedAction = '';
+                    }
+                }"
                     class="bg-white overflow-hidden shadow-sm sm:rounded-lg border border-gray-200 mt-8">
-                    <div class="p-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
+                    <div class="p-4 border-b border-gray-100 bg-gray-50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                         <div class="flex items-center">
-                            <svg class="w-5 h-5 text-gray-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-5 h-5 text-gray-500 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             </svg>
                             <span class="text-gray-700 font-bold">Form İşlem Geçmişi</span>
                         </div>
                         @if($logs->count() > 0)
-                            <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
-                                Toplam {{ $logs->count() }} Kayıt
-                            </span>
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-600" x-show="!isFiltering">
+                                    Toplam {{ $logs->count() }} Kayıt
+                                </span>
+                                <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100" x-show="isFiltering" x-cloak>
+                                    Filtrelenen: <span x-text="filteredLogs.length"></span> / {{ $logs->count() }} Kayıt
+                                </span>
+                            </div>
                         @endif
                     </div>
 
                     @if($logs->count() > 0)
+                        <!-- Anlık Arama ve Filtreleme Çubuğu -->
+                        <div class="p-3 bg-slate-50/70 border-b border-gray-100 flex flex-wrap items-center gap-2.5">
+                            <!-- Anlık Arama Inputu -->
+                            <div class="relative flex-1 min-w-[200px]">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                                    </svg>
+                                </div>
+                                <input type="text"
+                                       x-model="searchQuery"
+                                       placeholder="İşlem, kullanıcı veya açıklamada anlık ara..."
+                                       class="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 bg-white shadow-2xs placeholder-gray-400">
+                            </div>
+
+                            <!-- Kullanıcı Filtresi -->
+                            @if($distinctUsers->count() > 1)
+                            <div class="min-w-[150px]">
+                                <select x-model="selectedUser" class="w-full text-xs py-1.5 px-3 rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 bg-white text-gray-700 shadow-2xs">
+                                    <option value="">Tüm Kullanıcılar ({{ $distinctUsers->count() }})</option>
+                                    @foreach($distinctUsers as $u)
+                                        <option value="{{ $u['id'] }}">{{ $u['name'] }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            @endif
+
+                            <!-- Tarih Filtresi -->
+                            <div class="min-w-[130px]">
+                                <input type="date"
+                                       x-model="selectedDate"
+                                       title="Tarihe Göre Filtrele"
+                                       class="w-full text-xs py-1.5 px-3 rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 bg-white text-gray-700 shadow-2xs">
+                            </div>
+
+                            <!-- İşlem Filtresi -->
+                            @if($distinctActions->count() > 1)
+                            <div class="min-w-[140px]">
+                                <select x-model="selectedAction" class="w-full text-xs py-1.5 px-3 rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 bg-white text-gray-700 shadow-2xs">
+                                    <option value="">Tüm İşlemler</option>
+                                    @foreach($distinctActions as $a)
+                                        <option value="{{ $a['slug'] }}">{{ $a['label'] }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            @endif
+
+                            <!-- Filtreleri Temizle Butonu -->
+                            <button type="button"
+                                    x-show="isFiltering"
+                                    @click="resetFilters()"
+                                    x-cloak
+                                    class="inline-flex items-center gap-1 text-xs text-rose-600 hover:text-rose-800 bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded-xl border border-rose-200 transition-colors font-bold shadow-2xs cursor-pointer">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                <span>Temizle</span>
+                            </button>
+                        </div>
                         <div class="overflow-x-auto">
                             <table class="min-w-full divide-y divide-gray-200">
                                 <thead class="bg-gray-50/50">
@@ -958,27 +1081,43 @@
                                             Kullanıcı</th>
                                         <th
                                             class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                            İşlem (Action)</th>
+                                            İşlem</th>
                                         <th
                                             class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
                                             Detay / Açıklama</th>
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-100">
+                                    <!-- Arama/Filtre Sonucu Bulunamadı Durumu -->
+                                    <tr x-show="isFiltering && filteredLogs.length === 0" x-cloak>
+                                        <td colspan="4" class="px-6 py-10 text-center text-gray-500">
+                                            <div class="flex flex-col items-center justify-center gap-2">
+                                                <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                                                </div>
+                                                <p class="text-xs font-bold text-slate-700">Arama kriterlerine uygun işlem kaydı bulunamadı.</p>
+                                                <p class="text-[11px] text-slate-400">Farklı bir arama terimi, kullanıcı veya tarih deneyebilir ya da filtreleri temizleyebilirsiniz.</p>
+                                                <button type="button" @click="resetFilters()" class="mt-1 inline-flex items-center gap-1 px-3 py-1 text-xs font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors cursor-pointer">
+                                                    Filtreleri Temizle
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+
                                     @foreach($logs as $index => $log)
-                                        <tr @if($index >= 10) x-show="showAllLogs" x-cloak @endif
+                                        <tr x-show="isRowVisible({{ $index }})" x-cloak
                                             class="hover:bg-gray-50 transition-colors">
-                                            <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-500">
+                                            <td class="px-6 py-3 whitespace-nowrap text-xs font-medium text-gray-500">
                                                 {{ $log->created_at->format('d.m.Y H:i:s') }}
                                             </td>
                                             <td class="px-6 py-3 whitespace-nowrap">
                                                 @if($log->user)
                                                     <div class="flex items-center">
                                                         <div
-                                                            class="flex-shrink-0 h-6 w-6 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center text-gray-700 font-bold text-xs border border-gray-300">
+                                                            class="flex-shrink-0 h-6 w-6 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-full flex items-center justify-center text-indigo-700 font-bold text-xs border border-indigo-200">
                                                             {{ mb_substr($log->user->name, 0, 1) }}
                                                         </div>
-                                                        <div class="ml-2 text-sm font-medium text-gray-900">
+                                                        <div class="ml-2 text-xs font-bold text-gray-900">
                                                             <a href="{{ route('users.profile', $log->user->id) }}"
                                                                 class="hover:text-indigo-600 hover:underline transition-colors">
                                                                 {{ $log->user->name }}
@@ -986,17 +1125,55 @@
                                                         </div>
                                                     </div>
                                                 @else
-                                                    <span class="text-sm text-gray-400 italic">Sistem</span>
+                                                    <span class="text-xs text-gray-400 italic">Sistem</span>
                                                 @endif
                                             </td>
                                             <td class="px-6 py-3 whitespace-nowrap">
                                                 <span
-                                                    class="px-2.5 py-1 inline-flex text-xs leading-5 font-bold rounded-full border {{ $log->action_badge_class }}">
+                                                    class="px-2.5 py-0.5 inline-flex text-xs leading-5 font-bold rounded-full border {{ $log->action_badge_class }}">
                                                     {{ $log->action_label }}
                                                 </span>
                                             </td>
-                                            <td class="px-6 py-3 text-sm text-gray-600 break-words">
-                                                {{ $log->description }}
+                                            <td class="px-6 py-3 text-xs text-gray-600">
+                                                @php
+                                                    $desc = (string) $log->description;
+                                                    $isLong = strlen($desc) > 120 || str_contains($desc, "\n") || str_contains($desc, '•');
+                                                    $summaryLine = $desc;
+                                                    if (str_contains($desc, "\n")) {
+                                                        $lines = explode("\n", $desc);
+                                                        $summaryLine = trim($lines[0]);
+                                                    }
+                                                    $diffCount = substr_count($desc, '•');
+                                                @endphp
+
+                                                @if(!$isLong)
+                                                    <span class="text-slate-700 font-medium">{{ $desc }}</span>
+                                                @else
+                                                    <div class="space-y-1">
+                                                        <p class="text-slate-800 font-medium line-clamp-1 leading-snug">
+                                                            {{ $summaryLine }}
+                                                        </p>
+                                                        <div class="flex items-center gap-2">
+                                                            @if($diffCount > 0)
+                                                                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100">
+                                                                    {{ $diffCount }} Alan Değişikliği
+                                                                </span>
+                                                            @endif
+                                                            <button type="button"
+                                                                @click="activeLogDetail = {
+                                                                    date: '{{ $log->created_at->format('d.m.Y H:i:s') }}',
+                                                                    user: '{{ $log->user->name ?? 'Sistem' }}',
+                                                                    action: '{{ $log->action_label }}',
+                                                                    badgeClass: '{{ $log->action_badge_class }}',
+                                                                    description: @js($log->description)
+                                                                }; showLogModal = true;"
+                                                                class="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-600 hover:text-indigo-800 hover:underline cursor-pointer">
+                                                                <svg class="w-3.5 h-3.5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                                                <span>Detayları İncele</span>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                @endif
                                             </td>
                                         </tr>
                                     @endforeach
@@ -1004,8 +1181,75 @@
                             </table>
                         </div>
 
+                        <!-- İŞLEM DETAY MODALI (UZUN LOGLAR İÇİN) -->
+                        <div x-show="showLogModal" x-cloak
+                            class="fixed inset-0 z-50 overflow-y-auto"
+                            aria-labelledby="log-detail-modal-title" role="dialog" aria-modal="true"
+                            style="display: none;">
+                            <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+                                <div x-show="showLogModal"
+                                    x-transition:enter="ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+                                    x-transition:leave="ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+                                    class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity"
+                                    @click="showLogModal = false"></div>
+
+                                <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+                                <div x-show="showLogModal"
+                                    x-transition:enter="ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                                    x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                                    x-transition:leave="ease-in duration-150" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                                    x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                                    class="inline-block align-bottom bg-white rounded-3xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full border border-slate-100">
+
+                                    <div class="bg-gradient-to-r from-slate-50 via-indigo-50/30 to-white px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center shadow-2xs">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <h3 class="text-base font-extrabold text-slate-800" id="log-detail-modal-title">İşlem & Değişiklik Detayı</h3>
+                                                <p class="text-xs text-slate-500 mt-0.5">
+                                                    <span x-text="activeLogDetail.user" class="font-bold text-slate-700"></span> &bull; 
+                                                    <span x-text="activeLogDetail.date"></span>
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <span :class="activeLogDetail.badgeClass" class="px-2.5 py-1 text-xs font-bold rounded-full border" x-text="activeLogDetail.action"></span>
+                                            <button type="button" @click="showLogModal = false" class="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-colors">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div class="p-6 max-h-[60vh] overflow-y-auto space-y-4 bg-slate-50/50">
+                                        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs">
+                                            <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Kayıtlı Değişiklik / Açıklama İçeriği</div>
+                                            <div class="text-xs sm:text-sm font-medium text-slate-800 whitespace-pre-wrap leading-relaxed font-mono bg-slate-50 p-3 rounded-xl border border-slate-100 overflow-x-auto select-text" x-text="activeLogDetail.description"></div>
+                                        </div>
+                                    </div>
+
+                                    <div class="bg-white px-6 py-4 border-t border-slate-100 flex justify-between items-center">
+                                        <button type="button"
+                                            @click="navigator.clipboard.writeText(activeLogDetail.description); alert('Log detayı panoya kopyalandı.');"
+                                            class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-slate-700 hover:text-indigo-600 hover:bg-indigo-50 border border-slate-200 transition-colors">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/></svg>
+                                            <span>Detayı Kopyala</span>
+                                        </button>
+                                        <button type="button" @click="showLogModal = false"
+                                            class="px-5 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold transition-all shadow-xs">
+                                            Kapat
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         @if($logs->count() > 10)
-                            <div class="p-3 bg-gray-50/80 border-t border-gray-100 text-center">
+                            <div x-show="!isFiltering" class="p-3 bg-gray-50/80 border-t border-gray-100 text-center">
                                 <button type="button" @click="showAllLogs = !showAllLogs"
                                     class="inline-flex items-center px-4 py-1.5 text-xs font-bold text-indigo-600 hover:text-indigo-800 bg-white hover:bg-indigo-50 border border-gray-200 hover:border-indigo-200 rounded-lg transition-all shadow-2xs">
                                     <span

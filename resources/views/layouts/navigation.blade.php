@@ -612,6 +612,25 @@
                                             </a>
                                         @endif
 
+                                        @if(Auth::user()->can('settings.manage') || Auth::user()->can('logs.view'))
+                                            <a href="{{ route('settings.activity_logs.index') }}"
+                                                class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs transition-colors group {{ request()->routeIs('settings.activity_logs.*') ? 'bg-indigo-50/80 text-indigo-900 font-bold' : 'text-slate-700 hover:bg-slate-50 hover:text-indigo-600 font-medium' }}">
+                                                <div
+                                                    class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 {{ request()->routeIs('settings.activity_logs.*') ? 'bg-indigo-600 text-white shadow-xs' : 'bg-indigo-50 text-indigo-600 group-hover:bg-indigo-100' }}">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01">
+                                                        </path>
+                                                    </svg>
+                                                </div>
+                                                <div class="flex-1 min-w-0">
+                                                    <div class="leading-tight">{{ __('Sistem Günlüğü') }}</div>
+                                                    <div class="text-[10px] text-slate-400 group-hover:text-slate-500 truncate">
+                                                        Audit logs ve denetim kayıtları</div>
+                                                </div>
+                                            </a>
+                                        @endif
+
                                         @if($canAccessSettings)
                                             <a href="{{ route('settings.index') }}"
                                                 class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs transition-colors group {{ request()->routeIs('settings.*') ? 'bg-indigo-50/80 text-indigo-900 font-bold' : 'text-slate-700 hover:bg-slate-50 hover:text-indigo-600 font-medium' }}">
@@ -812,6 +831,21 @@
                                     </svg>
                                 </span>
                                 <span>{{ __('Aktif Oturumlar') }}</span>
+                            </a>
+                        @endif
+
+                        @if(Auth::user()->can('settings.manage') || Auth::user()->can('logs.view'))
+                            <a href="{{ route('settings.activity_logs.index') }}"
+                                class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-colors {{ request()->routeIs('settings.activity_logs.*') ? 'bg-indigo-50 text-indigo-700 font-bold border-l-4 border-indigo-600' : 'text-slate-700 hover:bg-slate-50 hover:text-indigo-600' }}">
+                                <span
+                                    class="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 {{ request()->routeIs('settings.activity_logs.*') ? 'bg-indigo-600 text-white' : 'bg-indigo-50 text-indigo-600' }}">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01">
+                                        </path>
+                                    </svg>
+                                </span>
+                                <span>{{ __('Sistem Günlüğü (Audit Logs)') }}</span>
                             </a>
                         @endif
 

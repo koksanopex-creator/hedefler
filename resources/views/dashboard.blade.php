@@ -709,65 +709,192 @@
                 @endif
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {{-- Onay Bekleyen Formlar --}}
-                @if($permissions['pending_approvals'] && isset($pendingApprovals) && $pendingApprovals->count() > 0)
-                <div class="bg-white rounded-xl border border-amber-100 shadow-sm p-6">
-                    <h3 class="text-sm font-bold text-amber-700 uppercase tracking-wider mb-4 flex items-center">
-                        <span class="w-2 h-2 bg-amber-500 rounded-full mr-2 animate-pulse"></span>
-                        Onay Bekleyen Formlar
+            {{-- ─── 4. ALT BÖLÜM: Onay Bekleyenler (Varsa) ─── --}}
+            @if($permissions['pending_approvals'] && isset($pendingApprovals) && $pendingApprovals->count() > 0)
+            <div class="mb-6">
+                <div class="bg-white rounded-2xl border border-amber-200/80 shadow-xs p-6">
+                    <h3 class="text-sm font-extrabold text-amber-800 uppercase tracking-wider mb-4 flex items-center justify-between">
+                        <span class="flex items-center">
+                            <span class="w-2.5 h-2.5 bg-amber-500 rounded-full mr-2.5 animate-pulse"></span>
+                            Onay Bekleyen Formlar
+                        </span>
+                        <span class="text-xs bg-amber-100 text-amber-800 font-bold px-2.5 py-0.5 rounded-full">{{ $pendingApprovals->count() }} Form Bekliyor</span>
                     </h3>
-                    <div class="space-y-3">
+                    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
                         @foreach($pendingApprovals as $entry)
-                        <a href="{{ route('form-entries.show', $entry) }}" class="flex items-center justify-between py-2.5 px-3 rounded-lg hover:bg-amber-50 transition-colors border border-transparent hover:border-amber-200 group">
-                            <div class="flex items-center gap-3">
-                                <div class="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-full flex items-center justify-center text-indigo-700 font-bold text-xs border border-indigo-200">
+                        <a href="{{ route('form-entries.show', $entry) }}" class="flex items-center justify-between py-2.5 px-3.5 rounded-xl hover:bg-amber-50 transition-colors border border-amber-100/70 hover:border-amber-300 group bg-amber-50/30">
+                            <div class="flex items-center gap-3 min-w-0">
+                                <div class="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-amber-100 to-amber-200 rounded-full flex items-center justify-center text-amber-800 font-bold text-xs border border-amber-300">
                                     {{ mb_substr($entry->user->name, 0, 1) }}
                                 </div>
-                                <div>
-                                    <p class="text-sm font-bold text-gray-900 group-hover:text-indigo-600 transition-colors">{{ $entry->user->name }}</p>
-                                    <p class="text-xs text-gray-500">{{ $entry->template->name }}</p>
+                                <div class="min-w-0 flex-1">
+                                    <p class="text-sm font-bold text-gray-900 group-hover:text-amber-700 transition-colors truncate">{{ $entry->user->name }}</p>
+                                    <p class="text-xs text-gray-500 truncate">{{ $entry->template->name }}</p>
                                 </div>
                             </div>
-                            <div class="text-right">
-                                <p class="text-xs font-medium text-gray-500">{{ $entry->entry_date->format('d.m.Y') }}</p>
+                            <div class="text-right shrink-0 ml-2">
+                                <p class="text-xs font-semibold text-gray-700">{{ $entry->entry_date->format('d.m.Y') }}</p>
                                 <p class="text-[10px] text-gray-400">{{ $entry->created_at->diffForHumans() }}</p>
                             </div>
                         </a>
                         @endforeach
                     </div>
                 </div>
-                @endif
+            </div>
+            @endif
 
-                {{-- Son Aktiviteler --}}
-                @if($permissions['recent_activity'] && isset($recentActivity) && $recentActivity->count() > 0)
-                <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
-                    <h3 class="text-sm font-bold text-gray-700 uppercase tracking-wider mb-4 flex items-center">
-                        <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                        Son Aktiviteler
+            {{-- ─── 4.2 SON AKTİVİTELER (Yatayda Yayılmış Tam Genişlik) ─── --}}
+            @if($permissions['recent_activity'] && isset($recentActivity) && $recentActivity->count() > 0)
+            <div x-data="{ showDashLogModal: false, activeDashLog: { date: '', user: '', action: '', badgeClass: '', description: '' } }"
+                class="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-6 mb-6 w-full">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4 border-b border-slate-100 pb-3">
+                    <h3 class="text-sm font-extrabold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                        <span class="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                        </span>
+                        <span>Son Aktiviteler & Sistem Günlüğü</span>
                     </h3>
-                    <div class="space-y-2 max-h-[350px] overflow-y-auto pr-1">
-                        @foreach($recentActivity as $log)
-                        <div class="flex items-start gap-3 py-2 border-b border-gray-50 last:border-0">
-                            <div class="flex-shrink-0 w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center text-gray-600 font-bold text-[10px] mt-0.5">
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-bold text-slate-400 bg-slate-50 border border-slate-100 px-2.5 py-1 rounded-lg">
+                            Son {{ $recentActivity->count() }} İşlem
+                        </span>
+                        @if(auth()->user()->can('settings.manage') || auth()->user()->can('logs.view'))
+                        <a href="{{ route('settings.activity_logs.index') }}" 
+                           class="inline-flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 transition-colors shadow-2xs">
+                            <span>Tüm Geçmişi Gör (Sistem Günlüğü)</span>
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                        </a>
+                        @endif
+                    </div>
+                </div>
+                
+                <div class="space-y-2 max-h-[420px] overflow-y-auto divide-y divide-slate-100/70">
+                    @foreach($recentActivity as $log)
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 py-3 px-3 rounded-xl hover:bg-slate-50/80 transition-colors group">
+                        <div class="flex items-start sm:items-center gap-3 min-w-0 flex-1">
+                            <div class="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-indigo-50 to-purple-50 text-indigo-700 rounded-xl flex items-center justify-center font-black text-xs border border-indigo-100/80 shadow-2xs mt-0.5 sm:mt-0">
                                 {{ $log->user ? mb_substr($log->user->name, 0, 1) : 'S' }}
                             </div>
-                            <div class="flex-grow min-w-0">
-                                <p class="text-xs text-gray-900">
-                                    <span class="font-semibold">{{ $log->user->name ?? 'Sistem' }}</span>
-                                    <span class="text-gray-500"> &bull; {{ $log->description }}</span>
-                                </p>
-                                <div class="flex items-center gap-2 mt-0.5">
-                                    <span class="text-[10px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded font-medium">{{ $log->action }}</span>
-                                    <span class="text-[10px] text-gray-400">{{ $log->created_at->diffForHumans() }}</span>
+                            <div class="min-w-0 flex-1">
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <span class="text-xs font-bold text-slate-900">{{ $log->user->name ?? 'Sistem' }}</span>
+                                    <span class="text-[10px] px-2 py-0.5 rounded-full font-bold border {{ $log->action_badge_class }}">
+                                        {{ $log->action_label }}
+                                    </span>
+                                </div>
+                                <div class="text-xs text-slate-600 mt-1 flex items-center gap-2 flex-wrap">
+                                    @php
+                                        $dDesc = (string) $log->description;
+                                        $isLong = strlen($dDesc) > 140 || str_contains($dDesc, "\n");
+                                        $dSummary = $dDesc;
+                                        if (str_contains($dDesc, "\n")) {
+                                            $dSummary = trim(explode("\n", $dDesc)[0]);
+                                        }
+                                    @endphp
+                                    <span class="line-clamp-1 text-slate-700 leading-snug">{{ $dSummary }}</span>
+                                    @if($isLong)
+                                        <button type="button"
+                                            @click="activeDashLog = {
+                                                date: '{{ $log->created_at->format('d.m.Y H:i:s') }}',
+                                                user: '{{ $log->user->name ?? 'Sistem' }}',
+                                                action: '{{ $log->action_label }}',
+                                                badgeClass: '{{ $log->action_badge_class }}',
+                                                description: @js($log->description)
+                                            }; showDashLogModal = true;"
+                                            class="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 hover:underline inline-flex items-center gap-0.5 cursor-pointer shrink-0">
+                                            <span>Detay</span>
+                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                                        </button>
+                                    @endif
                                 </div>
                             </div>
                         </div>
-                        @endforeach
+                        <div class="flex items-center gap-2 shrink-0 pl-11 sm:pl-0 sm:self-center">
+                            <span class="text-[11px] font-medium text-slate-400 whitespace-nowrap" title="{{ $log->created_at->format('d.m.Y H:i:s') }}">
+                                {{ $log->created_at->diffForHumans() }}
+                            </span>
+                        </div>
                     </div>
+                    @endforeach
+                </div>
+
+                @if(auth()->user()->can('settings.manage') || auth()->user()->can('logs.view'))
+                <div class="pt-3 border-t border-slate-100 mt-2 text-center">
+                    <a href="{{ route('settings.activity_logs.index') }}" class="text-xs font-bold text-indigo-600 hover:text-indigo-800 hover:underline inline-flex items-center gap-1">
+                        <span>Tüm Sistem Günlüğü & Denetim İzi Kayıtlarını İncele (Sayfalama ve Filtreler ile)</span>
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                    </a>
                 </div>
                 @endif
+
+                <!-- Dashboard Log Detay Modalı -->
+                <div x-show="showDashLogModal" x-cloak
+                    class="fixed inset-0 z-50 overflow-y-auto"
+                    aria-labelledby="dash-log-modal-title" role="dialog" aria-modal="true"
+                    style="display: none;">
+                    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+                        <div x-show="showDashLogModal"
+                            x-transition:enter="ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+                            x-transition:leave="ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+                            class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity"
+                            @click="showDashLogModal = false"></div>
+
+                        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+                        <div x-show="showDashLogModal"
+                            x-transition:enter="ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                            x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                            x-transition:leave="ease-in duration-150" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                            x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                            class="inline-block align-bottom bg-white rounded-3xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full border border-slate-100">
+
+                            <div class="bg-gradient-to-r from-slate-50 via-indigo-50/30 to-white px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center shadow-2xs">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h3 class="text-base font-extrabold text-slate-800" id="dash-log-modal-title">Aktivite Detayı</h3>
+                                        <p class="text-xs text-slate-500 mt-0.5">
+                                            <span x-text="activeDashLog.user" class="font-bold text-slate-700"></span> &bull; 
+                                            <span x-text="activeDashLog.date"></span>
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span :class="activeDashLog.badgeClass" class="px-2.5 py-1 text-xs font-bold rounded-full border" x-text="activeDashLog.action"></span>
+                                    <button type="button" @click="showDashLogModal = false" class="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-colors">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="p-6 max-h-[60vh] overflow-y-auto space-y-4 bg-slate-50/50">
+                                <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs">
+                                    <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">İşlem Kayıt İçeriği</div>
+                                    <div class="text-xs sm:text-sm font-medium text-slate-800 whitespace-pre-wrap leading-relaxed font-mono bg-slate-50 p-3 rounded-xl border border-slate-100 overflow-x-auto select-text" x-text="activeDashLog.description"></div>
+                                </div>
+                            </div>
+
+                            <div class="bg-white px-6 py-4 border-t border-slate-100 flex justify-between items-center">
+                                <button type="button"
+                                    @click="navigator.clipboard.writeText(activeDashLog.description); alert('Aktivite detayı panoya kopyalandı.');"
+                                    class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-slate-700 hover:text-indigo-600 hover:bg-indigo-50 border border-slate-200 transition-colors">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/></svg>
+                                    <span>Detayı Kopyala</span>
+                                </button>
+                                <button type="button" @click="showDashLogModal = false"
+                                    class="px-5 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold transition-all shadow-xs">
+                                    Kapat
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
+            @endif
 
             {{-- ─── 5. GRUP BİLGİLERİ ─── --}}
             @if($permissions['view_group_users'] || $permissions['view_group_manager'])

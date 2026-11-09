@@ -449,9 +449,16 @@ class FormEntryC extends Controller
             }
         }
 
+        $totalDiffs = count($fieldDiffs);
         $logDesc = 'Form verisi düzenlendi ve güncellendi.';
-        if (!empty($fieldDiffs)) {
-            $logDesc .= "\nDeğiştirilen Alanlar:\n• " . implode("\n• ", $fieldDiffs);
+        if ($totalDiffs > 0) {
+            $logDesc .= " (Toplam {$totalDiffs} alan değiştirildi).";
+            if ($totalDiffs > 50) {
+                $sampleDiffs = array_slice($fieldDiffs, 0, 50);
+                $logDesc .= "\nDeğiştirilen Alanlar:\n• " . implode("\n• ", $sampleDiffs) . "\n• ...ve " . ($totalDiffs - 50) . " alan daha güncellendi.";
+            } else {
+                $logDesc .= "\nDeğiştirilen Alanlar:\n• " . implode("\n• ", $fieldDiffs);
+            }
         }
 
         $this->activityLogService->log('form_entry.update', $logDesc, $formEntry);

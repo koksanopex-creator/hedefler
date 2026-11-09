@@ -103,6 +103,9 @@ Route::middleware(['auth'])->group(function () {
         Route::post('settings/notification-logs/clear', [\App\Http\Controllers\NotificationLogC::class, 'clearLogs'])->name('settings.notification_logs.clear')->middleware('permission:settings.manage');
         Route::get('settings/email-logs', [\App\Http\Controllers\NotificationLogC::class, 'index'])->name('settings.email_logs.index')->middleware('permission:settings.manage');
 
+        // Sistem Günlüğü & Denetim İzi (Audit Logs)
+        Route::get('settings/activity-logs', [\App\Http\Controllers\ActivityLogC::class, 'index'])->name('settings.activity_logs.index')->middleware('permission:settings.manage,logs.view');
+
         // Aktif Oturumlar ve Giriş İzleme (Yetki Matrisi kontrollü: system.active_sessions)
         Route::get('system/active-sessions', [\App\Http\Controllers\SessionMonitorC::class, 'index'])->name('system.active_sessions')->middleware('permission:system.active_sessions');
         Route::delete('system/active-sessions/{session}', [\App\Http\Controllers\SessionMonitorC::class, 'destroy'])->name('system.active_sessions.destroy')->middleware('permission:system.active_sessions');

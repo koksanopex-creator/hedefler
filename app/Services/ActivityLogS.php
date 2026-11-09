@@ -37,6 +37,7 @@ class ActivityLogS
     public static function getActionMeta(string $action): array
     {
         $map = [
+            // Form Onay & Süreç İşlemleri
             'form_entry.create' => [
                 'label' => 'Form Oluşturuldu',
                 'badge' => 'bg-emerald-50 text-emerald-700 border-emerald-200',
@@ -52,6 +53,38 @@ class ActivityLogS
             'form_entry.update' => [
                 'label' => 'Form Güncellendi',
                 'badge' => 'bg-indigo-50 text-indigo-700 border-indigo-200',
+            ],
+            'form_entry.approved' => [
+                'label' => 'Form Onaylandı',
+                'badge' => 'bg-emerald-50 text-emerald-700 border-emerald-200',
+            ],
+            'form_entry.rejected' => [
+                'label' => 'Form Reddedildi',
+                'badge' => 'bg-rose-50 text-rose-700 border-rose-200',
+            ],
+            'form_entry.revert' => [
+                'label' => 'Karar Geri Alındı',
+                'badge' => 'bg-amber-50 text-amber-700 border-amber-200',
+            ],
+            'form_entry.withdrawn' => [
+                'label' => 'Onaydan Geri Çekildi',
+                'badge' => 'bg-amber-50 text-amber-700 border-amber-200',
+            ],
+            'form_entry.draft_deleted' => [
+                'label' => 'Taslak Form Silindi',
+                'badge' => 'bg-rose-50 text-rose-700 border-rose-200',
+            ],
+            'form_entry.revision_requested' => [
+                'label' => 'Revizyon Talep Edildi',
+                'badge' => 'bg-amber-50 text-amber-800 border-amber-200',
+            ],
+            'form_entry.revision_approved' => [
+                'label' => 'Revizyon Talebi Onaylandı',
+                'badge' => 'bg-teal-50 text-teal-700 border-teal-200',
+            ],
+            'form_entry.revision_rejected' => [
+                'label' => 'Revizyon Talebi Reddedildi',
+                'badge' => 'bg-rose-50 text-rose-700 border-rose-200',
             ],
             'form_entry.review' => [
                 'label' => 'Durum Değiştirildi',
@@ -85,16 +118,88 @@ class ActivityLogS
                 'label' => 'Onay Bekliyor',
                 'badge' => 'bg-blue-50 text-blue-700 border-blue-200',
             ],
+
+            // Kullanıcı & Başvuru İşlemleri
+            'user.create' => [
+                'label' => 'Kullanıcı Oluşturuldu',
+                'badge' => 'bg-emerald-50 text-emerald-700 border-emerald-200',
+            ],
+            'user.created' => [
+                'label' => 'Kullanıcı Oluşturuldu',
+                'badge' => 'bg-emerald-50 text-emerald-700 border-emerald-200',
+            ],
+            'user.update' => [
+                'label' => 'Kullanıcı Güncellendi',
+                'badge' => 'bg-indigo-50 text-indigo-700 border-indigo-200',
+            ],
+            'user.updated' => [
+                'label' => 'Kullanıcı Güncellendi',
+                'badge' => 'bg-indigo-50 text-indigo-700 border-indigo-200',
+            ],
+            'user.delete' => [
+                'label' => 'Kullanıcı Silindi',
+                'badge' => 'bg-rose-50 text-rose-700 border-rose-200',
+            ],
+            'user.deleted' => [
+                'label' => 'Kullanıcı Silindi',
+                'badge' => 'bg-rose-50 text-rose-700 border-rose-200',
+            ],
+            'user.sync' => [
+                'label' => 'Merkez Senkronizasyonu',
+                'badge' => 'bg-purple-50 text-purple-700 border-purple-200',
+            ],
+            'application.approved' => [
+                'label' => 'Başvuru Onaylandı',
+                'badge' => 'bg-emerald-50 text-emerald-700 border-emerald-200',
+            ],
+            'application.rejected' => [
+                'label' => 'Başvuru Reddedildi',
+                'badge' => 'bg-rose-50 text-rose-700 border-rose-200',
+            ],
+
+            // Grup İşlemleri
+            'group.create' => [
+                'label' => 'Grup Oluşturuldu',
+                'badge' => 'bg-indigo-50 text-indigo-700 border-indigo-200',
+            ],
+            'group.update' => [
+                'label' => 'Grup Güncellendi',
+                'badge' => 'bg-blue-50 text-blue-700 border-blue-200',
+            ],
+            'group.delete' => [
+                'label' => 'Grup Silindi',
+                'badge' => 'bg-rose-50 text-rose-700 border-rose-200',
+            ],
+
+            // Rol & Yetki Matrisi
+            'role.update' => [
+                'label' => 'Yetki Matrisi Güncellendi',
+                'badge' => 'bg-purple-50 text-purple-700 border-purple-200',
+            ],
+            'roles.matrix.update' => [
+                'label' => 'Yetki Matrisi Güncellendi',
+                'badge' => 'bg-purple-50 text-purple-700 border-purple-200',
+            ],
+
+            // Ayarlar & Sistem
+            'settings.general' => [
+                'label' => 'Sistem Ayarları Güncellendi',
+                'badge' => 'bg-indigo-50 text-indigo-700 border-indigo-200',
+            ],
             'settings.logo' => [
                 'label' => 'Sistem Logosu Güncellendi',
                 'badge' => 'bg-indigo-50 text-indigo-700 border-indigo-200',
             ],
             'notification_log.clear' => [
                 'label' => 'Bildirim Logları Temizlendi',
-                'badge' => 'bg-rose-50 text-rose-700 border-rose-200',
+                'badge' => 'bg-amber-50 text-amber-800 border-amber-200',
             ],
-            'user.delete' => [
-                'label' => 'Kullanıcı Silindi',
+            'notification.clear' => [
+                'label' => 'Bildirim Logları Temizlendi',
+                'badge' => 'bg-amber-50 text-amber-800 border-amber-200',
+            ],
+            'session.terminate' => [
+                'label' => 'Oturum Sonlandırıldı',
                 'badge' => 'bg-rose-50 text-rose-700 border-rose-200',
             ],
             'login' => [
@@ -102,7 +207,7 @@ class ActivityLogS
                 'badge' => 'bg-emerald-50 text-emerald-700 border-emerald-200',
             ],
             'auth.login' => [
-                'label' => 'Uygulamaya Giriş Yapıldı',
+                'label' => 'Giriş Yapıldı',
                 'badge' => 'bg-emerald-50 text-emerald-700 border-emerald-200',
             ],
             'logout' => [
@@ -113,12 +218,10 @@ class ActivityLogS
                 'label' => 'Çıkış Yapıldı',
                 'badge' => 'bg-slate-50 text-slate-600 border-slate-200',
             ],
-            'session.terminate' => [
-                'label' => 'Oturum Sonlandırıldı',
-                'badge' => 'bg-rose-50 text-rose-700 border-rose-200',
-            ],
+
+            // KPI Hedefleri
             'kpi.target.created' => [
-                'label' => 'Yeni KPI Hedefi Tanımlandı',
+                'label' => 'KPI Hedefi Tanımlandı',
                 'badge' => 'bg-indigo-50 text-indigo-700 border-indigo-200',
             ],
             'kpi.target.updated' => [
@@ -143,11 +246,16 @@ class ActivityLogS
             return $map[$action];
         }
 
-        // Bilinmeyen slug kodları için temiz formatlama
+        // Bilinmeyen slug kodları için akıllı Türkçe formatlama
         $clean = str_replace(['_', '.'], ' ', $action);
+        $clean = str_ireplace(
+            ['form entry', 'revision requested', 'revision approved', 'revision rejected', 'created', 'updated', 'deleted', 'approved', 'rejected'],
+            ['Form Girişi', 'Revizyon Talep Edildi', 'Revizyon Onaylandı', 'Revizyon Reddedildi', 'Oluşturuldu', 'Güncellendi', 'Silindi', 'Onaylandı', 'Reddedildi'],
+            $clean
+        );
         return [
             'label' => mb_convert_case($clean, MB_CASE_TITLE, 'UTF-8'),
-            'badge' => 'bg-slate-50 text-slate-600 border-slate-200',
+            'badge' => 'bg-slate-50 text-slate-700 border-slate-200',
         ];
     }
 }

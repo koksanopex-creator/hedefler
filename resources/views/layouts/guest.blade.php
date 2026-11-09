@@ -7,6 +7,11 @@
 
         <title>@hasSection('title') @yield('title') - @endif{{ config('app.name', 'Köksan Hedefler Portalı') }}</title>
 
+        <!-- Favicon -->
+        <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}?v=2">
+        <link rel="alternate icon" type="image/png" href="{{ asset('favicon.png') }}?v=2">
+        <link rel="shortcut icon" href="{{ asset('favicon.ico') }}?v=2">
+
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700,800,900&display=swap" rel="stylesheet" />

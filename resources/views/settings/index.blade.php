@@ -202,6 +202,40 @@
                     </div>
                 </div>
 
+                <div class="hidden sm:block" aria-hidden="true">
+                    <div class="py-5">
+                        <div class="border-t border-gray-200"></div>
+                    </div>
+                </div>
+
+                <!-- Sistem Günlüğü & Denetim İzi (Audit Logs) -->
+                <div class="md:grid md:grid-cols-3 md:gap-6">
+                    <div class="md:col-span-1">
+                        <div class="px-4 sm:px-0">
+                            <h3 class="text-lg font-medium leading-6 text-gray-900">Sistem Günlüğü & Denetim İzi</h3>
+                            <p class="mt-1 text-sm text-gray-600">
+                                Tüm kullanıcı işlemleri, veri girişleri, onay/red kararları, revizyonlar ve idari hareketlerin sayfalama ve filtrelemeli geçmiş kayıtları.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="mt-5 md:mt-0 md:col-span-2">
+                        <div class="shadow sm:rounded-md sm:overflow-hidden bg-white px-4 py-5 sm:p-6 flex flex-col sm:flex-row items-center justify-between border border-gray-100">
+                            <div class="flex items-center mb-4 sm:mb-0">
+                                <div class="w-12 h-12 bg-purple-50 text-purple-600 rounded-full flex items-center justify-center mr-4">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                                </div>
+                                <div>
+                                    <h4 class="text-base font-bold text-gray-900">Sistem Denetim İzi (Audit Logs)</h4>
+                                    <p class="text-sm text-gray-500">Tüm kullanıcı hareketlerini, silinen verileri ve onay geçmişini sayfa başına 20 kayıtla inceleyin.</p>
+                                </div>
+                            </div>
+                            <a href="{{ route('settings.activity_logs.index') }}" class="inline-flex justify-center py-2 px-6 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500">
+                                Günlüğü İncele &rarr;
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>

@@ -39,15 +39,15 @@
                 @csrf
 
                 {{-- Tablo: Doğrudan sayfa içinde, yapışkan başlık tam navbar altına oturacak şekilde ayarlandı --}}
-                <div class="overflow-x-auto shadow-lg rounded-2xl border border-gray-200 bg-white">
+                <div class="shadow-lg rounded-2xl border border-gray-200 bg-white overflow-visible">
                     <table class="w-full border-separate border-spacing-0 text-sm">
-                        <thead>
+                        <thead class="sticky top-0 lg:top-[56px] z-30">
                             <tr>
-                                <th class="sticky top-12 sm:top-14 z-30 bg-slate-900 text-white text-left px-4 py-3.5 sm:px-6 sm:py-4 text-xs sm:text-sm font-extrabold uppercase tracking-wider border-b-2 border-r border-slate-700 min-w-[220px] shadow-xs">
+                                <th class="sticky top-0 lg:top-[56px] z-30 bg-slate-900 text-white text-left px-4 py-3.5 sm:px-6 sm:py-4 text-xs sm:text-sm font-extrabold uppercase tracking-wider border-b-2 border-r border-slate-700 min-w-[220px] shadow-sm first:rounded-tl-2xl">
                                     Yetki / Rol
                                 </th>
                                 @foreach($roles as $role)
-                                    <th class="sticky top-12 sm:top-14 z-30 bg-slate-900 text-white text-center px-2 py-3.5 sm:px-4 sm:py-4 text-[10px] sm:text-xs font-extrabold uppercase tracking-wider border-b-2 border-r border-slate-700 relative group min-w-[120px] shadow-xs">
+                                    <th class="sticky top-0 lg:top-[56px] z-30 bg-slate-900 text-white text-center px-2 py-3.5 sm:px-4 sm:py-4 text-[10px] sm:text-xs font-extrabold uppercase tracking-wider border-b-2 border-r border-slate-700 relative group min-w-[120px] shadow-sm {{ $loop->last ? 'rounded-tr-2xl' : '' }}">
                                         <span class="block leading-tight">{{ $role->name }}</span>
                                         <span class="block text-slate-400 font-normal mt-0.5 text-[9px] sm:text-[10px]">{{ $role->slug }}</span>
 
