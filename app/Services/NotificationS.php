@@ -76,25 +76,36 @@ class NotificationS
                     'recipient_name' => $user->name,
                 ]);
 
-                $channels = [];
-                if ($item['send_email']) $channels[] = 'mail';
-                if ($item['send_in_app']) $channels[] = 'database';
-
-                if (empty($channels)) continue;
+                if (!$item['send_email'] && !$item['send_in_app']) continue;
 
                 $subject = self::replaceVariables($tpl['subject'], $userVars, false);
                 $body = self::replaceVariables($tpl['body'], $userVars, true);
                 $inAppSubject = self::replaceVariables($tpl['in_app_subject'] ?: $tpl['subject'], $userVars, false);
                 $inAppBody = self::replaceVariables($tpl['in_app_body'] ?: $tpl['body'], $userVars, true);
 
-                $user->notify(new DynamicNotification(
-                    $subject,
-                    $body,
-                    $channels,
-                    $actionUrl,
-                    $inAppSubject,
-                    $inAppBody
-                ));
+                // 1) Zil (In-App / Database) bildirimi doğrudan veritabanına anında yazılsın (kuyruğa takılmasın)
+                if ($item['send_in_app']) {
+                    $user->notifyNow(new DynamicNotification(
+                        $subject,
+                        $body,
+                        ['database'],
+                        $actionUrl,
+                        $inAppSubject,
+                        $inAppBody
+                    ));
+                }
+
+                // 2) E-posta gönderimi arka planda asenkron kuyruk üzerinden yürütülsün
+                if ($item['send_email']) {
+                    $user->notify(new DynamicNotification(
+                        $subject,
+                        $body,
+                        ['mail'],
+                        $actionUrl,
+                        $inAppSubject,
+                        $inAppBody
+                    ));
+                }
 
                 $userRoleName = $user->role?->name ?? (is_numeric($item['target_type']) ? (\App\Models\RoleM::find($item['target_type'])?->name ?? 'Kullanıcı') : ($item['target_type'] === 'manager' ? 'Grup Yöneticisi' : 'Kullanıcı'));
 
