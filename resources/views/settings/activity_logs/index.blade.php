@@ -23,7 +23,7 @@
                 </a>
 
                 <!-- Logları Temizle (Sadece Sistem Yöneticisi) -->
-                @if(!auth()->user()?->isYonetim() && (auth()->user()?->role?->slug === 'sistem_yoneticisi' || auth()->user()?->id === 1 || auth()->user()?->hasPermission('settings.manage')))
+                @if(auth()->user() && !auth()->user()->isYonetim() && (auth()->user()->isSuperAdmin() || auth()->user()->hasPermission('settings.manage')))
                     <button type="button" 
                             @click="showClearModal = true"
                             class="inline-flex items-center px-4 py-2 rounded-xl text-xs font-bold text-rose-700 bg-rose-50 border border-rose-200 hover:bg-rose-100 transition shadow-xs cursor-pointer">

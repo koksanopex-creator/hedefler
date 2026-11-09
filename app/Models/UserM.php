@@ -161,4 +161,9 @@ class UserM extends Authenticatable
     {
         return $this->role_id === 19 || $this->role?->slug === 'yonetim' || strcasecmp($this->role?->name ?? '', 'Yonetim') === 0;
     }
+
+    public function hasPermission(string $permissionKey): bool
+    {
+        return app(\App\Services\PermissionS::class)->hasPermission($this, $permissionKey);
+    }
 }
