@@ -21,6 +21,27 @@
             background-color: #312e81;
             transform: scale(1.35);
         }
+        /* Tablo Yatay ve Dikey Scrollbar - Her zaman belirgin ve kolay tutulabilir */
+        .table-scroll-container {
+            scrollbar-width: auto;
+            scrollbar-color: #6366f1 #f1f5f9;
+        }
+        .table-scroll-container::-webkit-scrollbar {
+            height: 14px;
+            width: 10px;
+        }
+        .table-scroll-container::-webkit-scrollbar-track {
+            background: #f8fafc;
+            border-top: 1px solid #e2e8f0;
+        }
+        .table-scroll-container::-webkit-scrollbar-thumb {
+            background: #818cf8;
+            border-radius: 6px;
+            border: 2px solid #f8fafc;
+        }
+        .table-scroll-container::-webkit-scrollbar-thumb:hover {
+            background: #4f46e5;
+        }
     </style>
     <x-slot name="header">
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
@@ -67,7 +88,7 @@
         }
     @endphp
 
-    <div class="py-6 sm:py-10"
+    <div class="py-2 sm:py-3"
         x-data="formEntryApp({{ json_encode($fieldsToRender) }}, {{ $formTemplate->show_row_totals ? 'true' : 'false' }}, {{ json_encode($masterDataTree ?? []) }}, {{ json_encode($currentUserScope ?? ['is_admin' => true, 'is_manager' => true, 'allowed_user_ids' => [], 'allowed_user_names' => []]) }}, {{ json_encode($usersList ?? []) }}, {{ $formTemplate->id }}, {{ json_encode($pinnedColumns ?? ['left' => [], 'right' => []]) }})">
         <div :class="isWide ? 'w-full px-2 sm:px-4' : 'max-w-full mx-auto px-4 sm:px-6 lg:px-8'" class="transition-all duration-200">
 
@@ -150,7 +171,7 @@
                 <input type="hidden" name="rows_json" id="form_rows_json_input" value="">
 
                 <div :class="isFullscreen ? 'fixed inset-0 z-[999999] bg-white flex flex-col w-screen h-screen overflow-hidden m-0 p-0' : 'bg-white shadow-xl sm:rounded-lg border border-gray-200 flex flex-col transition-all'"
-                     :style="isFullscreen ? 'position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; width: 100vw !important; height: 100vh !important; z-index: 9999999 !important; margin: 0 !important; padding: 0 !important;' : ''">
+                     :style="isFullscreen ? 'position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; width: 100vw !important; height: 100vh !important; z-index: 9999999 !important; margin: 0 !important; padding: 0 !important;' : 'height: calc(100vh - 250px); max-height: calc(100vh - 250px); min-height: 420px;'">
                     
                     <!-- Üst Eylem & Hızlı Satır Çubuğu (Top Action Bar - Konumu Asla Aşağı Kaymaz) -->
                     <div class="px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 flex-shrink-0 transition-colors"
@@ -250,7 +271,7 @@
                     </div>
 
                     <div x-ref="tableContainer"
-                        :class="isFullscreen ? 'flex-1 overflow-auto w-full bg-white relative' : 'overflow-auto w-full pb-2 min-h-[380px] h-[60vh] max-h-[72vh] bg-white relative'">
+                        :class="isFullscreen ? 'flex-1 overflow-auto w-full bg-white relative table-scroll-container' : 'flex-1 min-h-0 overflow-auto w-full bg-white relative table-scroll-container'">
                         <table class="min-w-full divide-y divide-gray-200 border-separate border-spacing-0">
                             <thead class="bg-gray-800 sticky top-0 z-20 shadow-md">
                                 <tr>
@@ -714,9 +735,9 @@
                         </table>
                     </div>
 
-                    <!-- Bottom Toolbar -->
+                    <!-- Bottom Toolbar (En altta her zaman sabit & hazır) -->
                     <div
-                        class="p-4 bg-gray-50 border-t border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4 flex-shrink-0"
+                        class="px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-50/95 backdrop-blur-xs border-t border-gray-200 flex flex-col md:flex-row justify-between items-center gap-2 sm:gap-4 flex-shrink-0 sticky bottom-0 z-30 shadow-[0_-4px_16px_rgba(0,0,0,0.06)]"
                         :class="isFullscreen ? 'shadow-lg bg-slate-100 border-slate-300' : 'sm:rounded-b-lg'">
                         <div class="flex flex-wrap items-center gap-2">
                             <!-- Seri Satır Ekle (Alt Bar) -->
