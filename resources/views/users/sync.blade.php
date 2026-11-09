@@ -78,15 +78,15 @@
                     </div>
                 </div>
 
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-100">
+                <div class="w-full overflow-hidden">
+                    <table class="w-full divide-y divide-gray-100 table-fixed">
                         <thead class="bg-slate-50/50 text-gray-500 text-[11px] font-bold uppercase tracking-wider">
                             <tr>
-                                <th class="px-6 py-3.5 text-left">Personel</th>
-                                <th class="px-6 py-3.5 text-left">Merkezi Departman</th>
-                                <th class="px-6 py-3.5 text-left">Tanımlanacak Rol *</th>
-                                <th class="px-6 py-3.5 text-left">Grup (Opsiyonel)</th>
-                                <th class="px-6 py-3.5 text-right">İşlem</th>
+                                <th class="w-[26%] px-3.5 py-3 sm:px-4 sm:py-3.5 text-left">Personel</th>
+                                <th class="w-[20%] px-3.5 py-3 sm:px-4 sm:py-3.5 text-left">Merkezi Departman</th>
+                                <th class="w-[20%] px-3.5 py-3 sm:px-4 sm:py-3.5 text-left">Tanımlanacak Rol *</th>
+                                <th class="w-[20%] px-3.5 py-3 sm:px-4 sm:py-3.5 text-left">Grup (Opsiyonel)</th>
+                                <th class="w-[14%] px-3.5 py-3 sm:px-4 sm:py-3.5 text-right">İşlem</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100/70 text-sm">
@@ -94,32 +94,32 @@
                                 <tr class="hover:bg-amber-50/30 transition-colors">
                                     <form action="{{ route('users.sync.assign_role', $pu->central_id) }}" method="POST">
                                         @csrf
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="font-bold text-gray-900">{{ $pu->name }}</div>
-                                            <div class="text-xs text-gray-500">{{ $pu->email }}</div>
+                                        <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 whitespace-nowrap">
+                                            <div class="font-bold text-gray-900 truncate" title="{{ $pu->name }}">{{ $pu->name }}</div>
+                                            <div class="text-xs text-gray-500 truncate" title="{{ $pu->email }}">{{ $pu->email }}</div>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-xs text-gray-600 font-medium">
+                                        <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 whitespace-nowrap text-xs text-gray-600 font-medium truncate" title="{{ $pu->department }}">
                                             {{ $pu->department }}
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <select name="role_id" required class="bg-white border border-gray-300 rounded-xl px-3 py-1.5 text-xs text-gray-800 focus:ring-2 focus:ring-indigo-500">
+                                        <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 whitespace-nowrap">
+                                            <select name="role_id" required class="w-full bg-white border border-gray-300 rounded-xl px-2.5 py-1.5 text-xs text-gray-800 focus:ring-2 focus:ring-indigo-500">
                                                 <option value="">Rol Seçiniz...</option>
                                                 @foreach($roles as $role)
                                                     <option value="{{ $role->id }}">{{ $role->name }}</option>
                                                 @endforeach
                                             </select>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <select name="group_id" class="bg-white border border-gray-300 rounded-xl px-3 py-1.5 text-xs text-gray-800 focus:ring-2 focus:ring-indigo-500">
+                                        <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 whitespace-nowrap">
+                                            <select name="group_id" class="w-full bg-white border border-gray-300 rounded-xl px-2.5 py-1.5 text-xs text-gray-800 focus:ring-2 focus:ring-indigo-500">
                                                 <option value="">Bağımsız (Grup Yok)</option>
                                                 @foreach($groups as $group)
                                                     <option value="{{ $group->id }}">{{ $group->name }}</option>
                                                 @endforeach
                                             </select>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-right">
-                                            <button type="submit" class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center gap-1.5 ml-auto">
-                                                <span>✓ Sisteme Dahil Et</span>
+                                        <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 whitespace-nowrap text-right">
+                                            <button type="submit" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center gap-1.5 ml-auto">
+                                                <span>✓ Ekle</span>
                                             </button>
                                         </td>
                                     </form>
@@ -153,36 +153,36 @@
                     </div>
                 </div>
 
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-100">
+                <div class="w-full overflow-hidden">
+                    <table class="w-full divide-y divide-gray-100 table-fixed">
                         <thead class="bg-slate-50/50 text-gray-500 text-[11px] font-bold uppercase tracking-wider">
                             <tr>
-                                <th class="px-6 py-3.5 text-left">Personel</th>
-                                <th class="px-6 py-3.5 text-left">Departman</th>
-                                <th class="px-6 py-3.5 text-left">Sistem Rolü</th>
-                                <th class="px-6 py-3.5 text-left">Grubu</th>
-                                <th class="px-6 py-3.5 text-right">İşlemler</th>
+                                <th class="w-[28%] px-3.5 py-3 sm:px-4 sm:py-3.5 text-left">Personel</th>
+                                <th class="w-[24%] px-3.5 py-3 sm:px-4 sm:py-3.5 text-left">Departman</th>
+                                <th class="w-[20%] px-3.5 py-3 sm:px-4 sm:py-3.5 text-left">Sistem Rolü</th>
+                                <th class="w-[18%] px-3.5 py-3 sm:px-4 sm:py-3.5 text-left">Grubu</th>
+                                <th class="w-[10%] px-3.5 py-3 sm:px-4 sm:py-3.5 text-right">İşlemler</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100/70 text-sm">
                             @forelse($syncedUsers as $su)
                                 <tr class="hover:bg-slate-50/50 transition-colors">
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="font-bold text-gray-900">{{ $su->name }}</div>
-                                        <div class="text-xs text-gray-500">{{ $su->email }}</div>
+                                    <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 whitespace-nowrap">
+                                        <div class="font-bold text-gray-900 truncate" title="{{ $su->name }}">{{ $su->name }}</div>
+                                        <div class="text-xs text-gray-500 truncate" title="{{ $su->email }}">{{ $su->email }}</div>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-xs text-gray-600">
+                                    <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 whitespace-nowrap text-xs text-gray-600 truncate" title="{{ $su->department }}">
                                         {{ $su->department }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
+                                    <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 whitespace-nowrap">
                                         <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-100">
                                             {{ $su->local_user?->role?->name ?? 'Tanımsız' }}
                                         </span>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-xs text-gray-600">
+                                    <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 whitespace-nowrap text-xs text-gray-600 truncate" title="{{ $su->local_user?->group?->name ?? 'Grup Yok' }}">
                                         {{ $su->local_user?->group?->name ?? 'Grup Yok' }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right">
+                                    <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 whitespace-nowrap text-right">
                                         @if($su->local_user)
                                             <a href="{{ route('users.edit', $su->local_user) }}" class="text-xs font-semibold text-indigo-600 hover:text-indigo-800">
                                                 Rolü Düzenle →

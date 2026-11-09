@@ -58,7 +58,7 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('users', [UserC::class, 'index'])->name('users.index')->middleware('permission:users.view_all,users.view_group,users.view,users.manage');
     Route::middleware('permission:users.manage')->group(function () {
-        Route::resource('users', UserC::class)->except(['index', 'show', 'destroy']);
+        Route::resource('users', UserC::class)->except(['index', 'show']);
     });
     
     Route::middleware('permission:groups.manage')->group(function () {
@@ -102,6 +102,10 @@ Route::middleware(['auth'])->group(function () {
         Route::get('settings/notification-logs', [\App\Http\Controllers\NotificationLogC::class, 'index'])->name('settings.notification_logs.index')->middleware('permission:settings.manage');
         Route::post('settings/notification-logs/clear', [\App\Http\Controllers\NotificationLogC::class, 'clearLogs'])->name('settings.notification_logs.clear')->middleware('permission:settings.manage');
         Route::get('settings/email-logs', [\App\Http\Controllers\NotificationLogC::class, 'index'])->name('settings.email_logs.index')->middleware('permission:settings.manage');
+
+        // Aktif Oturumlar ve Giriş İzleme (Yetki Matrisi kontrollü: system.active_sessions)
+        Route::get('system/active-sessions', [\App\Http\Controllers\SessionMonitorC::class, 'index'])->name('system.active_sessions')->middleware('permission:system.active_sessions');
+        Route::delete('system/active-sessions/{session}', [\App\Http\Controllers\SessionMonitorC::class, 'destroy'])->name('system.active_sessions.destroy')->middleware('permission:system.active_sessions');
     });
 });
 

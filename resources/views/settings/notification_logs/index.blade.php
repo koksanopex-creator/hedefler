@@ -11,7 +11,10 @@
             </div>
             <div class="flex items-center gap-3">
                 @if(!auth()->user()?->isYonetim())
-                <button type="button" @click="$dispatch('open-clear-modal')" class="inline-flex items-center px-4 py-2 rounded-xl text-xs font-bold text-rose-700 bg-rose-50 border border-rose-200 hover:bg-rose-100 hover:text-rose-800 transition shadow-xs cursor-pointer">
+                <button type="button" 
+                        x-data 
+                        @click="window.dispatchEvent(new CustomEvent('open-clear-modal'))" 
+                        class="inline-flex items-center px-4 py-2 rounded-xl text-xs font-bold text-rose-700 bg-rose-50 border border-rose-200 hover:bg-rose-100 hover:text-rose-800 transition shadow-xs cursor-pointer">
                     <svg class="w-4 h-4 mr-1.5 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                     Geçmiş Logları Temizle
                 </button>

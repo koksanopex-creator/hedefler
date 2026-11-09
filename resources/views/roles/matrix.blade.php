@@ -75,6 +75,7 @@
                                 'form_entries' => 'Form Veri Girişleri ve Onay Süreci',
                                 'exports' => 'Dışa Aktarma (Excel Export)',
                                 'logs' => 'Sistem ve İşlem Logları',
+                                'system' => 'Sistem ve Oturum Yönetimi (Login Takibi)',
                                 'dashboard' => 'Dashboard ve Performans Grafikleri',
                             ];
                         @endphp

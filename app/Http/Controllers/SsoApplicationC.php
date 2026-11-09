@@ -103,6 +103,19 @@ class SsoApplicationC extends Controller
         // Merkezi API'ye Onay Durumunu Gönder (Webhook)
         $this->notifyCentralApi($application->email, 'approved');
 
+        // Başvuru sahibine e-posta bildirimi gönder (Matriste aktifse)
+        \App\Services\NotificationS::dispatchApplicationResult(
+            'application.approved',
+            $application->email,
+            $application->name,
+            [
+                'rol_adi' => $user->role?->name ?? 'Tanımlanan Rol',
+                'grup_adi' => $user->group?->name ?? 'Bağımsız',
+            ],
+            url('/'),
+            $user
+        );
+
         return back()->with('success', "{$application->name} adlı kullanıcının başvurusu onaylandı ve rolü tanımlandı.");
     }
 
@@ -138,8 +151,23 @@ class SsoApplicationC extends Controller
         // Merkezi API'ye Red Durumunu Gönder (Webhook)
         $this->notifyCentralApi($application->email, 'rejected');
 
-        $typeLabel = $request->rejection_type === 'permanent' ? 'Kesin Olarak' : 'Gerekçeli Olarak';
-        return back()->with('success', "{$application->name} adlı kullanıcının başvurusu {$typeLabel} reddedildi.");
+        $typeLabel = $request->rejection_type === 'permanent' ? 'Kesin Red (Kalıcı)' : 'Düzeltilebilir Red';
+
+        // Başvuru sahibine e-posta bildirimi gönder (Matriste aktifse)
+        \App\Services\NotificationS::dispatchApplicationResult(
+            'application.rejected',
+            $application->email,
+            $application->name,
+            [
+                'red_turu' => $typeLabel,
+                'red_nedeni' => $request->rejection_reason,
+            ],
+            url('/'),
+            $user
+        );
+
+        $typeMsg = $request->rejection_type === 'permanent' ? 'Kesin Olarak' : 'Gerekçeli Olarak';
+        return back()->with('success', "{$application->name} adlı kullanıcının başvurusu {$typeMsg} reddedildi.");
     }
 
     /**

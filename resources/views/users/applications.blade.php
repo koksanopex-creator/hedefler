@@ -73,38 +73,38 @@
                     <p class="text-xs text-gray-500 mt-0.5">Merkezi Portaldan başvuru yapan kullanıcıları inceleyip rol tanımlayarak onaylayabilir veya reddedebilirsiniz.</p>
                 </div>
 
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-100">
+                <div class="w-full overflow-hidden">
+                    <table class="w-full divide-y divide-gray-100 table-fixed">
                         <thead class="bg-slate-50/50 text-gray-500 text-[11px] font-bold uppercase tracking-wider">
                             <tr>
-                                <th class="px-6 py-3.5 text-left">Başvuran</th>
-                                <th class="px-6 py-3.5 text-left">Merkezi Bölüm</th>
-                                <th class="px-6 py-3.5 text-left">Talep Notu</th>
-                                <th class="px-6 py-3.5 text-left">Tarih</th>
-                                <th class="px-6 py-3.5 text-right">İşlemler</th>
+                                <th class="w-[26%] px-3.5 py-3 sm:px-4 sm:py-3.5 text-left">Başvuran</th>
+                                <th class="w-[18%] px-3.5 py-3 sm:px-4 sm:py-3.5 text-left">Merkezi Bölüm</th>
+                                <th class="w-[26%] px-3.5 py-3 sm:px-4 sm:py-3.5 text-left">Talep Notu</th>
+                                <th class="w-[12%] px-3.5 py-3 sm:px-4 sm:py-3.5 text-left">Tarih</th>
+                                <th class="w-[18%] px-3.5 py-3 sm:px-4 sm:py-3.5 text-right">İşlemler</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100/70 text-sm">
                             @forelse($pendingApplications as $app)
                                 <tr class="hover:bg-amber-50/30 transition-colors">
-                                    <td class="px-6 py-4 whitespace-nowrap">
+                                    <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 whitespace-nowrap">
                                         <div class="font-bold text-gray-900">{{ $app->name }}</div>
-                                        <div class="text-xs text-gray-500">{{ $app->email }}</div>
+                                        <div class="text-xs text-gray-500 truncate max-w-[180px] lg:max-w-none">{{ $app->email }}</div>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
+                                    <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 whitespace-nowrap">
                                         <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-100 text-slate-700">
                                             {{ $app->department ?? 'Tanımsız' }}
                                         </span>
                                     </td>
-                                    <td class="px-6 py-4">
+                                    <td class="px-3.5 py-3 sm:px-4 sm:py-3.5">
                                         <div class="text-xs text-gray-600 max-w-xs truncate" title="{{ $app->application_note }}">
                                             {{ $app->application_note ?? '-' }}
                                         </div>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-xs text-gray-500">
+                                    <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 whitespace-nowrap text-xs text-gray-500">
                                         {{ $app->created_at->format('d.m.Y H:i') }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right space-x-2">
+                                    <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 whitespace-nowrap text-right space-x-2">
                                         <button type="button" @click="selectedApp = {{ json_encode($app) }}; approveModal = true" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold shadow-sm transition-all">
                                             ✓ Onayla & Rol Ver
                                         </button>
@@ -135,28 +135,28 @@
                     <p class="text-xs text-gray-500 mt-0.5">Kesin veya düzeltilebilir ret kararı verilen kullanıcılar. Kesin ret kararını buradan silerseniz kullanıcı tekrar başvurabilir.</p>
                 </div>
 
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-100">
+                <div class="w-full overflow-hidden">
+                    <table class="w-full divide-y divide-gray-100 table-fixed">
                         <thead class="bg-slate-50/50 text-gray-500 text-[11px] font-bold uppercase tracking-wider">
                             <tr>
-                                <th class="px-6 py-3.5 text-left">Kullanıcı</th>
-                                <th class="px-6 py-3.5 text-left">Red Türü</th>
-                                <th class="px-6 py-3.5 text-left">Gerekçeli Karar</th>
-                                <th class="px-6 py-3.5 text-left">Reddeden / Tarih</th>
-                                <th class="px-6 py-3.5 text-right">İşlemler</th>
+                                <th class="w-[26%] px-3.5 py-3 sm:px-4 sm:py-3.5 text-left">Kullanıcı</th>
+                                <th class="w-[16%] px-3.5 py-3 sm:px-4 sm:py-3.5 text-left">Red Türü</th>
+                                <th class="w-[30%] px-3.5 py-3 sm:px-4 sm:py-3.5 text-left">Gerekçeli Karar</th>
+                                <th class="w-[14%] px-3.5 py-3 sm:px-4 sm:py-3.5 text-left">Reddeden / Tarih</th>
+                                <th class="w-[14%] px-3.5 py-3 sm:px-4 sm:py-3.5 text-right">İşlemler</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100/70 text-sm">
                             @forelse($rejectedApplications as $app)
                                 <tr class="hover:bg-rose-50/20 transition-colors">
-                                    <td class="px-6 py-4 whitespace-nowrap">
+                                    <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 whitespace-nowrap">
                                         <div class="font-bold text-gray-900">{{ $app->name }}</div>
-                                        <div class="text-xs text-gray-500">{{ $app->email }}</div>
+                                        <div class="text-xs text-gray-500 truncate" title="{{ $app->email }}">{{ $app->email }}</div>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
+                                    <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 whitespace-nowrap">
                                         @if($app->rejection_type === 'permanent')
                                             <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-rose-100 text-rose-800 border border-rose-200">
-                                                🚫 Kesin Red (Kalıcı)
+                                                🚫 Kesin Red
                                             </span>
                                         @else
                                             <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
@@ -164,16 +164,16 @@
                                             </span>
                                         @endif
                                     </td>
-                                    <td class="px-6 py-4">
-                                        <div class="text-xs text-gray-700 max-w-md font-medium">
+                                    <td class="px-3.5 py-3 sm:px-4 sm:py-3.5">
+                                        <div class="text-xs text-gray-700 font-medium truncate" title="{{ $app->rejection_reason }}">
                                             {{ $app->rejection_reason ?? '-' }}
                                         </div>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-xs text-gray-500">
+                                    <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 whitespace-nowrap text-xs text-gray-500">
                                         <div>{{ $app->reviewer?->name ?? 'Yönetim' }}</div>
                                         <div class="text-[10px] text-gray-400">{{ $app->reviewed_at?->format('d.m.Y H:i') }}</div>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right">
+                                    <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 whitespace-nowrap text-right">
                                         <form action="{{ route('users.applications.destroy_rejection', $app) }}" method="POST" onsubmit="return confirm('Bu kullanıcının ret kararını silmek istediğinize emin misiniz? Kullanıcı tekrar başvuru yapabilecek.');">
                                             @csrf
                                             @method('DELETE')
@@ -204,32 +204,32 @@
                     </h3>
                 </div>
 
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-100">
+                <div class="w-full overflow-hidden">
+                    <table class="w-full divide-y divide-gray-100 table-fixed">
                         <thead class="bg-slate-50/50 text-gray-500 text-[11px] font-bold uppercase tracking-wider">
                             <tr>
-                                <th class="px-6 py-3.5 text-left">Kullanıcı</th>
-                                <th class="px-6 py-3.5 text-left">Bölüm</th>
-                                <th class="px-6 py-3.5 text-left">Tanımlanan Rol</th>
-                                <th class="px-6 py-3.5 text-left">Onaylayan / Tarih</th>
+                                <th class="w-[30%] px-3.5 py-3 sm:px-4 sm:py-3.5 text-left">Kullanıcı</th>
+                                <th class="w-[24%] px-3.5 py-3 sm:px-4 sm:py-3.5 text-left">Bölüm</th>
+                                <th class="w-[24%] px-3.5 py-3 sm:px-4 sm:py-3.5 text-left">Tanımlanan Rol</th>
+                                <th class="w-[22%] px-3.5 py-3 sm:px-4 sm:py-3.5 text-left">Onaylayan / Tarih</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100/70 text-sm">
                             @forelse($approvedApplications as $app)
                                 <tr class="hover:bg-emerald-50/20 transition-colors">
-                                    <td class="px-6 py-4 whitespace-nowrap">
+                                    <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 whitespace-nowrap">
                                         <div class="font-bold text-gray-900">{{ $app->name }}</div>
-                                        <div class="text-xs text-gray-500">{{ $app->email }}</div>
+                                        <div class="text-xs text-gray-500 truncate" title="{{ $app->email }}">{{ $app->email }}</div>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-xs text-gray-600">
+                                    <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 whitespace-nowrap text-xs text-gray-600 truncate" title="{{ $app->department }}">
                                         {{ $app->department ?? '-' }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
+                                    <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 whitespace-nowrap">
                                         <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
                                             {{ $app->user?->role?->name ?? 'Rol Atandı' }}
                                         </span>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-xs text-gray-500">
+                                    <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 whitespace-nowrap text-xs text-gray-500">
                                         <div>{{ $app->reviewer?->name ?? 'Yönetim' }}</div>
                                         <div class="text-[10px] text-gray-400">{{ $app->reviewed_at?->format('d.m.Y H:i') }}</div>
                                     </td>

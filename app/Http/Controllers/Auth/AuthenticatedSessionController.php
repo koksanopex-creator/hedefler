@@ -28,6 +28,16 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
+        if (Auth::check()) {
+            $user = Auth::user();
+            \App\Services\ActivityLogS::logAction(
+                'auth.login',
+                "{$user->name} ({$user->email}) Hedefler uygulamasına giriş yaptı.",
+                \App\Models\UserM::class,
+                $user->id
+            );
+        }
+
         return redirect()->intended(route('dashboard', absolute: false));
     }
 
@@ -36,6 +46,16 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
+        if (Auth::check()) {
+            $user = Auth::user();
+            \App\Services\ActivityLogS::logAction(
+                'auth.logout',
+                "{$user->name} ({$user->email}) oturumu kapattı.",
+                \App\Models\UserM::class,
+                $user->id
+            );
+        }
+
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();

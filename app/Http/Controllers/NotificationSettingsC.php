@@ -13,7 +13,9 @@ class NotificationSettingsC extends Controller
 {
     public function index()
     {
-        $events = NotificationEventM::with(['matrix', 'template'])->get();
+        $allEvents = NotificationEventM::with(['matrix', 'template'])->get();
+        $events = $allEvents->whereNotIn('slug', ['application.approved', 'application.rejected']);
+        $applicationEvents = $allEvents->whereIn('slug', ['application.approved', 'application.rejected']);
         $roles = RoleM::all();
         
         // Özel dinamik hedefler
@@ -23,7 +25,7 @@ class NotificationSettingsC extends Controller
             'special:creator' => 'İşlemi Yapan Kişi'
         ];
 
-        return view('settings.notifications.index', compact('events', 'roles', 'specialTargets'));
+        return view('settings.notifications.index', compact('events', 'applicationEvents', 'roles', 'specialTargets'));
     }
 
     public function updateMatrix(Request $request)

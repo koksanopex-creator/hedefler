@@ -498,6 +498,18 @@
                         </a>
                     @endcan
 
+                    @can('system.active_sessions')
+                        <a href="{{ route('system.active_sessions') }}"
+                            class="{{ $navClasses }} {{ request()->routeIs('system.active_sessions*') ? $activeClasses : $inactiveClasses }}">
+                            <svg class="w-3.5 h-3.5 mr-1.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z">
+                                </path>
+                            </svg>
+                            {{ __('Aktif Oturumlar') }}
+                        </a>
+                    @endcan
+
                     @can('settings.manage')
                         <a href="{{ route('settings.index') }}"
                             class="{{ $navClasses }} {{ request()->routeIs('settings.*') ? $activeClasses : $inactiveClasses }}">
@@ -576,6 +588,12 @@
             @can('roles.manage')
                 <x-responsive-nav-link :href="route('roles.matrix')" :active="request()->routeIs('roles.*')">
                     {{ __('Yetki Matrisi') }}
+                </x-responsive-nav-link>
+            @endcan
+
+            @can('system.active_sessions')
+                <x-responsive-nav-link :href="route('system.active_sessions')" :active="request()->routeIs('system.active_sessions*')">
+                    {{ __('Aktif Oturumlar') }}
                 </x-responsive-nav-link>
             @endcan
 

@@ -5,8 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\UserM;
 use App\Models\RoleM;
 use App\Models\GroupM;
+use App\Services\ActivityLogS;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 
 class UserC extends Controller
 {
@@ -204,5 +207,82 @@ class UserC extends Controller
         }
 
         return redirect()->route('users.index')->with('success', "'{$user->name}' kullanıcısının rol ve durum yetkileri başarıyla güncellendi.");
+    }
+
+    /**
+     * Kullanıcıyı siler (Grubu olmayan, pasif, veri girişi yapmamış veya test kullanıcıları)
+     */
+    public function destroy(UserM $user)
+    {
+        // 1. Süperadmin koruması
+        if ($user->id === 1 || $user->isSuperAdmin()) {
+            return back()->with('error', 'Sistem Yöneticisi (Superadmin) hesabı silinemez.');
+        }
+
+        // 2. Kendi kendini silme koruması
+        if ($user->id === auth()->id()) {
+            return back()->with('error', 'Kendi oturum açtığınız hesabı silemezsiniz.');
+        }
+
+        // 3. Veri girişi ve şablon kontrolü
+        $entryCount = $user->formEntries()->count();
+        $templateCount = \App\Models\FormTemplateM::where('created_by', $user->id)->count();
+
+        if ($entryCount > 0 || $templateCount > 0) {
+            return back()->with('error', "'{$user->name}' kullanıcısının sistemde kayıtlı {$entryCount} adet form verisi veya oluşturduğu form tasarımı bulunmaktadır. Veri bütünlüğünü korumak adına bu kullanıcı silinemez. Kullanıcıyı düzenleme ekranından 'Pasif' duruma getirebilirsiniz.");
+        }
+
+        $userName = $user->name;
+        $userEmail = $user->email;
+        $centralUserId = $user->central_user_id;
+
+        DB::transaction(function () use ($user) {
+            // İlişkili ara kayıtları temizle
+            $user->managedGroups()->detach();
+            $user->permissions()->detach();
+            
+            DB::table('sessions')->where('user_id', $user->id)->delete();
+            DB::table('notifications')->where('notifiable_id', $user->id)->delete();
+            DB::table('notification_logs')->where('user_id', $user->id)->update(['user_id' => null]);
+            DB::table('email_logs')->where('user_id', $user->id)->update(['user_id' => null]);
+            DB::table('activity_logs')->where('user_id', $user->id)->update(['user_id' => null]);
+            DB::table('sso_applications')->where('user_id', $user->id)->update(['user_id' => null]);
+            DB::table('kpi_targets')->where('assignee_id', $user->id)->where('assignee_type', 'user')->delete();
+
+            $user->delete();
+        });
+
+        // 4. Merkezi API app_users kaydı varsa pasife al
+        if (!empty($centralUserId)) {
+            try {
+                $centralDb = env('CENTRAL_DB_DATABASE', 'merkezi_auth_db');
+                $hedeflerAppId = DB::table("{$centralDb}.applications")
+                    ->where(function($q) {
+                        $q->whereIn('code', ['hedefler', 'hedefler-uygulamasi'])
+                          ->orWhere('code', 'like', '%hedef%');
+                    })
+                    ->value('id') ?? 14;
+
+                DB::table("{$centralDb}.app_users")
+                    ->where('user_id', $centralUserId)
+                    ->where('application_id', $hedeflerAppId)
+                    ->update([
+                        'is_active' => 0,
+                        'status' => 'rejected',
+                        'approval_notes' => 'Hedefler sistem yöneticisi tarafından kullanıcı yerel sistemden silindi.',
+                        'updated_at' => now(),
+                    ]);
+            } catch (\Exception $e) {
+                Log::warning('Merkezi API app_users silme/pasif güncelleme hatası: ' . $e->getMessage());
+            }
+        }
+
+        // 5. Denetim kaydı oluştur
+        ActivityLogS::logAction(
+            'user.delete',
+            "{$userName} ({$userEmail}) kullanıcısı sistem yöneticisi tarafından sistemden silindi."
+        );
+
+        return redirect()->route('users.index')->with('success', "'{$userName}' adlı kullanıcı sistemden başarıyla silindi.");
     }
 }

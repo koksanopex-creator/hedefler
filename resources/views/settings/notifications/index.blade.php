@@ -41,6 +41,94 @@
 
             <form action="{{ route('settings.notifications.matrix.update') }}" method="POST">
                 @csrf
+
+                <!-- UYGULAMA BAŞVURU BİLDİRİMLERİ (GENEL AÇ/KAPA KARTI) -->
+                @if(isset($applicationEvents) && $applicationEvents->isNotEmpty())
+                <div class="mb-8 bg-white/90 backdrop-blur-xl rounded-3xl border border-indigo-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden">
+                    <div class="px-6 py-5 bg-gradient-to-r from-indigo-50/80 via-purple-50/40 to-white border-b border-indigo-100/60 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <div class="flex items-center gap-3.5">
+                            <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center text-white shadow-md shadow-indigo-500/20">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                            </div>
+                            <div>
+                                <h3 class="text-base font-extrabold text-gray-900 tracking-tight flex items-center gap-2">
+                                    Uygulama Başvuru Bildirimleri
+                                    <span class="text-[11px] font-semibold text-indigo-700 bg-indigo-100/80 px-2.5 py-0.5 rounded-full">Kullanıcıya Özel</span>
+                                </h3>
+                                <p class="text-xs text-gray-500 mt-0.5">Merkezi Portaldan yapılan uygulama başvuruları onaylandığında veya reddedildiğinde başvuru sahibine giden bilgilendirme e-postalarını buradan açıp kapatabilir, e-posta şablonunu düzenleyebilirsiniz.</p>
+                            </div>
+                        </div>
+                        <span class="text-xs font-bold text-indigo-700 bg-white/90 border border-indigo-200/60 px-3.5 py-1.5 rounded-xl shadow-2xs shrink-0">
+                            Role / Gruba Bağlı Değildir (Genel Alıcı)
+                        </span>
+                    </div>
+
+                    <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-5">
+                        @foreach($applicationEvents as $appEvent)
+                            @php
+                                $isEmailActive = optional($appEvent->matrix->where('target_type', 'applicant')->first())->send_email;
+                            @endphp
+                            <div class="p-5 rounded-2xl border {{ $appEvent->slug === 'application.approved' ? 'bg-emerald-50/30 border-emerald-100' : 'bg-rose-50/30 border-rose-100' }} flex flex-col justify-between gap-4">
+                                <div class="flex items-start justify-between gap-3">
+                                    <div class="flex items-start gap-3">
+                                        <div class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 {{ $appEvent->slug === 'application.approved' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700' }}">
+                                            @if($appEvent->slug === 'application.approved')
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                            @else
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                            @endif
+                                        </div>
+                                        <div>
+                                            <h4 class="text-sm font-extrabold text-gray-900">{{ $appEvent->name }}</h4>
+                                            <p class="text-xs text-gray-500 mt-0.5">
+                                                @if($appEvent->slug === 'application.approved')
+                                                    Başvuru onaylandığında ve rol tanımlandığında kullanıcıya e-posta gider.
+                                                @else
+                                                    Başvuru gerekçeli veya kesin reddedildiğinde kullanıcıya e-posta gider.
+                                                @endif
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <!-- Şablon Düzenleme Butonu -->
+                                    <button type="button" 
+                                            x-data 
+                                            @click="$dispatch('open-template-modal', {{ json_encode([
+                                                'id' => $appEvent->id, 
+                                                'name' => $appEvent->name, 
+                                                'slug' => $appEvent->slug,
+                                                'subject' => $appEvent->template->subject ?? '', 
+                                                'body' => $appEvent->template->body ?? '', 
+                                                'in_app_subject' => $appEvent->template->in_app_subject ?? '',
+                                                'in_app_body' => $appEvent->template->in_app_body ?? '',
+                                                'additional_emails' => $appEvent->template->additional_emails ?? '',
+                                                'role_templates' => $appEvent->template->role_templates ?? (object)[]
+                                            ]) }})" 
+                                            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-slate-700 bg-white hover:bg-slate-50 rounded-xl border border-slate-200 transition shadow-2xs whitespace-nowrap shrink-0">
+                                        <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                                        <span>Şablonu Düzenle</span>
+                                    </button>
+                                </div>
+
+                                <!-- Aç/Kapa Anahtarı -->
+                                <div class="pt-3 border-t {{ $appEvent->slug === 'application.approved' ? 'border-emerald-100/70' : 'border-rose-100/70' }} flex items-center justify-between"
+                                     x-data="{ active: {{ $isEmailActive ? 'true' : 'false' }} }">
+                                    <span class="text-xs font-semibold text-gray-700 flex items-center gap-1.5">
+                                        <svg class="w-4 h-4 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                                        E-Posta Bildirimi Durumu:
+                                    </span>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" name="matrix[{{ $appEvent->id }}][applicant][email]" value="1" class="sr-only peer" x-model="active">
+                                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                                        <span class="ml-2.5 text-xs font-bold" :class="active ? 'text-emerald-700' : 'text-gray-400'" x-text="active ? 'Açık (Aktif)' : 'Kapalı (Pasif)'"></span>
+                                    </label>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+                @endif
+
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-2xl border border-gray-100">
                     <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200 table-fixed">
@@ -423,15 +511,17 @@
                 
                 // Dinamik Değişken Havuzu Listesi
                 variablePool: [
-                    { key: '{kullanici_adi}', label: 'Form Sahibi', desc: 'İşlemi yapan veya form sahibi personelin adı' },
+                    { key: '{kullanici_adi}', label: 'Kullanıcı / Personel', desc: 'İşlemi yapan veya başvuru yapan personelin adı' },
                     { key: '{alici_adi}', label: 'Alıcı Adı', desc: 'Bildirimi alan kullanıcının adı' },
+                    { key: '{rol_adi}', label: 'Tanımlanan Rol', desc: 'Kullanıcıya tanımlanan sistem rolü' },
+                    { key: '{red_turu}', label: 'Red Türü', desc: 'Kesin Red veya Düzeltilebilir Red' },
+                    { key: '{red_nedeni}', label: 'Red Sebebi', desc: 'Reddedilme veya ret gerekçesi' },
                     { key: '{form_adi}', label: 'Şablon Adı', desc: 'İlgili form şablonunun başlığı' },
-                    { key: '{onaylayan_kullanici}', label: 'Yetkili', desc: 'Formu onaylayan veya reddeden yetkili' },
-                    { key: '{red_nedeni}', label: 'Red Sebebi', desc: 'Reddedilme gerekçesi' },
+                    { key: '{onaylayan_kullanici}', label: 'Yetkili', desc: 'İşlemi onaylayan veya inceleyen yetkili' },
                     { key: '{tarih_saat}', label: 'Tarih Saat', desc: 'İşlem tarihi ve saati (örn: 02.11.2026 17:30)' },
                     { key: '{tarih}', label: 'Tarih', desc: 'İşlem tarihi' },
-                    { key: '{islem_linki}', label: 'Kayıt Linki', desc: 'Form kaydına doğrudan gitme bağlantısı' },
-                    { key: '{kayit_id}', label: 'Kayıt No', desc: 'Formun ID numarası' },
+                    { key: '{islem_linki}', label: 'Giriş / İşlem Linki', desc: 'Doğrudan sisteme veya kayda gitme bağlantısı' },
+                    { key: '{email}', label: 'E-Posta', desc: 'Kullanıcının e-posta adresi' },
                     { key: '{grup_adi}', label: 'Bölüm / Grup', desc: 'Kullanıcının departman/grup adı' },
                     { key: '{sirket_adi}', label: 'Firma', desc: 'Kurum adı (KÖKSAN)' }
                 ],

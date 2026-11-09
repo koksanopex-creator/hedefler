@@ -48,7 +48,9 @@ class SsoC extends Controller
             return redirect($centralUrl)->with('error', 'Kullanıcı bilgisi alınamadı.');
         }
 
-        $centralDb = env('CENTRAL_DB_DATABASE', 'merkezi_auth_db');
+        $centralDb = env('CENTRAL_DB_DATABASE') ?: (
+            \Illuminate\Support\Facades\DB::select("SHOW DATABASES LIKE 'merkezi_app'") ? 'merkezi_app' : 'merkezi_auth_db'
+        );
         $deptName = $centralUser['department']['name'] ?? null;
         if (!$deptName && !empty($centralUser['department_id'])) {
             try {
@@ -73,7 +75,9 @@ class SsoC extends Controller
         $localUser = UserM::where('email', $centralUser['email'])->first();
 
         // MERKEZİ APİ YETKİ KONTROLÜ: Kullanıcı Merkezi API'de Hedefler uygulamasına atanmış ve onaylı mı?
-        $centralDb = env('CENTRAL_DB_DATABASE', 'merkezi_auth_db');
+        $centralDb = env('CENTRAL_DB_DATABASE') ?: (
+            \Illuminate\Support\Facades\DB::select("SHOW DATABASES LIKE 'merkezi_app'") ? 'merkezi_app' : 'merkezi_auth_db'
+        );
         $hedeflerAppId = null;
         try {
             $hedeflerAppId = \Illuminate\Support\Facades\DB::table("{$centralDb}.applications")
@@ -98,7 +102,10 @@ class SsoC extends Controller
 
         $isCentralApproved = $centralAppUser && $centralAppUser->status === 'approved' && $centralAppUser->is_active;
 
-        if (!$isCentralApproved) {
+        // Süperadminler asla merkezi portal yetkisizliği nedeniyle kilitlenemez
+        $isSuperAdminUser = $localUser && ($localUser->id === 1 || $localUser->isSuperAdmin() || $localUser->role_id === 1 || in_array($localUser->email, ['ahmet.gulluce@koksan.com', 'celal.karaman@koksan.com']));
+
+        if (!$isCentralApproved && !$isSuperAdminUser) {
             // Merkezi API'de bu uygulama atanmamış veya yetkisi kaldırılmış
             if ($localUser) {
                 $localUser->update([
@@ -179,6 +186,14 @@ class SsoC extends Controller
             // D) Rolü atanmış ve aktif -> GİRİŞ YAP
             $localUser->update(['approval_status' => 'approved']);
             Auth::login($localUser);
+
+            \App\Services\ActivityLogS::logAction(
+                'auth.login',
+                "{$localUser->name} ({$localUser->email}) Merkezi SSO ile Hedefler uygulamasına giriş yaptı.",
+                UserM::class,
+                $localUser->id
+            );
+
             $targetUrl = session()->pull('url.intended', route('dashboard'));
             return redirect()->to($targetUrl);
         }

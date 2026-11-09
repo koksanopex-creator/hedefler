@@ -200,6 +200,86 @@ class NotificationS
     }
 
     /**
+     * Uygulama başvuru onay ve ret bildirimlerini gönderir.
+     * Alıcı doğrudan başvuran kullanıcıdır (role veya gruba bağlı değildir).
+     */
+    public static function dispatchApplicationResult(string $eventSlug, string $recipientEmail, string $recipientName, array $variables = [], ?string $actionUrl = null, ?UserM $localUser = null)
+    {
+        try {
+            $event = NotificationEventM::with(['matrix', 'template'])->where('slug', $eventSlug)->first();
+            if (!$event || !$event->template) {
+                return;
+            }
+
+            // Matriste 'applicant' hedefinin mail gönderimi açık mı?
+            $rule = $event->matrix->firstWhere('target_type', 'applicant');
+            if (!$rule || !$rule->send_email) {
+                return;
+            }
+
+            $now = now();
+            $baseVars = [
+                'alici_adi' => $recipientName,
+                'kullanici_adi' => $recipientName,
+                'email' => $recipientEmail,
+                'tarih_saat' => $now->format('d.m.Y H:i'),
+                'tarih' => $now->format('d.m.Y'),
+                'saat' => $now->format('H:i'),
+                'sirket_adi' => 'KÖKSAN',
+                'action_url' => $actionUrl ?: url('/'),
+                'islem_linki' => '<a href="' . e($actionUrl ?: url('/')) . '" style="display:inline-block; padding:10px 20px; background-color:#4f46e5; color:#ffffff; font-weight:bold; border-radius:8px; text-decoration:none;">Hedefler Uygulamasına Giriş Yap</a>',
+            ];
+            $allVars = array_merge($baseVars, $variables);
+
+            $template = $event->template;
+            $subject = self::replaceVariables($template->subject, $allVars, false);
+            $body = self::replaceVariables($template->body, $allVars, true);
+
+            // Bildirimi e-posta olarak gönder (Microsoft Graph kys@koksan.com)
+            if ($localUser) {
+                $localUser->notify(new DynamicNotification($subject, $body, ['mail'], $actionUrl ?: url('/')));
+            } else {
+                \Illuminate\Support\Facades\Notification::route('mail', $recipientEmail)
+                    ->notify(new DynamicNotification($subject, $body, ['mail'], $actionUrl ?: url('/')));
+            }
+
+            // 1) Bildirim Logu (notification_logs)
+            \App\Models\NotificationLogM::create([
+                'channel' => 'mail',
+                'event_slug' => $eventSlug,
+                'event_name' => $event->name,
+                'user_id' => $localUser?->id,
+                'recipient_name' => $recipientName,
+                'recipient_email' => $recipientEmail,
+                'recipient_role' => $localUser?->role?->name ?? 'Başvuru Sahibi',
+                'subject' => $subject,
+                'body' => $body,
+                'action_url' => $actionUrl ?: url('/'),
+                'status' => 'sent',
+                'sent_at' => now(),
+                'metadata' => [
+                    'target_type' => 'applicant',
+                    'variables' => $allVars,
+                ],
+            ]);
+
+            // 2) E-Posta Logu (email_logs)
+            \App\Models\EmailLogM::create([
+                'user_id' => $localUser?->id,
+                'to_email' => $recipientEmail,
+                'subject' => $subject,
+                'body' => $body,
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error("Application Notification Dispatch Error ({$eventSlug}): " . $e->getMessage(), [
+                'email' => $recipientEmail,
+                'trace' => $e->getTraceAsString(),
+            ]);
+        }
+    }
+
+    /**
      * Standart ve dinamik değişkenleri hazırlar ve eşler.
      */
     public static function prepareVariables(array $variables, ?UserM $contextUser = null, ?string $actionUrl = null): array

@@ -93,13 +93,29 @@ class ActivityLogS
                 'label' => 'Bildirim Logları Temizlendi',
                 'badge' => 'bg-rose-50 text-rose-700 border-rose-200',
             ],
+            'user.delete' => [
+                'label' => 'Kullanıcı Silindi',
+                'badge' => 'bg-rose-50 text-rose-700 border-rose-200',
+            ],
             'login' => [
                 'label' => 'Giriş Yapıldı',
+                'badge' => 'bg-emerald-50 text-emerald-700 border-emerald-200',
+            ],
+            'auth.login' => [
+                'label' => 'Uygulamaya Giriş Yapıldı',
                 'badge' => 'bg-emerald-50 text-emerald-700 border-emerald-200',
             ],
             'logout' => [
                 'label' => 'Çıkış Yapıldı',
                 'badge' => 'bg-slate-50 text-slate-600 border-slate-200',
+            ],
+            'auth.logout' => [
+                'label' => 'Çıkış Yapıldı',
+                'badge' => 'bg-slate-50 text-slate-600 border-slate-200',
+            ],
+            'session.terminate' => [
+                'label' => 'Oturum Sonlandırıldı',
+                'badge' => 'bg-rose-50 text-rose-700 border-rose-200',
             ],
             'kpi.target.created' => [
                 'label' => 'Yeni KPI Hedefi Tanımlandı',
