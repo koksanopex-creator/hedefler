@@ -105,6 +105,8 @@ Route::middleware(['auth'])->group(function () {
 
         // Sistem Günlüğü & Denetim İzi (Audit Logs)
         Route::get('settings/activity-logs', [\App\Http\Controllers\ActivityLogC::class, 'index'])->name('settings.activity_logs.index')->middleware('permission:settings.manage,logs.view');
+        Route::post('settings/activity-logs/clear', [\App\Http\Controllers\ActivityLogC::class, 'clearLogs'])->name('settings.activity_logs.clear')->middleware('permission:settings.manage');
+        Route::get('settings/activity-logs/archive', [\App\Http\Controllers\ActivityLogC::class, 'archiveLogs'])->name('settings.activity_logs.archive')->middleware('permission:settings.manage,logs.view');
 
         // Aktif Oturumlar ve Giriş İzleme (Yetki Matrisi kontrollü: system.active_sessions)
         Route::get('system/active-sessions', [\App\Http\Controllers\SessionMonitorC::class, 'index'])->name('system.active_sessions')->middleware('permission:system.active_sessions');

@@ -129,7 +129,8 @@
                 action="{{ $existingEntry ? route('form-entries.update', $existingEntry) : route('form-entries.store', $formTemplate) }}"
                 method="POST"
                 novalidate
-                @submit.prevent>
+                @submit.prevent
+                @keydown.window.escape="handleEscapeKey()">
                 @csrf
                 @if($existingEntry)
                     @method('PUT')
@@ -138,8 +139,78 @@
                 <input type="hidden" name="action" id="form_action_input" value="draft">
                 <input type="hidden" name="rows_json" id="form_rows_json_input" value="">
 
-                <div class="bg-white shadow-xl sm:rounded-lg border border-gray-200">
-                    <div class="overflow-auto w-full pb-2 min-h-[360px] max-h-[70vh]">
+                <div :class="isFullscreen ? 'fixed inset-0 z-40 bg-white flex flex-col w-screen h-screen overflow-hidden' : 'bg-white shadow-xl sm:rounded-lg border border-gray-200 flex flex-col transition-all'">
+                    
+                    <!-- Üst Eylem & Hızlı Satır Çubuğu (Top Action Bar - Konumu Asla Aşağı Kaymaz) -->
+                    <div class="px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 flex-shrink-0 transition-colors"
+                        :class="isFullscreen ? 'bg-slate-900 text-white border-b border-slate-800 shadow-md' : 'bg-slate-50 border-b border-gray-200 sm:rounded-t-lg'">
+                        <div class="flex items-center gap-2.5">
+                            <span class="text-xs font-bold" :class="isFullscreen ? 'text-white' : 'text-gray-800'">
+                                {{ $formTemplate->name }}
+                            </span>
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-extrabold"
+                                :class="isFullscreen ? 'bg-indigo-500/30 text-indigo-200 border border-indigo-400/30' : 'bg-indigo-100 text-indigo-800 border border-indigo-200'"
+                                x-text="rows.length + ' Satır'"></span>
+                            <span x-show="isFullscreen" class="text-xs text-slate-400 hidden sm:inline">&bull; {{ $date ?? now()->format('d.m.Y') }}</span>
+                            @if(isset($existingEntry) && $existingEntry->status === 'draft')
+                                <span x-show="isFullscreen" class="text-xs text-amber-400 font-semibold hidden md:inline">&bull; Taslak Modu</span>
+                            @endif
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                            <!-- Seri Satır Ekle (Üst bar - mouse pozisyonu sabit kalır) -->
+                            <div class="inline-flex rounded-lg shadow-xs">
+                                <button type="button" @click="addRow(1)"
+                                    class="bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-bold py-1.5 px-3 rounded-l-lg text-xs shadow-xs transition flex items-center gap-1 active:scale-95 cursor-pointer"
+                                    title="1 Satır Ekle">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                                    <span>+ Satır Ekle</span>
+                                </button>
+                                <button type="button" @click="addRow(5)"
+                                    class="bg-indigo-700 hover:bg-indigo-800 active:bg-indigo-900 text-indigo-100 font-bold py-1.5 px-2 border-l border-indigo-500 text-xs transition active:scale-95 cursor-pointer"
+                                    title="Hızlıca 5 Satır Ekle">
+                                    +5
+                                </button>
+                                <button type="button" @click="addRow(10)"
+                                    class="bg-indigo-700 hover:bg-indigo-800 active:bg-indigo-900 text-indigo-100 font-bold py-1.5 px-2 rounded-r-lg border-l border-indigo-500 text-xs transition active:scale-95 cursor-pointer"
+                                    title="Hızlıca 10 Satır Ekle">
+                                    +10
+                                </button>
+                            </div>
+
+                            <button type="button" @click="undo()" x-show="history.length > 0"
+                                class="py-1.5 px-2.5 rounded-lg text-xs font-bold transition flex items-center gap-1 border cursor-pointer"
+                                :class="isFullscreen ? 'bg-slate-800 hover:bg-slate-700 text-orange-400 border-slate-700' : 'bg-white hover:bg-orange-50 text-orange-600 border-orange-200'"
+                                style="display: none;" title="Geri Al (Son işlemi geri alır)">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg>
+                                <span class="hidden sm:inline">Geri Al</span>
+                            </button>
+
+                            <div class="h-5 border-l mx-1" :class="isFullscreen ? 'border-slate-700' : 'border-gray-300'"></div>
+
+                            <!-- Tam Ekran Geçiş Butonu -->
+                            <button type="button" @click="toggleFullscreen()"
+                                class="py-1.5 px-3 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-xs border cursor-pointer select-none"
+                                :class="isFullscreen ? 'bg-rose-600 hover:bg-rose-700 text-white border-rose-500 ring-2 ring-rose-400/40' : 'bg-white hover:bg-gray-100 text-gray-700 border-gray-300'"
+                                :title="isFullscreen ? 'Tam Ekrandan Çık (ESC tuşuna da basabilirsiniz)' : 'Geniş / Tam Ekran Veri Giriş Modu'">
+                                <template x-if="!isFullscreen">
+                                    <span class="flex items-center gap-1.5">
+                                        <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg>
+                                        <span>Tam Ekran</span>
+                                    </span>
+                                </template>
+                                <template x-if="isFullscreen">
+                                    <span class="flex items-center gap-1.5 text-white">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                        <span>Tam Ekrandan Çık (ESC)</span>
+                                    </span>
+                                </template>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div x-ref="tableContainer"
+                        :class="isFullscreen ? 'flex-1 overflow-auto w-full' : 'overflow-auto w-full pb-2 min-h-[380px] h-[60vh] max-h-[72vh]'">
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-800 sticky top-0 z-20 shadow-md">
                                 <tr>
@@ -605,24 +676,38 @@
 
                     <!-- Bottom Toolbar -->
                     <div
-                        class="p-4 bg-gray-50 border-t border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4">
+                        class="p-4 bg-gray-50 border-t border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4 flex-shrink-0"
+                        :class="isFullscreen ? 'shadow-lg' : 'sm:rounded-b-lg'">
                         <div class="flex flex-wrap items-center gap-2">
-                            <button type="button" @click="addRow()"
-                                class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg shadow-sm transition flex items-center">
-                                <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                                </svg>
-                                Satır Ekle
-                            </button>
+                            <!-- Seri Satır Ekle (Alt Bar) -->
+                            <div class="inline-flex rounded-lg shadow-xs">
+                                <button type="button" @click="addRow(1)"
+                                    class="bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-semibold py-2 px-4 rounded-l-lg shadow-sm transition flex items-center cursor-pointer">
+                                    <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                    </svg>
+                                    Satır Ekle
+                                </button>
+                                <button type="button" @click="addRow(5)"
+                                    class="bg-indigo-700 hover:bg-indigo-800 active:bg-indigo-900 text-indigo-100 font-bold py-2 px-2.5 border-l border-indigo-500 text-xs transition cursor-pointer"
+                                    title="5 Satır Ekle">
+                                    +5
+                                </button>
+                                <button type="button" @click="addRow(10)"
+                                    class="bg-indigo-700 hover:bg-indigo-800 active:bg-indigo-900 text-indigo-100 font-bold py-2 px-2.5 rounded-r-lg border-l border-indigo-500 text-xs transition cursor-pointer"
+                                    title="10 Satır Ekle">
+                                    +10
+                                </button>
+                            </div>
 
                             <button type="button" @click="clearAll()"
-                                class="bg-white hover:bg-red-50 text-red-600 font-semibold py-2 px-4 border border-red-200 rounded-lg shadow-sm transition flex items-center">
+                                class="bg-white hover:bg-red-50 text-red-600 font-semibold py-2 px-4 border border-red-200 rounded-lg shadow-sm transition flex items-center cursor-pointer">
                                 Tümünü Temizle
                             </button>
 
                             <button type="button" @click="undo()" x-show="history.length > 0"
-                                class="bg-white hover:bg-orange-50 text-orange-600 font-semibold py-2 px-4 border border-orange-200 rounded-lg shadow-sm transition flex items-center"
+                                class="bg-white hover:bg-orange-50 text-orange-600 font-semibold py-2 px-4 border border-orange-200 rounded-lg shadow-sm transition flex items-center cursor-pointer"
                                 style="display: none;">
                                 <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -643,7 +728,7 @@
                             </a>
 
                             <button type="button" @click="$refs.excelInput.click()" :disabled="isUploading"
-                                class="bg-white hover:bg-indigo-50 text-indigo-700 font-semibold py-2 px-4 border border-indigo-200 rounded-lg shadow-sm transition flex items-center">
+                                class="bg-white hover:bg-indigo-50 text-indigo-700 font-semibold py-2 px-4 border border-indigo-200 rounded-lg shadow-sm transition flex items-center cursor-pointer">
                                 <svg class="w-5 h-5 mr-1 group-hover:scale-110 transition-transform" fill="none"
                                     stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -653,6 +738,24 @@
                             </button>
                             <input type="file" x-ref="excelInput" @change="handleExcelUpload" accept=".xlsx,.xls"
                                 class="hidden">
+
+                            <!-- Tam Ekran Butonu (Alt Bar) -->
+                            <button type="button" @click="toggleFullscreen()"
+                                class="bg-white hover:bg-gray-100 text-gray-700 font-semibold py-2 px-3.5 border border-gray-300 rounded-lg shadow-sm transition flex items-center gap-1.5 cursor-pointer"
+                                :title="isFullscreen ? 'Tam Ekrandan Çık (ESC)' : 'Geniş / Tam Ekran Modu (ESC)'">
+                                <template x-if="!isFullscreen">
+                                    <span class="flex items-center gap-1.5 text-xs font-bold">
+                                        <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg>
+                                        Tam Ekran
+                                    </span>
+                                </template>
+                                <template x-if="isFullscreen">
+                                    <span class="flex items-center gap-1.5 text-xs text-rose-600 font-bold">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                        Tam Ekrandan Çık (ESC)
+                                    </span>
+                                </template>
+                            </button>
                         </div>
 
                         <div class="flex space-x-3">
@@ -963,6 +1066,7 @@
                 totals: {},
                 filteredTotals: {},
                 history: [],
+                isFullscreen: false,
                 isUploading: false,
                 showUploadModal: false,
                 uploadModalTitle: 'Excel Dosyası İçe Aktarılıyor',
@@ -1792,10 +1896,41 @@
                     return newRow;
                 },
 
-                addRow() {
-                    this.rows.push(this.createEmptyRowObject());
+                addRow(count = 1) {
+                    const numToAdd = Math.max(1, parseInt(count) || 1);
+                    for (let i = 0; i < numToAdd; i++) {
+                        this.rows.push(this.createEmptyRowObject());
+                    }
                     this.updateRowMaps();
                     this.calculateTotals();
+                    this.$nextTick(() => {
+                        if (this.$refs.tableContainer) {
+                            this.$refs.tableContainer.scrollTop = this.$refs.tableContainer.scrollHeight;
+                        }
+                    });
+                },
+
+                toggleFullscreen() {
+                    this.isFullscreen = !this.isFullscreen;
+                    if (this.isFullscreen) {
+                        document.body.classList.add('overflow-hidden');
+                    } else {
+                        document.body.classList.remove('overflow-hidden');
+                    }
+                },
+
+                handleEscapeKey() {
+                    if (this.showFillConfirmModal) {
+                        if (!this.isFillingColumn) this.showFillConfirmModal = false;
+                        return;
+                    }
+                    if (this.showUploadModal) {
+                        this.showUploadModal = false;
+                        return;
+                    }
+                    if (this.isFullscreen) {
+                        this.toggleFullscreen();
+                    }
                 },
 
                 removeRow(rowOrIndex) {

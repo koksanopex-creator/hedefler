@@ -185,6 +185,13 @@ class FormEntryC extends Controller
             $existingEntry
         );
 
+        $actionName = $status === 'draft' ? 'form_entry.draft' : 'form_entry.create';
+        $dateFormatted = \Carbon\Carbon::parse($request->entry_date)->format('d.m.Y');
+        $desc = $status === 'draft'
+            ? "Taslak form kaydedildi: [{$formTemplate->name}] (Giriş Tarihi: {$dateFormatted})"
+            : "Yeni form verisi oluşturuldu ve onaya gönderildi: [{$formTemplate->name}] (Giriş Tarihi: {$dateFormatted})";
+        $this->activityLogService->log($actionName, $desc, $entry);
+
         if ($status === 'draft') {
             return redirect()->route('form-entries.edit', $entry)->with('success', 'Taslak başarıyla kaydedildi.');
         }
@@ -216,7 +223,15 @@ class FormEntryC extends Controller
 
         // Başkasının verisine bakıyorsa logla
         if ($formEntry->user_id !== $user->id) {
-            $this->activityLogService->log('form_entry.view', 'Başka kullanıcının verisi görüntülendi.', $formEntry);
+            $formEntry->loadMissing(['template', 'user']);
+            $tName = $formEntry->template?->name ?? 'Dinamik Form';
+            $eDate = $formEntry->entry_date ? $formEntry->entry_date->format('d.m.Y') : '-';
+            $oName = $formEntry->user?->name ?? 'Kullanıcı';
+            $this->activityLogService->log(
+                'form_entry.view',
+                "Başka kullanıcının form verisi görüntülendi. Form: [{$tName}] (Giriş Tarihi: {$eDate}, Sahibi: {$oName})",
+                $formEntry
+            );
         }
 
         $formEntry->load(['template.fields', 'rows.values', 'user.group', 'revisionRequests.reviewer', 'revisionRequests.user', 'approver']);
@@ -449,8 +464,13 @@ class FormEntryC extends Controller
             }
         }
 
+        $formEntry->loadMissing(['template', 'user']);
+        $tName = $formEntry->template?->name ?? 'Dinamik Form';
+        $eDate = $formEntry->entry_date ? $formEntry->entry_date->format('d.m.Y') : '-';
+        $oName = $formEntry->user?->name ?? 'Kullanıcı';
+
         $totalDiffs = count($fieldDiffs);
-        $logDesc = 'Form verisi düzenlendi ve güncellendi.';
+        $logDesc = "Form verisi düzenlendi ve güncellendi. Form: [{$tName}] (Giriş Tarihi: {$eDate}, Sahibi: {$oName}, Form ID: #{$formEntry->id}).";
         if ($totalDiffs > 0) {
             $logDesc .= " (Toplam {$totalDiffs} alan değiştirildi).";
             if ($totalDiffs > 50) {
@@ -516,8 +536,17 @@ class FormEntryC extends Controller
         }
         $formEntry->save();
 
+        $formEntry->loadMissing(['template', 'user']);
+        $tName = $formEntry->template?->name ?? 'Dinamik Form';
+        $eDate = $formEntry->entry_date ? $formEntry->entry_date->format('d.m.Y') : '-';
+        $oName = $formEntry->user?->name ?? 'Kullanıcı';
+
         if ($request->status === 'approved') {
-            $this->activityLogService->log('form_entry.approved', 'Form girişi incelendi ve ONAYLANDI.', $formEntry);
+            $this->activityLogService->log(
+                'form_entry.approved',
+                "Form girişi incelendi ve ONAYLANDI. Form: [{$tName}] (Giriş Tarihi: {$eDate}, Sahibi: {$oName}, Form ID: #{$formEntry->id})",
+                $formEntry
+            );
 
             // KPI Hedef Gerçekleşmelerini Anlık Güncelle
             app(\App\Services\KpiTargetS::class)->recalculateForEntry($formEntry);
@@ -527,7 +556,11 @@ class FormEntryC extends Controller
                 'form_name' => $formEntry->template->name,
             ], $formEntry->user, route('form-entries.show', $formEntry));
         } elseif ($request->status === 'rejected') {
-            $this->activityLogService->log('form_entry.rejected', 'Form girişi REDDEDİLDİ. Gerekçe: ' . $request->rejection_reason, $formEntry);
+            $this->activityLogService->log(
+                'form_entry.rejected',
+                "Form girişi REDDEDİLDİ. Form: [{$tName}] (Giriş Tarihi: {$eDate}, Sahibi: {$oName}, Form ID: #{$formEntry->id}). Gerekçe: " . $request->rejection_reason,
+                $formEntry
+            );
 
             // Reddedildiğinde de hedefleri güncelle (daha önce onaylıysa geri alsın)
             app(\App\Services\KpiTargetS::class)->recalculateForEntry($formEntry);
@@ -574,9 +607,14 @@ class FormEntryC extends Controller
             app(\App\Services\KpiTargetS::class)->recalculateForEntry($formEntry);
         }
 
+        $formEntry->loadMissing(['template', 'user']);
+        $tName = $formEntry->template?->name ?? 'Dinamik Form';
+        $eDate = $formEntry->entry_date ? $formEntry->entry_date->format('d.m.Y') : '-';
+        $oName = $formEntry->user?->name ?? 'Kullanıcı';
+
         $this->activityLogService->log(
             'form_entry.revert',
-            'Form onay/red kararı geri alındı. Form durumu tekrar "Onay Bekliyor (submitted)" seviyesine çekildi.',
+            "Form onay/red kararı geri alındı. Form: [{$tName}] (Giriş Tarihi: {$eDate}, Sahibi: {$oName}, Form ID: #{$formEntry->id}). Form durumu tekrar 'Onay Bekliyor (submitted)' seviyesine çekildi.",
             $formEntry
         );
 
@@ -635,7 +673,16 @@ class FormEntryC extends Controller
         $formEntry->submitted_at = now();
         $formEntry->save();
 
-        $this->activityLogService->log('form_entry.submit', 'Form detay sayfasından onaya gönderildi.', $formEntry);
+        $formEntry->loadMissing(['template', 'user']);
+        $tName = $formEntry->template?->name ?? 'Dinamik Form';
+        $eDate = $formEntry->entry_date ? $formEntry->entry_date->format('d.m.Y') : '-';
+        $oName = $formEntry->user?->name ?? 'Kullanıcı';
+
+        $this->activityLogService->log(
+            'form_entry.submit',
+            "Form detay sayfasından onaya gönderildi. Form: [{$tName}] (Giriş Tarihi: {$eDate}, Sahibi: {$oName}, Form ID: #{$formEntry->id})",
+            $formEntry
+        );
 
         \App\Services\NotificationS::dispatch('form.submitted', [
             'user_name' => $formEntry->user->name,
@@ -657,6 +704,12 @@ class FormEntryC extends Controller
             abort(403, 'Bu formu sadece formu oluşturan kullanıcı veya Sistem Yöneticisi geri çekebilir.');
         }
 
+        $formEntry->loadMissing(['template', 'user']);
+        $tName = $formEntry->template?->name ?? 'Dinamik Form';
+        $eDate = $formEntry->entry_date ? $formEntry->entry_date->format('d.m.Y') : '-';
+        $oName = $formEntry->user?->name ?? 'Kullanıcı';
+        $entryId = $formEntry->id;
+
         // 1. Durum: Form onay bekliyorsa (submitted) -> Onay sürecinden geri çekip tekrar taslak yapar
         if ($formEntry->status === 'submitted') {
             $formEntry->status = 'draft';
@@ -665,7 +718,7 @@ class FormEntryC extends Controller
 
             $this->activityLogService->log(
                 'form_entry.withdrawn',
-                'Form onay sürecinden geri çekildi ve tekrar taslak durumuna alındı.',
+                "Form onay sürecinden geri çekildi ve tekrar taslak durumuna alındı. Form: [{$tName}] (Giriş Tarihi: {$eDate}, Sahibi: {$oName}, Form ID: #{$entryId})",
                 $formEntry
             );
 
@@ -674,13 +727,13 @@ class FormEntryC extends Controller
 
         // 2. Durum: Form taslak durumundaysa (draft) -> Taslağı geri çeker (siler)
         if ($formEntry->status === 'draft') {
-            $formEntryName = $formEntry->template->name;
+            $formEntryName = $tName;
             $formEntry->rows()->delete();
             $formEntry->delete();
 
             $this->activityLogService->log(
                 'form_entry.draft_deleted',
-                "Taslak form ({$formEntryName}) sistemden geri çekildi (silindi).",
+                "Taslak form sistemden geri çekildi (silindi). Form: [{$formEntryName}] (Giriş Tarihi: {$eDate}, Sahibi: {$oName}, Kayıt ID: #{$entryId})",
                 null
             );
 
@@ -730,22 +783,25 @@ class FormEntryC extends Controller
             'status' => 'pending',
         ]);
 
-        $this->activityLogService->log(
-            'form_entry.revision_requested',
-            'Form için düzenleme (revizyon) talebi iletildi. Gerekçe: ' . $request->reason,
-            $formEntry
-        );
-
         $formEntry->loadMissing(['user.group', 'template']);
         $owner = $formEntry->user;
         $groupId = $owner?->group_id ?? $user->group_id;
+        $tName = $formEntry->template?->name ?? 'Dinamik Form';
+        $eDate = $formEntry->entry_date ? $formEntry->entry_date->format('d.m.Y') : '-';
+        $oName = $owner?->name ?? 'Kullanıcı';
+
+        $this->activityLogService->log(
+            'form_entry.revision_requested',
+            "Form için düzenleme (revizyon) talebi iletildi. Form: [{$tName}] (Giriş Tarihi: {$eDate}, Sahibi: {$oName}, Form ID: #{$formEntry->id}). Gerekçe: " . $request->reason,
+            $formEntry
+        );
 
         \App\Services\NotificationS::dispatch('form.revision_requested', [
             'user_name' => $user->name,
             'requester_name' => $user->name,
-            'form_name' => $formEntry->template->name,
+            'form_name' => $tName,
             'revision_reason' => $request->reason,
-            'entry_date' => $formEntry->entry_date->format('d.m.Y'),
+            'entry_date' => $eDate,
             'group_id' => $groupId,
         ], $user, route('form-entries.show', $formEntry));
 
@@ -777,6 +833,11 @@ class FormEntryC extends Controller
             'rejection_reason.min' => 'Red gerekçesi en az 3 karakter olmalıdır.',
         ]);
 
+        $formEntry->loadMissing(['template', 'user']);
+        $tName = $formEntry->template?->name ?? 'Dinamik Form';
+        $eDate = $formEntry->entry_date ? $formEntry->entry_date->format('d.m.Y') : '-';
+        $oName = $formEntry->user?->name ?? 'Kullanıcı';
+
         if ($request->action === 'approve') {
             $revisionRequest->update([
                 'status' => 'approved',
@@ -795,13 +856,13 @@ class FormEntryC extends Controller
 
             $this->activityLogService->log(
                 'form_entry.revision_approved',
-                'Form düzenleme (revizyon) talebi onaylandı. Form personel için düzenlemeye açıldı.',
+                "Form düzenleme (revizyon) talebi onaylandı. Form: [{$tName}] (Giriş Tarihi: {$eDate}, Sahibi: {$oName}, Form ID: #{$formEntry->id}). Form personel için düzenlemeye açıldı.",
                 $formEntry
             );
 
             \App\Services\NotificationS::dispatch('form.revision_approved', [
                 'user_name' => $formEntry->user->name,
-                'form_name' => $formEntry->template->name,
+                'form_name' => $tName,
             ], $formEntry->user, route('form-entries.edit', $formEntry));
 
             return redirect()->route('form-entries.show', $formEntry)->with('success', 'Düzenleme talebi onaylandı. Form kullanıcının düzenlemesine açıldı.');
@@ -816,13 +877,13 @@ class FormEntryC extends Controller
 
             $this->activityLogService->log(
                 'form_entry.revision_rejected',
-                'Form düzenleme talebi reddedildi. Red Gerekçesi: ' . $request->rejection_reason,
+                "Form düzenleme talebi reddedildi. Form: [{$tName}] (Giriş Tarihi: {$eDate}, Sahibi: {$oName}, Form ID: #{$formEntry->id}). Red Gerekçesi: " . $request->rejection_reason,
                 $formEntry
             );
 
             \App\Services\NotificationS::dispatch('form.revision_rejected', [
                 'user_name' => $formEntry->user->name,
-                'form_name' => $formEntry->template->name,
+                'form_name' => $tName,
                 'rejection_reason' => $request->rejection_reason,
             ], $formEntry->user, route('form-entries.show', $formEntry));
 
@@ -854,13 +915,21 @@ class FormEntryC extends Controller
             abort(403, 'Form kaydını silme yetkiniz yok.');
         }
 
+        $formEntry->loadMissing(['template', 'user']);
         $template = $formEntry->template;
         $wasApproved = $formEntry->status === 'approved';
         $entryYear = intval($formEntry->entry_date->format('Y'));
         $templateId = $formEntry->form_template_id;
         $formEntryId = $formEntry->id;
+        $tName = $template?->name ?? 'Dinamik Form';
+        $eDate = $formEntry->entry_date ? $formEntry->entry_date->format('d.m.Y') : '-';
+        $oName = $formEntry->user?->name ?? 'Kullanıcı';
 
-        $this->activityLogService->log('form_entry.delete', 'Form verisi (tüm satırlarıyla birlikte) silindi.', $formEntry);
+        $this->activityLogService->log(
+            'form_entry.delete',
+            "Form verisi (tüm satırlarıyla birlikte) silindi. Form: [{$tName}] (Giriş Tarihi: {$eDate}, Sahibi: {$oName}, Kayıt ID: #{$formEntryId})",
+            $formEntry
+        );
 
         \App\Services\NotificationS::dispatch('form.deleted', [
             'form_name' => $template->name,
@@ -898,7 +967,16 @@ class FormEntryC extends Controller
             abort(403, 'Bu Excel çıktısını alma yetkiniz (exports.manage) bulunmamaktadır.');
         }
 
-        $this->activityLogService->log('form_entry.export', 'Form verisi Excel olarak indirildi.', $formEntry);
+        $formEntry->loadMissing(['template', 'user']);
+        $tName = $formEntry->template?->name ?? 'Dinamik Form';
+        $eDate = $formEntry->entry_date ? $formEntry->entry_date->format('d.m.Y') : '-';
+        $oName = $formEntry->user?->name ?? 'Kullanıcı';
+
+        $this->activityLogService->log(
+            'form_entry.export',
+            "Form verisi Excel olarak indirildi. Form: [{$tName}] (Giriş Tarihi: {$eDate}, Sahibi: {$oName}, Form ID: #{$formEntry->id})",
+            $formEntry
+        );
 
         $filters = $request->input('filters', []);
 

@@ -87,12 +87,12 @@
                     <div class="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-600 flex items-center justify-center shrink-0">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                     </div>
-                    <div>
-                        <div class="text-sm font-black text-gray-900 truncate max-w-[150px]">
+                    <div class="min-w-0 flex-1">
+                        <div class="text-sm font-black text-gray-900">
                             {{ $latestLogin ? \Illuminate\Support\Carbon::parse($latestLogin->created_at)->diffForHumans() : 'Henüz yok' }}
                         </div>
                         <div class="text-xs font-bold text-gray-500">Son Login Hareketi</div>
-                        <div class="text-[10px] text-amber-700 font-semibold mt-0.5 truncate max-w-[150px]">
+                        <div class="text-[11px] text-amber-800 font-semibold mt-0.5 break-words">
                             {{ $latestLogin ? $latestLogin->description : 'Kayıt yok' }}
                         </div>
                     </div>
@@ -142,17 +142,17 @@
                     </div>
                 </div>
 
-                <div class="w-full overflow-hidden">
-                    <table class="w-full divide-y divide-gray-100 table-fixed">
+                <div class="w-full overflow-x-auto">
+                    <table class="w-full min-w-full divide-y divide-gray-100">
                         <thead class="bg-gray-50/70 text-gray-500 text-[11px] font-bold uppercase tracking-wider">
                             <tr>
-                                <th class="w-[28%] px-3.5 py-3 sm:px-4 sm:py-3.5 text-left">Kullanıcı</th>
-                                <th class="w-[18%] px-3.5 py-3 sm:px-4 sm:py-3.5 text-left">Rol & Grup</th>
-                                <th class="w-[14%] px-3.5 py-3 sm:px-4 sm:py-3.5 text-left">IP Adresi</th>
-                                <th class="w-[14%] px-3.5 py-3 sm:px-4 sm:py-3.5 text-left">Cihaz / Tarayıcı</th>
-                                <th class="w-[12%] px-3.5 py-3 sm:px-4 sm:py-3.5 text-left">Son Hareket</th>
-                                <th class="w-[7%] px-3.5 py-3 sm:px-4 sm:py-3.5 text-left">Durum</th>
-                                <th class="w-[7%] px-3.5 py-3 sm:px-4 sm:py-3.5 text-right">İşlem</th>
+                                <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-left whitespace-nowrap">Kullanıcı</th>
+                                <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-left whitespace-nowrap">Rol & Grup</th>
+                                <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-left whitespace-nowrap">IP Adresi</th>
+                                <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-left whitespace-nowrap">Cihaz / Tarayıcı</th>
+                                <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-left whitespace-nowrap">Son Hareket</th>
+                                <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-left whitespace-nowrap">Durum</th>
+                                <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-right whitespace-nowrap">İşlem</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100/70 text-sm">
@@ -251,15 +251,15 @@
                     </div>
                 </div>
 
-                <div class="w-full overflow-hidden">
-                    <table class="w-full divide-y divide-gray-100 table-fixed">
+                <div class="w-full overflow-x-auto">
+                    <table class="w-full min-w-full divide-y divide-gray-100">
                         <thead class="bg-gray-50/70 text-gray-500 text-[11px] font-bold uppercase tracking-wider">
                             <tr>
-                                <th class="w-[28%] px-3.5 py-3 sm:px-4 sm:py-3.5 text-left">Kullanıcı</th>
-                                <th class="w-[16%] px-3.5 py-3 sm:px-4 sm:py-3.5 text-left">İşlem Türü</th>
-                                <th class="w-[14%] px-3.5 py-3 sm:px-4 sm:py-3.5 text-left">IP Adresi</th>
-                                <th class="w-[14%] px-3.5 py-3 sm:px-4 sm:py-3.5 text-left">Tarih & Saat</th>
-                                <th class="w-[28%] px-3.5 py-3 sm:px-4 sm:py-3.5 text-left">Açıklama</th>
+                                <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-left whitespace-nowrap">Kullanıcı</th>
+                                <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-left whitespace-nowrap">İşlem Türü</th>
+                                <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-left whitespace-nowrap">IP Adresi</th>
+                                <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-left whitespace-nowrap">Tarih & Saat</th>
+                                <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-left min-w-[320px]">Açıklama</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100/70 text-sm">
@@ -294,8 +294,8 @@
                                         <div class="text-[10px] text-gray-400">{{ $log->created_at->diffForHumans() }}</div>
                                     </td>
 
-                                    <!-- Açıklama -->
-                                    <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-xs text-gray-600 truncate font-medium" title="{{ $log->description }}">
+                                    <!-- Açıklama (Kesmeden, tam metin, alt satıra geçerek) -->
+                                    <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-xs text-gray-800 font-medium break-words whitespace-normal leading-relaxed">
                                         {{ $log->description }}
                                     </td>
                                 </tr>
