@@ -32,22 +32,23 @@ class UserC extends Controller
             // Başvuru sürecinde onay bekleyen veya silinmiş/pasif kullanıcılar listelere dahil edilmez
             $users = UserM::with(['role', 'group', 'managedGroups'])
                 ->activePersonnel()
+                ->orderBy('name', 'asc')
                 ->get();
 
-            // 1) Sistem ve Genel Yönetim Rolleri (Sistem Yöneticisi, Yönetim)
+            // 1) Sistem ve Genel Yönetim Rolleri (Sistem Yöneticisi, Yönetim) -> A'dan Z'ye alfabetik
             $systemUsers = $users->filter(function ($u) {
                 return in_array($u->role?->slug, ['sistem_yoneticisi', 'yonetim']);
-            });
+            })->values();
 
-            // 2) Gruplar (Yöneticileri ve Üyeleri ile)
+            // 2) Gruplar (Yöneticileri ve Üyeleri ile) -> Kullanıcılar A'dan Z'ye alfabetik
             $groups = GroupM::with([
                 'managers.role',
                 'users' => function ($q) {
-                    $q->activePersonnel()->with('role');
+                    $q->activePersonnel()->with('role')->orderBy('name', 'asc');
                 }
-            ])->get();
+            ])->orderBy('name', 'asc')->get();
 
-            // 3) Herhangi bir gruba bağlı veya yönetici olmayan bağımsız kullanıcılar
+            // 3) Herhangi bir gruba bağlı veya yönetici olmayan bağımsız kullanıcılar -> A'dan Z'ye alfabetik
             $systemUserIds = $systemUsers->pluck('id')->toArray();
             $unassignedUsers = $users->filter(function ($u) use ($systemUserIds) {
                 if (in_array($u->id, $systemUserIds)) {
@@ -56,7 +57,7 @@ class UserC extends Controller
                 $hasGroup = !empty($u->group_id);
                 $managesGroup = $u->managedGroups->isNotEmpty();
                 return !$hasGroup && !$managesGroup;
-            });
+            })->values();
         } elseif ($canViewGroup) {
             // Sadece yöneticisi olduğu veya bağlı olduğu grup(lar)
             $managedGroupIds = $currentUser->managedGroups->pluck('id')->toArray();
@@ -65,10 +66,11 @@ class UserC extends Controller
             $groups = GroupM::with([
                 'managers.role',
                 'users' => function ($q) {
-                    $q->activePersonnel()->with('role');
+                    $q->activePersonnel()->with('role')->orderBy('name', 'asc');
                 }
             ])
             ->whereIn('id', $accessibleGroupIds)
+            ->orderBy('name', 'asc')
             ->get();
 
             $users = UserM::with(['role', 'group', 'managedGroups'])
@@ -80,6 +82,7 @@ class UserC extends Controller
                         })
                         ->orWhere('id', $currentUser->id);
                 })
+                ->orderBy('name', 'asc')
                 ->get();
 
             $systemUsers = collect();
