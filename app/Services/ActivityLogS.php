@@ -89,6 +89,10 @@ class ActivityLogS
                 'label' => 'Sistem Logosu Güncellendi',
                 'badge' => 'bg-indigo-50 text-indigo-700 border-indigo-200',
             ],
+            'notification_log.clear' => [
+                'label' => 'Bildirim Logları Temizlendi',
+                'badge' => 'bg-rose-50 text-rose-700 border-rose-200',
+            ],
             'login' => [
                 'label' => 'Giriş Yapıldı',
                 'badge' => 'bg-emerald-50 text-emerald-700 border-emerald-200',

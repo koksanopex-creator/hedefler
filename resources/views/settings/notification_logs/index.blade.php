@@ -10,6 +10,12 @@
                 <p class="text-xs text-gray-500 mt-1">Sistem tarafından gönderilen tüm Zil (sistem içi) ve E-Posta bildirimlerinin rol, işlem ve içerik bazlı denetim kayıtları.</p>
             </div>
             <div class="flex items-center gap-3">
+                @if(!auth()->user()->hasRole('Yonetim'))
+                <button type="button" @click="$dispatch('open-clear-modal')" class="inline-flex items-center px-4 py-2 rounded-xl text-xs font-bold text-rose-700 bg-rose-50 border border-rose-200 hover:bg-rose-100 hover:text-rose-800 transition shadow-xs cursor-pointer">
+                    <svg class="w-4 h-4 mr-1.5 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    Geçmiş Logları Temizle
+                </button>
+                @endif
                 <a href="{{ route('settings.notifications.index') }}" class="inline-flex items-center px-4 py-2 rounded-xl text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 hover:bg-indigo-100 transition shadow-xs">
                     <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
                     Bildirim Matrisi &rarr;
@@ -21,8 +27,25 @@
         </div>
     </x-slot>
 
-    <div class="py-8 bg-slate-50/50 min-h-screen">
+    <div class="py-8 bg-slate-50/50 min-h-screen" x-data="{ showClearModal: false }" @open-clear-modal.window="showClearModal = true">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
+
+            @if(session('success'))
+                <div class="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center justify-between text-emerald-800 text-xs font-semibold shadow-xs">
+                    <div class="flex items-center gap-2">
+                        <svg class="w-5 h-5 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <span>{{ session('success') }}</span>
+                    </div>
+                </div>
+            @endif
+            @if(session('error'))
+                <div class="p-4 bg-rose-50 border border-rose-200 rounded-2xl flex items-center justify-between text-rose-800 text-xs font-semibold shadow-xs">
+                    <div class="flex items-center gap-2">
+                        <svg class="w-5 h-5 text-rose-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <span>{{ session('error') }}</span>
+                    </div>
+                </div>
+            @endif
 
             <!-- 1. ÖZET İSTATİSTİK KARTLARI -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -379,6 +402,112 @@
 
             </div>
 
+        </div>
+
+        <!-- GEÇMİŞ LOGLARI TEMİZLEME MODALI -->
+        <div x-cloak x-show="showClearModal" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="clear-modal-title" role="dialog" aria-modal="true">
+            <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+                <!-- Arka Plan Karartması -->
+                <div x-show="showClearModal" 
+                     x-transition:enter="ease-out duration-300" 
+                     x-transition:enter-start="opacity-0" 
+                     x-transition:enter-end="opacity-100" 
+                     x-transition:leave="ease-in duration-200" 
+                     x-transition:leave-start="opacity-100" 
+                     x-transition:leave-end="opacity-0" 
+                     class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity" 
+                     @click="showClearModal = false"></div>
+
+                <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+                <!-- Modal Kutusu -->
+                <div x-show="showClearModal" 
+                     x-transition:enter="ease-out duration-300" 
+                     x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" 
+                     x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" 
+                     x-transition:leave="ease-in duration-200" 
+                     x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" 
+                     x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" 
+                     class="inline-block align-bottom bg-white rounded-3xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full border border-slate-100">
+                    
+                    <form method="POST" action="{{ route('settings.notification_logs.clear') }}">
+                        @csrf
+                        <div class="bg-white p-6 sm:p-7">
+                            <div class="flex items-start gap-4">
+                                <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-2xl bg-rose-50 text-rose-600 sm:mx-0 border border-rose-100">
+                                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                </div>
+                                <div class="mt-0 text-left flex-1">
+                                    <h3 class="text-base font-extrabold text-slate-900" id="clear-modal-title">
+                                        Geçmiş Bildirim Loglarını Temizle
+                                    </h3>
+                                    <p class="text-xs text-slate-500 mt-1">
+                                        Sistemde biriken denetim ve gönderim loglarını kalıcı olarak silebilirsiniz. Lütfen silmek istediğiniz kapsamı seçiniz.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Temizleme Kapsamı Seçimi -->
+                            <div class="mt-6 space-y-3">
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">
+                                    Temizleme Kapsamı
+                                </label>
+                                
+                                <label class="flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:bg-slate-50 cursor-pointer transition">
+                                    <input type="radio" name="period" value="all" class="text-rose-600 focus:ring-rose-500 h-4 w-4" checked>
+                                    <div>
+                                        <div class="text-xs font-bold text-slate-900">Tüm Geçmiş Logları Temizle</div>
+                                        <div class="text-[11px] text-slate-500">Mevcut tüm bildirim ve e-posta denetim kayıtları kalıcı olarak silinir.</div>
+                                    </div>
+                                </label>
+
+                                <label class="flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:bg-slate-50 cursor-pointer transition">
+                                    <input type="radio" name="period" value="30_days" class="text-rose-600 focus:ring-rose-500 h-4 w-4">
+                                    <div>
+                                        <div class="text-xs font-bold text-slate-900">30 Günden Eski Logları Temizle</div>
+                                        <div class="text-[11px] text-slate-500">Son 30 günün kayıtları korunur, daha eskiler silinir.</div>
+                                    </div>
+                                </label>
+
+                                <label class="flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:bg-slate-50 cursor-pointer transition">
+                                    <input type="radio" name="period" value="90_days" class="text-rose-600 focus:ring-rose-500 h-4 w-4">
+                                    <div>
+                                        <div class="text-xs font-bold text-slate-900">90 Günden Eski Logları Temizle</div>
+                                        <div class="text-[11px] text-slate-500">Son 90 günün kayıtları korunur, daha eskiler silinir.</div>
+                                    </div>
+                                </label>
+
+                                <!-- Ekstra Seçenek: Zil Bildirimleri Tablosu -->
+                                <div class="pt-3 border-t border-slate-100">
+                                    <label class="flex items-start gap-2.5 cursor-pointer">
+                                        <input type="checkbox" name="include_in_app" value="1" class="mt-0.5 rounded border-slate-300 text-rose-600 focus:ring-rose-500">
+                                        <span class="text-xs text-slate-600">
+                                            <strong class="text-slate-800">Zil Bildirimleri Tablosunu da Dahil Et:</strong> Kullanıcıların zil ikonunda görünen sistem içi bildirim geçmişini de seçilen kapsamda temizle.
+                                        </span>
+                                    </label>
+                                </div>
+
+                                <div class="p-3 bg-amber-50 rounded-xl border border-amber-200/80 text-[11px] text-amber-800 flex items-start gap-2">
+                                    <svg class="w-4 h-4 text-amber-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                                    <span>Bu işlem geri alınamaz. Silinen gönderim logları raporlardan ve geçmiş listelerinden kaldırılacaktır.</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-50 px-6 py-4 flex flex-col sm:flex-row-reverse gap-2 sm:gap-3 rounded-b-3xl border-t border-slate-100">
+                            <button type="submit" class="w-full sm:w-auto inline-flex justify-center items-center px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-sm transition">
+                                <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                Logları Kalıcı Olarak Temizle
+                            </button>
+                            <button type="button" @click="showClearModal = false" class="w-full sm:w-auto inline-flex justify-center items-center px-4 py-2.5 bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold rounded-xl border border-slate-200 shadow-xs transition">
+                                Vazgeç
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
 </x-app-layout>

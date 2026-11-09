@@ -4,8 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\NotificationLogM;
 use App\Models\NotificationEventM;
+use App\Models\EmailLogM;
 use App\Models\RoleM;
+use App\Services\ActivityLogS;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class NotificationLogC extends Controller
 {
@@ -81,6 +84,59 @@ class NotificationLogC extends Controller
             'events',
             'distinctRoles'
         ));
+    }
+
+    /**
+     * Geçmiş bildirim ve e-posta loglarını temizler.
+     */
+    public function clearLogs(Request $request)
+    {
+        // Madde 19: Yonetim rolü salt okunurdur, silme yapamaz
+        if (auth()->check() && method_exists(auth()->user(), 'hasRole') && auth()->user()->hasRole('Yonetim')) {
+            abort(403, 'Yönetim rolü salt okunur yetkiye sahiptir, kayıt silemez.');
+        }
+
+        $period = $request->input('period', 'all');
+        $includeInApp = $request->boolean('include_in_app', false);
+
+        $notifQuery = NotificationLogM::query();
+        $emailQuery = EmailLogM::query();
+        $notificationsQuery = DB::table('notifications');
+
+        $periodText = 'Tüm Zamanlar';
+
+        if ($period === '30_days') {
+            $cutoff = now()->subDays(30);
+            $notifQuery->where('sent_at', '<', $cutoff);
+            $emailQuery->where('created_at', '<', $cutoff);
+            $notificationsQuery->where('created_at', '<', $cutoff);
+            $periodText = '30 Günden Eski';
+        } elseif ($period === '90_days') {
+            $cutoff = now()->subDays(90);
+            $notifQuery->where('sent_at', '<', $cutoff);
+            $emailQuery->where('created_at', '<', $cutoff);
+            $notificationsQuery->where('created_at', '<', $cutoff);
+            $periodText = '90 Günden Eski';
+        }
+
+        $deletedNotif = $notifQuery->delete();
+        $deletedEmail = $emailQuery->delete();
+        $deletedSystemNotif = 0;
+
+        if ($includeInApp) {
+            $deletedSystemNotif = $notificationsQuery->delete();
+        }
+
+        $totalDeleted = $deletedNotif + $deletedEmail + $deletedSystemNotif;
+
+        // Madde 11 & 15: Denetim kaydı oluştur
+        ActivityLogS::logAction(
+            'notification_log.clear',
+            "Bildirim ve e-posta logları temizlendi (Kapsam: {$periodText}, Toplam Silinen: {$totalDeleted} [Bildirim Log: {$deletedNotif}, E-posta Log: {$deletedEmail}, Zil Bildirimi: {$deletedSystemNotif}])"
+        );
+
+        return redirect()->route('settings.notification_logs.index')
+            ->with('success', "Geçmiş loglar başarıyla temizlendi. (Silinen kayıt sayısı: {$totalDeleted})");
     }
 }
 

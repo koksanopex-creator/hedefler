@@ -100,6 +100,7 @@ Route::middleware(['auth'])->group(function () {
 
         // Bildirim ve E-Posta Gönderim Geçmişi (Loglar)
         Route::get('settings/notification-logs', [\App\Http\Controllers\NotificationLogC::class, 'index'])->name('settings.notification_logs.index')->middleware('permission:settings.manage');
+        Route::post('settings/notification-logs/clear', [\App\Http\Controllers\NotificationLogC::class, 'clearLogs'])->name('settings.notification_logs.clear')->middleware('permission:settings.manage');
         Route::get('settings/email-logs', [\App\Http\Controllers\NotificationLogC::class, 'index'])->name('settings.email_logs.index')->middleware('permission:settings.manage');
     });
 });
