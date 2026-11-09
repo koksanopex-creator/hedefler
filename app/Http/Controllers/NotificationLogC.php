@@ -45,7 +45,7 @@ class NotificationLogC extends Controller
         $totalCount = NotificationLogM::count();
         $inAppCount = NotificationLogM::where('channel', 'in_app')->count();
         $mailCount = NotificationLogM::where('channel', 'mail')->count();
-        $eventsCount = NotificationEventM::count();
+        $eventsCount = NotificationLogM::whereNotNull('event_slug')->distinct('event_slug')->count('event_slug');
 
         // Filtre Seçenekleri
         $events = NotificationEventM::orderBy('name')->get();
