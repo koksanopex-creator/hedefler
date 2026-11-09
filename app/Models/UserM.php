@@ -99,4 +99,31 @@ class UserM extends Authenticatable
     {
         return $this->hasMany(KpiTargetM::class, 'assignee_id')->where('assignee_type', 'user');
     }
+
+    public function hasRole(string|array $roles): bool
+    {
+        $roleSlug = $this->role?->slug ?? '';
+        $roleName = $this->role?->name ?? '';
+
+        if (is_array($roles)) {
+            foreach ($roles as $r) {
+                if (strcasecmp($roleSlug, $r) === 0 || strcasecmp($roleName, $r) === 0) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        return strcasecmp($roleSlug, $roles) === 0 || strcasecmp($roleName, $roles) === 0;
+    }
+
+    public function isSuperAdmin(): bool
+    {
+        return $this->id === 1 || $this->role_id === 1 || $this->role?->slug === 'sistem_yoneticisi';
+    }
+
+    public function isYonetim(): bool
+    {
+        return $this->role_id === 19 || $this->role?->slug === 'yonetim' || strcasecmp($this->role?->name ?? '', 'Yonetim') === 0;
+    }
 }

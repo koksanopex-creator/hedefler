@@ -92,7 +92,7 @@ class NotificationLogC extends Controller
     public function clearLogs(Request $request)
     {
         // Madde 19: Yonetim rolü salt okunurdur, silme yapamaz
-        if (auth()->check() && method_exists(auth()->user(), 'hasRole') && auth()->user()->hasRole('Yonetim')) {
+        if (auth()->check() && auth()->user()->isYonetim()) {
             abort(403, 'Yönetim rolü salt okunur yetkiye sahiptir, kayıt silemez.');
         }
 
