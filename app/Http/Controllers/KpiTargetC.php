@@ -30,10 +30,13 @@ class KpiTargetC extends Controller
      */
     private function getAccessibleUsers(UserM $user)
     {
+        // Sistem Yöneticisi ve Yönetim rolleri ile onay bekleyen/pasif kullanıcılar hariç tutulur
+        $baseQuery = UserM::with('group')->eligibleForKpi();
+
         if ($this->permissionService->hasPermission($user, 'kpi_targets.view_all') ||
             $this->permissionService->hasPermission($user, 'kpi_targets.manage') ||
             $user->role?->slug === 'sistem_yoneticisi') {
-            return UserM::with('group')->where('is_active', true)->orderBy('name')->get();
+            return $baseQuery->orderBy('name')->get();
         }
 
         if ($this->permissionService->hasPermission($user, 'kpi_targets.view_group') || $user->managedGroups->isNotEmpty()) {
@@ -41,16 +44,18 @@ class KpiTargetC extends Controller
             $allGroupIds = array_unique(array_filter(array_merge([$user->group_id], $managedGroupIds)));
 
             if (!empty($allGroupIds)) {
-                return UserM::with('group')
+                return $baseQuery
                     ->whereIn('group_id', $allGroupIds)
-                    ->where('is_active', true)
                     ->orderBy('name')
                     ->get();
             }
         }
 
         if ($this->permissionService->hasPermission($user, 'kpi_targets.view_own')) {
-            return UserM::with('group')->where('id', $user->id)->get();
+            if ($user->isSuperAdmin() || $user->isYonetim()) {
+                return collect();
+            }
+            return $baseQuery->where('id', $user->id)->get();
         }
 
         return collect();
@@ -296,12 +301,10 @@ class KpiTargetC extends Controller
                 return back()->withInput()->withErrors(['assignee_ids' => 'Lütfen hedefin atanacağı en az bir personel seçiniz.']);
             }
 
-            // Kapsam dışındaki personele atamayı engelle
-            if (!$isGlobalView) {
-                foreach ($assigneeIds as $aId) {
-                    if (!in_array($aId, $accessibleUserIds)) {
-                        return back()->withInput()->withErrors(['assignee_ids' => 'Yetki kapsamınız dışındaki bir personele hedef atayamazsınız.']);
-                    }
+            // Kapsam dışındaki veya KPI için uygun olmayan personele atamayı engelle
+            foreach ($assigneeIds as $aId) {
+                if (!in_array($aId, $accessibleUserIds)) {
+                    return back()->withInput()->withErrors(['assignee_ids' => 'Seçilen personel KPI hedefleri için uygun değildir (Sistem Yöneticisi, Yönetim veya Onay Bekleyen kullanıcılar hedefe dahil edilemez).']);
                 }
             }
 
@@ -424,6 +427,13 @@ class KpiTargetC extends Controller
             'distribute_evenly' => 'nullable|boolean',
             'status' => 'required|in:active,paused,completed,cancelled',
         ]);
+
+        if ($validated['assignee_type'] === 'user') {
+            $accessibleUserIds = $this->getAccessibleUsers($user)->pluck('id')->toArray();
+            if (!in_array((int) $validated['assignee_id'], $accessibleUserIds)) {
+                return back()->withInput()->withErrors(['assignee_id' => 'Seçilen personel KPI hedefleri için uygun değildir (Sistem Yöneticisi, Yönetim veya Onay Bekleyen kullanıcılar hedefe dahil edilemez).']);
+            }
+        }
 
         $this->kpiService->updateTarget($kpiTarget, $validated, $user);
 

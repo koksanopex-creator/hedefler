@@ -29,7 +29,10 @@ class UserC extends Controller
         }
 
         if ($canViewAll) {
-            $users = UserM::with(['role', 'group', 'managedGroups'])->get();
+            // Başvuru sürecinde onay bekleyen veya silinmiş/pasif kullanıcılar listelere dahil edilmez
+            $users = UserM::with(['role', 'group', 'managedGroups'])
+                ->activePersonnel()
+                ->get();
 
             // 1) Sistem ve Genel Yönetim Rolleri (Sistem Yöneticisi, Yönetim)
             $systemUsers = $users->filter(function ($u) {
@@ -37,7 +40,12 @@ class UserC extends Controller
             });
 
             // 2) Gruplar (Yöneticileri ve Üyeleri ile)
-            $groups = GroupM::with(['managers.role', 'users.role'])->get();
+            $groups = GroupM::with([
+                'managers.role',
+                'users' => function ($q) {
+                    $q->activePersonnel()->with('role');
+                }
+            ])->get();
 
             // 3) Herhangi bir gruba bağlı veya yönetici olmayan bağımsız kullanıcılar
             $systemUserIds = $systemUsers->pluck('id')->toArray();
@@ -54,11 +62,17 @@ class UserC extends Controller
             $managedGroupIds = $currentUser->managedGroups->pluck('id')->toArray();
             $accessibleGroupIds = array_unique(array_filter(array_merge([$currentUser->group_id], $managedGroupIds)));
 
-            $groups = GroupM::with(['managers.role', 'users.role'])
-                ->whereIn('id', $accessibleGroupIds)
-                ->get();
+            $groups = GroupM::with([
+                'managers.role',
+                'users' => function ($q) {
+                    $q->activePersonnel()->with('role');
+                }
+            ])
+            ->whereIn('id', $accessibleGroupIds)
+            ->get();
 
             $users = UserM::with(['role', 'group', 'managedGroups'])
+                ->activePersonnel()
                 ->where(function ($q) use ($accessibleGroupIds, $currentUser) {
                     $q->whereIn('group_id', $accessibleGroupIds)
                         ->orWhereHas('managedGroups', function ($sq) use ($accessibleGroupIds) {

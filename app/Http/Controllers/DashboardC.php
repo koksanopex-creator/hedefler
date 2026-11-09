@@ -212,9 +212,9 @@ class DashboardC extends Controller
 
         // Kullanıcı sayısı
         if ($can('users.manage') || $viewAll) {
-            $userCount = UserM::count();
+            $userCount = UserM::activePersonnel()->count();
         } elseif ($can('dashboard.view_group_users') && $user->group_id) {
-            $userCount = UserM::where('group_id', $user->group_id)->count();
+            $userCount = UserM::activePersonnel()->where('group_id', $user->group_id)->count();
         } else {
             $userCount = 1;
         }
@@ -236,112 +236,122 @@ class DashboardC extends Controller
 
         $monthKey = $month ?: 0; // 0 = Yıllık Kümülatif, 1..12 = Seçilen Ay
 
-        // İncelenecek kullanıcı: Yönetim/Superadmin dropdown'dan bir personel seçtiyse o, aksi halde kullanıcının kendisi
-        $targetUserId = ($isSuperAdmin || $isYonetim || $canManageKpi) && $inspectUserId ? $inspectUserId : $user->id;
-        $inspectedUser = $targetUserId !== $user->id ? UserM::find($targetUserId) : $user;
+        // İncelenecek kullanıcı: Yönetim/Superadmin dropdown'dan bir personel seçtiyse o; regular personelse kendisi
+        // Sistem Yöneticisi ve Yönetim rollerinin bireysel KPI hedefi/performansı olmaz
+        $targetUserId = null;
+        if ($inspectUserId) {
+            $targetUserId = (int) $inspectUserId;
+        } elseif (!$isSuperAdmin && !$isYonetim) {
+            $targetUserId = $user->id;
+        }
 
-        // 1. Bireysel Personel Hedefleri
-        $myTargetsQuery = KpiTargetM::with([
-            'template',
-            'targetField',
-            'realizations' => function ($q) use ($year) {
-                $q->where('realization_year', $year);
-            },
-            'periods' => function ($q) use ($year) {
-                $q->where('period_year', $year);
+        $inspectedUser = $targetUserId ? UserM::find($targetUserId) : null;
+        $myScorecard = null;
+
+        if ($targetUserId && $inspectedUser) {
+            // 1. Bireysel Personel Hedefleri
+            $myTargetsQuery = KpiTargetM::with([
+                'template',
+                'targetField',
+                'realizations' => function ($q) use ($year) {
+                    $q->where('realization_year', $year);
+                },
+                'periods' => function ($q) use ($year) {
+                    $q->where('period_year', $year);
+                }
+            ])
+            ->where('target_year', $year)
+            ->where('assignee_type', 'user')
+            ->where('assignee_id', $targetUserId)
+            ->where('status', 'active');
+
+            $myTargets = $myTargetsQuery->get();
+
+            $myTargetItems = [];
+            $sumRates = 0;
+            $totalTargetVal = 0;
+            $totalActualVal = 0;
+            $achievedCount = 0;
+            $inProgressCount = 0;
+            $atRiskCount = 0;
+
+            foreach ($myTargets as $t) {
+                $real = $t->realizations->firstWhere('realization_month', $monthKey);
+                $actual = $real ? floatval($real->actual_value) : 0;
+                $rate = $real ? floatval($real->achievement_rate) : 0;
+                $targetVal = floatval($t->target_value);
+
+                if ($monthKey > 0) {
+                    $period = $t->periods->firstWhere('period_month', $monthKey);
+                    $targetVal = $period ? floatval($period->period_target_value) : round($targetVal / 12, 2);
+                }
+
+                $sumRates += $rate;
+                $totalTargetVal += $targetVal;
+                $totalActualVal += $actual;
+
+                if ($rate >= 100) {
+                    $achievedCount++;
+                    $barColor = 'bg-emerald-500';
+                    $badgeClass = 'bg-emerald-50 text-emerald-700 border-emerald-200';
+                } elseif ($rate >= 70) {
+                    $inProgressCount++;
+                    $barColor = 'bg-amber-500';
+                    $badgeClass = 'bg-amber-50 text-amber-700 border-amber-200';
+                } else {
+                    $atRiskCount++;
+                    $barColor = 'bg-rose-500';
+                    $badgeClass = 'bg-rose-50 text-rose-700 border-rose-200';
+                }
+
+                $myTargetItems[] = [
+                    'id'               => $t->id,
+                    'title'            => $t->title,
+                    'template'         => $t->template->name ?? 'Dinamik Form',
+                    'template_name'    => $t->template->name ?? 'Dinamik Form',
+                    'target_field'     => $t->targetField->label ?? 'Hedef Alanı',
+                    'field_label'      => $t->targetField->label ?? 'Hedef Alanı',
+                    'target_value'     => $targetVal,
+                    'actual_value'     => $actual,
+                    'unit'             => $t->unit,
+                    'achievement_rate' => $rate,
+                    'bar_color'        => $barColor,
+                    'badge_class'      => $badgeClass,
+                    'badges'           => $this->kpiService->getFormattedCriteriaBadges($t->criteria_json),
+                ];
             }
-        ])
-        ->where('target_year', $year)
-        ->where('assignee_type', 'user')
-        ->where('assignee_id', $targetUserId)
-        ->where('status', 'active');
 
-        $myTargets = $myTargetsQuery->get();
+            $myTargetsCount = count($myTargetItems);
+            $myAverageRate = $myTargetsCount > 0 ? round($sumRates / $myTargetsCount, 1) : 0;
 
-        $myTargetItems = [];
-        $sumRates = 0;
-        $totalTargetVal = 0;
-        $totalActualVal = 0;
-        $achievedCount = 0;
-        $inProgressCount = 0;
-        $atRiskCount = 0;
-
-        foreach ($myTargets as $t) {
-            $real = $t->realizations->firstWhere('realization_month', $monthKey);
-            $actual = $real ? floatval($real->actual_value) : 0;
-            $rate = $real ? floatval($real->achievement_rate) : 0;
-            $targetVal = floatval($t->target_value);
-
-            if ($monthKey > 0) {
-                $period = $t->periods->firstWhere('period_month', $monthKey);
-                $targetVal = $period ? floatval($period->period_target_value) : round($targetVal / 12, 2);
-            }
-
-            $sumRates += $rate;
-            $totalTargetVal += $targetVal;
-            $totalActualVal += $actual;
-
-            if ($rate >= 100) {
-                $achievedCount++;
-                $barColor = 'bg-emerald-500';
-                $badgeClass = 'bg-emerald-50 text-emerald-700 border-emerald-200';
-            } elseif ($rate >= 70) {
-                $inProgressCount++;
-                $barColor = 'bg-amber-500';
-                $badgeClass = 'bg-amber-50 text-amber-700 border-amber-200';
+            if ($myAverageRate >= 100) {
+                $grade = 'Üstün Başarı';
+                $gradeColor = 'text-emerald-700 bg-emerald-50 border-emerald-200';
+            } elseif ($myAverageRate >= 70) {
+                $grade = 'Hedef Yolunda';
+                $gradeColor = 'text-indigo-700 bg-indigo-50 border-indigo-200';
+            } elseif ($myTargetsCount > 0) {
+                $grade = 'Geliştirilmeli (Kritik)';
+                $gradeColor = 'text-rose-700 bg-rose-50 border-rose-200';
             } else {
-                $atRiskCount++;
-                $barColor = 'bg-rose-500';
-                $badgeClass = 'bg-rose-50 text-rose-700 border-rose-200';
+                $grade = 'Tanımlı Hedef Yok';
+                $gradeColor = 'text-slate-500 bg-slate-50 border-slate-200';
             }
 
-            $myTargetItems[] = [
-                'id'               => $t->id,
-                'title'            => $t->title,
-                'template'         => $t->template->name ?? 'Dinamik Form',
-                'template_name'    => $t->template->name ?? 'Dinamik Form',
-                'target_field'     => $t->targetField->label ?? 'Hedef Alanı',
-                'field_label'      => $t->targetField->label ?? 'Hedef Alanı',
-                'target_value'     => $targetVal,
-                'actual_value'     => $actual,
-                'unit'             => $t->unit,
-                'achievement_rate' => $rate,
-                'bar_color'        => $barColor,
-                'badge_class'      => $badgeClass,
-                'badges'           => $this->kpiService->getFormattedCriteriaBadges($t->criteria_json),
+            $myScorecard = [
+                'total_targets'    => $myTargetsCount,
+                'average_rate'     => $myAverageRate,
+                'total_target_val' => $totalTargetVal,
+                'total_actual_val' => $totalActualVal,
+                'achieved_count'   => $achievedCount,
+                'in_progress_count'=> $inProgressCount,
+                'at_risk_count'    => $atRiskCount,
+                'grade'            => $grade,
+                'grade_color'      => $gradeColor,
+                'targets'          => $myTargetItems,
+                'user'             => $inspectedUser,
             ];
         }
-
-        $myTargetsCount = count($myTargetItems);
-        $myAverageRate = $myTargetsCount > 0 ? round($sumRates / $myTargetsCount, 1) : 0;
-
-        if ($myAverageRate >= 100) {
-            $grade = 'Üstün Başarı';
-            $gradeColor = 'text-emerald-700 bg-emerald-50 border-emerald-200';
-        } elseif ($myAverageRate >= 70) {
-            $grade = 'Hedef Yolunda';
-            $gradeColor = 'text-indigo-700 bg-indigo-50 border-indigo-200';
-        } elseif ($myTargetsCount > 0) {
-            $grade = 'Geliştirilmeli (Kritik)';
-            $gradeColor = 'text-rose-700 bg-rose-50 border-rose-200';
-        } else {
-            $grade = 'Tanımlı Hedef Yok';
-            $gradeColor = 'text-slate-500 bg-slate-50 border-slate-200';
-        }
-
-        $myScorecard = [
-            'total_targets'    => $myTargetsCount,
-            'average_rate'     => $myAverageRate,
-            'total_target_val' => $totalTargetVal,
-            'total_actual_val' => $totalActualVal,
-            'achieved_count'   => $achievedCount,
-            'in_progress_count'=> $inProgressCount,
-            'at_risk_count'    => $atRiskCount,
-            'grade'            => $grade,
-            'grade_color'      => $gradeColor,
-            'targets'          => $myTargetItems,
-            'user'             => $inspectedUser,
-        ];
 
         // 2. Grup Yöneticisi ve Yönetim için Departman / Grup Hedefleri
         $groupScorecard = null;
@@ -437,10 +447,11 @@ class DashboardC extends Controller
         }
 
         // 4. Yönetim / Superadmin için Canlı Personel İnceleme Listesi (Dropdown)
+        // Yalnızca KPI atanabilecek aktif onaylı personeller listelenir (Yönetim, Sistem Yöneticisi ve Onay Bekleyenler hariç)
         $allUsersList = [];
         if ($isSuperAdmin || $isYonetim || $canManageKpi) {
             $allUsersList = UserM::with('group')
-                ->where('is_active', true)
+                ->eligibleForKpi()
                 ->orderBy('name')
                 ->get(['id', 'name', 'group_id']);
         }
@@ -558,7 +569,10 @@ class DashboardC extends Controller
 
     private function getLeaderboard(array $filters = []): array
     {
-        $query = FormEntryM::join('users', 'form_entries.user_id', '=', 'users.id');
+        $eligibleUserIds = UserM::eligibleForKpi()->pluck('id');
+
+        $query = FormEntryM::join('users', 'form_entries.user_id', '=', 'users.id')
+            ->whereIn('form_entries.user_id', $eligibleUserIds);
         $this->applyDateFilters($query, $filters, 'form_entries.entry_date');
 
         $results = $query

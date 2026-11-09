@@ -96,7 +96,11 @@
                                 Personel:
                             </span>
                             <select name="inspect_user_id" onchange="document.getElementById('dashboardFilterForm').submit()" class="border-0 bg-transparent py-0 pl-1 pr-7 text-xs font-bold text-indigo-950 focus:ring-0 cursor-pointer max-w-[210px]">
-                                <option value="">👤 Kendim ({{ Auth::user()->name }})</option>
+                                @if($kpiCockpit['isSuperAdmin'] || $kpiCockpit['isYonetim'])
+                                    <option value="">👤 Personel İncele (Seçiniz)</option>
+                                @else
+                                    <option value="">👤 Kendim ({{ Auth::user()->name }})</option>
+                                @endif
                                 @foreach($kpiCockpit['allUsersList'] as $u)
                                     <option value="{{ $u->id }}" {{ ($kpiCockpit['inspectUserId'] == $u->id) ? 'selected' : '' }}>
                                         👤 {{ $u->name }} ({{ $u->group?->name ?? 'Grup Yok' }})
@@ -170,6 +174,7 @@
                 @endif
 
                 {{-- BİREYSEL KÜMÜLATİF PERFORMANS KARTI (Hero Scorecard) --}}
+                @if(!empty($kpiCockpit['myScorecard']))
                 <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-6 sm:p-7 relative overflow-hidden" x-data="{ openTargets: false }">
                     <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-100">
                         {{-- Sol: Personel & Başlık --}}
@@ -339,6 +344,7 @@
                     </div>
                     @endif
                 </div>
+                @endif
 
                 {{-- GRUP / DEPARTMAN HEDEFLERİ (Grup Yöneticisi & Yönetim) --}}
                 @if(!empty($kpiCockpit['groupScorecard']) && !empty($kpiCockpit['groupScorecard']['groups']) && count($kpiCockpit['groupScorecard']['groups']) > 0)

@@ -100,6 +100,41 @@ class UserM extends Authenticatable
         return $this->hasMany(KpiTargetM::class, 'assignee_id')->where('assignee_type', 'user');
     }
 
+    public function ssoApplications()
+    {
+        return $this->hasMany(SsoApplicationM::class, 'user_id');
+    }
+
+    /**
+     * Aktif, onaylı ve rolü atanmış gerçek sistem kullanıcıları
+     * (Henüz başvuru aşamasında veya onaysız olanlar hariç)
+     */
+    public function scopeActivePersonnel($query)
+    {
+        return $query->where('users.is_active', true)
+            ->where('users.approval_status', 'approved')
+            ->whereNotNull('users.role_id')
+            ->whereDoesntHave('ssoApplications', function ($q) {
+                $q->where('status', 'pending');
+            })
+            ->whereNotIn('users.email', function ($sq) {
+                $sq->select('email')->from('sso_applications')->where('status', 'pending');
+            });
+    }
+
+    /**
+     * KPI ve Performans Hedefi Atanabilecek Personeller
+     * (Sistem Yöneticisi ve Yönetim rolleri KPI hedefi almaz, listelerde görünmez)
+     */
+    public function scopeEligibleForKpi($query)
+    {
+        return $query->activePersonnel()
+            ->where('users.id', '!=', 1)
+            ->whereHas('role', function ($q) {
+                $q->whereNotIn('slug', ['sistem_yoneticisi', 'yonetim']);
+            });
+    }
+
     public function hasRole(string|array $roles): bool
     {
         $roleSlug = $this->role?->slug ?? '';
