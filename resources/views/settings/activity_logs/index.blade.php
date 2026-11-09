@@ -25,7 +25,7 @@
                 <!-- Logları Temizle (Sadece Sistem Yöneticisi) -->
                 @if(auth()->user() && !auth()->user()->isYonetim() && (auth()->user()->isSuperAdmin() || auth()->user()->hasPermission('settings.manage')))
                     <button type="button" 
-                            @click="showClearModal = true"
+                            @click="window.dispatchEvent(new CustomEvent('open-clear-log-modal'))"
                             class="inline-flex items-center px-4 py-2 rounded-xl text-xs font-bold text-rose-700 bg-rose-50 border border-rose-200 hover:bg-rose-100 transition shadow-xs cursor-pointer">
                         <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
@@ -50,7 +50,8 @@
              showLogModal: false, 
              showClearModal: false,
              activeLogDetail: { date: '', user: '', action: '', badgeClass: '', description: '', ip: '', model: '' } 
-         }">
+         }"
+         @open-clear-log-modal.window="showClearModal = true">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
 
             <!-- BİLDİRİM / ALERT MESAJLARI -->
@@ -237,8 +238,8 @@
                                     <tr class="hover:bg-slate-50/70 transition-colors">
                                         <!-- Tarih -->
                                         <td class="px-5 py-3.5 whitespace-nowrap">
-                                            <div class="font-bold text-slate-800">{{ $log->created_at->format('d.m.Y H:i:s') }}</div>
-                                            <div class="text-[10px] text-slate-400 mt-0.5">{{ $log->created_at->diffForHumans() }}</div>
+                                            <div class="font-bold text-slate-800">{{ $log->created_at ? $log->created_at->format('d.m.Y H:i:s') : '-' }}</div>
+                                            <div class="text-[10px] text-slate-400 mt-0.5">{{ $log->created_at ? $log->created_at->diffForHumans() : '' }}</div>
                                         </td>
 
                                         <!-- Kullanıcı -->
@@ -272,7 +273,13 @@
 
                                         <!-- İlişkili Kayıt / Hedef -->
                                         <td class="px-5 py-3.5 whitespace-nowrap">
-                                            @if($log->model_type === \App\Models\FormEntryM::class && $log->model_id)
+                                            @php
+                                                $isFormEntry = in_array($log->model_type, [\App\Models\FormEntryM::class, 'App\\Models\\FormEntryM', 'FormEntryM']);
+                                                $isKpiTarget = in_array($log->model_type, [\App\Models\KpiTargetM::class, 'App\\Models\\KpiTargetM', 'KpiTargetM']);
+                                                $isUser = in_array($log->model_type, [\App\Models\UserM::class, 'App\\Models\\UserM', 'UserM']);
+                                                $isFormTemplate = in_array($log->model_type, [\App\Models\FormTemplateM::class, 'App\\Models\\FormTemplateM', 'FormTemplateM']);
+                                            @endphp
+                                            @if($isFormEntry && $log->model_id)
                                                 @php
                                                     $entry = $relatedFormEntries[$log->model_id] ?? null;
                                                 @endphp
@@ -293,7 +300,7 @@
                                                         <span class="text-[10px] text-slate-400">Veri tabanından silinmiş</span>
                                                     </div>
                                                 @endif
-                                            @elseif($log->model_type === \App\Models\KpiTargetM::class && $log->model_id)
+                                            @elseif($isKpiTarget && $log->model_id)
                                                 @php
                                                     $target = $relatedKpiTargets[$log->model_id] ?? null;
                                                 @endphp
@@ -314,7 +321,7 @@
                                                         <span class="text-[10px] text-slate-400">Hedef kaydı silinmiş</span>
                                                     </div>
                                                 @endif
-                                            @elseif($log->model_type === \App\Models\UserM::class && $log->model_id)
+                                            @elseif($isUser && $log->model_id)
                                                 @php
                                                     $targetUser = $relatedUsers[$log->model_id] ?? null;
                                                 @endphp
@@ -326,7 +333,7 @@
                                                 @else
                                                     <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">Silinmiş Kullanıcı (#{{ $log->model_id }})</span>
                                                 @endif
-                                            @elseif($log->model_type === \App\Models\FormTemplateM::class && $log->model_id)
+                                            @elseif($isFormTemplate && $log->model_id)
                                                 @php
                                                     $template = $relatedFormTemplates[$log->model_id] ?? null;
                                                 @endphp
@@ -359,13 +366,13 @@
                                                         @endif
                                                         <button type="button"
                                                                 @click="activeLogDetail = {
-                                                                    date: '{{ $log->created_at->format('d.m.Y H:i:s') }}',
-                                                                    user: '{{ $log->user->name ?? 'Sistem' }}',
-                                                                    action: '{{ $log->action_label }}',
-                                                                    badgeClass: '{{ $log->action_badge_class }}',
-                                                                    description: @js($log->description),
-                                                                    ip: '{{ $log->ip_address ?? '-' }}',
-                                                                    model: '{{ $modelName }}'
+                                                                    date: {{ @js($log->created_at ? $log->created_at->format('d.m.Y H:i:s') : '-') }},
+                                                                    user: {{ @js($log->user?->name ?? 'Sistem') }},
+                                                                    action: {{ @js($log->action_label) }},
+                                                                    badgeClass: {{ @js($log->action_badge_class) }},
+                                                                    description: {{ @js($log->description ?? '') }},
+                                                                    ip: {{ @js($log->ip_address ?: '-') }},
+                                                                    model: {{ @js($modelName) }}
                                                                 }; showLogModal = true;"
                                                                 class="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-600 hover:text-indigo-800 hover:underline cursor-pointer">
                                                             <svg class="w-3.5 h-3.5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>

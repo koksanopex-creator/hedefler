@@ -71,10 +71,22 @@ class ActivityLogC extends Controller
         $logs = $query->paginate(20)->withQueryString();
 
         // İlişkili modelleri N+1 yapmadan tek seferde yükle
-        $formEntryIds = $logs->where('model_type', FormEntryM::class)->pluck('model_id')->filter()->unique();
-        $kpiTargetIds = $logs->where('model_type', KpiTargetM::class)->pluck('model_id')->filter()->unique();
-        $userIds = $logs->where('model_type', UserM::class)->pluck('model_id')->filter()->unique();
-        $formTemplateIds = $logs->where('model_type', FormTemplateM::class)->pluck('model_id')->filter()->unique();
+        $collection = $logs->getCollection();
+        $formEntryIds = $collection->filter(function ($item) {
+            return in_array($item->model_type, [FormEntryM::class, 'App\\Models\\FormEntryM', 'FormEntryM']);
+        })->pluck('model_id')->filter()->unique();
+
+        $kpiTargetIds = $collection->filter(function ($item) {
+            return in_array($item->model_type, [KpiTargetM::class, 'App\\Models\\KpiTargetM', 'KpiTargetM']);
+        })->pluck('model_id')->filter()->unique();
+
+        $userIds = $collection->filter(function ($item) {
+            return in_array($item->model_type, [UserM::class, 'App\\Models\\UserM', 'UserM']);
+        })->pluck('model_id')->filter()->unique();
+
+        $formTemplateIds = $collection->filter(function ($item) {
+            return in_array($item->model_type, [FormTemplateM::class, 'App\\Models\\FormTemplateM', 'FormTemplateM']);
+        })->pluck('model_id')->filter()->unique();
 
         $relatedFormEntries = FormEntryM::with(['template', 'user'])->whereIn('id', $formEntryIds)->get()->keyBy('id');
         $relatedKpiTargets = KpiTargetM::whereIn('id', $kpiTargetIds)->get()->keyBy('id');
@@ -264,9 +276,8 @@ class ActivityLogC extends Controller
     public function clearLogs(Request $request)
     {
         $user = $request->user();
-        $isSuperAdmin = ($user->role && $user->role->slug === 'sistem_yoneticisi') || $user->id === 1;
 
-        if ($user->isYonetim() || !$isSuperAdmin) {
+        if (!$user || $user->isYonetim() || !$user->isSuperAdmin()) {
             abort(403, 'Denetim loglarını silme yetkiniz bulunmamaktadır. Bu işlem sadece Sistem Yöneticisi tarafından gerçekleştirilebilir.');
         }
 

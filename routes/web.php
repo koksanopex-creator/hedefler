@@ -3,8 +3,12 @@
 use App\Http\Controllers\ProfileC;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return redirect()->route('dashboard');
+Route::any('/', function () {
+    return redirect('dashboard');
+});
+
+Route::any('/hedefler', function () {
+    return redirect('dashboard');
 });
 
 Route::get('/dashboard', [App\Http\Controllers\DashboardC::class, 'index'])
