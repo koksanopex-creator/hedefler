@@ -455,7 +455,7 @@
                                                         <template x-if="field.type !== 'auto_user' && !field.is_calculated">
                                                             <div class="flex items-center space-x-0.5">
                                                                 <!-- İlk Satırdaki Değeri Tüm Sütuna Yay (Aşağı Doldur) -->
-                                                                <button type="button" @click="promptFillColumnFromFirstRow(field.id)"
+                                                                <button type="button" @click.stop="promptFillColumnFromFirstRow(field.id)"
                                                                     class="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-indigo-300 hover:bg-gray-700/70 transition-all p-1 rounded"
                                                                     title="İlk Satırdaki Değeri Tüm Sütuna Yay (Onaylı)">
                                                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -464,7 +464,7 @@
                                                                 </button>
 
                                                                 <!-- Bu Sütunu Temizle (Modal Onaylı) -->
-                                                                <button type="button" @click="promptClearColumn(field.id)"
+                                                                <button type="button" @click.stop="promptClearColumn(field.id)"
                                                                     class="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-400 hover:bg-gray-700/70 transition-all p-1 rounded cursor-pointer"
                                                                     title="Bu Sütundaki Verileri Temizle">
                                                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor"
@@ -726,7 +726,7 @@
                                         @endforeach
 
                                         <td class="w-16 px-4 py-2 whitespace-nowrap text-center sticky right-0 z-10 bg-white group-hover:bg-indigo-50 border-l border-gray-200 shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.06)]">
-                                            <button type="button" @click="promptDeleteRow(row)"
+                                            <button type="button" @click.stop="promptDeleteRow(row)"
                                                 class="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-2 rounded-full transition cursor-pointer"
                                                 title="Satırı Sil (Doluysa Onay İster)" x-show="rows.length > 1">
                                                 <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor"
@@ -812,7 +812,7 @@
                                 </button>
                             </div>
 
-                            <button type="button" @click="promptClearAll()"
+                            <button type="button" @click.stop="promptClearAll()"
                                 class="bg-white hover:bg-red-50 text-red-600 font-semibold py-2 px-4 border border-red-200 rounded-lg shadow-sm transition flex items-center cursor-pointer select-none">
                                 Tümünü Temizle
                             </button>
@@ -909,8 +909,6 @@
                             </button>
                         </div>
                     </div>
-                </div>
-            </form>
 
             <!-- Excel Yükleme İlerleme Modalı (Upload Progress Modal) -->
             <div x-show="showUploadModal"
@@ -1011,7 +1009,7 @@
                  x-transition:leave-end="opacity-0 scale-95"
                  class="fixed inset-0 z-[99999999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
                  style="display: none; z-index: 99999999 !important;"
-                 @click.away="if (!isFillingColumn) showFillConfirmModal = false"
+                 @click.self="if (!isFillingColumn) showFillConfirmModal = false"
                  @keydown.escape.window="if (!isFillingColumn) showFillConfirmModal = false">
                 
                 <div class="bg-white rounded-2xl shadow-2xl border border-gray-100 p-6 max-w-md w-full">
@@ -1141,7 +1139,7 @@
                  x-transition:leave-end="opacity-0 scale-95"
                  class="fixed inset-0 z-[99999999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs"
                  style="display: none; z-index: 99999999 !important;"
-                 @click.away="showConfirmModal = false"
+                 @click.self="showConfirmModal = false"
                  @keydown.escape.window="showConfirmModal = false">
                 
                 <div class="bg-white rounded-2xl shadow-2xl border border-gray-100 p-6 max-w-md w-full">
@@ -1204,14 +1202,18 @@
                  x-transition:leave="transition ease-in duration-200"
                  x-transition:leave-start="opacity-100 translate-y-0"
                  x-transition:leave-end="opacity-0 translate-y-3"
-                 class="fixed bottom-6 right-6 z-50 bg-slate-900/90 text-white px-4 py-2.5 rounded-xl shadow-2xl flex items-center gap-2.5 text-xs font-semibold backdrop-blur-sm border border-slate-700/60"
-                 style="display: none;">
+                 class="fixed bottom-6 right-6 z-[99999999] bg-slate-900/90 text-white px-4 py-2.5 rounded-xl shadow-2xl flex items-center gap-2.5 text-xs font-semibold backdrop-blur-sm border border-slate-700/60"
+                 style="display: none; z-index: 99999999 !important;">
                 <span class="flex h-2 w-2 relative">
                     <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                     <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                 </span>
                 <span x-text="toastMessage"></span>
             </div>
+                </div>
+            </form>
+
+
         </div>
     </div>
 
