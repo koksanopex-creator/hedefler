@@ -117,18 +117,18 @@
                     </div>
 
                     <!-- Tablo -->
-                    <div class="w-full overflow-hidden">
-                        <table class="w-full divide-y divide-gray-100/70 table-fixed">
+                    <div class="w-full overflow-x-auto">
+                        <table class="w-full min-w-full divide-y divide-gray-100/70 text-left">
                             <thead>
                                 <tr class="bg-gray-50/50">
-                                    <th class="w-[24%] px-3.5 py-3 sm:px-4 sm:py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Kullanıcı Adı</th>
-                                    <th class="w-[20%] px-3.5 py-3 sm:px-4 sm:py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">E-Posta</th>
-                                    <th class="w-[16%] px-3.5 py-3 sm:px-4 sm:py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Gruptaki Konumu / Rol</th>
+                                    <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap min-w-[240px]">Kullanıcı Adı</th>
+                                    <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap min-w-[230px]">E-Posta</th>
+                                    <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap min-w-[170px]">Gruptaki Konumu / Rol</th>
                                     @if($canManage)
-                                        <th class="w-[15%] px-3.5 py-3 sm:px-4 sm:py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Sistem Rolü</th>
-                                        <th class="w-[11%] px-3.5 py-3 sm:px-4 sm:py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Yetki Kapsamı</th>
-                                        <th class="w-[7%] px-3.5 py-3 sm:px-4 sm:py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Durum</th>
-                                        <th class="w-[7%] px-3.5 py-3 sm:px-4 sm:py-3.5 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">İşlemler</th>
+                                        <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap min-w-[160px]">Sistem Rolü</th>
+                                        <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap min-w-[160px]">Yetki Kapsamı</th>
+                                        <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap w-[90px]">Durum</th>
+                                        <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-right text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap w-[90px]">İşlemler</th>
                                     @endif
                                 </tr>
                             </thead>
@@ -140,9 +140,9 @@
                                         $displayName = $maskName ? 'Yönetim' : $user->name;
                                     @endphp
                                     <tr class="hover:bg-purple-50/30 transition-colors">
-                                        <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 whitespace-nowrap">
+                                        <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 whitespace-nowrap min-w-[240px]">
                                             <div class="flex items-center gap-3">
-                                                <div class="h-10 w-10 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-white font-bold shadow-sm">
+                                                <div class="h-10 w-10 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-white font-bold shadow-sm shrink-0">
                                                     {{ substr($displayName, 0, 1) }}
                                                 </div>
                                                 <div>
@@ -154,11 +154,13 @@
                                                             <svg class="w-3.5 h-3.5 text-gray-400 group-hover:text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
                                                         </a>
                                                     @endif
-                                                    <span class="text-[11px] font-medium text-purple-600">Üst Düzey Yönetici</span>
+                                                    <span class="text-[11px] font-medium text-purple-600 block mt-0.5">Üst Düzey Yönetici</span>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-sm text-gray-600 font-medium truncate max-w-[200px] lg:max-w-none">{{ $user->email }}</td>
+                                        <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-sm text-gray-700 font-medium whitespace-nowrap min-w-[230px]">
+                                            <a href="mailto:{{ $user->email }}" class="hover:text-indigo-600 hover:underline">{{ $user->email }}</a>
+                                        </td>
                                         <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 whitespace-nowrap">
                                             <span class="px-3 py-1 inline-flex text-xs font-bold rounded-full bg-purple-50 text-purple-700 border border-purple-200">
                                                 Sistem ve Genel Yönetim
@@ -252,17 +254,17 @@
                         </div>
 
                         <!-- Grup Tablosu (Üstte Yönetici, Altta Üyeler) -->
-                        <div class="w-full overflow-hidden">
-                            <table class="w-full divide-y divide-gray-100 table-fixed">
+                        <div class="w-full overflow-x-auto">
+                            <table class="w-full min-w-full divide-y divide-gray-100 text-left">
                                 <thead>
                                     <tr class="bg-gray-50/50">
-                                        <th class="w-[28%] px-3.5 py-3 sm:px-4 sm:py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Kullanıcı Adı</th>
-                                        <th class="w-[22%] px-3.5 py-3 sm:px-4 sm:py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">E-Posta</th>
-                                        <th class="w-[18%] px-3.5 py-3 sm:px-4 sm:py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Gruptaki Konumu / Rol</th>
-                                        <th class="w-[18%] px-3.5 py-3 sm:px-4 sm:py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Bağlı Olduğu Grup</th>
+                                        <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap min-w-[260px]">Kullanıcı Adı</th>
+                                        <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap min-w-[240px]">E-Posta</th>
+                                        <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap min-w-[180px]">Gruptaki Konumu / Rol</th>
+                                        <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap min-w-[220px]">Bağlı Olduğu Grup</th>
                                         @if($canManage)
-                                            <th class="w-[7%] px-3.5 py-3 sm:px-4 sm:py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Durum</th>
-                                            <th class="w-[7%] px-3.5 py-3 sm:px-4 sm:py-3.5 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">İşlemler</th>
+                                            <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap w-[90px]">Durum</th>
+                                            <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-right text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap w-[90px]">İşlemler</th>
                                         @endif
                                     </tr>
                                 </thead>
@@ -276,9 +278,9 @@
                                             $displayName = $maskName ? 'Yönetim' : $manager->name;
                                         @endphp
                                         <tr class="bg-gradient-to-r from-amber-50/60 via-indigo-50/30 to-white hover:bg-amber-50/80 transition-colors border-b border-indigo-100">
-                                            <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 whitespace-nowrap">
+                                            <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 whitespace-nowrap min-w-[260px]">
                                                 <div class="flex items-center gap-3">
-                                                    <div class="relative">
+                                                    <div class="relative shrink-0">
                                                         <div class="h-10 w-10 rounded-full bg-gradient-to-br from-amber-400 to-indigo-600 flex items-center justify-center text-white font-bold shadow-md border-2 border-white">
                                                             {{ substr($displayName, 0, 1) }}
                                                         </div>
@@ -287,7 +289,7 @@
                                                         </div>
                                                     </div>
                                                     <div>
-                                                        <div class="text-sm font-extrabold text-gray-900 flex items-center gap-2">
+                                                        <div class="text-sm font-extrabold text-gray-900 flex items-center flex-wrap gap-1.5">
                                                             @if($maskName)
                                                                 <span>{{ $displayName }}</span>
                                                             @else
@@ -296,24 +298,26 @@
                                                                     <svg class="w-3.5 h-3.5 text-gray-400 group-hover:text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
                                                                 </a>
                                                             @endif
-                                                            <span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-full border border-amber-200">
+                                                            <span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-full border border-amber-200 shrink-0">
                                                                 👑 GRUP YÖNETİCİSİ
                                                             </span>
                                                         </div>
-                                                        <span class="text-[11px] font-semibold text-indigo-600">Veri Giriş Yöneticisi</span>
+                                                        <span class="text-[11px] font-semibold text-indigo-600 block mt-0.5">Veri Giriş Yöneticisi</span>
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-sm text-gray-700 font-medium truncate" title="{{ $manager->email }}">{{ $manager->email }}</td>
-                                            <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 whitespace-nowrap">
+                                            <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-sm text-gray-700 font-medium whitespace-nowrap min-w-[240px]">
+                                                <a href="mailto:{{ $manager->email }}" class="hover:text-indigo-600 hover:underline">{{ $manager->email }}</a>
+                                            </td>
+                                            <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 whitespace-nowrap min-w-[180px]">
                                                 <span class="px-3 py-1 inline-flex text-xs font-bold rounded-full bg-indigo-100 text-indigo-800 border border-indigo-200">
                                                     {{ $manager->role->name ?? 'Veri Giriş Yöneticisi' }}
                                                 </span>
                                             </td>
-                                            <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-xs font-semibold text-indigo-700 truncate" title="{{ $group->name }} (Yönettiği Grup)">
-                                                <div class="flex items-center gap-1.5 truncate">
+                                            <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-xs font-semibold text-indigo-700 whitespace-nowrap min-w-[220px]">
+                                                <div class="flex items-center gap-1.5">
                                                     <svg class="w-4 h-4 text-indigo-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
-                                                    <span class="truncate">{{ $group->name }} (Yönettiği Grup)</span>
+                                                    <span>{{ $group->name }} (Yönettiği Grup)</span>
                                                 </div>
                                             </td>
                                             @if($canManage)
@@ -357,7 +361,7 @@
                                             $displayName = $maskName ? 'Yönetim' : $member->name;
                                         @endphp
                                         <tr class="hover:bg-gray-50/70 transition-colors">
-                                            <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 whitespace-nowrap">
+                                            <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 whitespace-nowrap min-w-[260px]">
                                                 <div class="flex items-center gap-3 pl-3">
                                                     <svg class="w-4 h-4 text-gray-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
                                                     <div class="h-9 w-9 rounded-full bg-gradient-to-br from-slate-100 to-indigo-100 flex items-center justify-center text-indigo-600 font-bold border border-white shadow-xs shrink-0">
@@ -372,20 +376,22 @@
                                                                 <svg class="w-3.5 h-3.5 text-gray-400 group-hover:text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
                                                             </a>
                                                         @endif
-                                                        <span class="text-[11px] font-medium text-gray-400">Grup Üyesi</span>
+                                                        <span class="text-[11px] font-medium text-gray-400 block mt-0.5">Grup Üyesi</span>
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-sm text-gray-600 font-medium truncate" title="{{ $member->email }}">{{ $member->email }}</td>
-                                            <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 whitespace-nowrap">
+                                            <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-sm text-gray-600 font-medium whitespace-nowrap min-w-[240px]">
+                                                <a href="mailto:{{ $member->email }}" class="hover:text-indigo-600 hover:underline">{{ $member->email }}</a>
+                                            </td>
+                                            <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 whitespace-nowrap min-w-[180px]">
                                                 <span class="px-3 py-1 inline-flex text-xs font-semibold rounded-full bg-slate-100 text-slate-700 border border-slate-200">
                                                     {{ $member->role->name ?? 'Veri Girişi' }}
                                                 </span>
                                             </td>
-                                            <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-xs text-gray-600 font-medium truncate" title="{{ $group->name }}">
-                                                <div class="flex items-center gap-1.5 truncate">
+                                            <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-xs text-gray-600 font-medium whitespace-nowrap min-w-[220px]">
+                                                <div class="flex items-center gap-1.5">
                                                     <span class="w-2 h-2 rounded-full bg-indigo-400 shrink-0"></span>
-                                                    <span class="truncate">{{ $group->name }}</span>
+                                                    <span>{{ $group->name }}</span>
                                                 </div>
                                             </td>
                                             @if($canManage)
@@ -444,16 +450,16 @@
                                 {{ $unassignedUsers->count() }} Kullanıcı
                             </span>
                         </div>
-                        <div class="w-full overflow-hidden">
-                            <table class="w-full divide-y divide-gray-100 table-fixed">
+                        <div class="w-full overflow-x-auto">
+                            <table class="w-full min-w-full divide-y divide-gray-100 text-left">
                                 <thead>
                                     <tr class="bg-gray-50/50">
-                                        <th class="w-[35%] px-3.5 py-3 sm:px-4 sm:py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Kullanıcı Adı</th>
-                                        <th class="w-[30%] px-3.5 py-3 sm:px-4 sm:py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">E-Posta</th>
-                                        <th class="w-[21%] px-3.5 py-3 sm:px-4 sm:py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Gruptaki Konumu / Rol</th>
+                                        <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap min-w-[260px]">Kullanıcı Adı</th>
+                                        <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap min-w-[240px]">E-Posta</th>
+                                        <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap min-w-[180px]">Gruptaki Konumu / Rol</th>
                                         @if($canManage)
-                                            <th class="w-[7%] px-3.5 py-3 sm:px-4 sm:py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Durum</th>
-                                            <th class="w-[7%] px-3.5 py-3 sm:px-4 sm:py-3.5 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">İşlemler</th>
+                                            <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap w-[90px]">Durum</th>
+                                            <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-right text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap w-[90px]">İşlemler</th>
                                         @endif
                                     </tr>
                                 </thead>
@@ -465,9 +471,9 @@
                                             $displayName = $maskName ? 'Yönetim' : $user->name;
                                         @endphp
                                         <tr class="hover:bg-amber-50/20 transition-colors">
-                                            <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 whitespace-nowrap">
+                                            <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 whitespace-nowrap min-w-[260px]">
                                                 <div class="flex items-center gap-3">
-                                                    <div class="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-700 font-bold">
+                                                    <div class="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-700 font-bold shrink-0">
                                                         {{ substr($displayName, 0, 1) }}
                                                     </div>
                                                     <div>
@@ -479,11 +485,13 @@
                                                                 <svg class="w-3.5 h-3.5 text-gray-400 group-hover:text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
                                                             </a>
                                                         @endif
-                                                        <span class="text-[11px] font-medium text-gray-400">Bağımsız Kullanıcı</span>
+                                                        <span class="text-[11px] font-medium text-gray-400 block mt-0.5">Bağımsız Kullanıcı</span>
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-sm text-gray-600 font-medium truncate" title="{{ $user->email }}">{{ $user->email }}</td>
+                                            <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-sm text-gray-700 font-medium whitespace-nowrap min-w-[240px]">
+                                                <a href="mailto:{{ $user->email }}" class="hover:text-indigo-600 hover:underline">{{ $user->email }}</a>
+                                            </td>
                                             <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 whitespace-nowrap">
                                                 <span class="px-3 py-1 inline-flex text-xs font-bold rounded-full bg-gray-100 text-gray-700 border border-gray-200">
                                                     {{ $user->role->name ?? 'Bağımsız' }}
@@ -527,18 +535,18 @@
             <!-- 2) DÜZ LİSTE GÖRÜNÜMÜ (SEÇENEK OLARAK)    -->
             <!-- ========================================== -->
             <div x-show="view === 'flat'" class="backdrop-blur-xl bg-white/70 border border-white/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] sm:rounded-3xl overflow-hidden" style="display: none;">
-                <div class="w-full overflow-hidden p-3 sm:p-5">
-                    <table class="w-full border-collapse table-fixed">
+                <div class="w-full overflow-x-auto p-3 sm:p-5">
+                    <table class="w-full min-w-full border-collapse text-left">
                         <thead>
                             <tr class="bg-gray-50/50">
-                                <th class="w-[22%] px-3.5 py-3 sm:px-4 sm:py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-widest border-b border-gray-200/50">Kullanıcı Adı</th>
-                                <th class="w-[20%] px-3.5 py-3 sm:px-4 sm:py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-widest border-b border-gray-200/50">Email</th>
-                                <th class="w-[18%] px-3.5 py-3 sm:px-4 sm:py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-widest border-b border-gray-200/50">Grup</th>
-                                <th class="w-[16%] px-3.5 py-3 sm:px-4 sm:py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-widest border-b border-gray-200/50">Gruptaki Konumu / Rol</th>
+                                <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-widest border-b border-gray-200/50 whitespace-nowrap min-w-[240px]">Kullanıcı Adı</th>
+                                <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-widest border-b border-gray-200/50 whitespace-nowrap min-w-[230px]">Email</th>
+                                <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-widest border-b border-gray-200/50 whitespace-nowrap min-w-[200px]">Grup</th>
+                                <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-widest border-b border-gray-200/50 whitespace-nowrap min-w-[170px]">Gruptaki Konumu / Rol</th>
                                 @if($canManage)
-                                    <th class="w-[11%] px-3.5 py-3 sm:px-4 sm:py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-widest border-b border-gray-200/50">Sistem Rolü</th>
-                                    <th class="w-[6%] px-3.5 py-3 sm:px-4 sm:py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-widest border-b border-gray-200/50">Durum</th>
-                                    <th class="w-[7%] px-3.5 py-3 sm:px-4 sm:py-3.5 text-right text-xs font-bold text-gray-500 uppercase tracking-widest border-b border-gray-200/50">İşlemler</th>
+                                    <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-widest border-b border-gray-200/50 whitespace-nowrap min-w-[150px]">Sistem Rolü</th>
+                                    <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-widest border-b border-gray-200/50 whitespace-nowrap w-[90px]">Durum</th>
+                                    <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-right text-xs font-bold text-gray-500 uppercase tracking-widest border-b border-gray-200/50 whitespace-nowrap w-[90px]">İşlemler</th>
                                 @endif
                             </tr>
                         </thead>
@@ -550,10 +558,10 @@
                                     $displayName = $maskName ? 'Yönetim' : $user->name;
                                 @endphp
                                 <tr class="group hover:bg-white/80 transition-all duration-300 rounded-2xl">
-                                    <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 whitespace-nowrap">
+                                    <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 whitespace-nowrap min-w-[240px]">
                                         <div class="flex items-center">
                                             <div class="h-9 w-9 flex-shrink-0">
-                                                <div class="h-9 w-9 rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center text-indigo-600 font-bold border border-white shadow-sm">
+                                                <div class="h-9 w-9 rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center text-indigo-600 font-bold border border-white shadow-sm shrink-0">
                                                     {{ substr($displayName, 0, 1) }}
                                                 </div>
                                             </div>
@@ -569,11 +577,13 @@
                                             </div>
                                         </div>
                                     </td>
-                                    <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-sm text-gray-500 font-medium truncate" title="{{ $user->email }}">{{ $user->email }}</td>
-                                    <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-sm text-gray-600 font-medium truncate" title="{{ $user->group->name ?? 'Bağımsız' }}">
-                                        <div class="flex items-center gap-2 truncate">
+                                    <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-sm text-gray-700 font-medium whitespace-nowrap min-w-[230px]">
+                                        <a href="mailto:{{ $user->email }}" class="hover:text-indigo-600 hover:underline">{{ $user->email }}</a>
+                                    </td>
+                                    <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-sm text-gray-600 font-medium whitespace-nowrap min-w-[200px]">
+                                        <div class="flex items-center gap-2">
                                             <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-                                            <span class="truncate">{{ $user->group->name ?? 'Bağımsız' }}</span>
+                                            <span>{{ $user->group->name ?? 'Bağımsız' }}</span>
                                         </div>
                                     </td>
                                     <td class="px-3.5 py-3 sm:px-4 sm:py-3.5 whitespace-nowrap">
