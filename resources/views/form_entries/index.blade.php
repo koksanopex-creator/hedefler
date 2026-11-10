@@ -24,17 +24,26 @@
                         @endif
                     </button>
                     @endif
-                    <a href="{{ route('form-entries.select-template') }}" class="group relative flex items-center justify-center py-2.5 px-5 border border-transparent text-sm font-semibold rounded-xl text-white bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 shadow-md hover:shadow-lg transition-all overflow-hidden">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                        Yeni Veri Girişi
+                    <a href="{{ route('form-entries.select-template') }}"
+                        x-data="{ clicking: false }"
+                        @click="if(clicking) { $event.preventDefault(); return false; } clicking = true;"
+                        onclick="if(this.dataset.clicked === 'true'){ return false; } this.dataset.clicked = 'true'; this.classList.add('pointer-events-none', 'opacity-70', 'cursor-not-allowed');"
+                        :class="clicking ? 'pointer-events-none opacity-70 cursor-not-allowed' : ''"
+                        class="group relative flex items-center justify-center py-2.5 px-5 border border-transparent text-sm font-semibold rounded-xl text-white bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 shadow-md hover:shadow-lg transition-all overflow-hidden select-none">
+                        <svg x-show="!clicking" class="w-5 h-5 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                        <svg x-show="clicking" style="display: none;" class="animate-spin -ml-1 mr-2 h-5 w-5 text-white shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span x-text="clicking ? 'Yönlendiriliyor...' : 'Yeni Veri Girişi'">Yeni Veri Girişi</span>
                     </a>
                 </div>
             </div>
         </x-slot>
 
-    <div class="py-10">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-2xl border border-gray-100">
+    <div class="py-6 sm:py-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="bg-white overflow-hidden shadow-xs sm:rounded-2xl border border-gray-100">
                 
                 @if(session('success'))
                     <div class="p-4 mx-6 mt-6 mb-2 text-sm text-teal-800 bg-teal-50 border border-teal-200 rounded-xl flex items-center" role="alert">
@@ -158,39 +167,39 @@
                     @endif
                 </div>
 
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
+                <div class="w-full overflow-x-auto">
+                    <table class="w-full divide-y divide-gray-200">
                         <thead>
-                            <tr class="bg-gray-50/50">
-                                <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Tarih</th>
-                                <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Kullanıcı</th>
-                                <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Şablon</th>
-                                <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Durum</th>
+                            <tr class="bg-gray-50/70 border-b border-gray-200">
+                                <th class="px-3.5 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider w-28 whitespace-nowrap">Tarih</th>
+                                <th class="px-3.5 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider w-44">Kullanıcı</th>
+                                <th class="px-3.5 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Şablon</th>
+                                <th class="px-3.5 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider w-32 whitespace-nowrap">Durum</th>
                                 @if(isset($canViewApprover) && $canViewApprover)
-                                    <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Onaylayan</th>
+                                    <th class="px-3.5 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider w-36 whitespace-nowrap">Onaylayan</th>
                                 @endif
-                                <th class="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">İşlemler</th>
+                                <th class="px-3.5 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider w-36 whitespace-nowrap">İşlemler</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-100">
                             @forelse($entries as $entry)
                                 <tr class="hover:bg-indigo-50/30 transition-colors group">
-                                    <td class="px-6 py-5 whitespace-nowrap">
-                                        <div class="flex items-center text-sm text-gray-900 font-medium">
-                                            <svg class="w-4 h-4 mr-2 text-gray-400 group-hover:text-indigo-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                                            {{ $entry->entry_date->format('d M Y') }}
+                                    <td class="px-3.5 py-3 whitespace-nowrap">
+                                        <div class="flex items-center text-xs text-gray-900 font-semibold">
+                                            <svg class="w-3.5 h-3.5 mr-1.5 text-gray-400 group-hover:text-indigo-400 transition-colors shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                            <span>{{ $entry->entry_date->format('d M Y') }}</span>
                                         </div>
                                     </td>
-                                    <td class="px-6 py-5 whitespace-nowrap">
+                                    <td class="px-3.5 py-3">
                                         <div class="flex items-center">
-                                            <div class="flex-shrink-0 h-9 w-9 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-full flex items-center justify-center text-indigo-700 font-bold border border-indigo-200 shadow-sm">
+                                            <div class="shrink-0 h-8 w-8 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-full flex items-center justify-center text-indigo-700 font-bold border border-indigo-200 text-xs shadow-2xs">
                                                 {{ mb_substr($entry->user->name, 0, 1) }}
                                             </div>
-                                            <div class="ml-3">
-                                                <a href="{{ route('users.profile', $entry->user->id) }}" class="text-sm font-bold text-gray-900 hover:text-indigo-600 hover:underline transition-colors">{{ $entry->user->name }}</a>
-                                                <p class="text-xs text-gray-500 flex items-center mt-0.5">
+                                            <div class="ml-2.5 min-w-0">
+                                                <a href="{{ route('users.profile', $entry->user->id) }}" class="text-xs sm:text-sm font-bold text-gray-900 hover:text-indigo-600 hover:underline transition-colors block truncate max-w-[130px]" title="{{ $entry->user->name }}">{{ $entry->user->name }}</a>
+                                                <p class="text-[11px] text-gray-400 flex items-center mt-0.5 truncate max-w-[130px]" title="{{ $entry->user->group ? $entry->user->group->name : 'Grup Yok' }}">
                                                     @if($entry->user->group)
-                                                        <svg class="w-3 h-3 mr-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                                                        <svg class="w-3 h-3 mr-1 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                                                         {{ $entry->user->group->name }}
                                                     @else
                                                         Grup Yok
@@ -199,77 +208,77 @@
                                             </div>
                                         </div>
                                     </td>
-                                    <td class="px-6 py-5 whitespace-nowrap">
+                                    <td class="px-3.5 py-3">
                                         <div class="space-y-1">
                                             <div class="flex items-center gap-1.5 flex-wrap">
-                                                <span class="text-sm font-black text-gray-900 bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1">
+                                                <span class="text-xs font-black text-gray-900 bg-gray-50 border border-gray-200 rounded-md px-2 py-0.5 whitespace-nowrap">
                                                     {{ $entry->template->name }}
                                                 </span>
                                                 @if($entry->is_consolidated)
-                                                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-black bg-gradient-to-r from-purple-700 to-indigo-700 text-white shadow-2xs">
+                                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-gradient-to-r from-purple-700 to-indigo-700 text-white shadow-2xs whitespace-nowrap">
                                                         🌟 Konsolide ({{ $entry->children->count() }} Parça)
                                                     </span>
                                                 @elseif($entry->partition_value)
-                                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
+                                                    <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-amber-100 text-amber-800 border border-amber-300 whitespace-nowrap">
                                                         ⚡ {{ $entry->partition_value }}
                                                     </span>
                                                     @if($entry->parent_id)
-                                                        <a href="{{ route('form-entries.show', $entry->parent_id) }}" class="inline-flex items-center gap-0.5 text-[10px] text-indigo-600 hover:text-indigo-800 font-bold bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200">
-                                                            <span>🔗 #{{ $entry->parent_id }} Dahilinde</span>
+                                                        <a href="{{ route('form-entries.show', $entry->parent_id) }}" class="inline-flex items-center gap-0.5 text-[10px] text-indigo-600 hover:text-indigo-800 font-bold bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200 whitespace-nowrap">
+                                                            <span>🔗 #{{ $entry->parent_id }}</span>
                                                         </a>
                                                     @else
-                                                        <span class="text-[10px] text-slate-400 font-semibold">(Ayrık Parça)</span>
+                                                        <span class="text-[10px] text-slate-400 font-semibold whitespace-nowrap">(Ayrık Parça)</span>
                                                     @endif
                                                 @endif
                                             </div>
                                             @if($entry->title)
-                                                <div class="text-[11px] text-slate-500 font-medium truncate max-w-xs" title="{{ $entry->title }}">
+                                                <div class="text-[11px] text-slate-500 font-medium truncate max-w-[200px]" title="{{ $entry->title }}">
                                                     {{ $entry->title }}
                                                 </div>
                                             @endif
                                         </div>
                                     </td>
-                                    <td class="px-6 py-5 whitespace-nowrap">
+                                    <td class="px-3.5 py-3 whitespace-nowrap">
                                         @if($entry->revisionRequests->firstWhere('status', 'pending'))
-                                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-300 shadow-xs" title="Düzenleme (revizyon) talebi değerlendirme aşamasında">
-                                                <span class="w-1.5 h-1.5 bg-amber-500 rounded-full mr-1.5 animate-pulse"></span>
-                                                Düzenleme Talebi Bekliyor
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-800 border border-amber-300 shadow-2xs" title="Düzenleme (revizyon) talebi değerlendirme aşamasında">
+                                                <span class="w-1.5 h-1.5 bg-amber-500 rounded-full mr-1 animate-pulse"></span>
+                                                Revizyon Bekliyor
                                             </span>
                                         @elseif($entry->status === 'draft')
-                                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700 border border-gray-200">
-                                                <span class="w-1.5 h-1.5 bg-gray-400 rounded-full mr-1.5"></span>
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-gray-100 text-gray-700 border border-gray-200">
+                                                <span class="w-1.5 h-1.5 bg-gray-400 rounded-full mr-1"></span>
                                                 Taslak
                                             </span>
                                         @elseif($entry->status === 'submitted')
-                                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
-                                                <span class="w-1.5 h-1.5 bg-amber-500 rounded-full mr-1.5 animate-pulse"></span>
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                                                <span class="w-1.5 h-1.5 bg-amber-500 rounded-full mr-1 animate-pulse"></span>
                                                 Onay Bekliyor
                                             </span>
                                         @elseif($entry->status === 'approved')
-                                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                                <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-1.5"></span>
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                                <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-1"></span>
                                                 Onaylandı
                                             </span>
                                         @elseif($entry->status === 'rejected')
-                                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-700 border border-red-200 cursor-help" title="{{ $entry->rejection_reason }}">
-                                                <span class="w-1.5 h-1.5 bg-red-500 rounded-full mr-1.5"></span>
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-red-50 text-red-700 border border-red-200 cursor-help" title="{{ $entry->rejection_reason }}">
+                                                <span class="w-1.5 h-1.5 bg-red-500 rounded-full mr-1"></span>
                                                 Reddedildi
                                             </span>
                                         @endif
                                     </td>
                                     @if(isset($canViewApprover) && $canViewApprover)
-                                        <td class="px-6 py-5 whitespace-nowrap text-sm text-gray-500">
+                                        <td class="px-3.5 py-3 whitespace-nowrap text-xs text-gray-500">
                                             @if($entry->approver)
                                                 <div class="flex items-center text-emerald-600 font-medium">
-                                                    <svg class="w-4 h-4 mr-1.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                                    <a href="{{ route('users.profile', $entry->approver->id) }}" class="hover:underline hover:text-emerald-800 transition-colors">
+                                                    <svg class="w-3.5 h-3.5 mr-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                                    <a href="{{ route('users.profile', $entry->approver->id) }}" class="hover:underline hover:text-emerald-800 transition-colors block truncate max-w-[120px]" title="{{ $entry->approver->name }}">
                                                         {{ $entry->approver->name }}
                                                     </a>
                                                 </div>
                                             @elseif($entry->status === 'rejected' && $entry->approver)
                                                 <div class="flex items-center text-red-600 font-medium">
-                                                    <svg class="w-4 h-4 mr-1.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                                    <a href="{{ route('users.profile', $entry->approver->id) }}" class="hover:underline hover:text-red-800 transition-colors">
+                                                    <svg class="w-3.5 h-3.5 mr-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                                    <a href="{{ route('users.profile', $entry->approver->id) }}" class="hover:underline hover:text-red-800 transition-colors block truncate max-w-[120px]" title="{{ $entry->approver->name }}">
                                                         {{ $entry->approver->name }}
                                                     </a>
                                                 </div>
@@ -278,81 +287,83 @@
                                             @endif
                                         </td>
                                     @endif
-                                    <td class="px-6 py-5 whitespace-nowrap text-right text-sm font-medium flex justify-end gap-2 items-center">
-                                        <a href="{{ route('form-entries.show', $entry) }}" class="inline-flex items-center px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-indigo-600 hover:text-indigo-900 hover:bg-indigo-50 hover:border-indigo-200 transition-all shadow-sm">
-                                            <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
-                                            İncele
-                                        </a>
+                                    <td class="px-3.5 py-3 whitespace-nowrap text-right text-xs font-medium">
+                                        <div class="inline-flex items-center justify-end gap-1.5">
+                                            <a href="{{ route('form-entries.show', $entry) }}" class="inline-flex items-center px-2.5 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-bold text-indigo-600 hover:text-indigo-900 hover:bg-indigo-50 hover:border-indigo-300 transition-all shadow-2xs">
+                                                <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                                İncele
+                                            </a>
 
-                                        @if(!empty($canConsolidate) && $canConsolidate && $entry->is_consolidated && (Auth::id() === $entry->user_id || Auth::user()->id === 1 || (Auth::user()->role && Auth::user()->role->slug === 'sistem_yoneticisi')))
-                                            <form action="{{ route('form-entries.dissolve', $entry) }}" method="POST" class="inline" onsubmit="return confirm('Bu konsolide formu dağıtmak ve altındaki parçaları tekrar bağımsız hale getirmek istediğinize emin misiniz?');">
-                                                @csrf
-                                                <button type="submit" class="inline-flex items-center px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-amber-700 hover:bg-amber-50 hover:border-amber-300 transition-all shadow-2xs cursor-pointer" title="Konsolidasyonu Dağıt / Parçaları Ayır">
-                                                    <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
-                                                    Dağıt
+                                            @if(!empty($canConsolidate) && $canConsolidate && $entry->is_consolidated && (Auth::id() === $entry->user_id || Auth::user()->id === 1 || (Auth::user()->role && Auth::user()->role->slug === 'sistem_yoneticisi')))
+                                                <form action="{{ route('form-entries.dissolve', $entry) }}" method="POST" class="inline" onsubmit="return confirm('Bu konsolide formu dağıtmak ve altındaki parçaları tekrar bağımsız hale getirmek istediğinize emin misiniz?');">
+                                                    @csrf
+                                                    <button type="submit" class="inline-flex items-center px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-amber-700 hover:bg-amber-50 hover:border-amber-300 transition-all shadow-2xs cursor-pointer" title="Konsolidasyonu Dağıt / Parçaları Ayır">
+                                                        <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                                                        Dağıt
+                                                    </button>
+                                                </form>
+                                            @endif
+                                            
+                                            @if(app(\App\Services\PermissionS::class)->hasPermission(Auth::user(), 'form_entries.delete'))
+                                            <div x-data="{ open: false }" class="inline-block">
+                                                <button @click="open = true" class="inline-flex items-center px-2 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-bold text-red-600 hover:text-red-900 hover:bg-red-50 hover:border-red-300 transition-all shadow-2xs cursor-pointer">
+                                                    <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                                    Sil
                                                 </button>
-                                            </form>
-                                        @endif
-                                        
-                                        @if(app(\App\Services\PermissionS::class)->hasPermission(Auth::user(), 'form_entries.delete'))
-                                        <div x-data="{ open: false }" class="inline-block">
-                                            <button @click="open = true" class="inline-flex items-center px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-red-600 hover:text-red-900 hover:bg-red-50 hover:border-red-200 transition-all shadow-sm">
-                                                <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                                                Sil
-                                            </button>
 
-                                            <!-- Modal -->
-                                            <div x-show="open" style="display: none;" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-                                                <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-                                                    <div x-show="open" @click="open = false" x-transition.opacity class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
-                                                    <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-                                                    <div x-show="open" x-transition class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-                                                        <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                                                            <div class="sm:flex sm:items-start">
-                                                                <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
-                                                                    <svg class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                                                                    </svg>
-                                                                </div>
-                                                                <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-                                                                    <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">Kayıt Silinecek</h3>
-                                                                    <div class="mt-2">
-                                                                        <p class="text-sm text-gray-500">Bu form kaydını silmek istediğinize emin misiniz? Bu işlem geri alınamaz.</p>
+                                                <!-- Modal -->
+                                                <div x-show="open" style="display: none;" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+                                                    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                                                        <div x-show="open" @click="open = false" x-transition.opacity class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+                                                        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+                                                        <div x-show="open" x-transition class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                                                            <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                                                                <div class="sm:flex sm:items-start">
+                                                                    <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+                                                                        <svg class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                                                        </svg>
+                                                                    </div>
+                                                                    <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                                                                        <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">Kayıt Silinecek</h3>
+                                                                        <div class="mt-2">
+                                                                            <p class="text-sm text-gray-500">Bu form kaydını silmek istediğinize emin misiniz? Bu işlem geri alınamaz.</p>
+                                                                        </div>
                                                                     </div>
                                                                 </div>
                                                             </div>
-                                                        </div>
-                                                        <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse" x-data="{ deleting: false }">
-                                                            <form action="{{ route('form-entries.destroy', $entry) }}" method="POST"
-                                                                @submit="if(deleting) { $event.preventDefault(); return false; } deleting = true;">
-                                                                @csrf
-                                                                @method('DELETE')
-                                                                <button type="submit"
-                                                                    :disabled="deleting"
-                                                                    :class="deleting ? 'opacity-70 cursor-not-allowed pointer-events-none' : ''"
-                                                                    class="w-full inline-flex items-center justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm transition gap-1.5 cursor-pointer">
-                                                                    <svg x-show="deleting" class="animate-spin -ml-1 mr-1.5 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                                                    </svg>
-                                                                    <span x-text="deleting ? 'Siliniyor...' : 'Evet, Sil'">Evet, Sil</span>
+                                                            <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse" x-data="{ deleting: false }">
+                                                                <form action="{{ route('form-entries.destroy', $entry) }}" method="POST"
+                                                                    @submit="if(deleting) { $event.preventDefault(); return false; } deleting = true;">
+                                                                    @csrf
+                                                                    @method('DELETE')
+                                                                    <button type="submit"
+                                                                        :disabled="deleting"
+                                                                        :class="deleting ? 'opacity-70 cursor-not-allowed pointer-events-none' : ''"
+                                                                        class="w-full inline-flex items-center justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm transition gap-1.5 cursor-pointer">
+                                                                        <svg x-show="deleting" class="animate-spin -ml-1 mr-1.5 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                                        </svg>
+                                                                        <span x-text="deleting ? 'Siliniyor...' : 'Evet, Sil'">Evet, Sil</span>
+                                                                    </button>
+                                                                </form>
+                                                                <button type="button" @click="if(!deleting) open = false" :disabled="deleting"
+                                                                    class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50">
+                                                                    İptal
                                                                 </button>
-                                                            </form>
-                                                            <button type="button" @click="if(!deleting) open = false" :disabled="deleting"
-                                                                class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50">
-                                                                İptal
-                                                            </button>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
                                             </div>
+                                            @endif
                                         </div>
-                                        @endif
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="6" class="px-6 py-12 whitespace-nowrap text-center">
+                                    <td colspan="{{ (isset($canViewApprover) && $canViewApprover) ? 6 : 5 }}" class="px-4 py-12 whitespace-nowrap text-center">
                                         <div class="flex flex-col items-center justify-center">
                                             <div class="bg-gray-50 rounded-full p-4 mb-3">
                                                 <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
