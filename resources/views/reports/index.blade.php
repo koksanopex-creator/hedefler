@@ -38,6 +38,14 @@
             box-shadow: none !important;
             position: absolute !important;
         }
+        #reportWorldMap svg {
+            width: 100% !important;
+            height: 100% !important;
+            display: block;
+        }
+        .jvm-container {
+            touch-action: pan-x pan-y !important;
+        }
     </style>
 
     <div class="py-6 sm:py-8" x-data="reportCenter()" x-init="init()">
@@ -219,7 +227,7 @@
                                 <select x-model="metricFieldId"
                                     class="w-3/5 rounded-xl border-slate-200 text-xs font-semibold focus:border-indigo-500 focus:ring-indigo-500 shadow-2xs">
                                     <option value="">🔢 Satır Adedi (COUNT)</option>
-                                    <optgroup label="Sayısal Metrikler (Dinamik)" id="multiPivotMetricsOptgroup">
+                                    <optgroup label="Sayısal Metrikler (Dinamik)" id="multiPivotMetricsOptgroup" class="dynamic-metrics-optgroup">
                                         @foreach($initialMetrics as $m)
                                             @if($m['id'] !== 'count')
                                                 <option value="{{ $m['field_id'] }}">{{ $m['name'] }}</option>
@@ -313,7 +321,7 @@
                             <select x-model="metricFieldId"
                                 class="w-full rounded-xl border-slate-200 text-xs font-semibold focus:border-indigo-500 focus:ring-indigo-500 shadow-2xs">
                                 <option value="">🔢 Satır Adedi (COUNT)</option>
-                                <optgroup label="Sayısal Metrikler (Dinamik)">
+                                <optgroup label="Sayısal Metrikler (Dinamik)" id="yoyMetricsOptgroup" class="dynamic-metrics-optgroup">
                                     @foreach($initialMetrics as $m)
                                         @if($m['id'] !== 'count')
                                             <option value="{{ $m['field_id'] }}">{{ $m['name'] }}</option>
@@ -385,7 +393,7 @@
                             <select x-model="metricFieldId"
                                 class="w-full rounded-xl border-slate-200 text-xs font-semibold focus:border-indigo-500 focus:ring-indigo-500 shadow-2xs">
                                 <option value="">🔢 Satır Adedi (COUNT)</option>
-                                <optgroup label="Sayısal Metrikler (Dinamik)">
+                                <optgroup label="Sayısal Metrikler (Dinamik)" id="segmentMetricsOptgroup" class="dynamic-metrics-optgroup">
                                     @foreach($initialMetrics as $m)
                                         @if($m['id'] !== 'count')
                                             <option value="{{ $m['field_id'] }}">{{ $m['name'] }}</option>
@@ -419,7 +427,7 @@
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div>
                             <label class="block text-xs font-bold text-slate-700 mb-1">Ülke Alanı (Master Data / Metin)</label>
-                            <select x-model="geoCountryFieldId"
+                            <select x-model="geoCountryFieldId" id="geoCountryFieldSelect"
                                 class="w-full rounded-xl border-slate-200 text-xs font-semibold focus:border-indigo-500 focus:ring-indigo-500 shadow-2xs">
                                 <option value="">-- Otomatik Tespit Et ('Ülke' Alanı) --</option>
                                 @foreach($initialDimensions as $dim)
@@ -435,7 +443,7 @@
                             <select x-model="metricFieldId"
                                 class="w-full rounded-xl border-slate-200 text-xs font-semibold focus:border-indigo-500 focus:ring-indigo-500 shadow-2xs">
                                 <option value="">🔢 Satır Adedi (COUNT)</option>
-                                <optgroup label="Sayısal Metrikler (Dinamik)">
+                                <optgroup label="Sayısal Metrikler (Dinamik)" id="geoMetricsOptgroup" class="dynamic-metrics-optgroup">
                                     @foreach($initialMetrics as $m)
                                         @if($m['id'] !== 'count')
                                             <option value="{{ $m['field_id'] }}">{{ $m['name'] }}</option>
@@ -1171,29 +1179,92 @@
                     </div>
 
                     <!-- İnteraktif Dünya Haritası Tuvali (jsVectorMap) -->
-                    <div class="bg-slate-900 rounded-3xl p-6 shadow-xl border border-slate-800 text-white space-y-4">
-                        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-                            <div class="flex items-center gap-2">
-                                <span class="text-xl">🌍</span>
+                    <div id="geoMapCardWrapper"
+                         class="bg-slate-900 rounded-3xl p-6 shadow-xl border border-slate-800 text-white space-y-4"
+                         :class="isMapFullscreen 
+                            ? '!fixed !inset-0 !z-[9999] !bg-slate-950 !p-6 !flex !flex-col !w-screen !h-screen !rounded-none !shadow-2xl !space-y-4 overflow-hidden' 
+                            : ''"
+                         @keydown.escape.window="if(isMapFullscreen) { toggleMapFullscreen(); }">
+                        
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-slate-800 pb-3 gap-3 shrink-0">
+                            <div class="flex items-center gap-2.5">
+                                <span class="text-2xl">🌍</span>
                                 <div>
-                                    <h4 class="text-sm font-black text-white">Etkileşimli Küresel Satış Isı Haritası</h4>
-                                    <p class="text-[11px] text-slate-400">Ülkelerin üzerine gelerek detaylı personelleri ve pazar paylarını inceleyin</p>
+                                    <div class="flex items-center gap-2">
+                                        <h4 class="text-sm sm:text-base font-black text-white">Etkileşimli Küresel Satış Isı Haritası</h4>
+                                        <span x-show="isMapFullscreen" class="bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-bold px-2 py-0.5 rounded-full">Tam Ekran Modu</span>
+                                    </div>
+                                    <p class="text-[11px] text-slate-400">Ülkelerin üzerine gelerek detaylı personelleri ve pazar paylarını inceleyin • Fare tekerleğiyle yakınlaştırın/uzaklaştırın</p>
                                 </div>
                             </div>
-                            <div class="flex items-center gap-2">
-                                <span class="text-[10px] bg-slate-800 text-slate-300 px-2.5 py-1 rounded-md border border-slate-700">Choropleth Yoğunluk Skalası</span>
+                            
+                            <div class="flex items-center gap-2 self-end sm:self-auto">
+                                <span class="text-[10px] bg-slate-800 text-slate-300 px-2.5 py-1 rounded-md border border-slate-700 hidden md:inline-block">Choropleth Yoğunluk Skalası</span>
+                                <span class="text-[10px] bg-indigo-950/80 text-indigo-300 px-2.5 py-1 rounded-md border border-indigo-700/50 hidden lg:inline-flex items-center gap-1">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"/></svg>
+                                    Mouse İle Sürükle & Zoom
+                                </span>
+
+                                <!-- Haritayı Ortala / Sıfırla Butonu -->
+                                <button type="button" @click="renderGeoMap()"
+                                    class="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1.5 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-200 transition cursor-pointer"
+                                    title="Haritayı Varsayılan Boyuta Döndür ve Ortala">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                    <span class="hidden sm:inline">Ortala</span>
+                                </button>
+                                
+                                <!-- Tam Ekran Butonu -->
+                                <button type="button" @click="toggleMapFullscreen()"
+                                    class="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl border transition cursor-pointer shadow-xs"
+                                    :class="isMapFullscreen 
+                                        ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 border-amber-400 font-black' 
+                                        : 'bg-slate-800 hover:bg-slate-700 text-white border-slate-700'">
+                                    <template x-if="!isMapFullscreen">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
+                                    </template>
+                                    <template x-if="isMapFullscreen">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                    </template>
+                                    <span x-text="isMapFullscreen ? 'Tam Ekrandan Çık (ESC)' : 'Tam Ekran'">Tam Ekran</span>
+                                </button>
                             </div>
                         </div>
 
-                        <!-- Harita Container -->
-                        <div id="reportWorldMap" class="w-full h-[450px] rounded-2xl overflow-hidden relative"></div>
+                        <!-- Harita Container: Normalde 600px yükseklik, Tam ekranda flex-1 / calc(100vh - 120px) -->
+                        <div id="reportWorldMap"
+                             :style="isMapFullscreen ? 'height: calc(100vh - 120px) !important; width: 100% !important;' : 'height: 600px !important; width: 100% !important;'"
+                             class="w-full rounded-2xl overflow-hidden relative flex-1 min-h-[400px]"></div>
                     </div>
 
                     <!-- Ülke Sıralama ve Pazar Payı Tablosu -->
                     <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
-                        <div class="p-4 bg-slate-50 border-b border-slate-200">
-                            <h4 class="text-sm font-black text-slate-900">Ülke Bazında Pazar Dağılımı ve Personel Kırılımı</h4>
+                        <div class="p-4 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                            <div>
+                                <h4 class="text-sm font-black text-slate-900">Ülke Bazında Pazar Dağılımı ve Personel Kırılımı</h4>
+                                <p class="text-[11px] text-slate-500 mt-0.5">
+                                    Toplam <strong class="text-slate-800" x-text="(reportData.rankings || []).length"></strong> ülke •
+                                    <span x-show="geoSearch.trim()" class="text-indigo-600 font-bold">Filtrelenen: <strong x-text="filteredGeoRankings.length"></strong> ülke • </span>
+                                    <span>Sayfa başına 10 satır listelenir</span>
+                                </p>
+                            </div>
+
+                            <!-- Anlık Arama ve Filtreleme Kutusu -->
+                            <div class="flex items-center gap-2">
+                                <div class="relative w-full sm:w-64">
+                                    <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                                    </span>
+                                    <input type="text" x-model="geoSearch" @input="geoPage = 1"
+                                        placeholder="Ülke, ISO kodu veya personel ara..."
+                                        class="w-full pl-8 pr-7 py-1.5 text-xs bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 placeholder-slate-400 transition">
+                                    <button type="button" x-show="geoSearch" @click="geoSearch = ''; geoPage = 1"
+                                        class="absolute inset-y-0 right-0 pr-2 flex items-center text-slate-400 hover:text-slate-600 cursor-pointer">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
+
                         <div class="overflow-x-auto">
                             <table class="w-full text-left border-collapse text-xs">
                                 <thead class="bg-slate-900 text-white">
@@ -1208,7 +1279,7 @@
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-slate-100">
-                                    <template x-for="r in (reportData.rankings || [])" :key="r.code">
+                                    <template x-for="r in paginatedGeoRankings" :key="r.code">
                                         <tr class="hover:bg-slate-50 transition-colors">
                                             <td class="py-3 px-3 font-black text-slate-400 text-center" x-text="'#' + r.rank"></td>
                                             <td class="py-3 px-4 font-extrabold text-slate-900 text-sm" x-text="r.name"></td>
@@ -1225,17 +1296,97 @@
                                                 </div>
                                             </td>
                                             <td class="py-3 px-3 text-right font-mono text-slate-700" x-text="r.count"></td>
-                                            <td class="py-3 px-4">
-                                                <div class="flex flex-wrap gap-1">
-                                                    <template x-for="u in (r.top_users || [])" :key="u">
+                                            <td class="py-3 px-4" x-data="{ expandedUsers: false }">
+                                                <div class="flex flex-wrap items-center gap-1">
+                                                    <!-- İlk 3 Personel veya Açıkken Tümü -->
+                                                    <template x-for="u in ((r.top_users || []).slice(0, expandedUsers ? undefined : 3))" :key="u">
                                                         <span class="bg-indigo-50 text-indigo-700 text-[10px] font-bold px-2 py-0.5 rounded border border-indigo-100" x-text="u"></span>
+                                                    </template>
+
+                                                    <!-- 3'ten Fazla Varsa "+X daha" Butonu -->
+                                                    <template x-if="(r.top_users || []).length > 3 && !expandedUsers">
+                                                        <button type="button" @click="expandedUsers = true"
+                                                            class="bg-amber-50 hover:bg-amber-100 text-amber-800 text-[10px] font-black px-2 py-0.5 rounded border border-amber-200 transition cursor-pointer"
+                                                            :title="'Tüm personelleri gör (' + r.top_users.length + ' kişi)'"
+                                                            x-text="'+' + (r.top_users.length - 3) + ' daha'">
+                                                        </button>
+                                                    </template>
+
+                                                    <!-- Açıkken "Daralt" Butonu -->
+                                                    <template x-if="(r.top_users || []).length > 3 && expandedUsers">
+                                                        <button type="button" @click="expandedUsers = false"
+                                                            class="bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] font-bold px-1.5 py-0.5 rounded border border-slate-200 transition cursor-pointer">
+                                                            ▴ Kapat
+                                                        </button>
+                                                    </template>
+
+                                                    <!-- Hiç Personel Yoksa -->
+                                                    <template x-if="!(r.top_users && r.top_users.length)">
+                                                        <span class="text-slate-400 text-[10px] italic">-</span>
                                                     </template>
                                                 </div>
                                             </td>
                                         </tr>
                                     </template>
+
+                                    <!-- Arama Sonucu Bulunamadı -->
+                                    <tr x-show="filteredGeoRankings.length === 0">
+                                        <td colspan="7" class="py-8 text-center text-slate-400 text-xs">
+                                            <div class="flex flex-col items-center justify-center gap-1">
+                                                <svg class="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                                <span>Arama kriterine uygun ülke veya personel bulunamadı.</span>
+                                                <button type="button" @click="geoSearch = ''; geoPage = 1" class="text-indigo-600 font-bold hover:underline mt-1 text-[11px] cursor-pointer">Aramayı Temizle</button>
+                                            </div>
+                                        </td>
+                                    </tr>
                                 </tbody>
                             </table>
+                        </div>
+
+                        <!-- Sayfalama (Sayfa Yenilemeden İleri / Geri / Sayfa Seçimi) -->
+                        <div x-show="filteredGeoRankings.length > 0" class="p-3 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs">
+                            <div class="text-slate-500 text-[11px] text-center sm:text-left">
+                                <span>Gösterilen: </span>
+                                <strong class="text-slate-800" x-text="((geoPage - 1) * geoPerPage) + 1"></strong> -
+                                <strong class="text-slate-800" x-text="Math.min(geoPage * geoPerPage, filteredGeoRankings.length)"></strong> /
+                                <span class="text-slate-700 font-bold" x-text="filteredGeoRankings.length + ' Ülke'"></span>
+                            </div>
+
+                            <!-- Sayfa Düğmeleri -->
+                            <div class="flex items-center gap-1 justify-center sm:justify-end">
+                                <!-- İlk Sayfa -->
+                                <button type="button" @click="setGeoPage(1)" :disabled="geoPage === 1"
+                                    class="px-2 py-1 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-30 disabled:pointer-events-none transition cursor-pointer" title="İlk Sayfa">
+                                    «
+                                </button>
+                                <!-- Önceki Sayfa -->
+                                <button type="button" @click="setGeoPage(geoPage - 1)" :disabled="geoPage === 1"
+                                    class="px-2.5 py-1 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-30 disabled:pointer-events-none transition cursor-pointer" title="Önceki Sayfa">
+                                    ‹ Önceki
+                                </button>
+
+                                <!-- Numaralandırılmış Sayfa Butonları -->
+                                <div class="flex items-center gap-1 mx-1">
+                                    <template x-for="p in geoPaginationPages" :key="p">
+                                        <button type="button" @click="setGeoPage(p)"
+                                            :class="geoPage === p ? 'bg-indigo-600 text-white font-black shadow-xs' : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200 font-semibold'"
+                                            class="w-7 h-7 flex items-center justify-center rounded-lg text-xs transition cursor-pointer"
+                                            x-text="p">
+                                        </button>
+                                    </template>
+                                </div>
+
+                                <!-- Sonraki Sayfa -->
+                                <button type="button" @click="setGeoPage(geoPage + 1)" :disabled="geoPage >= geoTotalPages"
+                                    class="px-2.5 py-1 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-30 disabled:pointer-events-none transition cursor-pointer" title="Sonraki Sayfa">
+                                    Sonraki ›
+                                </button>
+                                <!-- Son Sayfa -->
+                                <button type="button" @click="setGeoPage(geoTotalPages)" :disabled="geoPage >= geoTotalPages"
+                                    class="px-2 py-1 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-30 disabled:pointer-events-none transition cursor-pointer" title="Son Sayfa">
+                                    »
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1450,6 +1601,10 @@
 
                 // MOD 4: Coğrafi Dünya Haritası Durumu
                 geoCountryFieldId: '11',
+                isMapFullscreen: false,
+                geoSearch: '',
+                geoPage: 1,
+                geoPerPage: 10,
 
                 // Personel ve Departman Çoktan Seçmeli Açılır Menü Verileri
                 allUsers: @json($users->map(fn($u) => ['id' => $u->id, 'name' => $u->name, 'group_name' => $u->group?->name ?? 'Grup Yok'])->values()),
@@ -1529,13 +1684,75 @@
                     return this.savedRulesList.filter(r => r.form_template_id == this.templateId);
                 },
 
+                get filteredGeoRankings() {
+                    const list = (this.reportData && this.reportData.rankings) ? this.reportData.rankings : [];
+                    if (!this.geoSearch || !this.geoSearch.trim()) {
+                        return list;
+                    }
+                    const q = this.geoSearch.trim().toLowerCase();
+                    return list.filter(r => {
+                        const nameMatch = (r.name || '').toLowerCase().includes(q);
+                        const codeMatch = (r.code || '').toLowerCase().includes(q);
+                        const userMatch = (r.top_users || []).some(u => (u || '').toLowerCase().includes(q));
+                        return nameMatch || codeMatch || userMatch;
+                    });
+                },
+
+                get geoTotalPages() {
+                    const total = this.filteredGeoRankings.length;
+                    return Math.max(1, Math.ceil(total / this.geoPerPage));
+                },
+
+                get paginatedGeoRankings() {
+                    const filtered = this.filteredGeoRankings;
+                    const start = (this.geoPage - 1) * this.geoPerPage;
+                    return filtered.slice(start, start + this.geoPerPage);
+                },
+
+                get geoPaginationPages() {
+                    const total = this.geoTotalPages;
+                    const current = this.geoPage;
+                    const delta = 2;
+                    const range = [];
+                    for (let i = Math.max(1, current - delta); i <= Math.min(total, current + delta); i++) {
+                        range.push(i);
+                    }
+                    return range;
+                },
+
+                setGeoPage(p) {
+                    if (p < 1) p = 1;
+                    if (p > this.geoTotalPages) p = this.geoTotalPages;
+                    this.geoPage = p;
+                },
+
+                toggleMapFullscreen() {
+                    this.isMapFullscreen = !this.isMapFullscreen;
+                    this.$nextTick(() => {
+                        setTimeout(() => {
+                            this.renderGeoMap();
+                        }, 100);
+                    });
+                },
+
                 init() {
                     this.loadTemplateMeta(this.templateId);
+                    this.updateDynamicSelectOptions();
                     this.runReport();
+
+                    window.addEventListener('resize', () => {
+                        if (this.analysisMode === 'geo' && window.reportGeoMapInstance) {
+                            clearTimeout(window.__geoMapResizeTimer);
+                            window.__geoMapResizeTimer = setTimeout(() => {
+                                this.renderGeoMap();
+                            }, 200);
+                        }
+                    });
                 },
 
                 setAnalysisMode(mode) {
                     this.analysisMode = mode;
+                    this.updateDynamicSelectOptions();
                     this.runReport();
                 },
 
@@ -1555,15 +1772,81 @@
                         }
                     }
 
-                    const firstMetric = this.templateMetrics.find(m => m.id !== 'count');
-                    if (firstMetric) {
-                        this.metricFieldId = firstMetric.field_id;
+                    const hasMetric = (this.templateMetrics || []).some(m => String(m.field_id) === String(this.metricFieldId));
+                    if (!hasMetric) {
+                        const firstMetric = this.templateMetrics.find(m => m.id !== 'count');
+                        this.metricFieldId = firstMetric ? String(firstMetric.field_id) : '';
+                    }
+
+                    this.updateDynamicSelectOptions();
+                },
+
+                updateDynamicSelectOptions() {
+                    const updateDOM = () => {
+                        const fieldDims = (this.templateDimensions || []).filter(d => d.type === 'field');
+                        const numMetrics = (this.templateMetrics || []).filter(m => m.id !== 'count');
+
+                        // 1. Sütun Kırılımı (colDimensionDynamicOptgroup)
+                        const colGroup = document.getElementById('colDimensionDynamicOptgroup');
+                        if (colGroup) {
+                            colGroup.innerHTML = '';
+                            fieldDims.forEach(dim => {
+                                const opt = document.createElement('option');
+                                opt.value = 'field:' + dim.field_id;
+                                opt.textContent = dim.name;
+                                colGroup.appendChild(opt);
+                            });
+                        }
+
+                        // 2. Sayısal Metrikler (.dynamic-metrics-optgroup)
+                        const metricGroups = document.querySelectorAll('.dynamic-metrics-optgroup');
+                        metricGroups.forEach(grp => {
+                            grp.innerHTML = '';
+                            numMetrics.forEach(m => {
+                                const opt = document.createElement('option');
+                                opt.value = String(m.field_id);
+                                opt.textContent = m.name;
+                                grp.appendChild(opt);
+                            });
+                        });
+
+                        // 3. YoY Varlık / Dinamik Form Alanları (yoyEntityDynamicOptgroup)
+                        const yoyGroup = document.getElementById('yoyEntityDynamicOptgroup');
+                        if (yoyGroup) {
+                            yoyGroup.innerHTML = '';
+                            fieldDims.forEach(dim => {
+                                const opt = document.createElement('option');
+                                opt.value = 'field:' + dim.field_id;
+                                opt.textContent = dim.name;
+                                yoyGroup.appendChild(opt);
+                            });
+                        }
+
+                        // 4. Harita Ülke Alanı (geoCountryFieldSelect)
+                        const geoCountrySelect = document.getElementById('geoCountryFieldSelect');
+                        if (geoCountrySelect) {
+                            while (geoCountrySelect.options.length > 1) {
+                                geoCountrySelect.remove(1);
+                            }
+                            fieldDims.forEach(dim => {
+                                const opt = document.createElement('option');
+                                opt.value = String(dim.field_id);
+                                opt.textContent = dim.name;
+                                geoCountrySelect.appendChild(opt);
+                            });
+                        }
+                    };
+
+                    updateDOM();
+                    if (window.Alpine && this.$nextTick) {
+                        this.$nextTick(updateDOM);
                     }
                 },
 
                 onTemplateChange() {
                     this.selectedRuleId = '';
                     this.loadTemplateMeta(this.templateId);
+                    this.updateDynamicSelectOptions();
                     this.runReport();
                 },
 
@@ -1787,6 +2070,7 @@
                         }
 
                         this.reportData = data;
+                        this.geoPage = 1;
                         this.loading = false;
 
                         this.$nextTick(() => {
@@ -1957,7 +2241,10 @@
                             backgroundColor: 'transparent',
                             draggable: true,
                             zoomButtons: true,
-                            zoomOnScroll: false,
+                            zoomOnScroll: true,
+                            zoomOnScrollSpeed: 0.8,
+                            zoomMax: 15,
+                            zoomMin: 1,
                             regionStyle: {
                                 initial: {
                                     fill: '#e2e8f0',
@@ -1979,16 +2266,24 @@
                             onRegionTooltipShow(event, tooltip, code) {
                                 const country = geoCountries[code];
                                 if (country) {
-                                    const topUsersHtml = (country.top_users && country.top_users.length)
-                                        ? country.top_users.map(u => `<span class="inline-block bg-slate-800 text-[10px] px-1.5 py-0.5 rounded text-indigo-300 mr-1 mb-1">${u}</span>`).join('')
-                                        : '<span class="text-slate-400 text-[10px]">Kayıt yok</span>';
+                                    const userList = country.top_users || [];
+                                    let topUsersHtml = '';
+                                    if (userList.length === 0) {
+                                        topUsersHtml = '<span class="text-slate-400 text-[10px]">Kayıt yok</span>';
+                                    } else if (userList.length <= 4) {
+                                        topUsersHtml = userList.map(u => `<span class="inline-block bg-slate-800 text-[10px] px-1.5 py-0.5 rounded text-indigo-300 mr-1 mb-1 font-semibold">${u}</span>`).join('');
+                                    } else {
+                                        const firstFour = userList.slice(0, 4).map(u => `<span class="inline-block bg-slate-800 text-[10px] px-1.5 py-0.5 rounded text-indigo-300 mr-1 mb-1 font-semibold">${u}</span>`).join('');
+                                        const extraCount = userList.length - 4;
+                                        topUsersHtml = `${firstFour}<span class="inline-block bg-amber-900/60 text-amber-300 text-[10px] font-bold px-1.5 py-0.5 rounded mr-1 mb-1 border border-amber-500/30">+${extraCount} personel daha</span>`;
+                                    }
                                     
                                     const topCustHtml = (country.top_customers && country.top_customers.length)
                                         ? country.top_customers.join(', ')
                                         : '-';
 
                                     tooltip.text(`
-                                        <div style="z-index:999999999;" class="p-3 bg-slate-900/95 text-white rounded-xl shadow-2xl border-2 border-indigo-400 text-xs backdrop-blur-md min-w-[200px]">
+                                        <div style="z-index:999999999;" class="p-3 bg-slate-900/95 text-white rounded-xl shadow-2xl border-2 border-indigo-400 text-xs backdrop-blur-md min-w-[220px] max-w-[320px]">
                                             <div class="font-extrabold text-indigo-300 text-sm border-b border-slate-700 pb-1.5 mb-2 flex items-center justify-between">
                                                 <span>${country.name}</span>
                                                 <span class="text-[10px] text-slate-400 font-mono">${code}</span>

@@ -1597,10 +1597,10 @@ class ReportEngineS
                 $maxCountryTotal = $cTotal;
             }
 
-            // Top personeller
+            // Katkı veren personeller (hacme göre sıralı)
             arsort($data['users']);
             $topUsers = [];
-            foreach (array_slice($data['users'], 0, 3, true) as $u => $val) {
+            foreach ($data['users'] as $u => $val) {
                 $pShare = ($cTotal > 0) ? round(($val / $cTotal) * 100, 1) : 0;
                 $topUsers[] = "{$u} (%{$pShare})";
             }

@@ -295,13 +295,63 @@
                                             </a>
 
                                             @if(!empty($canConsolidate) && $canConsolidate && $entry->is_consolidated && (Auth::id() === $entry->user_id || Auth::user()->id === 1 || (Auth::user()->role && Auth::user()->role->slug === 'sistem_yoneticisi')))
-                                                <form action="{{ route('form-entries.dissolve', $entry) }}" method="POST" class="inline" onsubmit="return confirm('Bu konsolide formu dağıtmak ve altındaki parçaları tekrar bağımsız hale getirmek istediğinize emin misiniz?');">
-                                                    @csrf
-                                                    <button type="submit" class="inline-flex items-center px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-amber-700 hover:bg-amber-50 hover:border-amber-300 transition-all shadow-2xs cursor-pointer" title="Konsolidasyonu Dağıt / Parçaları Ayır">
+                                                <div x-data="{ openDissolve: false }" class="inline-block text-left">
+                                                    <button type="button" @click="openDissolve = true" class="inline-flex items-center px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-amber-700 hover:bg-amber-50 hover:border-amber-300 transition-all shadow-2xs cursor-pointer" title="Konsolidasyonu Dağıt / Parçaları Ayır">
                                                         <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
                                                         Dağıt
                                                     </button>
-                                                </form>
+
+                                                    <!-- Dağıtma Onay Modalı -->
+                                                    <div x-show="openDissolve" style="display: none;" class="fixed inset-0 z-50 overflow-y-auto whitespace-normal" aria-labelledby="dissolve-modal-title-{{ $entry->id }}" role="dialog" aria-modal="true">
+                                                        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                                                            <div x-show="openDissolve" @click="openDissolve = false" x-transition.opacity class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity" aria-hidden="true"></div>
+                                                            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+                                                            <div x-show="openDissolve" x-transition class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full border border-slate-100 whitespace-normal">
+                                                                <div class="bg-white px-5 pt-6 pb-5 sm:p-6 sm:pb-5">
+                                                                    <div class="sm:flex sm:items-start gap-4">
+                                                                        <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-2xl bg-amber-100 text-amber-700 sm:mx-0">
+                                                                            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                                                                            </svg>
+                                                                        </div>
+                                                                        <div class="mt-3 text-center sm:mt-0 sm:text-left flex-1 min-w-0 whitespace-normal">
+                                                                            <h3 class="text-lg font-black text-slate-900" id="dissolve-modal-title-{{ $entry->id }}">Konsolidasyonu Dağıt</h3>
+                                                                            <div class="mt-2 space-y-2.5">
+                                                                                <p class="text-sm text-slate-600 whitespace-normal break-words">
+                                                                                    Bu konsolide formu dağıtmak ve altındaki <strong>{{ $entry->children->count() }} parçayı</strong> tekrar bağımsız hale getirmek istediğinize emin misiniz?
+                                                                                </p>
+                                                                                <div class="p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-900 flex items-start gap-2.5 whitespace-normal break-words">
+                                                                                    <span class="shrink-0 text-base leading-none">💡</span>
+                                                                                    <span class="flex-1 whitespace-normal break-words leading-relaxed">Parçaların girilmiş verileri kaybolmaz; sadece ana form bağlantısı çözülerek parçalar ayrı ayrı görüntülenebilir/düzenlenebilir hale gelir.</span>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="bg-slate-50 px-5 py-3.5 sm:px-6 sm:flex sm:flex-row-reverse gap-2 border-t border-slate-100" x-data="{ dissolving: false }">
+                                                                    <form action="{{ route('form-entries.dissolve', $entry) }}" method="POST"
+                                                                        @submit="if(dissolving) { $event.preventDefault(); return false; } dissolving = true;">
+                                                                        @csrf
+                                                                        <button type="submit"
+                                                                            :disabled="dissolving"
+                                                                            :class="dissolving ? 'opacity-70 cursor-not-allowed pointer-events-none' : ''"
+                                                                            class="w-full inline-flex items-center justify-center rounded-xl border border-transparent shadow-sm px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 sm:w-auto transition gap-1.5 cursor-pointer">
+                                                                            <svg x-show="dissolving" style="display: none;" class="animate-spin -ml-1 mr-1.5 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                                            </svg>
+                                                                            <span x-text="dissolving ? 'Dağıtılıyor...' : 'Evet, Dağıt'">Evet, Dağıt</span>
+                                                                        </button>
+                                                                    </form>
+                                                                    <button type="button" @click="if(!dissolving) openDissolve = false" :disabled="dissolving"
+                                                                        class="mt-2 sm:mt-0 w-full inline-flex justify-center rounded-xl border border-slate-300 shadow-2xs px-4 py-2.5 bg-white text-sm font-semibold text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:w-auto disabled:opacity-50 cursor-pointer">
+                                                                        İptal
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             @endif
                                             
                                             @if(app(\App\Services\PermissionS::class)->hasPermission(Auth::user(), 'form_entries.delete'))
@@ -312,11 +362,11 @@
                                                 </button>
 
                                                 <!-- Modal -->
-                                                <div x-show="open" style="display: none;" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+                                                <div x-show="open" style="display: none;" class="fixed inset-0 z-50 overflow-y-auto whitespace-normal" aria-labelledby="modal-title" role="dialog" aria-modal="true">
                                                     <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
                                                         <div x-show="open" @click="open = false" x-transition.opacity class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
                                                         <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-                                                        <div x-show="open" x-transition class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                                                        <div x-show="open" x-transition class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full whitespace-normal">
                                                             <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                                                                 <div class="sm:flex sm:items-start">
                                                                     <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
@@ -324,10 +374,10 @@
                                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                                                                         </svg>
                                                                     </div>
-                                                                    <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                                                                    <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left flex-1 min-w-0 whitespace-normal">
                                                                         <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">Kayıt Silinecek</h3>
                                                                         <div class="mt-2">
-                                                                            <p class="text-sm text-gray-500">Bu form kaydını silmek istediğinize emin misiniz? Bu işlem geri alınamaz.</p>
+                                                                            <p class="text-sm text-gray-500 whitespace-normal break-words">Bu form kaydını silmek istediğinize emin misiniz? Bu işlem geri alınamaz.</p>
                                                                         </div>
                                                                     </div>
                                                                 </div>

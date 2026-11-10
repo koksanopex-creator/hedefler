@@ -41,9 +41,11 @@ class ReportC extends Controller
             abort(403, 'Bu sayfayı görüntüleme yetkiniz bulunmamaktadır.');
         }
 
-        // 1. Erişilebilir Form Şablonları
+        // 1. Erişilebilir Form Şablonları (Alanı olan aktif şablonlar önce listelenir)
         $templates = FormTemplateM::where('is_active', true)
             ->with(['fields' => fn($q) => $q->orderBy('sort_order')])
+            ->withCount('fields')
+            ->orderByDesc('fields_count')
             ->orderBy('name')
             ->get();
 
@@ -103,9 +105,18 @@ class ReportC extends Controller
         // Eğer URL'den belirli bir rule_id veya template_id geldiyse
         $initialRuleId = $request->query('rule_id');
         $selectedRule = $initialRuleId ? ReportRuleM::find($initialRuleId) : null;
-        $initialTemplateId = $selectedRule ? $selectedRule->form_template_id : ($request->query('template_id') ?: $templates->first()?->id);
+        $requestedTemplateId = $request->query('template_id');
 
-        $initialTemplate = $templates->firstWhere('id', $initialTemplateId) ?: $templates->first();
+        if ($selectedRule) {
+            $initialTemplate = $selectedRule->template;
+        } elseif ($requestedTemplateId && $templates->firstWhere('id', $requestedTemplateId)) {
+            $initialTemplate = $templates->firstWhere('id', $requestedTemplateId);
+        } else {
+            // Alanı tanımlı aktif şablonu öncelikli seç (boş test şablonları yerine)
+            $initialTemplate = $templates->firstWhere(fn($t) => $t->fields->count() > 0) ?: $templates->first();
+        }
+        $initialTemplateId = $initialTemplate?->id;
+
         $initialDimensions = $initialTemplate ? $this->engine->getAvailableDimensions($initialTemplate) : [];
         $initialMetrics = $initialTemplate ? $this->engine->getAvailableMetrics($initialTemplate) : [];
 
