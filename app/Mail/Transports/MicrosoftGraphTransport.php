@@ -120,6 +120,20 @@ class MicrosoftGraphTransport extends AbstractTransport
             $payload['message']['bccRecipients'] = $bccRecipients;
         }
 
+        // 4.1 Ekler (Attachments - Microsoft Graph fileAttachment)
+        $attachments = [];
+        foreach ($email->getAttachments() as $attachment) {
+            $attachments[] = [
+                '@odata.type'  => '#microsoft.graph.fileAttachment',
+                'name'         => $attachment->getName() ?: 'dosya.xlsx',
+                'contentType'  => $attachment->getMediaType() . '/' . $attachment->getMediaSubtype(),
+                'contentBytes' => base64_encode($attachment->getBody()),
+            ];
+        }
+        if (!empty($attachments)) {
+            $payload['message']['attachments'] = $attachments;
+        }
+
         // 5. ADIM: Microsoft Graph API'ye Teslim Et!
         $response = Http::withoutVerifying()->withToken($token)
             ->post("https://graph.microsoft.com/v1.0/users/{$this->fromAddress}/sendMail", $payload);

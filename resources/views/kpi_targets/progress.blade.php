@@ -300,7 +300,9 @@
     let kpiChart = null;
 
     function renderChart(mode) {
-        const ctx = document.getElementById('kpiProgressChart').getContext('2d');
+        const canvas = document.getElementById('kpiProgressChart');
+        if (!canvas || !canvas.getContext) return;
+        const ctx = canvas.getContext('2d');
 
         if (kpiChart) {
             kpiChart.destroy();

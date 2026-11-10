@@ -982,112 +982,131 @@
         Chart.defaults.plugins.legend.labels.padding = 16;
 
         @if($permissions['status_chart'] && isset($statusChart))
-        new Chart(document.getElementById('statusChart'), {
-            type: 'doughnut',
-            data: {
-                labels: @json($statusChart['labels']),
-                datasets: [{
-                    data: @json($statusChart['data']),
-                    backgroundColor: @json($statusChart['colors']),
-                    borderWidth: 0,
-                    hoverOffset: 8
-                }]
-            },
-            options: {
-                responsive: true,
-                cutout: '65%',
-                plugins: {
-                    legend: { position: 'bottom', labels: { font: { size: 11 } } }
+        const statusChartEl = document.getElementById('statusChart');
+        if (statusChartEl) {
+            new Chart(statusChartEl, {
+                type: 'doughnut',
+                data: {
+                    labels: @json($statusChart['labels']),
+                    datasets: [{
+                        data: @json($statusChart['data']),
+                        backgroundColor: @json($statusChart['colors']),
+                        borderWidth: 0,
+                        hoverOffset: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    cutout: '65%',
+                    plugins: {
+                        legend: { position: 'bottom', labels: { font: { size: 11 } } }
+                    }
                 }
-            }
-        });
+            });
+        }
         @endif
 
         @if($permissions['trend_chart'] && isset($trendChart))
-        new Chart(document.getElementById('trendChart'), {
-            type: 'line',
-            data: {
-                labels: @json($trendChart['labels']),
-                datasets: [
-                    {
-                        label: 'Toplam Giriş',
-                        data: @json($trendChart['total']),
-                        borderColor: '#6366f1',
-                        backgroundColor: 'rgba(99, 102, 241, 0.08)',
-                        tension: 0.4,
-                        fill: true,
-                        pointRadius: 4,
-                        pointHoverRadius: 6,
-                        borderWidth: 2.5
-                    },
-                    {
-                        label: 'Onaylanan',
-                        data: @json($trendChart['approved']),
-                        borderColor: '#10b981',
-                        backgroundColor: 'rgba(16, 185, 129, 0.08)',
-                        tension: 0.4,
-                        fill: true,
-                        pointRadius: 4,
-                        pointHoverRadius: 6,
-                        borderWidth: 2.5
+        const trendChartEl = document.getElementById('trendChart');
+        if (trendChartEl) {
+            new Chart(trendChartEl, {
+                type: 'line',
+                data: {
+                    labels: @json($trendChart['labels']),
+                    datasets: [
+                        {
+                            label: 'Toplam Giriş',
+                            data: @json($trendChart['total']),
+                            borderColor: '#6366f1',
+                            backgroundColor: 'rgba(99, 102, 241, 0.08)',
+                            tension: 0.4,
+                            fill: true,
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            borderWidth: 2.5
+                        },
+                        {
+                            label: 'Onaylanan',
+                            data: @json($trendChart['approved']),
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.08)',
+                            tension: 0.4,
+                            fill: true,
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            borderWidth: 2.5
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: { legend: { position: 'top', labels: { font: { size: 11 } } } },
+                    scales: {
+                        y: { beginAtZero: true, ticks: { precision: 0 } },
+                        x: { ticks: { font: { size: 10 } } }
                     }
-                ]
-            },
-            options: {
-                responsive: true,
-                interaction: { mode: 'index', intersect: false },
-                plugins: { legend: { position: 'top', labels: { font: { size: 11 } } } },
-                scales: {
-                    y: { beginAtZero: true, ticks: { precision: 0 } },
-                    x: { ticks: { font: { size: 10 } } }
                 }
-            }
-        });
+            });
+        }
         @endif
 
         @if($permissions['template_chart'] && isset($templateChart))
-        new Chart(document.getElementById('templateChart'), {
-            type: 'bar',
-            data: {
-                labels: @json($templateChart['labels']),
-                datasets: [{
-                    label: 'Giriş Sayısı',
-                    data: @json($templateChart['data']),
-                    backgroundColor: ['#6366f1','#8b5cf6','#a78bfa','#c4b5fd','#818cf8','#6366f1','#7c3aed','#4f46e5','#4338ca','#3730a3'],
-                    borderRadius: 6,
-                    borderSkipped: false,
-                    barThickness: 32
-                }]
-            },
-            options: {
-                responsive: true,
-                indexAxis: 'y',
-                plugins: { legend: { display: false } },
-                scales: {
-                    x: { beginAtZero: true, ticks: { precision: 0 } },
-                    y: { ticks: { font: { size: 11 } } }
+        const templateChartEl = document.getElementById('templateChart');
+        if (templateChartEl) {
+            new Chart(templateChartEl, {
+                type: 'bar',
+                data: {
+                    labels: @json($templateChart['labels']),
+                    datasets: [{
+                        label: 'Giriş Sayısı',
+                        data: @json($templateChart['data']),
+                        backgroundColor: ['#6366f1','#8b5cf6','#a78bfa','#c4b5fd','#818cf8','#6366f1','#7c3aed','#4f46e5','#4338ca','#3730a3'],
+                        borderRadius: 6,
+                        borderSkipped: false,
+                        barThickness: 32
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    indexAxis: 'y',
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { beginAtZero: true, ticks: { precision: 0 } },
+                        y: { ticks: { font: { size: 11 } } }
+                    }
                 }
-            }
-        });
+            });
+        }
         @endif
 
         @if($permissions['group_chart'] && isset($groupChart))
-        new Chart(document.getElementById('groupChart'), {
-            type: 'bar',
-            data: {
-                labels: @json($groupChart['labels']),
-                datasets: [{
-                    label: 'Giriş Sayısı',
-                    data: @json($groupChart['data']),
-                    backgroundColor: ['#14b8a6','#06b6d4','#0ea5e9','#6366f1','#8b5cf6','#a855f7','#d946ef'],
-                    borderRadius: 6,
-                    borderSkipped: false,
-                    barThickness: 32
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: { legend: { display: false } },
+        const groupChartEl = document.getElementById('groupChart');
+        if (groupChartEl) {
+            new Chart(groupChartEl, {
+                type: 'bar',
+                data: {
+                    labels: @json($groupChart['labels']),
+                    datasets: [{
+                        label: 'Giriş Sayısı',
+                        data: @json($groupChart['data']),
+                        backgroundColor: ['#14b8a6','#06b6d4','#0ea5e9','#6366f1','#8b5cf6','#a855f7','#d946ef'],
+                        borderRadius: 6,
+                        borderSkipped: false,
+                        barThickness: 32
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { beginAtZero: true, ticks: { precision: 0 } },
+                        y: { ticks: { font: { size: 11 } } }
+                    }
+                }
+            });
+        }
+        @endif
                 scales: {
                     y: { beginAtZero: true, ticks: { precision: 0 } },
                     x: { ticks: { font: { size: 11 } } }

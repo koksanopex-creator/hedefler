@@ -141,6 +141,23 @@ Route::middleware(['auth'])->group(function () {
 
 use App\Http\Controllers\KpiTargetC;
 use App\Http\Controllers\MyTargetsC;
+use App\Http\Controllers\ReportC;
+
+// Dinamik BI ve Raporlama Motoru Rotaları
+Route::middleware(['auth'])->prefix('reports')->name('reports.')->group(function () {
+    Route::get('/', [ReportC::class, 'index'])->name('index');
+    Route::get('/template-meta/{template}', [ReportC::class, 'templateMeta'])->name('template-meta');
+    Route::post('/query', [ReportC::class, 'query'])->name('query');
+    Route::post('/rules', [ReportC::class, 'storeRule'])->name('rules.store');
+    Route::put('/rules/{rule}', [ReportC::class, 'updateRule'])->name('rules.update');
+    Route::delete('/rules/{rule}', [ReportC::class, 'destroyRule'])->name('rules.destroy');
+    Route::get('/export/excel', [ReportC::class, 'exportExcel'])->name('export.excel');
+    Route::get('/print', [ReportC::class, 'print'])->name('print');
+    Route::post('/share', [ReportC::class, 'share'])->name('share');
+    Route::post('/schedules', [ReportC::class, 'storeSchedule'])->name('schedules.store');
+    Route::post('/schedules/{schedule}/toggle', [ReportC::class, 'toggleSchedule'])->name('schedules.toggle');
+    Route::delete('/schedules/{schedule}', [ReportC::class, 'destroySchedule'])->name('schedules.destroy');
+});
 
 // KPI Hedef Yönetimi ve Performans Rotaları
 Route::middleware(['auth'])->group(function () {
