@@ -1107,13 +1107,6 @@
             });
         }
         @endif
-                scales: {
-                    y: { beginAtZero: true, ticks: { precision: 0 } },
-                    x: { ticks: { font: { size: 11 } } }
-                }
-            }
-        });
-        @endif
     </script>
     @endif
 </x-app-layout>
