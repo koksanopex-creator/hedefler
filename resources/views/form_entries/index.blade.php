@@ -1,19 +1,36 @@
 @section('title', 'Veri Girişleri (Formlar)')
 <x-app-layout>
-    <x-slot name="header">
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div>
-                <h2 class="font-extrabold text-2xl text-gray-900 tracking-tight">
-                    {{ __('Veri Girişleri') }}
-                </h2>
-                <p class="text-sm text-gray-500 mt-1">Doldurduğunuz veya yetkiniz dahilindeki tüm form kayıtları</p>
+    <div x-data="{ openConsolidateModal: false, selectedEntries: [] }" @open-consolidate-modal.window="openConsolidateModal = true">
+        <x-slot name="header">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                    <h2 class="font-extrabold text-2xl text-gray-900 tracking-tight">
+                        {{ __('Veri Girişleri') }}
+                    </h2>
+                    <p class="text-sm text-gray-500 mt-1">Doldurduğunuz veya yetkiniz dahilindeki tüm form kayıtları</p>
+                </div>
+                <div class="flex items-center gap-2 flex-wrap">
+                    @if(!empty($canConsolidate) && $canConsolidate)
+                    <button type="button"
+                        onclick="window.dispatchEvent(new CustomEvent('open-consolidate-modal'))"
+                        @click="openConsolidateModal = true"
+                        class="group relative inline-flex items-center justify-center py-2.5 px-4 border border-indigo-200 text-sm font-bold rounded-xl text-indigo-700 bg-indigo-50 hover:bg-indigo-100 shadow-xs hover:shadow transition-all cursor-pointer">
+                        <svg class="w-5 h-5 mr-1.5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+                        Parçaları Birleştir
+                        @if(isset($eligibleForConsolidation) && $eligibleForConsolidation->count() >= 2)
+                            <span class="ml-1.5 px-2 py-0.5 rounded-full text-[10px] font-black bg-indigo-600 text-white">
+                                {{ $eligibleForConsolidation->count() }}
+                            </span>
+                        @endif
+                    </button>
+                    @endif
+                    <a href="{{ route('form-entries.select-template') }}" class="group relative flex items-center justify-center py-2.5 px-5 border border-transparent text-sm font-semibold rounded-xl text-white bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 shadow-md hover:shadow-lg transition-all overflow-hidden">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                        Yeni Veri Girişi
+                    </a>
+                </div>
             </div>
-            <a href="{{ route('form-entries.select-template') }}" class="group relative flex items-center justify-center py-2.5 px-5 border border-transparent text-sm font-semibold rounded-xl text-white bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 shadow-md hover:shadow-lg transition-all overflow-hidden">
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                Yeni Veri Girişi
-            </a>
-        </div>
-    </x-slot>
+        </x-slot>
 
     <div class="py-10">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
@@ -116,6 +133,31 @@
                     @endif
                 </div>
 
+                <!-- Kapsam / Kayıt Tipi Filtresi -->
+                <div class="px-4 py-2.5 bg-slate-100/70 border-b border-gray-100 flex flex-wrap items-center justify-between gap-2 text-xs">
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                        <span class="text-slate-500 font-bold uppercase tracking-wider text-[10px] mr-1">Kayıt Tipi:</span>
+                        <a href="{{ route('form-entries.index', array_merge(request()->except('scope'), ['scope' => 'all'])) }}"
+                           class="px-2.5 py-1 rounded-lg font-bold transition {{ ($scope ?? 'all') === 'all' ? 'bg-indigo-600 text-white shadow-2xs' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200' }}">
+                            Tümü ({{ $scopeCounts['all'] ?? 0 }})
+                        </a>
+                        <a href="{{ route('form-entries.index', array_merge(request()->except('scope'), ['scope' => 'partitions'])) }}"
+                           class="px-2.5 py-1 rounded-lg font-bold transition {{ ($scope ?? '') === 'partitions' ? 'bg-amber-600 text-white shadow-2xs' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200' }}">
+                            ⚡ Parçalı Kayıtlar ({{ $scopeCounts['partitions'] ?? 0 }})
+                        </a>
+                        <a href="{{ route('form-entries.index', array_merge(request()->except('scope'), ['scope' => 'consolidated'])) }}"
+                           class="px-2.5 py-1 rounded-lg font-bold transition {{ ($scope ?? '') === 'consolidated' ? 'bg-purple-700 text-white shadow-2xs' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200' }}">
+                            🌟 Konsolide Ana Formlar ({{ $scopeCounts['consolidated'] ?? 0 }})
+                        </a>
+                    </div>
+                    @if(isset($eligibleForConsolidation) && $eligibleForConsolidation->count() >= 2)
+                        <button type="button" @click="openConsolidateModal = true" class="text-indigo-600 hover:text-indigo-800 font-extrabold flex items-center gap-1 cursor-pointer">
+                            <span>⚡ {{ $eligibleForConsolidation->count() }} adet birleştirilebilir parça mevcut</span>
+                            <span class="underline">&rarr;</span>
+                        </button>
+                    @endif
+                </div>
+
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead>
@@ -158,8 +200,33 @@
                                         </div>
                                     </td>
                                     <td class="px-6 py-5 whitespace-nowrap">
-                                        <div class="text-sm font-medium text-gray-900 bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 inline-block">
-                                            {{ $entry->template->name }}
+                                        <div class="space-y-1">
+                                            <div class="flex items-center gap-1.5 flex-wrap">
+                                                <span class="text-sm font-black text-gray-900 bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1">
+                                                    {{ $entry->template->name }}
+                                                </span>
+                                                @if($entry->is_consolidated)
+                                                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-black bg-gradient-to-r from-purple-700 to-indigo-700 text-white shadow-2xs">
+                                                        🌟 Konsolide ({{ $entry->children->count() }} Parça)
+                                                    </span>
+                                                @elseif($entry->partition_value)
+                                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
+                                                        ⚡ {{ $entry->partition_value }}
+                                                    </span>
+                                                    @if($entry->parent_id)
+                                                        <a href="{{ route('form-entries.show', $entry->parent_id) }}" class="inline-flex items-center gap-0.5 text-[10px] text-indigo-600 hover:text-indigo-800 font-bold bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200">
+                                                            <span>🔗 #{{ $entry->parent_id }} Dahilinde</span>
+                                                        </a>
+                                                    @else
+                                                        <span class="text-[10px] text-slate-400 font-semibold">(Ayrık Parça)</span>
+                                                    @endif
+                                                @endif
+                                            </div>
+                                            @if($entry->title)
+                                                <div class="text-[11px] text-slate-500 font-medium truncate max-w-xs" title="{{ $entry->title }}">
+                                                    {{ $entry->title }}
+                                                </div>
+                                            @endif
                                         </div>
                                     </td>
                                     <td class="px-6 py-5 whitespace-nowrap">
@@ -211,11 +278,21 @@
                                             @endif
                                         </td>
                                     @endif
-                                    <td class="px-6 py-5 whitespace-nowrap text-right text-sm font-medium flex justify-end gap-2">
+                                    <td class="px-6 py-5 whitespace-nowrap text-right text-sm font-medium flex justify-end gap-2 items-center">
                                         <a href="{{ route('form-entries.show', $entry) }}" class="inline-flex items-center px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-indigo-600 hover:text-indigo-900 hover:bg-indigo-50 hover:border-indigo-200 transition-all shadow-sm">
                                             <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
                                             İncele
                                         </a>
+
+                                        @if(!empty($canConsolidate) && $canConsolidate && $entry->is_consolidated && (Auth::id() === $entry->user_id || Auth::user()->id === 1 || (Auth::user()->role && Auth::user()->role->slug === 'sistem_yoneticisi')))
+                                            <form action="{{ route('form-entries.dissolve', $entry) }}" method="POST" class="inline" onsubmit="return confirm('Bu konsolide formu dağıtmak ve altındaki parçaları tekrar bağımsız hale getirmek istediğinize emin misiniz?');">
+                                                @csrf
+                                                <button type="submit" class="inline-flex items-center px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-amber-700 hover:bg-amber-50 hover:border-amber-300 transition-all shadow-2xs cursor-pointer" title="Konsolidasyonu Dağıt / Parçaları Ayır">
+                                                    <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                                                    Dağıt
+                                                </button>
+                                            </form>
+                                        @endif
                                         
                                         @if(app(\App\Services\PermissionS::class)->hasPermission(Auth::user(), 'form_entries.delete'))
                                         <div x-data="{ open: false }" class="inline-block">
@@ -294,6 +371,106 @@
                         {{ $entries->links() }}
                     </div>
                 @endif
+            </div>
+        </div>
+
+        <!-- KONSOLİDASYON (PARÇALARI BİRLEŞTİRME) MODALI -->
+        <div x-show="openConsolidateModal" @keydown.window.escape="openConsolidateModal = false" style="display: none;" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+            <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+                <div x-show="openConsolidateModal" @click="openConsolidateModal = false" x-transition.opacity class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity" aria-hidden="true"></div>
+                <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+                <div x-show="openConsolidateModal" x-transition class="inline-block align-bottom bg-white rounded-3xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full border border-slate-100">
+                    <form action="{{ route('form-entries.consolidate') }}" method="POST">
+                        @csrf
+                        <div class="p-6 sm:p-8 space-y-6">
+                            <div class="flex items-start justify-between gap-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center font-black">
+                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+                                    </div>
+                                    <div>
+                                        <h3 class="text-lg font-black text-slate-900">Parçalı Formları Birleştir (Konsolidasyon)</h3>
+                                        <p class="text-xs text-slate-500 mt-0.5">Farklı kriterlere göre girilmiş form parçalarını tek bir konsolide formda toplayın.</p>
+                                    </div>
+                                </div>
+                                <button type="button" @click="openConsolidateModal = false" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                </button>
+                            </div>
+
+                            @if(isset($eligibleForConsolidation) && $eligibleForConsolidation->count() >= 2)
+                                <div class="space-y-3">
+                                    <div class="flex items-center justify-between text-xs">
+                                        <span class="font-bold text-slate-700">Birleştirilecek Parçaları Seçiniz (En az 2):</span>
+                                        <span class="font-extrabold text-indigo-600" x-text="selectedEntries.length + ' parça seçildi'"></span>
+                                    </div>
+
+                                    <div class="max-h-72 overflow-y-auto space-y-2 pr-1 border border-slate-200 rounded-2xl p-2 bg-slate-50/50">
+                                        @foreach($eligibleForConsolidation as $item)
+                                            <label class="flex items-center justify-between p-3 rounded-xl bg-white border border-slate-200/90 hover:border-indigo-400 hover:shadow-xs transition cursor-pointer group">
+                                                <div class="flex items-center gap-3">
+                                                    <input type="checkbox" name="entry_ids[]" value="{{ $item->id }}"
+                                                        x-model="selectedEntries"
+                                                        class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4">
+                                                    <div>
+                                                        <div class="flex items-center gap-2">
+                                                            <span class="text-xs font-black text-slate-900 group-hover:text-indigo-600 transition">
+                                                                {{ $item->template->name }}
+                                                            </span>
+                                                            <span class="px-2 py-0.5 rounded-md text-[11px] font-extrabold bg-amber-100 text-amber-800 border border-amber-300">
+                                                                ⚡ {{ $item->partition_value }}
+                                                            </span>
+                                                        </div>
+                                                        <div class="text-[11px] text-slate-400 mt-0.5 flex items-center gap-2">
+                                                            <span>#{{ $item->id }}</span>
+                                                            <span>&bull;</span>
+                                                            <span>{{ $item->rows->count() }} Satır</span>
+                                                            <span>&bull;</span>
+                                                            <span>{{ $item->entry_date->format('d.m.Y') }}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    @if($item->status === 'approved')
+                                                        <span class="text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 px-2 py-0.5 rounded-full">Onaylandı</span>
+                                                    @elseif($item->status === 'submitted')
+                                                        <span class="text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-300 px-2 py-0.5 rounded-full">Onay Bekliyor</span>
+                                                    @else
+                                                        <span class="text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-300 px-2 py-0.5 rounded-full">Taslak</span>
+                                                    @endif
+                                                </div>
+                                            </label>
+                                        @endforeach
+                                    </div>
+                                    <p class="text-[11px] text-slate-500 italic">
+                                        💡 Not: Birleştirme sonrasında parçaların tüm satırları tek bir ana form altında toplanacak ve bu parçalar konsolide ana forma bağlanacaktır. Dilediğiniz zaman konsolidasyonu dağıtabilirsiniz.
+                                    </p>
+                                </div>
+                            @else
+                                <div class="p-8 text-center bg-slate-50 rounded-2xl border border-slate-200 text-slate-500 space-y-2">
+                                    <svg class="w-10 h-10 mx-auto text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                    <p class="text-sm font-bold text-slate-700">Henüz Birleştirilecek Yeterli Parça Yok</p>
+                                    <p class="text-xs text-slate-400">Birleştirme işlemi için aynı şablona ait en az 2 adet bağımsız parçalı form kaydı bulunmalıdır.</p>
+                                </div>
+                            @endif
+                        </div>
+
+                        <div class="bg-slate-50 px-6 py-4 border-t border-slate-100 flex items-center justify-end gap-3">
+                            <button type="button" @click="openConsolidateModal = false" class="px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-white transition cursor-pointer">
+                                İptal
+                            </button>
+                            @if(isset($eligibleForConsolidation) && $eligibleForConsolidation->count() >= 2)
+                                <button type="submit"
+                                    :disabled="selectedEntries.length < 2"
+                                    :class="selectedEntries.length < 2 ? 'opacity-50 cursor-not-allowed bg-indigo-400' : 'bg-indigo-600 hover:bg-indigo-700 active:scale-98'"
+                                    class="px-5 py-2.5 rounded-xl text-xs font-black text-white shadow-md shadow-indigo-500/20 transition flex items-center gap-1.5 cursor-pointer">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                    <span>Seçilen Parçaları Birleştir</span>
+                                </button>
+                            @endif
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </div>

@@ -8,7 +8,8 @@ class FormEntryM extends Model
 {
     protected $table = 'form_entries';
     protected $fillable = [
-        'form_template_id', 'user_id', 'entry_date', 'status', 'rejection_reason',
+        'form_template_id', 'parent_id', 'partition_field_id', 'partition_value', 'title', 'is_consolidated',
+        'user_id', 'entry_date', 'status', 'rejection_reason',
         'template_snapshot', 'submitted_at', 'approved_at', 'approved_by'
     ];
 
@@ -19,7 +20,53 @@ class FormEntryM extends Model
             'submitted_at' => 'datetime',
             'approved_at' => 'datetime',
             'template_snapshot' => 'array',
+            'is_consolidated' => 'boolean',
+            'parent_id' => 'integer',
+            'partition_field_id' => 'integer',
         ];
+    }
+
+    public function parent()
+    {
+        return $this->belongsTo(FormEntryM::class, 'parent_id');
+    }
+
+    public function children()
+    {
+        return $this->hasMany(FormEntryM::class, 'parent_id')->orderBy('id', 'asc');
+    }
+
+    public function partitionField()
+    {
+        return $this->belongsTo(FormFieldM::class, 'partition_field_id');
+    }
+
+    public function isConsolidated(): bool
+    {
+        return (bool)$this->is_consolidated;
+    }
+
+    public function isPartition(): bool
+    {
+        return !empty($this->partition_value);
+    }
+
+    public function getFormattedTitleAttribute(): string
+    {
+        if (!empty($this->title)) {
+            return $this->title;
+        }
+
+        $templateName = $this->template?->name ?? 'Form';
+        if ($this->isConsolidated()) {
+            return "Birleştirilmiş Konsolide Kayıt - {$templateName} (#{$this->id})";
+        }
+
+        if ($this->isPartition()) {
+            return "{$this->partition_value} - {$templateName} (#{$this->id})";
+        }
+
+        return "{$templateName} (#{$this->id})";
     }
 
     public function template()

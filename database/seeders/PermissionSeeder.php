@@ -27,6 +27,7 @@ class PermissionSeeder extends Seeder
             ['form_entries',    'edit_own',      'Kendi Verisini Düzenleme'],
             ['form_entries',    'edit_group',    'Grup Verisini Düzenleme'],
             ['form_entries',    'approve',       'Veri Onaylama/Reddetme'],
+            ['form_entries',    'consolidate',   'Parçalı Formları Birleştirme ve Dağıtma (Konsolidasyon)'],
             ['form_entries',    'delete',        'Veri (Form Kaydı) Silme'],
             ['form_templates',  'view_targets',  'Form Hedef Kitlesini Görüntüleme'],
             ['form_templates',  'delete',        'Form Tasarımı Silme'],

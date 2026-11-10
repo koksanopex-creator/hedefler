@@ -26,6 +26,8 @@ class FormFieldC extends Controller
     public function update(Request $request, FormTemplateM $formTemplate)
     {
         $validated = $request->validate([
+            'allow_partition_entry' => 'nullable|in:0,1',
+            'partition_field_id' => 'nullable',
             'fields' => 'required|array',
             'fields.*.id' => 'nullable|integer',
             'fields.*.label' => 'required|string',
@@ -42,14 +44,52 @@ class FormFieldC extends Controller
             'fields.*.calc_condition_field_id' => 'nullable|exists:form_fields,id',
             'fields.*.calc_condition_value' => 'nullable',
             'fields.*.filter_by_user_group' => 'nullable|boolean',
+            'fields.*._uid' => 'nullable|string',
         ]);
 
         try {
-            $this->formFieldService->syncFields($formTemplate, $validated['fields']);
+            $incomingIds = $this->formFieldService->syncFields($formTemplate, $validated['fields']);
+
+            // Şablonun parçalı giriş modunu ve kriter alanını güncelle
+            $allowPartition = $request->input('allow_partition_entry') == '1';
+            $partitionFieldRaw = $request->input('partition_field_id');
+            $partitionFieldId = null;
+
+            if ($allowPartition && !empty($partitionFieldRaw)) {
+                if (is_numeric($partitionFieldRaw)) {
+                    if ($formTemplate->fields()->where('id', $partitionFieldRaw)->exists()) {
+                        $partitionFieldId = (int)$partitionFieldRaw;
+                    }
+                } elseif (str_starts_with((string)$partitionFieldRaw, 'uid_')) {
+                    // Client UID ile eşleştir
+                    $fieldsInput = $request->input('fields', []);
+                    foreach ($fieldsInput as $idx => $fData) {
+                        if (($fData['_uid'] ?? '') === $partitionFieldRaw && isset($incomingIds[$idx])) {
+                            $partitionFieldId = $incomingIds[$idx];
+                            break;
+                        }
+                    }
+                } elseif (str_starts_with((string)$partitionFieldRaw, 'index:')) {
+                    $idx = (int)str_replace('index:', '', $partitionFieldRaw);
+                    if (isset($incomingIds[$idx])) {
+                        $partitionFieldId = $incomingIds[$idx];
+                    }
+                } else {
+                    $matched = $formTemplate->fields()->where('label', $partitionFieldRaw)->first();
+                    if ($matched) {
+                        $partitionFieldId = $matched->id;
+                    }
+                }
+            }
+
+            $formTemplate->update([
+                'allow_partition_entry' => $allowPartition,
+                'partition_field_id' => $partitionFieldId,
+            ]);
         } catch (\Exception $e) {
             return back()->withErrors(['error' => $e->getMessage()]);
         }
 
-        return redirect()->route('form-templates.show', $formTemplate)->with('success', 'Alanlar başarıyla güncellendi.');
+        return redirect()->route('form-templates.show', $formTemplate)->with('success', 'Alanlar ve şablon ayarları başarıyla güncellendi.');
     }
 }

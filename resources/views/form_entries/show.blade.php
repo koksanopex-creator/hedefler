@@ -123,6 +123,84 @@
     <div class="py-6 sm:py-10">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
+            @if($formEntry->is_consolidated)
+                <div class="mb-6 bg-gradient-to-r from-indigo-900 via-indigo-800 to-slate-900 text-white rounded-2xl p-5 shadow-lg border border-indigo-700/50">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div class="space-y-1">
+                            <div class="flex items-center gap-2">
+                                <span class="px-2.5 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-amber-400 text-slate-900">
+                                    🌟 Birleştirilmiş Konsolide Form
+                                </span>
+                                <span class="text-xs text-indigo-200">Toplam {{ $formEntry->children->count() }} Parça &bull; {{ $formEntry->rows->count() }} Satır</span>
+                            </div>
+                            <h3 class="text-base sm:text-lg font-extrabold text-white">
+                                {{ $formEntry->title }}
+                            </h3>
+                            <p class="text-xs text-indigo-200/90">
+                                Bu kayıt, aşağıdaki bağımsız parçalı formların birleştirilmesiyle oluşturulmuştur. Onaylama veya revizyon işlemlerinizi ister bu ana formdan ister parçalardan bağımsız yürütebilirsiniz.
+                            </p>
+                        </div>
+
+                        @if((Auth::id() === $formEntry->user_id || Auth::user()->id === 1 || (Auth::user()->role && Auth::user()->role->slug === 'sistem_yoneticisi')) && (Auth::user()->id === 1 || (Auth::user()->role && Auth::user()->role->slug === 'sistem_yoneticisi') || app(\App\Services\PermissionS::class)->hasPermission(Auth::user(), 'form_entries.consolidate')))
+                            <form action="{{ route('form-entries.dissolve', $formEntry) }}" method="POST" onsubmit="return confirm('Bu konsolide formu dağıtmak ve altındaki parçaları tekrar bağımsız hale getirmek istediğinize emin misiniz?');">
+                                @csrf
+                                <button type="submit" class="px-3.5 py-2 bg-white/10 hover:bg-rose-600 border border-white/20 text-white text-xs font-bold rounded-xl transition shadow-xs flex items-center gap-1.5 shrink-0">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                                    <span>Konsolidasyonu Dağıt</span>
+                                </button>
+                            </form>
+                        @endif
+                    </div>
+
+                    <!-- Dahil Olan Parçalar Listesi -->
+                    <div class="mt-4 pt-4 border-t border-white/10 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                        @foreach($formEntry->children as $child)
+                            <div class="bg-white/10 hover:bg-white/15 border border-white/10 rounded-xl p-3 transition flex flex-col justify-between">
+                                <div class="flex items-center justify-between gap-1">
+                                    <span class="text-xs font-black text-amber-300">
+                                        ⚡ {{ $child->partition_value ?: ('Parça #' . $child->id) }}
+                                    </span>
+                                    @if($child->status === 'approved')
+                                        <span class="text-[10px] font-bold bg-emerald-500/30 text-emerald-200 border border-emerald-400/30 px-1.5 py-0.2 rounded">Onaylandı</span>
+                                    @elseif($child->status === 'submitted')
+                                        <span class="text-[10px] font-bold bg-blue-500/30 text-blue-200 border border-blue-400/30 px-1.5 py-0.2 rounded">Onay Bekliyor</span>
+                                    @else
+                                        <span class="text-[10px] font-bold bg-slate-500/30 text-slate-200 border border-slate-400/30 px-1.5 py-0.2 rounded">Taslak</span>
+                                    @endif
+                                </div>
+                                <div class="mt-2 text-[11px] text-indigo-200 flex items-center justify-between">
+                                    <span>{{ $child->rows->count() }} Satır</span>
+                                    <a href="{{ route('form-entries.show', $child) }}" class="text-amber-300 hover:text-white font-bold underline transition">
+                                        Parçayı Aç &rarr;
+                                    </a>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            @elseif($formEntry->partition_value)
+                <div class="mb-4 px-4 py-3 bg-amber-50 border-l-4 border-amber-500 rounded-r-xl shadow-xs flex items-center justify-between">
+                    <div class="flex items-center gap-2.5">
+                        <span class="w-7 h-7 rounded-lg bg-amber-500 text-slate-900 flex items-center justify-center font-black text-xs shadow-xs">
+                            ⚡
+                        </span>
+                        <div>
+                            <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Bölümlenmiş Parçalı Form Kaydı</span>
+                            <div class="text-xs font-extrabold text-slate-800 flex items-center gap-1.5">
+                                <span>{{ $formEntry->partitionField->label ?? 'Kriter' }}:</span>
+                                <span class="text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded font-mono">{{ $formEntry->partition_value }}</span>
+                                @if($formEntry->parent_id)
+                                    <span class="text-slate-400">&bull;</span>
+                                    <a href="{{ route('form-entries.show', $formEntry->parent_id) }}" class="text-indigo-600 hover:underline font-bold">
+                                        🔗 #{{ $formEntry->parent_id }} Numaralı Konsolide Form Dahilinde
+                                    </a>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
             @if(isset($errors) && $errors->any())
                 <div class="p-4 mb-4 text-sm text-red-800 bg-red-100 border border-red-200 rounded-lg shadow-sm" role="alert">
                     <div class="font-bold mb-1 flex items-center gap-1.5">
@@ -516,17 +594,26 @@
             </div>
 
             <!-- Veri Tablosu -->
-            <div class="bg-white shadow-xl sm:rounded-xl overflow-hidden ring-1 ring-black/5 mb-8">
+            <div x-data="formShowApp({!! htmlspecialchars(json_encode($fieldsToRender), ENT_QUOTES, 'UTF-8') !!}, {{ $formEntry->template->show_row_totals ? 'true' : 'false' }})"
+                @keydown.window.escape="if(isFullscreen) toggleFullscreen()"
+                :class="isFullscreen ? 'fixed inset-0 z-[999999] bg-white flex flex-col w-screen h-screen overflow-hidden m-0 p-0 rounded-none shadow-none ring-0' : 'bg-white shadow-xl sm:rounded-xl overflow-hidden ring-1 ring-black/5 mb-8'"
+                :style="isFullscreen ? 'position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; width: 100vw !important; height: 100vh !important; z-index: 9999999 !important; margin: 0 !important; padding: 0 !important;' : ''">
                 <div
-                    class="p-4 sm:p-5 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    class="p-4 sm:p-5 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 flex-shrink-0 transition-colors"
+                    :class="isFullscreen ? 'bg-slate-900 border-slate-800' : ''">
                     <div class="flex items-center space-x-3">
-                        <div class="p-2 bg-indigo-100 text-indigo-600 rounded-lg shadow-inner">
+                        <div class="p-2 rounded-lg shadow-inner"
+                            :class="isFullscreen ? 'bg-indigo-900/60 text-indigo-300' : 'bg-indigo-100 text-indigo-600'">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M4 6h16M4 10h16M4 14h16M4 18h16"></path>
                             </svg>
                         </div>
-                        <h3 class="text-gray-900 font-extrabold text-lg tracking-tight">Girilen Veriler</h3>
+                        <div>
+                            <h3 class="font-extrabold text-lg tracking-tight"
+                                :class="isFullscreen ? 'text-white' : 'text-gray-900'">Girilen Veriler</h3>
+                            <span x-show="isFullscreen" class="text-xs text-slate-400" x-text="rows.length + ' Satır'"></span>
+                        </div>
                     </div>
                     <div class="flex items-center gap-2 flex-wrap">
                         @if(!empty($canSubmitApproval) && $canSubmitApproval)
@@ -564,11 +651,29 @@
                                 Düzenle
                             </a>
                         @endif
+
+                        <!-- Tam Ekran Butonu -->
+                        <button type="button" @click="toggleFullscreen()"
+                            class="inline-flex items-center px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg font-semibold text-xs transition cursor-pointer shadow-xs gap-1.5 select-none"
+                            :class="isFullscreen ? 'bg-indigo-600 hover:bg-indigo-500 text-white ring-2 ring-indigo-400' : 'bg-white hover:bg-indigo-50 text-indigo-700 border border-indigo-200'"
+                            :title="isFullscreen ? 'Tam Ekrandan Çık (Esc)' : 'Tam Ekran Moduna Geç'">
+                            <template x-if="!isFullscreen">
+                                <span class="flex items-center gap-1.5">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg>
+                                    <span>Tam Ekran</span>
+                                </span>
+                            </template>
+                            <template x-if="isFullscreen">
+                                <span class="flex items-center gap-1.5">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                    <span>Tam Ekrandan Çık</span>
+                                </span>
+                            </template>
+                        </button>
                     </div>
                 </div>
 
-                <div class="overflow-x-auto min-h-[200px] pb-2"
-                    x-data="formShowApp({!! htmlspecialchars(json_encode($fieldsToRender), ENT_QUOTES, 'UTF-8') !!}, {{ $formEntry->template->show_row_totals ? 'true' : 'false' }})">
+                <div class="overflow-auto min-h-[200px] pb-2 flex-1" :class="isFullscreen ? 'h-full' : ''">
                     <!-- Gizli form (Excel Export için) -->
                     <form id="exportForm" action="{{ route('form-entries.export', $formEntry) }}" method="GET"
                         style="display:none;">
@@ -1715,6 +1820,26 @@
                 filteredTotals: {},
                 filters: {},
                 uniqueValues: {},
+                isFullscreen: false,
+
+                toggleFullscreen() {
+                    this.isFullscreen = !this.isFullscreen;
+                    if (this.isFullscreen) {
+                        document.body.classList.add('overflow-hidden');
+                        try {
+                            if (document.documentElement.requestFullscreen && !document.fullscreenElement) {
+                                document.documentElement.requestFullscreen().catch(() => {});
+                            }
+                        } catch(e) {}
+                    } else {
+                        document.body.classList.remove('overflow-hidden');
+                        try {
+                            if (document.exitFullscreen && document.fullscreenElement) {
+                                document.exitFullscreen().catch(() => {});
+                            }
+                        } catch(e) {}
+                    }
+                },
 
                 init() {
                     // Blade'den gelen verileri JSON objesine aktarma

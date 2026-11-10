@@ -40,7 +40,10 @@ class FormEntryC extends Controller
     public function index(Request $request)
     {
         $user = $request->user() ?? Auth::user();
+        $isSuperAdmin = $user ? (($user->role && $user->role->slug === 'sistem_yoneticisi') || $this->permissionService->hasPermission($user, 'roles.manage') || $user->id === 1) : false;
         $baseQuery = $this->formEntryService->getVisibleEntriesQuery($user);
+
+        $scope = $request->get('scope', 'all');
 
         $statusCounts = [
             'all' => (clone $baseQuery)->count(),
@@ -53,7 +56,19 @@ class FormEntryC extends Controller
             'revision_pending' => (clone $baseQuery)->whereHas('revisionRequests', fn($q) => $q->where('status', 'pending'))->count(),
         ];
 
+        $scopeCounts = [
+            'all' => (clone $baseQuery)->count(),
+            'consolidated' => (clone $baseQuery)->where('is_consolidated', true)->count(),
+            'partitions' => (clone $baseQuery)->whereNotNull('partition_value')->count(),
+        ];
+
         $query = clone $baseQuery;
+
+        if ($scope === 'consolidated') {
+            $query->where('is_consolidated', true);
+        } elseif ($scope === 'partitions') {
+            $query->whereNotNull('partition_value');
+        }
 
         if ($request->filled('status')) {
             if ($request->status === 'revision_pending') {
@@ -70,14 +85,26 @@ class FormEntryC extends Controller
             $query->whereDate('entry_date', today());
         }
 
-        $entries = $query->with(['template', 'user.group', 'revisionRequests', 'approver'])
+        $entries = $query->with(['template', 'user.group', 'revisionRequests', 'approver', 'children', 'parent', 'partitionField'])
             ->orderBy('entry_date', 'desc')
             ->paginate(20)
             ->withQueryString();
 
         $canViewApprover = $user ? $this->permissionService->hasPermission($user, 'form_entries.view_approver') : false;
+        $canConsolidate = $user ? ($isSuperAdmin || $this->permissionService->hasPermission($user, 'form_entries.consolidate')) : false;
 
-        return view('form_entries.index', compact('entries', 'canViewApprover', 'statusCounts'));
+        // Konsolidasyon modalı için birleştirmeye uygun (parçalı ve henüz bir üst forma bağlanmamış) kayıtlar
+        $eligibleForConsolidation = $canConsolidate
+            ? (clone $baseQuery)
+                ->whereNotNull('partition_value')
+                ->whereNull('parent_id')
+                ->where('is_consolidated', false)
+                ->with(['template', 'rows', 'user'])
+                ->orderBy('entry_date', 'desc')
+                ->get()
+            : collect();
+
+        return view('form_entries.index', compact('entries', 'canViewApprover', 'statusCounts', 'scope', 'scopeCounts', 'eligibleForConsolidation', 'canConsolidate'));
     }
 
     public function selectTemplate(Request $request)
@@ -97,8 +124,67 @@ class FormEntryC extends Controller
         }
 
         // Mevcut şablonun alanlarını yükle
-        $formTemplate->load('fields');
+        $formTemplate->load(['fields', 'partitionField']);
         $date = now()->format('Y-m-d');
+
+        $partitionField = null;
+        $partitionValue = null;
+
+        if ($formTemplate->isPartitioned() && $formTemplate->partitionField) {
+            $partitionField = $formTemplate->partitionField;
+
+            // Eğer query'de partition_value yoksa, seçim ekranına yönlendir
+            if (!$request->filled('partition_value')) {
+                $partitionOptions = [];
+                if ($partitionField->master_data_type_id) {
+                    $mType = \App\Models\MasterDataTypeM::with('items')->find($partitionField->master_data_type_id);
+                    if ($mType) {
+                        foreach ($mType->items as $item) {
+                            $partitionOptions[] = ['id' => $item->id, 'name' => $item->name];
+                        }
+                    }
+                } elseif ($partitionField->options) {
+                    $opts = is_array($partitionField->options) ? $partitionField->options : json_decode($partitionField->options, true);
+                    if (is_array($opts)) {
+                        foreach ($opts as $k => $v) {
+                            $val = is_numeric($k) ? $v : $k;
+                            $partitionOptions[] = ['id' => $val, 'name' => (string) $v];
+                        }
+                    }
+                }
+
+                $userEntries = FormEntryM::where('form_template_id', $formTemplate->id)
+                    ->where('user_id', $user->id)
+                    ->whereNotNull('partition_value')
+                    ->orderBy('id', 'desc')
+                    ->get()
+                    ->keyBy('partition_value');
+
+                return view('form_entries.select_partition', compact('formTemplate', 'partitionField', 'partitionOptions', 'userEntries'));
+            }
+
+            // partition_value belirtilmiş: akıllı yönlendirme ve kontrol
+            $partitionValue = trim($request->query('partition_value'));
+
+            $existingEntryForPart = FormEntryM::where('form_template_id', $formTemplate->id)
+                ->where('user_id', $user->id)
+                ->where('partition_value', $partitionValue)
+                ->latest()
+                ->first();
+
+            if ($existingEntryForPart) {
+                if ($existingEntryForPart->status === 'draft') {
+                    return redirect()->route('form-entries.edit', $existingEntryForPart)
+                        ->with('info', "'{$partitionValue}' bölümü için mevcut bir taslağınız bulundu (#{$existingEntryForPart->id}). Taslağınıza yönlendirildiniz.");
+                } elseif ($existingEntryForPart->status === 'submitted') {
+                    return redirect()->route('form-entries.show', $existingEntryForPart)
+                        ->with('warning', "'{$partitionValue}' bölümü için daha önce onaya gönderilmiş bir kaydınız bulunmaktadır (#{$existingEntryForPart->id}).");
+                } elseif ($existingEntryForPart->status === 'approved') {
+                    return redirect()->route('form-entries.show', $existingEntryForPart)
+                        ->with('warning', "'{$partitionValue}' bölümü için onaylanmış bir kaydınız bulunmaktadır (#{$existingEntryForPart->id}). Değişiklik yapmak istiyorsanız lütfen 'Düzenleme Talep Et (Revizyon)' butonunu kullanınız.");
+                }
+            }
+        }
 
         // Artık taslak aramıyoruz, "Yeni Veri Girişi" her seferinde yepyeni bir kayıt açar.
         $existingEntry = null;
@@ -119,7 +205,7 @@ class FormEntryC extends Controller
             ];
         }
 
-        return view('form_entries.create', compact('formTemplate', 'date', 'existingEntry', 'masterDataTree', 'currentUserScope', 'usersList', 'pinnedColumns'));
+        return view('form_entries.create', compact('formTemplate', 'date', 'existingEntry', 'masterDataTree', 'currentUserScope', 'usersList', 'pinnedColumns', 'partitionField', 'partitionValue'));
     }
 
     public function store(Request $request, FormTemplateM $formTemplate)
@@ -176,20 +262,24 @@ class FormEntryC extends Controller
             }
         }
 
+        $partitionValue = $request->filled('partition_value') ? trim($request->input('partition_value')) : null;
+
         $entry = $this->formEntryService->saveEntry(
             $formTemplate,
             $request->user(),
             $request->entry_date,
             $request->rows,
             $status,
-            $existingEntry
+            $existingEntry,
+            $partitionValue
         );
 
         $actionName = $status === 'draft' ? 'form_entry.draft' : 'form_entry.create';
         $dateFormatted = \Carbon\Carbon::parse($request->entry_date)->format('d.m.Y');
+        $entryTitle = $entry->title ?: $formTemplate->name;
         $desc = $status === 'draft'
-            ? "Taslak form kaydedildi: [{$formTemplate->name}] (Giriş Tarihi: {$dateFormatted})"
-            : "Yeni form verisi oluşturuldu ve onaya gönderildi: [{$formTemplate->name}] (Giriş Tarihi: {$dateFormatted})";
+            ? "Taslak form kaydedildi: [{$entryTitle}] (Giriş Tarihi: {$dateFormatted})"
+            : "Yeni form verisi oluşturuldu ve onaya gönderildi: [{$entryTitle}] (Giriş Tarihi: {$dateFormatted})";
         $this->activityLogService->log($actionName, $desc, $entry);
 
         if ($request->wantsJson() || $request->ajax()) {
@@ -199,6 +289,7 @@ class FormEntryC extends Controller
                 'entry_id' => $entry->id,
                 'edit_url' => route('form-entries.edit', $entry),
                 'update_url' => route('form-entries.update', $entry),
+                'title' => $entry->title,
                 'status' => $status,
                 'saved_at' => now()->format('H:i:s'),
             ]);
@@ -209,10 +300,8 @@ class FormEntryC extends Controller
         }
 
         if ($status === 'submitted') {
-            \App\Services\NotificationS::dispatch('form.submitted', [
-                'user_name' => $request->user()->name,
-                'form_name' => $formTemplate->name,
-            ], $request->user(), route('form-entries.show', $entry));
+            $vars = $this->getFormNotificationVariables($entry);
+            \App\Services\NotificationS::dispatch('form.submitted', $vars, $request->user(), route('form-entries.show', $entry));
         }
 
         return redirect()->route('form-entries.index')->with('success', 'Veri girişi kaydedildi.');
@@ -342,11 +431,13 @@ class FormEntryC extends Controller
         }
 
         // Snapshot alanlarını yükle
-        $formEntry->load(['template.fields', 'rows.values']);
+        $formEntry->load(['template.fields', 'rows.values', 'partitionField']);
 
         $formTemplate = $formEntry->template;
         $date = $formEntry->entry_date->format('Y-m-d');
         $existingEntry = $formEntry;
+        $partitionField = $formEntry->partitionField ?? $formTemplate->partitionField;
+        $partitionValue = $formEntry->partition_value;
 
         $masterDataTree = \App\Models\MasterDataTypeM::with('items')->get()->keyBy('id')->toArray();
         $currentUserScope = $this->getUserScope($user);
@@ -364,7 +455,7 @@ class FormEntryC extends Controller
             ];
         }
 
-        return view('form_entries.create', compact('formTemplate', 'date', 'existingEntry', 'masterDataTree', 'currentUserScope', 'usersList', 'pinnedColumns'));
+        return view('form_entries.create', compact('formTemplate', 'date', 'existingEntry', 'masterDataTree', 'currentUserScope', 'usersList', 'pinnedColumns', 'partitionField', 'partitionValue'));
     }
 
     public function update(Request $request, FormEntryM $formEntry)
@@ -449,13 +540,18 @@ class FormEntryC extends Controller
             $status = 'approved';
         }
 
+        $partitionValue = $request->filled('partition_value')
+            ? trim($request->input('partition_value'))
+            : $formEntry->partition_value;
+
         $this->formEntryService->saveEntry(
             $formEntry->template,
             $formEntry->user,
             $request->entry_date,
             $request->rows,
             $status,
-            $formEntry
+            $formEntry,
+            $partitionValue
         );
 
         // Değişiklikleri kalem kalem tespit et (Field-level diffing)
@@ -500,6 +596,7 @@ class FormEntryC extends Controller
                 'success' => true,
                 'message' => $status === 'draft' ? 'Taslak başarıyla güncellendi.' : 'Veri başarıyla güncellendi.',
                 'entry_id' => $formEntry->id,
+                'title' => $formEntry->title,
                 'edit_url' => route('form-entries.edit', $formEntry),
                 'update_url' => route('form-entries.update', $formEntry),
                 'status' => $status,
@@ -508,10 +605,8 @@ class FormEntryC extends Controller
         }
 
         if ($status === 'submitted') {
-            \App\Services\NotificationS::dispatch('form.submitted', [
-                'user_name' => $formEntry->user->name,
-                'form_name' => $formEntry->template->name,
-            ], $formEntry->user, route('form-entries.show', $formEntry));
+            $vars = $this->getFormNotificationVariables($formEntry);
+            \App\Services\NotificationS::dispatch('form.submitted', $vars, $formEntry->user, route('form-entries.show', $formEntry));
         }
 
         if ($status === 'draft') {
@@ -572,13 +667,29 @@ class FormEntryC extends Controller
                 $formEntry
             );
 
+            // Eğer konsolide bir ana form onaylanıyorsa, altındaki tüm parçaları da kaskat onayla
+            if ($formEntry->is_consolidated) {
+                foreach ($formEntry->children as $child) {
+                    $child->status = 'approved';
+                    $child->approved_at = now();
+                    $child->approved_by = $user->id;
+                    $child->rejection_reason = null;
+                    $child->save();
+
+                    $this->activityLogService->log(
+                        'form_entry.approved',
+                        "Konsolide ana form (#{$formEntry->id}) onaylandığı için bu parça da otomatik ONAYLANDI.",
+                        $child
+                    );
+                    app(\App\Services\KpiTargetS::class)->recalculateForEntry($child);
+                }
+            }
+
             // KPI Hedef Gerçekleşmelerini Anlık Güncelle
             app(\App\Services\KpiTargetS::class)->recalculateForEntry($formEntry);
 
-            \App\Services\NotificationS::dispatch('form.approved', [
-                'user_name' => $formEntry->user->name,
-                'form_name' => $formEntry->template->name,
-            ], $formEntry->user, route('form-entries.show', $formEntry));
+            $vars = $this->getFormNotificationVariables($formEntry);
+            \App\Services\NotificationS::dispatch('form.approved', $vars, $formEntry->user, route('form-entries.show', $formEntry));
         } elseif ($request->status === 'rejected') {
             $this->activityLogService->log(
                 'form_entry.rejected',
@@ -589,11 +700,10 @@ class FormEntryC extends Controller
             // Reddedildiğinde de hedefleri güncelle (daha önce onaylıysa geri alsın)
             app(\App\Services\KpiTargetS::class)->recalculateForEntry($formEntry);
 
-            \App\Services\NotificationS::dispatch('form.rejected', [
-                'user_name' => $formEntry->user->name,
-                'form_name' => $formEntry->template->name,
+            $vars = array_merge($this->getFormNotificationVariables($formEntry), [
                 'rejection_reason' => $formEntry->rejection_reason,
-            ], $formEntry->user, route('form-entries.show', $formEntry));
+            ]);
+            \App\Services\NotificationS::dispatch('form.rejected', $vars, $formEntry->user, route('form-entries.show', $formEntry));
         }
 
         return redirect()->route('form-entries.show', $formEntry)->with('success', 'Form onay durumu başarıyla güncellendi.');
@@ -626,6 +736,22 @@ class FormEntryC extends Controller
         $formEntry->rejection_reason = null;
         $formEntry->save();
 
+        if ($formEntry->is_consolidated) {
+            foreach ($formEntry->children as $child) {
+                $child->status = 'submitted';
+                $child->approved_at = null;
+                $child->approved_by = null;
+                $child->save();
+
+                $this->activityLogService->log(
+                    'form_entry.revert',
+                    "Konsolide ana form (#{$formEntry->id}) onayı geri alındığı için bu parçanın (#{$child->id}) onayı da geri alındı.",
+                    $child
+                );
+                app(\App\Services\KpiTargetS::class)->recalculateForEntry($child);
+            }
+        }
+
         if ($prevStatus === 'approved') {
             // KPI gerçekleşmelerini geri çek (actuals düşürülür)
             app(\App\Services\KpiTargetS::class)->recalculateForEntry($formEntry);
@@ -643,6 +769,85 @@ class FormEntryC extends Controller
         );
 
         return redirect()->route('form-entries.show', $formEntry)->with('success', 'Form durumu başarıyla geri alındı ve form tekrar onay bekliyor durumuna getirildi.');
+    }
+
+    /**
+     * Parçalı form girişlerini tek bir konsolide form altında birleştirir.
+     */
+    public function consolidate(Request $request)
+    {
+        $user = $request->user();
+        $isSuperAdmin = ($user->role && $user->role->slug === 'sistem_yoneticisi') || $this->permissionService->hasPermission($user, 'roles.manage') || $user->id === 1;
+
+        if (!$isSuperAdmin && !$this->permissionService->hasPermission($user, 'form_entries.consolidate')) {
+            abort(403, 'Form parçalarını birleştirme yetkiniz bulunmamaktadır.');
+        }
+
+        $request->validate([
+            'entry_ids' => 'required|array|min:2',
+            'entry_ids.*' => 'required|integer|exists:form_entries,id'
+        ], [
+            'entry_ids.required' => 'Birleştirilecek formlar seçilmelidir.',
+            'entry_ids.min' => 'Birleştirme işlemi için en az 2 adet parçalı form seçilmelidir.'
+        ]);
+
+        // Kullanıcı yetki ve mülkiyet kontrolü: Superadmin değilse sadece kendi girdiği parçaları birleştirebilir
+        if (!$isSuperAdmin) {
+            $otherUserEntries = FormEntryM::whereIn('id', $request->entry_ids)
+                ->where('user_id', '!=', $user->id)
+                ->count();
+            if ($otherUserEntries > 0) {
+                abort(403, 'Yalnızca kendi adınıza girilmiş parçalı formları birleştirebilirsiniz.');
+            }
+        }
+
+        try {
+            $parent = $this->formEntryService->consolidateEntries($request->entry_ids, $user);
+
+            $this->activityLogService->log(
+                'form_entry.consolidated',
+                "Parçalı formlar konsolide edildi ve #{$parent->id} numaralı birleştirilmiş ana form oluşturuldu.",
+                $parent
+            );
+
+            return redirect()->route('form-entries.show', $parent)
+                ->with('success', "Seçilen " . count($request->entry_ids) . " parçalı kayıt başarıyla birleştirildi ve #{$parent->id} numaralı konsolide form oluşturuldu.");
+        } catch (\Exception $e) {
+            return back()->with('error', 'Birleştirme sırasında bir hata oluştu: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Konsolide formu çözer/dağıtır ve parçaları bağımsız hale getirir.
+     */
+    public function dissolve(Request $request, FormEntryM $formEntry)
+    {
+        $user = $request->user();
+        $isSuperAdmin = ($user->role && $user->role->slug === 'sistem_yoneticisi') || $this->permissionService->hasPermission($user, 'roles.manage') || $user->id === 1;
+
+        if (!$isSuperAdmin && !$this->permissionService->hasPermission($user, 'form_entries.consolidate')) {
+            abort(403, 'Konsolide formları dağıtma yetkiniz bulunmamaktadır.');
+        }
+
+        if ($formEntry->user_id !== $user->id && !$isSuperAdmin) {
+            abort(403, 'Yalnızca kendi konsolide formunuzu dağıtabilirsiniz.');
+        }
+
+        try {
+            $childCount = $formEntry->children()->count();
+            $this->formEntryService->dissolveConsolidation($formEntry, $user);
+
+            $this->activityLogService->log(
+                'form_entry.dissolved',
+                "Konsolide form (#{$formEntry->id}) dağıtıldı. Toplam {$childCount} parça bağımsız kayda dönüştürüldü.",
+                $formEntry
+            );
+
+            return redirect()->route('form-entries.index')
+                ->with('success', "Konsolide form başarıyla dağıtıldı. Dahil olan {$childCount} parça bağımsız kayıtlara dönüştürüldü.");
+        } catch (\Exception $e) {
+            return back()->with('error', 'Konsolidasyon dağıtılırken bir hata oluştu: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -708,10 +913,8 @@ class FormEntryC extends Controller
             $formEntry
         );
 
-        \App\Services\NotificationS::dispatch('form.submitted', [
-            'user_name' => $formEntry->user->name,
-            'form_name' => $formEntry->template->name,
-        ], $formEntry->user, route('form-entries.show', $formEntry));
+        $vars = $this->getFormNotificationVariables($formEntry);
+        \App\Services\NotificationS::dispatch('form.submitted', $vars, $formEntry->user, route('form-entries.show', $formEntry));
 
         return redirect()->route('form-entries.show', $formEntry)->with('success', 'Form başarıyla onaya gönderildi.');
     }
@@ -820,14 +1023,15 @@ class FormEntryC extends Controller
             $formEntry
         );
 
-        \App\Services\NotificationS::dispatch('form.revision_requested', [
+        $vars = array_merge($this->getFormNotificationVariables($formEntry), [
             'user_name' => $user->name,
             'requester_name' => $user->name,
-            'form_name' => $tName,
             'revision_reason' => $request->reason,
             'entry_date' => $eDate,
             'group_id' => $groupId,
-        ], $user, route('form-entries.show', $formEntry));
+        ]);
+
+        \App\Services\NotificationS::dispatch('form.revision_requested', $vars, $user, route('form-entries.show', $formEntry));
 
         return redirect()->route('form-entries.show', $formEntry)->with('success', 'Düzenleme talebiniz yöneticinize iletilmiştir. Onaylandığında form düzenlemeye açılacaktır.');
     }
@@ -884,10 +1088,8 @@ class FormEntryC extends Controller
                 $formEntry
             );
 
-            \App\Services\NotificationS::dispatch('form.revision_approved', [
-                'user_name' => $formEntry->user->name,
-                'form_name' => $tName,
-            ], $formEntry->user, route('form-entries.edit', $formEntry));
+            $vars = $this->getFormNotificationVariables($formEntry);
+            \App\Services\NotificationS::dispatch('form.revision_approved', $vars, $formEntry->user, route('form-entries.edit', $formEntry));
 
             return redirect()->route('form-entries.show', $formEntry)->with('success', 'Düzenleme talebi onaylandı. Form kullanıcının düzenlemesine açıldı.');
         } else {
@@ -905,11 +1107,10 @@ class FormEntryC extends Controller
                 $formEntry
             );
 
-            \App\Services\NotificationS::dispatch('form.revision_rejected', [
-                'user_name' => $formEntry->user->name,
-                'form_name' => $tName,
+            $vars = array_merge($this->getFormNotificationVariables($formEntry), [
                 'rejection_reason' => $request->rejection_reason,
-            ], $formEntry->user, route('form-entries.show', $formEntry));
+            ]);
+            \App\Services\NotificationS::dispatch('form.revision_rejected', $vars, $formEntry->user, route('form-entries.show', $formEntry));
 
             return redirect()->route('form-entries.show', $formEntry)->with('success', 'Düzenleme talebi reddedildi.');
         }
@@ -1192,5 +1393,41 @@ class FormEntryC extends Controller
             'template_id' => $request->template_id,
             'pinned_columns' => $preferences['pinned_columns'][(string) $request->template_id],
         ]);
+    }
+
+    /**
+     * Form bildirimleri için şablon değişkenlerini hazırlar (parçalı form bilgisi dahil).
+     */
+    protected function getFormNotificationVariables(FormEntryM $formEntry): array
+    {
+        $formEntry->loadMissing(['template', 'user', 'partitionField']);
+        $templateName = $formEntry->template?->name ?? 'Dinamik Form';
+        $isPartitioned = !empty($formEntry->partition_value);
+        $partitionFieldLabel = $formEntry->partitionField?->label ?? 'Kriter';
+        $partitionValue = $formEntry->partition_value;
+
+        if ($isPartitioned) {
+            $formDisplayName = "{$templateName} [{$partitionFieldLabel}: {$partitionValue}]";
+            $parcaBilgisi = " ({$partitionFieldLabel}: {$partitionValue} parçası)";
+            $gonderimMetni = "parçalı formu gönderdi ({$partitionFieldLabel}: {$partitionValue})";
+        } else {
+            $formDisplayName = $templateName;
+            $parcaBilgisi = "";
+            $gonderimMetni = "formu gönderdi";
+        }
+
+        return [
+            'user_name' => $formEntry->user?->name ?? 'Kullanıcı',
+            'kullanici_adi' => $formEntry->user?->name ?? 'Kullanıcı',
+            'form_name' => $formDisplayName,
+            'form_adi' => $formDisplayName,
+            'sablon_adi' => $templateName,
+            'parca_bilgisi' => $parcaBilgisi,
+            'gonderim_metni' => $gonderimMetni,
+            'partition_value' => $partitionValue ?? '',
+            'partition_field' => $partitionFieldLabel,
+            'is_partitioned' => $isPartitioned ? '1' : '0',
+            'entry_date' => $formEntry->entry_date ? $formEntry->entry_date->format('d.m.Y') : '',
+        ];
     }
 }

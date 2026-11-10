@@ -136,6 +136,8 @@ Route::middleware(['auth'])->group(function () {
     Route::post('form-entries/{formEntry}/withdraw', [FormEntryC::class, 'withdraw'])->name('form-entries.withdraw');
     Route::get('form-entries/{formEntry}/export', [FormEntryC::class, 'export'])->name('form-entries.export');
     Route::post('user-preferences/pinned-columns', [FormEntryC::class, 'savePinnedColumns'])->name('user-preferences.pinned-columns');
+    Route::post('form-entries/consolidate', [FormEntryC::class, 'consolidate'])->name('form-entries.consolidate');
+    Route::post('form-entries/{formEntry}/dissolve', [FormEntryC::class, 'dissolve'])->name('form-entries.dissolve');
     Route::resource('form-entries', FormEntryC::class)->only(['index', 'show', 'edit', 'update', 'destroy'])->parameters(['form-entries' => 'formEntry']);
 });
 

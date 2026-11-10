@@ -1,4 +1,4 @@
-﻿@section('title', 'Form Şablonu Önizleme')
+@section('title', 'Form Şablonu Önizleme')
 <x-app-layout>
     <x-slot name="header">
         <div class="flex justify-between items-center">
@@ -48,6 +48,18 @@
                             <div>
                                 <span class="block text-sm font-medium text-gray-500">Alt Toplam Gösterimi</span>
                                 <p class="mt-1 text-sm text-gray-900">{{ $formTemplate->show_row_totals ? 'Açık' : 'Kapalı' }}</p>
+                            </div>
+                            <div>
+                                <span class="block text-sm font-medium text-gray-500">Parçalı / Kısıtlı Giriş Modu</span>
+                                @if($formTemplate->isPartitioned())
+                                    <div class="mt-1 flex items-center gap-2">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 text-xs font-bold rounded-full bg-indigo-100 text-indigo-800 border border-indigo-200">
+                                            Aktif (Kriter: {{ $formTemplate->partitionField?->label ?? 'Tanımsız' }})
+                                        </span>
+                                    </div>
+                                @else
+                                    <span class="mt-1 inline-flex px-2 text-xs font-semibold rounded-full bg-slate-100 text-slate-600">Kapalı (Klasik Tek Parça)</span>
+                                @endif
                             </div>
                             <div>
                                 <span class="block text-sm font-medium text-gray-500">Oluşturan</span>

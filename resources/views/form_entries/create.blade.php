@@ -99,7 +99,7 @@
     @endphp
 
     <div class="py-1.5 sm:py-2"
-        x-data="formEntryApp({{ json_encode($fieldsToRender) }}, {{ $formTemplate->show_row_totals ? 'true' : 'false' }}, {{ json_encode($masterDataTree ?? []) }}, {{ json_encode($currentUserScope ?? ['is_admin' => true, 'is_manager' => true, 'allowed_user_ids' => [], 'allowed_user_names' => []]) }}, {{ json_encode($usersList ?? []) }}, {{ $formTemplate->id }}, {{ json_encode($pinnedColumns ?? ['left' => [], 'right' => []]) }})">
+        x-data="formEntryApp({{ json_encode($fieldsToRender) }}, {{ $formTemplate->show_row_totals ? 'true' : 'false' }}, {{ json_encode($masterDataTree ?? []) }}, {{ json_encode($currentUserScope ?? ['is_admin' => true, 'is_manager' => true, 'allowed_user_ids' => [], 'allowed_user_names' => []]) }}, {{ json_encode($usersList ?? []) }}, {{ $formTemplate->id }}, {{ json_encode($pinnedColumns ?? ['left' => [], 'right' => []]) }}, {{ $partitionField ? $partitionField->id : 'null' }}, {{ json_encode($partitionValue ?? null) }})">
         <div :class="isWide ? 'w-full px-2 sm:px-4' : 'max-w-full mx-auto px-4 sm:px-6 lg:px-8'" class="transition-all duration-200">
 
             @if(session('success'))
@@ -140,7 +140,7 @@
                 </div>
             @endif
 
-            @if($existingEntry)
+            @if($existingEntry || !empty($partitionValue))
                 @php
                     $statusMap = [
                         'draft' => 'Taslak',
@@ -149,17 +149,34 @@
                         'rejected' => 'Reddedildi',
                         'revised' => 'Revize Edildi',
                     ];
-                    $entryStatusLabel = $statusMap[strtolower($existingEntry->status)] ?? $existingEntry->status;
+                    $entryStatusLabel = $existingEntry ? ($statusMap[strtolower($existingEntry->status)] ?? $existingEntry->status) : null;
                 @endphp
-                <div
-                    class="bg-blue-50/90 text-blue-700 px-3.5 py-1.5 rounded-lg mb-2 shadow-xs border border-blue-200 flex items-center justify-between text-xs sm:text-sm">
-                    <div class="flex items-center gap-2">
-                        <svg class="w-4 h-4 text-blue-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                        <span><strong>Düzenleme Modu:</strong> Şu anda sistemde <span class="bg-blue-100 text-blue-900 px-2 py-0.5 rounded font-bold">{{ $entryStatusLabel }}</span> durumundaki formu düzenliyorsunuz.</span>
+                <div class="mb-1.5 px-3 py-1 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white rounded-lg shadow-2xs flex flex-wrap items-center justify-between gap-2 text-xs">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        @if(!empty($partitionValue))
+                            <span class="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider bg-amber-400 text-slate-950 px-2 py-0.5 rounded shadow-xs">
+                                <span>⚡ PARÇALI GİRİŞ</span>
+                            </span>
+                            <span class="text-indigo-200 text-xs">{{ $partitionField->label ?? 'Kriter' }}:</span>
+                            <strong class="text-xs font-black text-amber-300 bg-amber-400/20 border border-amber-300/40 px-2 py-0.5 rounded">{{ $partitionValue }}</strong>
+                        @endif
+
+                        @if($existingEntry)
+                            @if(!empty($partitionValue))
+                                <span class="text-slate-500 font-bold">&bull;</span>
+                            @endif
+                            <span class="text-slate-300 text-xs">Düzenleme Modu:</span>
+                            <span class="px-2 py-0.5 rounded text-[11px] font-extrabold {{ $existingEntry->status === 'draft' ? 'bg-amber-400/20 text-amber-300 border border-amber-400/40' : 'bg-blue-400/20 text-blue-200 border border-blue-400/40' }}">
+                                {{ $entryStatusLabel }}
+                            </span>
+                        @endif
                     </div>
+
+                    @if(!$existingEntry && $formTemplate->isPartitioned())
+                        <a href="{{ route('form-entries.create', $formTemplate) }}" class="text-[11px] font-bold text-indigo-200 hover:text-white underline shrink-0">
+                            ← Bölüm Değiştir
+                        </a>
+                    @endif
                 </div>
             @endif
 
@@ -177,10 +194,11 @@
                 <input type="hidden" name="entry_date" value="{{ $date }}">
                 <input type="hidden" name="action" id="form_action_input" value="draft">
                 <input type="hidden" name="rows_json" id="form_rows_json_input" value="">
+                <input type="hidden" name="partition_value" value="{{ $partitionValue ?? ($existingEntry->partition_value ?? '') }}">
 
                 <div x-ref="mainCardContainer"
                      :class="isFullscreen ? 'fixed inset-0 z-[999999] bg-white flex flex-col w-screen h-screen overflow-hidden m-0 p-0' : 'bg-white shadow-xl sm:rounded-lg border border-gray-200 flex flex-col transition-all'"
-                     :style="isFullscreen ? 'position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; width: 100vw !important; height: 100vh !important; z-index: 9999999 !important; margin: 0 !important; padding: 0 !important;' : 'height: ' + normalCardHeight + '; max-height: ' + normalCardHeight + '; min-height: 320px;'">
+                     :style="isFullscreen ? 'position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; width: 100vw !important; height: 100vh !important; z-index: 9999999 !important; margin: 0 !important; padding: 0 !important;' : 'height: ' + normalCardHeight + '; max-height: ' + normalCardHeight + '; min-height: 420px;'">
                     
                     <!-- Üst Eylem & Hızlı Satır Çubuğu (Top Action Bar - Konumu Asla Aşağı Kaymaz) -->
                     <div class="px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 flex-shrink-0 transition-colors"
@@ -492,13 +510,13 @@
                                 <template x-for="(row, rIndex) in visibleRows()" :key="row.id">
                                     <tr class="hover:bg-indigo-50 transition-colors group fast-row">
                                         <td
-                                            class="px-2 py-2 whitespace-nowrap text-center align-middle w-12 border-r border-gray-200 bg-gray-50 sticky left-0 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] group-hover:bg-indigo-50">
-                                            <div class="flex flex-col items-center justify-center space-y-1">
+                                            class="px-1 py-1 whitespace-nowrap text-center align-middle w-12 border-r border-gray-200 bg-gray-50 sticky left-0 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] group-hover:bg-indigo-50">
+                                            <div class="inline-flex items-center justify-center gap-0.5">
                                                 <button type="button" @click="moveRowUp(row)"
                                                     :disabled="rIndex === 0"
-                                                    class="text-gray-400 hover:text-indigo-600 disabled:opacity-30 disabled:cursor-not-allowed opacity-0 group-hover:opacity-100 transition-opacity"
+                                                    class="text-gray-400 hover:text-indigo-600 disabled:opacity-10 opacity-0 group-hover:opacity-100 transition-opacity p-0.5"
                                                     title="Yukarı Taşı">
-                                                    <svg class="w-4 h-4 mx-auto" fill="none" stroke="currentColor"
+                                                    <svg class="w-3.5 h-3.5 mx-auto" fill="none" stroke="currentColor"
                                                         viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round"
                                                             stroke-width="2" d="M5 15l7-7 7 7"></path>
@@ -507,14 +525,14 @@
 
                                                 <input type="number" min="1" :max="rows.length" :value="rIndex + 1"
                                                     @change="moveRowTo(row, $event.target.value)"
-                                                    class="w-10 text-center text-xs font-bold text-indigo-900 bg-white rounded border border-gray-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 py-1 px-0 shadow-sm transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none cursor-pointer hover:bg-gray-50"
+                                                    class="w-8 h-7 text-center text-xs font-black text-indigo-950 bg-white rounded border border-gray-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 p-0 shadow-2xs transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none cursor-pointer hover:bg-gray-50"
                                                     title="Sıra numarası (Rakamı değiştirin)">
 
                                                 <button type="button" @click="moveRowDown(row)"
                                                     :disabled="rIndex === rows.length - 1"
-                                                    class="text-gray-400 hover:text-indigo-600 disabled:opacity-30 disabled:cursor-not-allowed opacity-0 group-hover:opacity-100 transition-opacity"
+                                                    class="text-gray-400 hover:text-indigo-600 disabled:opacity-10 opacity-0 group-hover:opacity-100 transition-opacity p-0.5"
                                                     title="Aşağı Taşı">
-                                                    <svg class="w-4 h-4 mx-auto" fill="none" stroke="currentColor"
+                                                    <svg class="w-3.5 h-3.5 mx-auto" fill="none" stroke="currentColor"
                                                         viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round"
                                                             stroke-width="2" d="M19 9l-7 7-7-7"></path>
@@ -536,7 +554,16 @@
                                                 class="px-2 sm:px-4 py-2 whitespace-nowrap min-w-[160px] align-middle relative group/cell"
                                                 :title="getCellDisabledReason(fields[{{ $colIndex }}], row)">
 
-                                                @if ($fType === 'text')
+                                                @if (isset($partitionField) && $fId == $partitionField->id && !empty($partitionValue))
+                                                    <div class="relative w-full flex items-center justify-between gap-1.5 bg-amber-50/90 border border-amber-300 text-amber-900 rounded-md px-3 py-1.5 text-xs font-bold shadow-2xs select-none"
+                                                         title="Bu form için {{ $partitionField->label }} değeri '{{ $partitionValue }}' olarak kilitlenmiştir.">
+                                                        <div class="flex items-center gap-1.5 truncate">
+                                                            <svg class="w-3.5 h-3.5 text-amber-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                                                            <span class="truncate font-mono">{{ $partitionValue }}</span>
+                                                        </div>
+                                                        <span class="text-[9px] text-amber-700 bg-amber-200/80 px-1.5 py-0.5 rounded font-black tracking-wider uppercase shrink-0">KİLİTLİ</span>
+                                                    </div>
+                                                @elseif ($fType === 'text')
                                                     <input type="text"
                                                         :id="'cell_' + rIndex + '_{{ $fId }}'"
                                                         :data-field-id="'{{ $fId }}'"
@@ -772,11 +799,11 @@
                                             </td>
                                         @endforeach
 
-                                        <td class="w-16 px-4 py-2 whitespace-nowrap text-center sticky right-0 z-10 bg-white group-hover:bg-indigo-50 border-l border-gray-200 shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.06)]">
+                                        <td class="w-12 px-2 py-1 whitespace-nowrap text-center sticky right-0 z-10 bg-white group-hover:bg-indigo-50 border-l border-gray-200 shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.06)]">
                                             <button type="button" @click.stop="promptDeleteRow(row)"
-                                                class="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-2 rounded-full transition cursor-pointer"
+                                                class="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-1.5 rounded-lg transition cursor-pointer"
                                                 title="Satırı Sil (Doluysa Onay İster)" x-show="rows.length > 1">
-                                                <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor"
+                                                <svg class="w-3.5 h-3.5 pointer-events-none" fill="none" stroke="currentColor"
                                                     viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round"
                                                         stroke-width="2"
@@ -1267,13 +1294,15 @@
     <!-- AlpineJS Grid Logic -->
     <script>
         document.addEventListener('alpine:init', () => {
-            Alpine.data('formEntryApp', (fields, showTotals, masterDataTree, currentUserScope, usersList, formTemplateId, initialPinnedColumnIds) => ({
+            Alpine.data('formEntryApp', (fields, showTotals, masterDataTree, currentUserScope, usersList, formTemplateId, initialPinnedColumnIds, partitionFieldId = null, partitionValue = null) => ({
                 fields: fields,
                 showTotals: showTotals,
                 masterDataTree: masterDataTree || {},
                 currentUserScope: currentUserScope || { is_admin: true, is_manager: true, allowed_user_ids: [], allowed_user_names: [] },
                 usersList: usersList || [],
                 formTemplateId: formTemplateId || {{ $formTemplate->id }},
+                partitionFieldId: partitionFieldId,
+                partitionValue: partitionValue,
                 pinnedColumns: (() => {
                     let norm = { left: [], right: [] };
                     if (Array.isArray(initialPinnedColumnIds)) {
@@ -1617,11 +1646,7 @@
                         const docTop = rect.top + window.scrollY;
                         // Ekranın en altına 8px pay bırakarak kart yüksekliğini dinamik hesaplar: Butonlar ve yatay scroll her zaman ekranda sabit kalır
                         const available = Math.floor(window.innerHeight - docTop - 8);
-                        if (available >= 300) {
-                            this.normalCardHeight = available + 'px';
-                        } else {
-                            this.normalCardHeight = '420px';
-                        }
+                        this.normalCardHeight = Math.max(available, 440) + 'px';
                     });
                 },
 
@@ -2190,6 +2215,12 @@
                         this.addRow();
                         this.calculateTotals();
                     @endif
+
+                    if (this.partitionFieldId && this.partitionValue) {
+                        this.rows.forEach(r => {
+                            if (r && r.values) r.values[this.partitionFieldId] = this.partitionValue;
+                        });
+                    }
                 },
 
                 saveHistory() {
@@ -2210,7 +2241,9 @@
                 createEmptyRowObject() {
                     const newRow = { id: Date.now() + Math.random().toString(36).substr(2, 9), values: {} };
                     this.fields.forEach(f => {
-                        if (f.type === 'auto_user') {
+                        if (this.partitionFieldId && (f.id == this.partitionFieldId) && this.partitionValue) {
+                            newRow.values[f.id] = this.partitionValue;
+                        } else if (f.type === 'auto_user') {
                             newRow.values[f.id] = '{{ Auth::user()->name }}';
                         } else if ((f.type === 'user_list' || f.type === 'master_data') && f.filter_by_user_group && !this.currentUserScope.is_admin && this.currentUserScope.allowed_user_names && this.currentUserScope.allowed_user_names.length === 1) {
                             newRow.values[f.id] = this.currentUserScope.allowed_user_names[0];
@@ -2597,6 +2630,7 @@
                             entry_date: '{{ $date }}',
                             action: 'draft',
                             rows_json: JSON.stringify(rowsData),
+                            partition_value: this.partitionValue || '',
                             _token: token
                         };
 

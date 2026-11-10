@@ -7,7 +7,30 @@ use Illuminate\Database\Eloquent\Model;
 class FormTemplateM extends Model
 {
     protected $table = 'form_templates';
-    protected $fillable = ['name', 'slug', 'description', 'created_by', 'is_active', 'show_row_totals'];
+    protected $fillable = [
+        'name', 'slug', 'description', 'created_by', 'is_active', 'show_row_totals',
+        'allow_partition_entry', 'partition_field_id'
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'is_active' => 'boolean',
+            'show_row_totals' => 'boolean',
+            'allow_partition_entry' => 'boolean',
+            'partition_field_id' => 'integer',
+        ];
+    }
+
+    public function partitionField()
+    {
+        return $this->belongsTo(FormFieldM::class, 'partition_field_id');
+    }
+
+    public function isPartitioned(): bool
+    {
+        return (bool)($this->allow_partition_entry && $this->partition_field_id);
+    }
 
     public function fields()
     {

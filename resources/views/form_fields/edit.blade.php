@@ -11,7 +11,7 @@
         </div>
     </x-slot>
 
-    <div class="py-12 pb-32" x-data="formBuilder({{ json_encode($formTemplate->fields) }})">
+    <div class="py-12 pb-32" x-data="formBuilder({{ json_encode($formTemplate->fields) }}, {{ $formTemplate->allow_partition_entry ? 'true' : 'false' }}, {{ json_encode($formTemplate->partition_field_id) }})">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg p-6 border border-gray-100">
                 
@@ -30,6 +30,51 @@
 
                 <form action="{{ route('form_fields.update', $formTemplate) }}" method="POST">
                     @csrf
+
+                    <!-- 🌟 KISITLI / BÖLÜMLENMİŞ FORM GİRİŞİ AYARI (PARTITION MODE) -->
+                    <input type="hidden" name="allow_partition_entry" :value="allowPartition ? '1' : '0'">
+                    <input type="hidden" name="partition_field_id" :value="allowPartition ? partitionFieldId : ''">
+
+                    <div class="mb-6 p-5 bg-gradient-to-r from-amber-50/70 via-indigo-50/40 to-slate-50 border-2 border-indigo-200/80 rounded-2xl shadow-xs transition-all">
+                        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <div class="flex items-start gap-3">
+                                <span class="p-2.5 bg-indigo-600 text-white rounded-xl shadow-xs shrink-0 mt-0.5">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                                </span>
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <h3 class="text-sm font-black text-slate-900 uppercase tracking-wide">Kısıtlı / Parçalı Veri Girişi ve Konsolidasyon Modu</h3>
+                                        <span class="text-[10px] font-black uppercase px-2 py-0.5 rounded-full" 
+                                            :class="allowPartition ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-slate-200 text-slate-600'">
+                                            <span x-text="allowPartition ? 'AKTİF' : 'PASİF'"></span>
+                                        </span>
+                                    </div>
+                                    <p class="text-xs text-slate-600 mt-1 max-w-2xl">
+                                        Bu ayar açıldığında personel form açılışında tek bir devasa tablo yerine, seçeceği kritere (örn: <strong class="text-indigo-700">İŞYERİ</strong> - Kapak, Preform, Levha vb.) göre kısıtlanmış izole formla karşılaşır. Formlar parça parça kaydedilir ve istendiğinde tek tıkla birleştirilebilir (konsolide edilir).
+                                    </p>
+                                </div>
+                            </div>
+                            
+                            <!-- Toggle ve Alan Seçimi -->
+                            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
+                                <label class="inline-flex items-center cursor-pointer select-none bg-white px-3.5 py-2 rounded-xl border border-slate-300 hover:border-indigo-400 shadow-2xs">
+                                    <input type="checkbox" x-model="allowPartition" class="sr-only peer">
+                                    <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
+                                    <span class="ml-2.5 text-xs font-bold text-slate-700">Parçalı Girişi Aç</span>
+                                </label>
+
+                                <div x-show="allowPartition" class="flex items-center gap-2" x-transition>
+                                    <label class="text-xs font-bold text-slate-700 whitespace-nowrap">Bölümleme Kriteri:</label>
+                                    <select x-model="partitionFieldId" class="rounded-xl border-slate-300 text-xs font-bold text-indigo-900 bg-white py-1.5 px-3 focus:ring-indigo-500 focus:border-indigo-500 shadow-2xs min-w-[220px]">
+                                        <option value="">-- Alan Seçiniz --</option>
+                                        <template x-for="f in selectablePartitionFields" :key="f._key">
+                                            <option :value="f._key" :selected="String(partitionFieldId) === String(f._key)" x-text="(f._idx + 1) + '. ' + f.display_label + ' [' + f.type_label + ']'"></option>
+                                        </template>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     
                     <!-- Hızlı Erişim Menüsü (Üst Bar) -->
                     <div class="mb-6 p-4 bg-gradient-to-r from-slate-50 via-indigo-50/40 to-purple-50/30 border border-indigo-100 rounded-2xl shadow-xs" x-show="fields.length > 0">
@@ -104,6 +149,7 @@
                                     <div class="md:col-span-1">
                                         <label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Etiket (Başlık)</label>
                                         <input type="hidden" :name="'fields['+index+'][id]'" x-model="field.id">
+                                        <input type="hidden" :name="'fields['+index+'][_uid]'" :value="field._uid">
                                         <input type="text" x-model="field.label" :name="'fields['+index+'][label]'" required class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm p-2" placeholder="Örn: Miktar">
                                     </div>
                                     
@@ -533,9 +579,41 @@
     <!-- AlpineJS Logic -->
     <script>
         document.addEventListener('alpine:init', () => {
-            Alpine.data('formBuilder', (initialFields) => ({
+            Alpine.data('formBuilder', (initialFields, initialAllowPartition, initialPartitionFieldId) => ({
                 fields: [],
+                allowPartition: initialAllowPartition || false,
+                partitionFieldId: (initialPartitionFieldId !== null && initialPartitionFieldId !== undefined) ? String(initialPartitionFieldId) : '',
                 masterDataTypes: @json($masterDataTypes),
+
+                getFieldTypeLabel(type) {
+                    const types = {
+                        'text': 'Kısa Metin',
+                        'number': 'Sayı',
+                        'textarea': 'Uzun Metin',
+                        'select': 'Seçim Listesi',
+                        'date': 'Tarih',
+                        'year': 'Yıl',
+                        'auto_user': 'Otomatik Personel',
+                        'user_list': 'Personel Listesi',
+                        'master_data': 'Master Data'
+                    };
+                    return types[type] || type || 'Metin';
+                },
+
+                get selectablePartitionFields() {
+                    return this.fields.map((f, idx) => {
+                        let key = (f.id !== undefined && f.id !== null && f.id !== '') ? String(f.id) : (f._uid || ('index:' + idx));
+                        let name = (f.label && f.label.trim() !== '') ? f.label.trim() : ('(İsimsiz Alan ' + (idx + 1) + ')');
+                        let typeName = this.getFieldTypeLabel(f.type);
+                        return {
+                            ...f,
+                            _key: key,
+                            _idx: idx,
+                            display_label: name,
+                            type_label: typeName
+                        };
+                    });
+                },
                 
                 getConditionFieldType(id) {
                     let f = this.fields.find(f => f.id == id);
@@ -620,7 +698,8 @@
 
                 init() {
                     if (initialFields && initialFields.length > 0) {
-                        this.fields = initialFields.map(f => {
+                        this.fields = initialFields.map((f, idx) => {
+                            let uid = (f.id !== undefined && f.id !== null && f.id !== '') ? String(f.id) : ('uid_' + Date.now() + '_' + idx);
                             let excludedUsers = [];
                             let yearMode = 'dynamic';
                             let yearDefault = 'future_1';
@@ -647,6 +726,7 @@
 
                             return {
                                 ...f,
+                                _uid: uid,
                                 is_required: f.is_required == 1,
                                 is_summable: f.is_summable == 1,
                                 condition_field_id: f.condition_field_id || '',
@@ -672,6 +752,7 @@
                 },
                 addField() {
                     this.fields.push({
+                        _uid: 'uid_' + Date.now() + '_' + Math.random().toString(36).substr(2, 7),
                         label: '',
                         type: 'text',
                         value_type: 'nitel',
@@ -710,6 +791,13 @@
                     });
                 },
                 removeField(index) {
+                    const removed = this.fields[index];
+                    if (removed) {
+                        const removedKey = (removed.id !== undefined && removed.id !== null && removed.id !== '') ? String(removed.id) : (removed._uid || ('index:' + index));
+                        if (String(this.partitionFieldId) === String(removedKey)) {
+                            this.partitionFieldId = '';
+                        }
+                    }
                     this.fields.splice(index, 1);
                 },
                 moveUp(index) {

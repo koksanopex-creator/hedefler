@@ -305,6 +305,10 @@ class NotificationS
             'time' => $now->format('H:i'),
             'sirket_adi' => 'KÖKSAN',
             'company_name' => 'KÖKSAN',
+            'parca_bilgisi' => '',
+            'partition_info' => '',
+            'gonderim_metni' => 'formu gönderdi',
+            'submission_text' => 'formu gönderdi',
         ];
 
         if ($actionUrl) {
@@ -344,6 +348,8 @@ class NotificationS
             'target_field' => 'hedef_alani',
             'criteria_summary' => 'kriter_ozeti',
             'assigned_by' => 'atayan_kisi',
+            'parca_bilgisi' => 'partition_info',
+            'gonderim_metni' => 'submission_text',
         ];
 
         foreach ($aliases as $en => $tr) {

@@ -38,7 +38,7 @@ class FormTemplateC extends Controller
 
     public function show(FormTemplateM $formTemplate)
     {
-        $formTemplate->load('fields');
+        $formTemplate->load(['fields', 'partitionField']);
         return view('form_templates.show', compact('formTemplate'));
     }
 

@@ -11,9 +11,9 @@ class FormFieldS
     /**
      * Şablona yeni alan(lar) ekler veya günceller
      */
-    public function syncFields(FormTemplateM $template, array $fieldsData): void
+    public function syncFields(FormTemplateM $template, array $fieldsData): array
     {
-        DB::transaction(function () use ($template, $fieldsData) {
+        return DB::transaction(function () use ($template, $fieldsData) {
             $incomingIds = [];
             $sortOrder = 0;
             
@@ -67,6 +67,8 @@ class FormFieldS
                     throw $e;
                 }
             }
+
+            return $incomingIds;
         });
     }
 }
