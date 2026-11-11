@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\FormEntryM;
+use App\Models\FormEntryVersionM;
 use App\Models\FormTemplateM;
 use App\Models\UserM;
 use Illuminate\Support\Facades\DB;
@@ -93,11 +94,36 @@ class FormEntryS
             $entry->rows()->delete();
 
             $fieldTypes = $template->fields->pluck('type', 'id');
+            $partitionFieldId = $template->partition_field_id;
+
+            // Otomatik veya varsayılan doldurulan alanlar (kullanıcının girdiği asıl veri sayılmayanlar)
+            $nonUserDataFieldIds = $template->fields
+                ->filter(fn($f) => in_array($f->type, ['auto_user', 'year']) || ($partitionFieldId && $f->id == $partitionFieldId))
+                ->pluck('id')
+                ->map(fn($id) => (int)$id)
+                ->toArray();
+
             $rowOrder = 0;
             foreach ($rowsData as $rowData) {
-                // Eğer satır tamamen boşsa atla
-                if (empty(array_filter($rowData))) {
+                // Eğer satırda otomatik/bölüm alanları haricinde girilmiş hiçbir gerçek veri yoksa bu boş şablon satırını atla
+                $hasRealUserInput = false;
+                foreach ($rowData as $fieldId => $fVal) {
+                    if (in_array((int)$fieldId, $nonUserDataFieldIds)) {
+                        continue;
+                    }
+                    if ($fVal !== null && $fVal !== '' && trim((string)$fVal) !== '') {
+                        $hasRealUserInput = true;
+                        break;
+                    }
+                }
+
+                if (!$hasRealUserInput) {
                     continue;
+                }
+
+                // Bölümlenmiş form ise kilitli kriter alanını (Örn: İŞYERİ) backend seviyesinde kesinleştir
+                if ($partitionValue && $partitionFieldId) {
+                    $rowData[$partitionFieldId] = $partitionValue;
                 }
 
                 $row = $entry->rows()->create(['row_order' => $rowOrder++]);
@@ -123,8 +149,91 @@ class FormEntryS
                 }
             }
 
+            // Satırları ve değerleri yeni halinden JSON snapshot formatında derle
+            $entry->load('rows.values');
+            $snapshotRows = [];
+            foreach ($entry->rows as $r) {
+                $vals = [];
+                foreach ($r->values as $v) {
+                    $vals[(int) $v->form_field_id] = $v->value;
+                }
+                $snapshotRows[] = [
+                    'row_order' => $r->row_order,
+                    'values' => $vals
+                ];
+            }
+
+            if (!empty($snapshotRows)) {
+                $this->createVersionSnapshot($entry, $user, $status, $snapshotRows);
+            }
+
             return $entry;
         });
+    }
+
+    /**
+     * Form entry için versiyon snapshot'ı oluşturur (Değişiklik yoksa mükerrer oluşturmaz, en fazla 10 sürüm saklar)
+     */
+    public function createVersionSnapshot(FormEntryM $entry, UserM $user, string $status, array $snapshotRows, ?string $actionType = null): ?FormEntryVersionM
+    {
+        $rowCount = count($snapshotRows);
+        if ($rowCount === 0) {
+            return null;
+        }
+
+        $lastVersion = FormEntryVersionM::where('form_entry_id', $entry->id)
+            ->orderBy('version_number', 'desc')
+            ->first();
+
+        $newJson = json_encode($snapshotRows);
+
+        // Eğer son versiyon varsa ve satır sayısı + içeriği tamamen aynıysa gereksiz mükerrer versiyon oluşturma
+        if ($lastVersion) {
+            $lastJson = is_array($lastVersion->rows_data) ? json_encode($lastVersion->rows_data) : $lastVersion->rows_data;
+            if ($lastJson === $newJson && $lastVersion->status === $status) {
+                return $lastVersion;
+            }
+        }
+
+        $nextVersionNum = $lastVersion ? ($lastVersion->version_number + 1) : 1;
+
+        if (!$actionType) {
+            $actionType = $status === 'submitted' ? 'submit' : ($lastVersion ? 'update' : 'initial_draft');
+        }
+
+        $summary = "{$rowCount} satır veri kaydedildi.";
+        if ($lastVersion) {
+            $diffCount = $rowCount - $lastVersion->row_count;
+            if ($diffCount > 0) {
+                $summary .= " (+{$diffCount} yeni satır)";
+            } elseif ($diffCount < 0) {
+                $summary .= " (" . abs($diffCount) . " satır silindi)";
+            }
+        }
+
+        $newVersion = FormEntryVersionM::create([
+            'form_entry_id' => $entry->id,
+            'version_number' => $nextVersionNum,
+            'status' => $status,
+            'action_type' => $actionType,
+            'user_id' => $user->id,
+            'row_count' => $rowCount,
+            'rows_data' => $snapshotRows,
+            'summary' => $summary,
+        ]);
+
+        // Versiyon geçmişi en fazla 10 adet tutulur
+        $allVersionsCount = FormEntryVersionM::where('form_entry_id', $entry->id)->count();
+        if ($allVersionsCount > 10) {
+            $excess = $allVersionsCount - 10;
+            $oldestIds = FormEntryVersionM::where('form_entry_id', $entry->id)
+                ->orderBy('version_number', 'asc')
+                ->take($excess)
+                ->pluck('id');
+            FormEntryVersionM::whereIn('id', $oldestIds)->delete();
+        }
+
+        return $newVersion;
     }
 
     /**

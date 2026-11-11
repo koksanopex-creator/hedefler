@@ -258,6 +258,26 @@ class KpiTargetC extends Controller
         return view('kpi_targets.create', compact('templates', 'groups', 'users', 'years', 'parentTargets', 'units'));
     }
 
+    private function sanitizeNumericInput($val): float
+    {
+        if (is_numeric($val)) {
+            return floatval($val);
+        }
+        if (!is_string($val)) {
+            return 0.0;
+        }
+        $cleaned = trim($val);
+        if (str_contains($cleaned, ',') && str_contains($cleaned, '.')) {
+            $cleaned = str_replace('.', '', $cleaned);
+            $cleaned = str_replace(',', '.', $cleaned);
+        } elseif (str_contains($cleaned, ',')) {
+            $cleaned = str_replace(',', '.', $cleaned);
+        } elseif (substr_count($cleaned, '.') > 1) {
+            $cleaned = str_replace('.', '', $cleaned);
+        }
+        return floatval($cleaned);
+    }
+
     /**
      * Hedefi Kaydeder
      */
@@ -266,6 +286,10 @@ class KpiTargetC extends Controller
         $user = Auth::user();
         if (!$this->permissionService->hasPermission($user, 'kpi_targets.create') && !$this->permissionService->hasPermission($user, 'kpi_targets.manage')) {
             abort(403, 'KPI hedefi oluşturma yetkiniz bulunmamaktadır.');
+        }
+
+        if ($request->has('target_value')) {
+            $request->merge(['target_value' => $this->sanitizeNumericInput($request->target_value)]);
         }
 
         $validated = $request->validate([
@@ -470,6 +494,10 @@ class KpiTargetC extends Controller
 
         $this->authorizeTargetAccess($user, $kpiTarget);
 
+        if ($request->has('target_value')) {
+            $request->merge(['target_value' => $this->sanitizeNumericInput($request->target_value)]);
+        }
+
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
@@ -544,8 +572,12 @@ class KpiTargetC extends Controller
 
         $this->authorizeTargetAccess($user, $kpiTarget);
 
-        $months = $request->input('months', []);
-        $this->kpiService->distributePeriods($kpiTarget, $months, $user);
+        $rawMonths = $request->input('months', []);
+        $cleanedMonths = [];
+        foreach ($rawMonths as $m => $val) {
+            $cleanedMonths[$m] = $this->sanitizeNumericInput($val);
+        }
+        $this->kpiService->distributePeriods($kpiTarget, $cleanedMonths, $user);
 
         return redirect()->route('kpi-targets.progress', $kpiTarget->id)
             ->with('success', 'Aylık hedef dağılımı başarıyla kaydedildi.');

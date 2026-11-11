@@ -96,11 +96,11 @@
                         $statusBadge = null;
 
                         if ($hasDraft) {
-                            $cardBg = 'bg-white border-amber-300 shadow-amber-500/5 hover:border-amber-400';
-                            $statusBadge = ['bg' => 'bg-amber-100 text-amber-900 border-amber-300', 'dot' => 'bg-amber-500', 'text' => 'Kayıtlı Taslak Mevcut'];
+                            $cardBg = 'bg-white border-slate-300 shadow-slate-500/5 hover:border-slate-400';
+                            $statusBadge = ['bg' => 'bg-slate-100 text-slate-800 border-slate-300', 'dot' => 'bg-slate-600', 'text' => 'Kayıtlı Taslak'];
                         } elseif ($hasSubmitted) {
-                            $cardBg = 'bg-white border-blue-300 shadow-blue-500/5 hover:border-blue-400';
-                            $statusBadge = ['bg' => 'bg-blue-100 text-blue-900 border-blue-300', 'dot' => 'bg-blue-500', 'text' => 'Onay Bekliyor'];
+                            $cardBg = 'bg-white border-amber-300 shadow-amber-500/5 hover:border-amber-400';
+                            $statusBadge = ['bg' => 'bg-amber-100 text-amber-900 border-amber-300', 'dot' => 'bg-amber-500', 'text' => 'Onay Bekliyor'];
                         } elseif ($hasApproved) {
                             $cardBg = 'bg-white border-emerald-300 shadow-emerald-500/5 hover:border-emerald-400';
                             $statusBadge = ['bg' => 'bg-emerald-100 text-emerald-900 border-emerald-300', 'dot' => 'bg-emerald-500', 'text' => 'Onaylandı'];
@@ -176,8 +176,8 @@
                                     @click="if(clicking) { $event.preventDefault(); return false; } clicking = true;"
                                     onclick="if(this.dataset.clicked === 'true'){ return false; } this.dataset.clicked = 'true'; this.classList.add('pointer-events-none', 'opacity-70', 'cursor-not-allowed');"
                                     :class="clicking ? 'pointer-events-none opacity-70 cursor-not-allowed' : ''"
-                                    class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black bg-amber-500 hover:bg-amber-600 text-white shadow-sm shadow-amber-500/20 transition active:scale-98 select-none">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black bg-slate-800 hover:bg-slate-900 text-white shadow-sm shadow-slate-800/20 transition active:scale-98 select-none">
+                                    <svg class="w-4 h-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                     </svg>
@@ -190,15 +190,12 @@
                                     @click="if(clicking) { $event.preventDefault(); return false; } clicking = true;"
                                     onclick="if(this.dataset.clicked === 'true'){ return false; } this.dataset.clicked = 'true'; this.classList.add('pointer-events-none', 'opacity-70', 'cursor-not-allowed');"
                                     :class="clicking ? 'pointer-events-none opacity-70 cursor-not-allowed' : ''"
-                                    class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition active:scale-98 select-none">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black bg-amber-500 hover:bg-amber-600 text-white shadow-sm shadow-amber-500/25 transition active:scale-98 select-none ring-1 ring-amber-400">
+                                    <svg class="w-4 h-4 text-amber-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
-                                    <span x-text="clicking ? 'Yönlendiriliyor...' : 'Onay Bekliyor - İncele'">Onay Bekliyor -
-                                        İncele</span>
+                                    <span x-text="clicking ? 'Yönlendiriliyor...' : 'Onay Bekliyor - İncele (#{{ $entry->id }})'">Onay Bekliyor - İncele (#{{ $entry->id }})</span>
                                 </a>
                             @elseif($hasApproved)
                                 <div class="w-full flex items-center gap-2">

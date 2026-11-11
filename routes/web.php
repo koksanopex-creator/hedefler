@@ -138,6 +138,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('user-preferences/pinned-columns', [FormEntryC::class, 'savePinnedColumns'])->name('user-preferences.pinned-columns');
     Route::post('form-entries/consolidate', [FormEntryC::class, 'consolidate'])->name('form-entries.consolidate');
     Route::post('form-entries/{formEntry}/dissolve', [FormEntryC::class, 'dissolve'])->name('form-entries.dissolve');
+    Route::post('form-entries/bulk-destroy', [FormEntryC::class, 'bulkDestroy'])->name('form-entries.bulk-destroy');
     Route::resource('form-entries', FormEntryC::class)->only(['index', 'show', 'edit', 'update', 'destroy'])->parameters(['form-entries' => 'formEntry']);
 });
 

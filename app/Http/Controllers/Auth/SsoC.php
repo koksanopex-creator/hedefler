@@ -21,7 +21,7 @@ class SsoC extends Controller
         $token = $request->query('token');
         $centralUrl = rtrim(config('services.central_sso.url', env('CENTRAL_SSO_URL', 'https://kys.koksan.com/merkezi_yonetim_sistemi')), '/');
         $internalHttpUrl = str_replace('localhost', '127.0.0.1', $centralUrl);
-        $appCode = env('CENTRAL_SSO_APP_CODE', 'hedefler-uygulamasi');
+        $appCode = config('services.central_sso.app_code', env('CENTRAL_SSO_APP_CODE', 'hedefler'));
 
         if (!$token) {
             return redirect($centralUrl . '/sso-entry?app_code=' . $appCode);
@@ -239,7 +239,7 @@ class SsoC extends Controller
         $centralUser = session('sso_user_data');
         $centralUrl = rtrim(config('services.central_sso.url', env('CENTRAL_SSO_URL', 'https://kys.koksan.com/merkezi_yonetim_sistemi')), '/');
 
-        $appCode = env('CENTRAL_SSO_APP_CODE', 'hedefler-uygulamasi');
+        $appCode = config('services.central_sso.app_code', env('CENTRAL_SSO_APP_CODE', 'hedefler'));
         if (!$centralUser) {
             return redirect($centralUrl . '/sso-entry?app_code=' . $appCode);
         }
@@ -274,7 +274,7 @@ class SsoC extends Controller
         $centralUser = session('sso_user_data');
         $centralUrl = rtrim(config('services.central_sso.url', env('CENTRAL_SSO_URL', 'https://kys.koksan.com/merkezi_yonetim_sistemi')), '/');
 
-        $appCode = env('CENTRAL_SSO_APP_CODE', 'hedefler-uygulamasi');
+        $appCode = config('services.central_sso.app_code', env('CENTRAL_SSO_APP_CODE', 'hedefler'));
         if (!$centralUser) {
             return redirect($centralUrl . '/sso-entry?app_code=' . $appCode);
         }

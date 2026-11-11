@@ -125,9 +125,7 @@ class ReportC extends Controller
             $templatesMeta[$tpl->id] = [
                 'dimensions' => $this->engine->getAvailableDimensions($tpl),
                 'metrics' => $this->engine->getAvailableMetrics($tpl),
-                'filter_fields' => $tpl->fields
-                    ->whereIn('type', ['select', 'master_data', 'user_list', 'year'])
-                    ->values(),
+                'filter_fields' => $this->engine->getFilterFieldsWithOptions($tpl),
             ];
         }
 
@@ -161,11 +159,8 @@ class ReportC extends Controller
         $dimensions = $this->engine->getAvailableDimensions($template);
         $metrics = $this->engine->getAvailableMetrics($template);
 
-        // Dinamik alan filtreleri için filtreleme seçenekleri
-        $filterFields = $template->fields()
-            ->whereIn('type', ['select', 'master_data', 'user_list', 'year'])
-            ->orderBy('sort_order')
-            ->get(['id', 'label', 'type', 'master_data_type_id', 'options_list']);
+        // Dinamik alan filtreleri için seçenekli filtre listesi
+        $filterFields = $this->engine->getFilterFieldsWithOptions($template);
 
         return response()->json([
             'dimensions' => $dimensions,

@@ -42,4 +42,10 @@ return [
         'from_address' => env('MICROSOFT_FROM_ADDRESS', 'kys@koksan.com'),
     ],
 
+    'central_sso' => [
+        'url' => env('CENTRAL_SSO_URL', 'https://kys.koksan.com/merkezi_yonetim_sistemi'),
+        'app_code' => env('CENTRAL_SSO_APP_CODE', 'hedefler'),
+        'api_key' => env('CENTRAL_SSO_API_KEY'),
+    ],
+
 ];

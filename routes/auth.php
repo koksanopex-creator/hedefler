@@ -15,8 +15,8 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('guest')->group(function () {
     // Standart login iptal edildi -> Merkezi SSO'ya yönlendirme
     Route::get('login', function () {
-        $centralUrl = rtrim(env('CENTRAL_SSO_URL', 'https://kys.koksan.com/merkezi_yonetim_sistemi'), '/');
-        $appCode = env('CENTRAL_SSO_APP_CODE', 'hedefler-uygulamasi');
+        $centralUrl = rtrim(config('services.central_sso.url', env('CENTRAL_SSO_URL', 'https://kys.koksan.com/merkezi_yonetim_sistemi')), '/');
+        $appCode = config('services.central_sso.app_code', env('CENTRAL_SSO_APP_CODE', 'hedefler'));
         $params = ['app_code' => $appCode];
         if (request()->filled('intended')) {
             $params['intended'] = request('intended');
@@ -30,4 +30,4 @@ Route::get('sso/login', [SsoC::class, 'login'])->name('sso.login');
 Route::get('sso/basvuru', [SsoC::class, 'basvuru'])->name('sso.basvuru');
 Route::post('sso/basvuru', [SsoC::class, 'basvuruKaydet'])->name('sso.basvuru.kaydet');
 Route::get('sso/onay-bekliyor', [SsoC::class, 'onayBekliyor'])->name('sso.onay_bekliyor');
-Route::post('logout', [SsoC::class, 'logout'])->name('logout');
+Route::match(['get', 'post'], 'logout', [SsoC::class, 'logout'])->name('logout');

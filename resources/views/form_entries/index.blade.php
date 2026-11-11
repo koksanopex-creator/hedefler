@@ -1,6 +1,6 @@
 @section('title', 'Veri Girişleri (Formlar)')
 <x-app-layout>
-    <div x-data="{ openConsolidateModal: false, selectedEntries: [] }" @open-consolidate-modal.window="openConsolidateModal = true">
+    <div x-data="{ openConsolidateModal: false, selectedEntries: [], selectedDeleteIds: [], openBulkDeleteModal: false, isDeletingBulk: false }" @open-consolidate-modal.window="openConsolidateModal = true">
         <x-slot name="header">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
@@ -167,10 +167,54 @@
                     @endif
                 </div>
 
+                <!-- Toplu İşlem Barı (Silme Yetkisi Olanlar İçin) -->
+                @if(!empty($canDelete) && $canDelete && $entries->count() > 0)
+                    <div x-show="selectedDeleteIds.length > 0" x-cloak
+                         x-transition:enter="transition ease-out duration-150"
+                         x-transition:enter-start="opacity-0 -translate-y-2"
+                         x-transition:enter-end="opacity-100 translate-y-0"
+                         x-transition:leave="transition ease-in duration-100"
+                         x-transition:leave-start="opacity-100 translate-y-0"
+                         x-transition:leave-end="opacity-0 -translate-y-2"
+                         class="px-4 py-3 bg-rose-50 border-b border-rose-200 flex flex-wrap items-center justify-between gap-3 text-xs">
+                        <div class="flex items-center gap-2">
+                            <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-rose-600 text-white font-black text-xs" x-text="selectedDeleteIds.length"></span>
+                            <span class="font-bold text-rose-950">
+                                <span x-text="selectedDeleteIds.length"></span> adet form kaydı seçildi
+                            </span>
+                            <span class="text-rose-300">|</span>
+                            <button type="button" @click="selectedDeleteIds = [{{ $entries->pluck('id')->implode(',') }}]" class="text-rose-700 hover:text-rose-900 font-bold underline cursor-pointer">
+                                Sayfadaki Tümünü Seç ({{ $entries->count() }})
+                            </button>
+                            <span class="text-rose-300">·</span>
+                            <button type="button" @click="selectedDeleteIds = []" class="text-slate-600 hover:text-slate-900 font-semibold cursor-pointer">
+                                Seçimi Temizle
+                            </button>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button type="button" 
+                                    @click="openBulkDeleteModal = true"
+                                    class="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white font-bold rounded-xl shadow-xs transition cursor-pointer">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                <span>Seçilenleri Sil (<span x-text="selectedDeleteIds.length"></span>)</span>
+                            </button>
+                        </div>
+                    </div>
+                @endif
+
                 <div class="w-full overflow-x-auto">
                     <table class="w-full divide-y divide-gray-200">
                         <thead>
                             <tr class="bg-gray-50/70 border-b border-gray-200">
+                                @if(!empty($canDelete) && $canDelete && $entries->count() > 0)
+                                    <th class="w-10 px-3 py-3 text-center">
+                                        <input type="checkbox" 
+                                               @change="selectedDeleteIds = $event.target.checked ? [{{ $entries->pluck('id')->implode(',') }}] : []"
+                                               :checked="selectedDeleteIds.length > 0 && selectedDeleteIds.length === {{ $entries->count() }}"
+                                               class="w-4 h-4 rounded text-rose-600 border-gray-300 focus:ring-rose-500 cursor-pointer"
+                                               title="Sayfadaki Tümünü Seç / Kaldır">
+                                    </th>
+                                @endif
                                 <th class="px-3.5 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider w-28 whitespace-nowrap">Tarih</th>
                                 <th class="px-3.5 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider w-44">Kullanıcı</th>
                                 <th class="px-3.5 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Şablon</th>
@@ -183,11 +227,86 @@
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-100">
                             @forelse($entries as $entry)
-                                <tr class="hover:bg-indigo-50/30 transition-colors group">
+                                <tr class="hover:bg-indigo-50/30 transition-colors group" :class="selectedDeleteIds.includes({{ $entry->id }}) ? 'bg-rose-50/40' : ''">
+                                    @if(!empty($canDelete) && $canDelete)
+                                        <td class="w-10 px-3 py-3 text-center" @click.stop>
+                                            <input type="checkbox" 
+                                                   :value="{{ $entry->id }}" 
+                                                   x-model.number="selectedDeleteIds" 
+                                                   class="w-4 h-4 rounded text-rose-600 border-gray-300 focus:ring-rose-500 cursor-pointer">
+                                        </td>
+                                    @endif
                                     <td class="px-3.5 py-3 whitespace-nowrap">
-                                        <div class="flex items-center text-xs text-gray-900 font-semibold">
-                                            <svg class="w-3.5 h-3.5 mr-1.5 text-gray-400 group-hover:text-indigo-400 transition-colors shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                                            <span>{{ $entry->entry_date->format('d M Y') }}</span>
+                                        <div class="space-y-1">
+                                            <div class="flex items-center text-xs text-gray-900 font-bold">
+                                                <svg class="w-3.5 h-3.5 mr-1 text-gray-400 group-hover:text-indigo-500 transition-colors shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                                <span>{{ $entry->entry_date->format('d M Y') }}</span>
+                                            </div>
+                                            <div class="flex items-center gap-1.5 text-[11px] text-gray-500">
+                                                <span class="font-mono text-gray-600 font-semibold" title="Son Kaydedilme / Gönderim Saati">
+                                                    🕒 {{ $entry->updated_at ? $entry->updated_at->format('H:i:s') : '-' }}
+                                                </span>
+                                                @php $vCount = $entry->versions ? $entry->versions->count() : 0; @endphp
+                                                @if($vCount > 1)
+                                                    <div x-data="{
+                                                        open: false,
+                                                        coords: { top: 0, left: 0, placement: 'bottom' },
+                                                        updatePos() {
+                                                            const rect = $el.getBoundingClientRect();
+                                                            const spaceBelow = window.innerHeight - rect.bottom;
+                                                            if (spaceBelow < 170) {
+                                                                this.coords = {
+                                                                    top: rect.top - 8,
+                                                                    left: Math.max(10, rect.left),
+                                                                    placement: 'top'
+                                                                };
+                                                            } else {
+                                                                this.coords = {
+                                                                    top: rect.bottom + 8,
+                                                                    left: Math.max(10, rect.left),
+                                                                    placement: 'bottom'
+                                                                };
+                                                            }
+                                                        }
+                                                    }" 
+                                                    @scroll.window="open = false"
+                                                    class="inline-block">
+                                                        <button type="button" 
+                                                            @mouseenter="updatePos(); open = true" 
+                                                            @mouseleave="open = false" 
+                                                            @click="updatePos(); open = !open"
+                                                            class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 text-[10px] font-black cursor-pointer shadow-2xs">
+                                                            <span>v{{ $entry->versions->first()->version_number }}</span>
+                                                            <span class="text-[9px] text-indigo-500 font-normal">({{ $vCount }} sürüm)</span>
+                                                        </button>
+                                                        <div x-show="open" x-cloak
+                                                            x-transition:enter="transition ease-out duration-150"
+                                                            x-transition:enter-start="opacity-0 scale-95"
+                                                            x-transition:enter-end="opacity-100 scale-100"
+                                                            x-transition:leave="transition ease-in duration-100"
+                                                            x-transition:leave-start="opacity-100 scale-100"
+                                                            x-transition:leave-end="opacity-0 scale-95"
+                                                            :style="coords.placement === 'top' 
+                                                                ? 'position: fixed; left: ' + coords.left + 'px; bottom: ' + (window.innerHeight - coords.top) + 'px; z-index: 999999;' 
+                                                                : 'position: fixed; left: ' + coords.left + 'px; top: ' + coords.top + 'px; z-index: 999999;'"
+                                                            class="w-64 p-2.5 bg-slate-900 text-white rounded-xl shadow-2xl text-xs space-y-1.5 border border-slate-700 pointer-events-none">
+                                                            <div class="font-bold border-b border-slate-700 pb-1 text-slate-300 flex justify-between">
+                                                                <span>Sürüm Geçmişi</span>
+                                                                <span class="text-[10px] text-indigo-300">{{ $vCount }} Kayıt</span>
+                                                            </div>
+                                                            @foreach($entry->versions->take(10) as $v)
+                                                                <div class="flex justify-between items-center text-[10px] py-0.5 border-b border-slate-800 last:border-none">
+                                                                    <span class="font-bold text-amber-300">v{{ $v->version_number }} ({{ $v->formatted_status }})</span>
+                                                                    <span class="text-slate-400 font-mono">{{ $v->created_at ? $v->created_at->format('d.m H:i') : '-' }}</span>
+                                                                </div>
+                                                            @endforeach
+                                                            @if($vCount > 10)
+                                                                <div class="text-[9px] text-slate-400 italic text-center">+{{ $vCount - 10 }} eski sürüm daha</div>
+                                                            @endif
+                                                        </div>
+                                                    </div>
+                                                @endif
+                                            </div>
                                         </div>
                                     </td>
                                     <td class="px-3.5 py-3">
@@ -413,7 +532,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="{{ (isset($canViewApprover) && $canViewApprover) ? 6 : 5 }}" class="px-4 py-12 whitespace-nowrap text-center">
+                                    <td colspan="{{ (!empty($canDelete) && $canDelete ? 1 : 0) + ((isset($canViewApprover) && $canViewApprover) ? 6 : 5) }}" class="px-4 py-12 whitespace-nowrap text-center">
                                         <div class="flex flex-col items-center justify-center">
                                             <div class="bg-gray-50 rounded-full p-4 mb-3">
                                                 <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
@@ -534,5 +653,59 @@
                 </div>
             </div>
         </div>
+
+        @if(!empty($canDelete) && $canDelete)
+            <!-- Toplu Silme Onay Modalı -->
+            <div x-show="openBulkDeleteModal" style="display: none;" class="fixed inset-0 z-50 overflow-y-auto whitespace-normal" aria-labelledby="bulk-delete-title" role="dialog" aria-modal="true">
+                <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                    <div x-show="openBulkDeleteModal" @click="if(!isDeletingBulk) openBulkDeleteModal = false" x-transition.opacity class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+                    <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+                    <div x-show="openBulkDeleteModal" x-transition class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full whitespace-normal border border-gray-200">
+                        <form action="{{ route('form-entries.bulk-destroy') }}" method="POST" @submit="if(isDeletingBulk) { $event.preventDefault(); return false; } isDeletingBulk = true;">
+                            @csrf
+                            <template x-for="id in selectedDeleteIds" :key="id">
+                                <input type="hidden" name="entry_ids[]" :value="id">
+                            </template>
+                            
+                            <div class="bg-white px-5 pt-6 pb-4 sm:p-6 sm:pb-5">
+                                <div class="sm:flex sm:items-start gap-4">
+                                    <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-11 sm:w-11">
+                                        <svg class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                        </svg>
+                                    </div>
+                                    <div class="mt-3 text-center sm:mt-0 sm:text-left flex-1 min-w-0">
+                                        <h3 class="text-base font-extrabold text-gray-900" id="bulk-delete-title">
+                                            Seçilen <span x-text="selectedDeleteIds.length"></span> Form Kaydı Silinecek
+                                        </h3>
+                                        <div class="mt-2 text-xs text-gray-600 space-y-1.5 leading-relaxed">
+                                            <p>İşaretlediğiniz <strong class="text-red-700" x-text="selectedDeleteIds.length"></strong> adet form kaydı ve bunlara ait tüm satır/versiyon verileri <strong>kalıcı olarak silinecektir</strong>.</p>
+                                            <p class="text-red-600 font-semibold">Bu işlem geri alınamaz!</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-gray-50 px-5 py-3.5 sm:px-6 flex flex-row-reverse gap-2">
+                                <button type="submit"
+                                        :disabled="isDeletingBulk"
+                                        :class="isDeletingBulk ? 'opacity-70 cursor-not-allowed pointer-events-none' : ''"
+                                        class="inline-flex items-center justify-center px-4 py-2 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white text-xs font-bold rounded-xl shadow-xs transition gap-1.5 cursor-pointer">
+                                    <svg x-show="isDeletingBulk" style="display: none;" class="animate-spin -ml-1 mr-1.5 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    <span x-text="isDeletingBulk ? 'Siliniyor...' : 'Evet, Hepsini Sil (' + selectedDeleteIds.length + ')'"></span>
+                                </button>
+                                <button type="button" @click="if(!isDeletingBulk) openBulkDeleteModal = false" :disabled="isDeletingBulk"
+                                        class="inline-flex justify-center px-4 py-2 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 text-xs font-bold rounded-xl shadow-2xs transition cursor-pointer disabled:opacity-50">
+                                    Vazgeç
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        @endif
     </div>
 </x-app-layout>

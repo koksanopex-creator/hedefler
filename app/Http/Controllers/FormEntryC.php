@@ -13,6 +13,7 @@ use App\Services\FormExportS;
 use App\Services\SettingS;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class FormEntryC extends Controller
@@ -85,13 +86,15 @@ class FormEntryC extends Controller
             $query->whereDate('entry_date', today());
         }
 
-        $entries = $query->with(['template', 'user.group', 'revisionRequests', 'approver', 'children', 'parent', 'partitionField'])
-            ->orderBy('entry_date', 'desc')
+        $entries = $query->with(['template', 'user.group', 'revisionRequests', 'approver', 'children', 'parent', 'partitionField', 'versions'])
+            ->orderBy('updated_at', 'desc')
+            ->orderBy('id', 'desc')
             ->paginate(20)
             ->withQueryString();
 
         $canViewApprover = $user ? $this->permissionService->hasPermission($user, 'form_entries.view_approver') : false;
         $canConsolidate = $user ? ($isSuperAdmin || $this->permissionService->hasPermission($user, 'form_entries.consolidate')) : false;
+        $canDelete = $user ? ($isSuperAdmin || $this->permissionService->hasPermission($user, 'form_entries.delete')) : false;
 
         // Konsolidasyon modalı için birleştirmeye uygun (parçalı ve henüz bir üst forma bağlanmamış) kayıtlar
         $eligibleForConsolidation = $canConsolidate
@@ -104,7 +107,7 @@ class FormEntryC extends Controller
                 ->get()
             : collect();
 
-        return view('form_entries.index', compact('entries', 'canViewApprover', 'statusCounts', 'scope', 'scopeCounts', 'eligibleForConsolidation', 'canConsolidate'));
+        return view('form_entries.index', compact('entries', 'canViewApprover', 'statusCounts', 'scope', 'scopeCounts', 'eligibleForConsolidation', 'canConsolidate', 'canDelete'));
     }
 
     public function selectTemplate(Request $request)
@@ -223,8 +226,17 @@ class FormEntryC extends Controller
             'action' => 'required|in:draft,submit'
         ]);
 
-        // Artık benzersizlik kısıtlaması yok, her form gönderimi yeni bir kayıt oluşturacak
+        // Artık benzersizlik kısıtlaması yok; ancak bu oturumda auto-save / taslak oluşturulmuşsa o taslağı güncelle
         $existingEntry = null;
+        if ($request->filled('entry_id')) {
+            $candidate = FormEntryM::where('id', $request->entry_id)
+                ->where('user_id', $request->user()->id)
+                ->where('status', 'draft')
+                ->first();
+            if ($candidate) {
+                $existingEntry = $candidate;
+            }
+        }
 
         $status = $request->action === 'submit' ? 'submitted' : 'draft';
 
@@ -274,12 +286,14 @@ class FormEntryC extends Controller
             $partitionValue
         );
 
-        $actionName = $status === 'draft' ? 'form_entry.draft' : 'form_entry.create';
+        $actionName = $status === 'draft' ? 'form_entry.draft' : ($existingEntry ? 'form_entry.update' : 'form_entry.create');
         $dateFormatted = \Carbon\Carbon::parse($request->entry_date)->format('d.m.Y');
         $entryTitle = $entry->title ?: $formTemplate->name;
         $desc = $status === 'draft'
             ? "Taslak form kaydedildi: [{$entryTitle}] (Giriş Tarihi: {$dateFormatted})"
-            : "Yeni form verisi oluşturuldu ve onaya gönderildi: [{$entryTitle}] (Giriş Tarihi: {$dateFormatted})";
+            : ($existingEntry
+                ? "Taslak form tamamlandı ve onaya gönderildi: [{$entryTitle}] (Giriş Tarihi: {$dateFormatted})"
+                : "Yeni form verisi oluşturuldu ve onaya gönderildi: [{$entryTitle}] (Giriş Tarihi: {$dateFormatted})");
         $this->activityLogService->log($actionName, $desc, $entry);
 
         if ($request->wantsJson() || $request->ajax()) {
@@ -335,7 +349,7 @@ class FormEntryC extends Controller
             );
         }
 
-        $formEntry->load(['template.fields', 'rows.values', 'user.group', 'revisionRequests.reviewer', 'revisionRequests.user', 'approver']);
+        $formEntry->load(['template.fields', 'rows.values', 'user.group', 'revisionRequests.reviewer', 'revisionRequests.user', 'approver', 'versions.user']);
 
         // Onay Yetkisi & Grup İzolasyonu Kontrolü
         $hasGlobalApprove = $this->permissionService->hasPermission($user, 'form_entries.approve');
@@ -1181,6 +1195,74 @@ class FormEntryC extends Controller
 
         // Kullanıcı form-entries listesindeyse veya başka bir sayfadaysa aynı sayfada kal
         return redirect()->back(fallback: route('form-entries.index'))->with('success', 'Veri kaydı başarıyla silindi.');
+    }
+
+    public function bulkDestroy(Request $request)
+    {
+        $user = $request->user() ?? Auth::user();
+        $isSuperAdmin = $user ? (($user->role && $user->role->slug === 'sistem_yoneticisi') || $this->permissionService->hasPermission($user, 'roles.manage') || $user->id === 1) : false;
+        if (!$isSuperAdmin && !$this->permissionService->hasPermission($user, 'form_entries.delete')) {
+            abort(403, 'Form kayıtlarını toplu silme yetkiniz bulunmamaktadır.');
+        }
+
+        $request->validate([
+            'entry_ids' => 'required|array|min:1',
+            'entry_ids.*' => 'required|integer|exists:form_entries,id'
+        ]);
+
+        $entryIds = $request->input('entry_ids');
+        $entries = FormEntryM::with(['template', 'user'])->whereIn('id', $entryIds)->get();
+
+        if ($entries->isEmpty()) {
+            return back()->with('warning', 'Silinecek geçerli form kaydı bulunamadı.');
+        }
+
+        $deletedCount = 0;
+        $affectedTargetTemplates = [];
+
+        DB::transaction(function () use ($entries, &$deletedCount, &$affectedTargetTemplates) {
+            $kpiS = app(\App\Services\KpiTargetS::class);
+
+            foreach ($entries as $formEntry) {
+                $template = $formEntry->template;
+                $wasApproved = $formEntry->status === 'approved';
+                $entryYear = intval($formEntry->entry_date ? $formEntry->entry_date->format('Y') : now()->year);
+                $templateId = $formEntry->form_template_id;
+                $formEntryId = $formEntry->id;
+                $tName = $template?->name ?? 'Dinamik Form';
+                $eDate = $formEntry->entry_date ? $formEntry->entry_date->format('d.m.Y') : '-';
+                $oName = $formEntry->user?->name ?? 'Kullanıcı';
+
+                $this->activityLogService->log(
+                    'form_entry.bulk_delete',
+                    "Toplu silme kapsamında form verisi silindi. Form: [{$tName}] (Giriş Tarihi: {$eDate}, Sahibi: {$oName}, Kayıt ID: #{$formEntryId})",
+                    $formEntry
+                );
+
+                $formEntry->delete();
+                $deletedCount++;
+
+                if ($wasApproved && $templateId) {
+                    $affectedTargetTemplates[$templateId . '_' . $entryYear] = [
+                        'template_id' => $templateId,
+                        'year' => $entryYear
+                    ];
+                }
+            }
+
+            // Etkilenen hedeflerin gerçekleşmelerini yeniden hesapla
+            foreach ($affectedTargetTemplates as $item) {
+                $targets = \App\Models\KpiTargetM::where('form_template_id', $item['template_id'])
+                    ->where('target_year', $item['year'])
+                    ->where('status', 'active')
+                    ->get();
+                foreach ($targets as $target) {
+                    $kpiS->calculateTargetRealization($target);
+                }
+            }
+        });
+
+        return redirect()->route('form-entries.index')->with('success', "Seçilen {$deletedCount} adet form kaydı ve bağlı verileri başarıyla silindi.");
     }
 
     public function export(Request $request, FormEntryM $formEntry)

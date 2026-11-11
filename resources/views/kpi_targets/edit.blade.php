@@ -168,8 +168,21 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-xs font-bold text-gray-700 mb-1">Hedef Değer <span class="text-rose-500">*</span></label>
-                            <input type="number" step="0.01" min="0.01" name="target_value" value="{{ old('target_value', $kpiTarget->target_value) }}" required
-                                class="w-full text-sm rounded-xl border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 font-bold">
+                            <div x-data="autoThousandsInput('{{ old('target_value', $kpiTarget->target_value) }}')">
+                                <input type="hidden" name="target_value" :value="rawVal" required>
+                                <input type="text"
+                                    inputmode="decimal"
+                                    :value="displayVal"
+                                    @input="onInput($event)"
+                                    @keydown="onKeydown($event)"
+                                    @blur="onBlur($event)"
+                                    required
+                                    placeholder="Örn: 2.000.000"
+                                    class="w-full text-sm rounded-xl border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 font-bold">
+                                <p class="text-[10px] text-gray-400 mt-1">
+                                    💡 Binlik ayraçlar (nokta) otomatik formatlanır.
+                                </p>
+                            </div>
                         </div>
 
                         <div>
@@ -316,6 +329,109 @@
                         this.criteria[cf.id] = '';
                         this.handleCriteriaChange(cf.id);
                     });
+                }
+            };
+        }
+
+        function autoThousandsInput(initialVal = '') {
+            return {
+                rawVal: initialVal ? String(initialVal) : '',
+                displayVal: '',
+                init() {
+                    if (this.rawVal) {
+                        this.displayVal = this.formatNumber(this.rawVal);
+                    }
+                },
+                formatNumber(val) {
+                    if (val === null || val === undefined || val === '') return '';
+                    let str = String(val).trim();
+                    if (str.includes('.') && !str.includes(',')) {
+                        let parts = str.split('.');
+                        let intPart = parts[0].replace(/\D/g, '');
+                        let formattedInt = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+                        let decPart = parts[1] || '';
+                        if (decPart && decPart !== '00' && decPart !== '0') {
+                            return formattedInt + ',' + decPart.slice(0, 2);
+                        }
+                        return formattedInt;
+                    }
+                    let parts = str.split(',');
+                    let intPart = parts[0].replace(/\D/g, '');
+                    let formattedInt = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+                    if (parts.length > 1) {
+                        let decPart = parts[1].replace(/\D/g, '').slice(0, 2);
+                        return formattedInt + ',' + decPart;
+                    }
+                    return formattedInt;
+                },
+                onKeydown(e) {
+                    if (e.key === '.' && !e.target.value.includes(',')) {
+                        e.preventDefault();
+                        let start = e.target.selectionStart;
+                        let end = e.target.selectionEnd;
+                        let currentVal = e.target.value;
+                        e.target.value = currentVal.substring(0, start) + ',' + currentVal.substring(end);
+                        e.target.setSelectionRange(start + 1, start + 1);
+                        this.onInput(e);
+                    }
+                },
+                onInput(e) {
+                    let input = e.target;
+                    let val = input.value;
+                    let cursor = input.selectionStart;
+
+                    let digitsBeforeCursor = val.slice(0, cursor).replace(/\D/g, '').length;
+                    let hadCommaBefore = val.slice(0, cursor).includes(',');
+
+                    let cleaned = val.replace(/[^0-9,]/g, '');
+                    let parts = cleaned.split(',');
+                    if (parts.length > 2) {
+                        parts = [parts[0], parts.slice(1).join('')];
+                    }
+
+                    let intPart = parts[0].replace(/\D/g, '');
+                    let formattedInt = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+                    let hasComma = parts.length > 1;
+                    let decPart = hasComma ? ',' + parts[1].replace(/\D/g, '').slice(0, 2) : '';
+
+                    this.displayVal = formattedInt + decPart;
+                    input.value = this.displayVal;
+
+                    if (intPart) {
+                        this.rawVal = hasComma && parts[1] !== '' ? intPart + '.' + parts[1].replace(/\D/g, '').slice(0, 2) : intPart;
+                    } else {
+                        this.rawVal = hasComma && parts[1] !== '' ? '0.' + parts[1].replace(/\D/g, '').slice(0, 2) : '';
+                    }
+
+                    this.$nextTick(() => {
+                        let newPos = 0;
+                        let digitsSeen = 0;
+                        for (let i = 0; i < this.displayVal.length; i++) {
+                            if (this.displayVal[i] === ',') {
+                                if (hadCommaBefore) {
+                                    newPos = i + 1;
+                                    break;
+                                }
+                            }
+                            if (/\d/.test(this.displayVal[i])) {
+                                digitsSeen++;
+                            }
+                            if (digitsSeen === digitsBeforeCursor) {
+                                newPos = i + 1;
+                                break;
+                            }
+                        }
+                        if (newPos === 0 && this.displayVal.length > 0) {
+                            newPos = this.displayVal.length;
+                        }
+                        input.setSelectionRange(newPos, newPos);
+                    });
+                },
+                onBlur(e) {
+                    if (this.displayVal.endsWith(',')) {
+                        this.displayVal = this.displayVal.slice(0, -1);
+                        e.target.value = this.displayVal;
+                    }
                 }
             };
         }

@@ -115,6 +115,79 @@ class ReportEngineS
     }
 
     /**
+     * Şablonun filtrelenebilir dinamik alanlarını ve seçilebilir tüm opsiyonlarını döner.
+     */
+    public function getFilterFieldsWithOptions(FormTemplateM $template): array
+    {
+        $fields = $template->fields()->orderBy('sort_order')->get();
+        $filterFields = [];
+
+        foreach ($fields as $f) {
+            $options = [];
+
+            if ($f->type === 'master_data' && $f->master_data_type_id) {
+                $mType = \App\Models\MasterDataTypeM::with('items')->find($f->master_data_type_id);
+                if ($mType) {
+                    $itemsCount = $mType->items->count();
+                    if ($itemsCount <= 250) {
+                        $options = $mType->items->pluck('name')->toArray();
+                    } else {
+                        // Binlerce kayıt içeren master tiplerde (ör. şehirler) form_entry_values'ta girilmiş olanları ve ilk 60 öğeyi harmanla
+                        $dbVals = \Illuminate\Support\Facades\DB::table('form_entry_values')
+                            ->where('form_field_id', $f->id)
+                            ->whereNotNull('value')
+                            ->where('value', '!=', '')
+                            ->distinct()
+                            ->pluck('value')
+                            ->toArray();
+                        $options = array_values(array_unique(array_merge($dbVals, $mType->items->take(60)->pluck('name')->toArray())));
+                    }
+                }
+            } elseif ($f->type === 'select' && !empty($f->options)) {
+                $options = is_array($f->options) ? $f->options : (json_decode($f->options, true) ?: []);
+            } elseif ($f->type === 'user_list') {
+                $options = \App\Models\UserM::orderBy('name')->pluck('name')->toArray();
+            } elseif ($f->type === 'year') {
+                $currentYear = (int) date('Y');
+                $options = array_map('strval', range($currentYear - 3, $currentYear + 2));
+            } else {
+                // Diğer kategorik veya metin alanları: Veritabanında girilmiş tekil değerler
+                $dbVals = \Illuminate\Support\Facades\DB::table('form_entry_values')
+                    ->where('form_field_id', $f->id)
+                    ->whereNotNull('value')
+                    ->where('value', '!=', '')
+                    ->distinct()
+                    ->limit(60)
+                    ->pluck('value')
+                    ->toArray();
+                if (count($dbVals) > 0 && count($dbVals) <= 60) {
+                    $options = $dbVals;
+                }
+            }
+
+            // Temizleme ve sıralama
+            $cleanOptions = [];
+            foreach ($options as $opt) {
+                $optStr = trim((string) $opt);
+                if ($optStr !== '') {
+                    $cleanOptions[$optStr] = $optStr;
+                }
+            }
+            sort($cleanOptions, SORT_NATURAL | SORT_FLAG_CASE);
+
+            $filterFields[] = [
+                'id' => $f->id,
+                'label' => $f->label,
+                'type' => $f->type,
+                'has_options' => count($cleanOptions) > 0,
+                'options' => array_values($cleanOptions),
+            ];
+        }
+
+        return $filterFields;
+    }
+
+    /**
      * Dinamik Rapor Analizini Gerçekleştirir.
      */
     public function generateReport(array $params, ?UserM $currentUser = null): array
@@ -1631,30 +1704,74 @@ class ReportEngineS
             $rankings[] = $item;
         }
 
-        // Sıralama tablosu
+        // Sıralama tablosu (Toplam hacme göre büyükten küçüğe)
         usort($rankings, fn($a, $b) => $b['total'] <=> $a['total']);
         foreach ($rankings as $idx => &$r) {
             $r['rank'] = $idx + 1;
         }
+        unset($r);
 
-        // Isı haritası renkleri (Choropleth Scale: açık indigo -> koyu lacivert)
+        // 5 Katmanlı Choropleth Renk Skalası (En çok veri olandan en az veri olana doğru)
+        // Seviye 5 (Zirve / En Çok): #312e81 (Koyu Lacivert/İndigo)
+        // Seviye 4 (Yüksek): #4338ca (İndigo)
+        // Seviye 3 (Orta): #6366f1 (Canlı İndigo)
+        // Seviye 2 (Düşük): #818cf8 (Açık İndigo)
+        // Seviye 1 (En Az): #a5b4fc (Pastel Açık İndigo)
+        // Hiç veri olmayan ülkeler: #ffffff (Temiz Beyaz - Harita varsayılanında)
+        $palette = [
+            5 => '#312e81', // En Çok Veri / Zirve
+            4 => '#4338ca', // Yüksek Hacim
+            3 => '#6366f1', // Orta Hacim
+            2 => '#818cf8', // Düşük Hacim
+            1 => '#a5b4fc', // En Az Veri
+        ];
+
+        $totalGeo = count($rankings);
         $countryColors = [];
-        foreach ($geoCountries as $iso => $c) {
-            $ratio = ($maxCountryTotal > 0) ? ($c['total'] / $maxCountryTotal) : 0.5;
-            // 0.2 ile 1.0 arası opaklık / tonlama
-            if ($ratio > 0.8) {
-                $countryColors[$iso] = '#312e81'; // Koyu İndigo
-            } elseif ($ratio > 0.5) {
-                $countryColors[$iso] = '#4338ca'; // İndigo
-            } elseif ($ratio > 0.25) {
-                $countryColors[$iso] = '#6366f1'; // Orta İndigo
-            } elseif ($ratio > 0.1) {
-                $countryColors[$iso] = '#818cf8'; // Açık İndigo
+
+        foreach ($rankings as $idx => &$r) {
+            $iso = $r['code'];
+            $val = $r['total'];
+
+            if ($totalGeo === 1) {
+                $level = 5;
             } else {
-                $countryColors[$iso] = '#a5b4fc'; // Çok Açık İndigo
+                $ratio = ($maxCountryTotal > 0) ? ($val / $maxCountryTotal) : 0;
+                $rankPercentile = $idx / max(1, $totalGeo - 1);
+
+                if ($ratio >= 0.7) {
+                    $level = 5;
+                } elseif ($ratio >= 0.4) {
+                    $level = 4;
+                } elseif ($ratio >= 0.15) {
+                    $level = 3;
+                } elseif ($ratio >= 0.05) {
+                    $level = 2;
+                } else {
+                    // Skewed veri koruması: sıralama yüzdeliğine göre katman ata
+                    if ($rankPercentile <= 0.2) {
+                        $level = 4;
+                    } elseif ($rankPercentile <= 0.4) {
+                        $level = 3;
+                    } elseif ($rankPercentile <= 0.7) {
+                        $level = 2;
+                    } else {
+                        $level = 1;
+                    }
+                }
             }
-            $geoCountries[$iso]['color'] = $countryColors[$iso];
+
+            $colorHex = $palette[$level];
+            $countryColors[$iso] = $colorHex;
+            $r['color'] = $colorHex;
+            $r['color_level'] = $level;
+
+            if (isset($geoCountries[$iso])) {
+                $geoCountries[$iso]['color'] = $colorHex;
+                $geoCountries[$iso]['color_level'] = $level;
+            }
         }
+        unset($r);
 
         return [
             'mode' => 'geo',

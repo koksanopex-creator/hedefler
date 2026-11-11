@@ -193,6 +193,7 @@
                 @endif
                 <input type="hidden" name="entry_date" value="{{ $date }}">
                 <input type="hidden" name="action" id="form_action_input" value="draft">
+                <input type="hidden" name="entry_id" id="form_entry_id_input" :value="entryId || ''">
                 <input type="hidden" name="rows_json" id="form_rows_json_input" value="">
                 <input type="hidden" name="partition_value" value="{{ $partitionValue ?? ($existingEntry->partition_value ?? '') }}">
 
@@ -255,6 +256,19 @@
                                     </span>
                                 </template>
                             </div>
+
+                            <!-- İçe Aktarma / Yapıştırma Doğrulama Uyarıları Butonu -->
+                            <template x-if="importValidationData && (importValidationData.partitionMismatches.length > 0 || importValidationData.unmatchedDropdowns.length > 0)">
+                                <button type="button" @click="showImportValidationModal = true"
+                                    class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-500/15 hover:bg-amber-500/25 text-amber-700 border border-amber-300 transition shadow-xs cursor-pointer select-none"
+                                    :class="isFullscreen ? 'bg-amber-900/60 text-amber-200 border-amber-600' : ''"
+                                    title="Yapıştırma veya içe aktarmadaki doğrulama uyarılarını görüntüle">
+                                    <svg class="w-3.5 h-3.5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                                    </svg>
+                                    <span>Aktarım Uyarıları (<span x-text="importValidationData.partitionMismatches.length + importValidationData.unmatchedDropdowns.length"></span>)</span>
+                                </button>
+                            </template>
                         </div>
 
                         <div class="flex items-center gap-2">
@@ -1268,6 +1282,125 @@
                 </div>
             </div>
 
+            <!-- İçe Aktarma & Yapıştırma Doğrulama Modalı (Import & Paste Validation Modal) -->
+            <div x-show="showImportValidationModal"
+                 x-transition:enter="transition ease-out duration-250"
+                 x-transition:enter-start="opacity-0 scale-95"
+                 x-transition:enter-end="opacity-100 scale-100"
+                 x-transition:leave="transition ease-in duration-150"
+                 x-transition:leave-start="opacity-100 scale-100"
+                 x-transition:leave-end="opacity-0 scale-95"
+                 class="fixed inset-0 z-[99999999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs"
+                 style="display: none; z-index: 99999999 !important;"
+                 @click.self="showImportValidationModal = false"
+                 @keydown.escape.window="showImportValidationModal = false">
+                
+                <div class="bg-white rounded-2xl shadow-2xl border border-gray-100 p-6 max-w-2xl w-full max-h-[85vh] flex flex-col">
+                    <!-- Modal Başlık -->
+                    <div class="flex items-start justify-between gap-4 pb-4 border-b border-gray-100 shrink-0">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 class="text-base font-bold text-gray-900">İçe Aktarma / Yapıştırma Doğrulama Bildirimi</h3>
+                                <p class="text-xs text-gray-500 mt-0.5">Veriler aktarılırken form kuralına uymayan kriterler veya eşleşmeyen seçenekler tespit edildi.</p>
+                            </div>
+                        </div>
+                        <button type="button" @click="showImportValidationModal = false" class="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition cursor-pointer">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+
+                    <!-- Modal İçeriği (Kaydırılabilir) -->
+                    <div class="flex-1 overflow-y-auto py-4 space-y-4 pr-1">
+                        <!-- 1. Kilitli Kriter (İşyeri) Uyuşmazlığı Bölümü -->
+                        <div x-show="importValidationData.partitionMismatches && importValidationData.partitionMismatches.length > 0"
+                             class="p-4 bg-amber-50/90 border border-amber-300 rounded-xl space-y-2.5">
+                            <div class="flex items-center gap-2 text-amber-900 font-bold text-xs">
+                                <span>🔒</span>
+                                <span>Kilitli Kriter (<span x-text="partitionFieldId ? (fields.find(f => f.id == partitionFieldId)?.label || 'Kriter') : 'Kriter'"></span>) Uyarısı</span>
+                            </div>
+                            <p class="text-xs text-amber-900 leading-relaxed">
+                                Bu form <strong class="text-amber-950 font-bold underline" x-text="partitionValue"></strong> kriteri için açılmıştır. Yapıştırdığınız / aktardığınız verilerde farklı kriter değerleri tespit edilmiş olup, form bütünlüğünü korumak adına bu alanlar otomatik olarak kilitli kriter olan <strong class="text-amber-950 font-bold" x-text="partitionValue"></strong> değerine dönüştürülmüştür.
+                            </p>
+                            
+                            <!-- Özet Listesi -->
+                            <div class="mt-2 pt-2 border-t border-amber-200/80 space-y-1.5">
+                                <template x-for="(item, idx) in getPartitionMismatchSummary()" :key="idx">
+                                    <div class="flex items-center justify-between text-xs bg-white/80 px-3 py-1.5 rounded-lg border border-amber-200">
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-amber-600 font-bold">•</span>
+                                            <span class="text-gray-700">Excel / Panoda Tespit Edilen: <strong class="text-amber-900 font-mono font-bold" x-text="item.val"></strong></span>
+                                        </div>
+                                        <span class="text-xs font-semibold text-amber-800" x-text="item.count + ' satırda ➔ ' + partitionValue + ' yapıldı'"></span>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+
+                        <!-- 2. Eşleşmeyen Açılır Kutu (Dropdown / Master Data) Değerleri Bölümü -->
+                        <div x-show="importValidationData.unmatchedDropdowns && importValidationData.unmatchedDropdowns.length > 0"
+                             class="space-y-2.5">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-2 text-rose-800 font-bold text-xs">
+                                    <span>⚠️</span>
+                                    <span>Tanımlı Seçeneklerde Bulunamayan Değerler (<span x-text="importValidationData.unmatchedDropdowns.length"></span> Adet)</span>
+                                </div>
+                                <span class="text-[11px] text-gray-500 font-medium">Bu hücreler 'Seçiniz...' olarak ayarlanmıştır</span>
+                            </div>
+                            <p class="text-xs text-gray-600">
+                                Aşağıdaki satırlarda kopyalanan / yüklenen veriler form şablonunda tanımlı seçenekler arasında bulunamadığı için boş bırakılmıştır. Lütfen kontrol edip geçerli bir seçenek seçiniz:
+                            </p>
+
+                            <div class="overflow-hidden rounded-xl border border-gray-200 max-h-56 overflow-y-auto">
+                                <table class="w-full text-left text-xs">
+                                    <thead class="bg-gray-50 text-gray-700 font-bold sticky top-0 border-b border-gray-200">
+                                        <tr>
+                                            <th class="py-2 px-3 w-16">Satır</th>
+                                            <th class="py-2 px-3">Sütun / Alan</th>
+                                            <th class="py-2 px-3">Excel / Panodan Gelen</th>
+                                            <th class="py-2 px-3 text-right">Durum</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-gray-100 bg-white">
+                                        <template x-for="(item, idx) in importValidationData.unmatchedDropdowns" :key="idx">
+                                            <tr class="hover:bg-amber-50/40 transition">
+                                                <td class="py-2 px-3 font-semibold text-gray-600" x-text="'Satır ' + item.rowNum"></td>
+                                                <td class="py-2 px-3 font-bold text-gray-900" x-text="item.fieldLabel"></td>
+                                                <td class="py-2 px-3">
+                                                    <span class="inline-block px-2 py-0.5 rounded bg-rose-50 text-rose-700 font-mono text-[11px] border border-rose-200 font-semibold" x-text="item.pastedVal"></span>
+                                                </td>
+                                                <td class="py-2 px-3 text-right">
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gray-100 text-gray-600 border border-gray-200">
+                                                        Seçiniz... (Boş)
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Modal Alt Aksiyon Butonları -->
+                    <div class="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between shrink-0">
+                        <button type="button" @click="clearValidationWarnings()"
+                            class="px-3 py-1.5 text-xs font-semibold text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition cursor-pointer">
+                            Uyarıları Temizle
+                        </button>
+                        <button type="button" @click="showImportValidationModal = false"
+                            class="px-5 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 rounded-xl shadow-sm transition flex items-center gap-1.5 cursor-pointer">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                            <span>Anladım, Tabloyu Düzenlemeye Devam Et</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             <!-- Excel Fill Toast Notification -->
             <div x-show="toastMessage"
                  x-transition:enter="transition ease-out duration-250"
@@ -1383,6 +1516,31 @@
                 uniqueValues: {},
                 toastMessage: '',
                 toastTimeout: null,
+                showImportValidationModal: false,
+                importValidationData: {
+                    partitionMismatches: [],
+                    unmatchedDropdowns: []
+                },
+
+                getPartitionMismatchSummary() {
+                    let counts = {};
+                    (this.importValidationData?.partitionMismatches || []).forEach(m => {
+                        let val = m.foundVal || '(Boş)';
+                        counts[val] = (counts[val] || 0) + 1;
+                    });
+                    return Object.entries(counts).map(([val, count]) => ({
+                        val: val,
+                        count: count
+                    }));
+                },
+
+                clearValidationWarnings() {
+                    this.importValidationData = {
+                        partitionMismatches: [],
+                        unmatchedDropdowns: []
+                    };
+                    this.showImportValidationModal = false;
+                },
 
                 updateRowMaps() {
                     this.rowNumberMap.clear();
@@ -2472,8 +2630,33 @@
                     this.updateRowMaps();
                 },
 
+                hasRealUserData() {
+                    if (!this.rows || this.rows.length === 0) return false;
+                    for (let r of this.rows) {
+                        if (!r.values) continue;
+                        for (let f of this.fields) {
+                            if (f.type === 'auto_user') continue;
+                            if (this.partitionFieldId && f.id == this.partitionFieldId) continue;
+                            if (f.type === 'year') continue;
+                            const v = r.values[f.id];
+                            if (v !== null && v !== undefined && String(v).trim() !== '') {
+                                return true;
+                            }
+                        }
+                    }
+                    return false;
+                },
+
                 submitForm(actionType) {
                     if (this.isSubmitting) return;
+
+                    // Kullanıcı hiçbir gerçek veri girmemişse (sadece boş şablon satırları varsa) engelle
+                    if (!this.hasRealUserData()) {
+                        this.isSubmitting = false;
+                        this.submittingAction = null;
+                        this.showToast('Lütfen kaydetmeden veya onaya göndermeden önce en az bir satır veri giriniz.', 'warning');
+                        return;
+                    }
 
                     // 1. Onaya Gönderiliyorsa (action === 'submit') zorunlu alan kontrolü yap:
                     if (actionType === 'submit') {
@@ -2583,10 +2766,25 @@
 
                     const actionInput = document.getElementById('form_action_input');
                     const rowsJsonInput = document.getElementById('form_rows_json_input');
+                    const entryIdInput = document.getElementById('form_entry_id_input');
                     const form = document.getElementById('entry-form');
 
                     if (actionInput) actionInput.value = actionType;
                     if (rowsJsonInput) rowsJsonInput.value = JSON.stringify(rowsData);
+                    if (entryIdInput && this.entryId) entryIdInput.value = this.entryId;
+
+                    // Eğer önceden otomatik kayıtla bir taslak oluştuysa, formun action ve methodunu PUT olarak güncelle
+                    if (this.entryId && this.saveUrl && form) {
+                        form.action = this.saveUrl;
+                        let methodInput = form.querySelector('input[name="_method"]');
+                        if (!methodInput) {
+                            methodInput = document.createElement('input');
+                            methodInput.type = 'hidden';
+                            methodInput.name = '_method';
+                            methodInput.value = 'PUT';
+                            form.appendChild(methodInput);
+                        }
+                    }
 
                     if (form) {
                         HTMLFormElement.prototype.submit.call(form);
@@ -2607,15 +2805,12 @@
                         return;
                     }
 
-                    // Tabloda en az bir hücre dolu mu kontrol et
-                    let hasData = false;
-                    for (let r of this.rows) {
-                        if (r.values && Object.values(r.values).some(v => v !== null && v !== undefined && String(v).trim() !== '')) {
-                            hasData = true;
-                            break;
+                    // Tabloda en az bir hücrede kullanıcının girdiği gerçek veri var mı kontrol et (kilitli bölüm ve otomatik alanlar hariç)
+                    if (!this.hasRealUserData()) {
+                        this.isAutoSaving = false;
+                        if (!isSilent) {
+                            this.showToast('Lütfen kaydetmeden önce en az bir satır veri giriniz.', 'warning');
                         }
-                    }
-                    if (!hasData) {
                         if (typeof callback === 'function') callback(null, { skipped: true });
                         return;
                     }
@@ -2667,6 +2862,22 @@
                                 if (data.edit_url) {
                                     window.history.replaceState({ entry_id: data.entry_id }, '', data.edit_url);
                                 }
+
+                                // Form DOM elemanını da güncelle (Böylece kullanıcı Onaya Gönder'e bastığında yeni kopya değil, bu taslak güncellenir)
+                                const formEl = document.getElementById('entry-form');
+                                if (formEl) {
+                                    if (data.update_url) formEl.action = data.update_url;
+                                    let methodInput = formEl.querySelector('input[name="_method"]');
+                                    if (!methodInput) {
+                                        methodInput = document.createElement('input');
+                                        methodInput.type = 'hidden';
+                                        methodInput.name = '_method';
+                                        methodInput.value = 'PUT';
+                                        formEl.appendChild(methodInput);
+                                    }
+                                }
+                                const idInput = document.getElementById('form_entry_id_input');
+                                if (idInput) idInput.value = data.entry_id;
                             }
 
                             if (!isSilent) {
@@ -3470,6 +3681,8 @@
                             // 3. Verileri hücrelere parçalı (chunked) olarak yerleştir
                             const CHUNK_SIZE = 35;
                             let currentBatchIndex = 0;
+                            let partitionMismatches = [];
+                            let unmatchedDropdowns = [];
 
                             const processPasteChunk = () => {
                                 let start = currentBatchIndex * CHUNK_SIZE;
@@ -3486,21 +3699,45 @@
                                             let targetField = this.fields[currentColIndex];
 
                                             if (targetField.type !== 'auto_user') {
+                                                let pastedVal = colsData[j] !== undefined && colsData[j] !== null ? colsData[j].trim() : '';
+
+                                                // Bölümlenmiş formda kilitli alan kontrolü (Örn: İŞYERİ)
+                                                if (this.partitionFieldId && targetField.id == this.partitionFieldId && this.partitionValue) {
+                                                    if (pastedVal !== '' && this.toLocaleLower(pastedVal) !== this.toLocaleLower(this.partitionValue)) {
+                                                        partitionMismatches.push({
+                                                            rowNum: currentRowIndex + 1,
+                                                            fieldLabel: targetField.label || 'Kriter',
+                                                            foundVal: pastedVal,
+                                                            lockedVal: this.partitionValue
+                                                        });
+                                                    }
+                                                    currentRow.values[targetField.id] = this.partitionValue;
+                                                    continue;
+                                                }
+
                                                 if (this.isFieldCalculated(targetField, currentRow)) {
                                                     currentRow.values[targetField.id] = '';
                                                     continue;
                                                 }
 
-                                                let pastedVal = colsData[j].trim();
-
                                                 if (targetField.type === 'select') {
                                                     let map = selectLookupMaps[currentColIndex];
                                                     let searchVal = this.toLocaleLower(pastedVal);
                                                     let normVal = this.normalizeSearch(pastedVal);
-                                                    if (map && map.has(searchVal)) {
-                                                        currentRow.values[targetField.id] = map.get(searchVal);
-                                                    } else if (map && map.has(normVal)) {
-                                                        currentRow.values[targetField.id] = map.get(normVal);
+                                                    if (pastedVal !== '') {
+                                                        if (map && map.has(searchVal)) {
+                                                            currentRow.values[targetField.id] = map.get(searchVal);
+                                                        } else if (map && map.has(normVal)) {
+                                                            currentRow.values[targetField.id] = map.get(normVal);
+                                                        } else {
+                                                            currentRow.values[targetField.id] = '';
+                                                            unmatchedDropdowns.push({
+                                                                rowNum: currentRowIndex + 1,
+                                                                fieldLabel: targetField.label || 'Açılır Liste',
+                                                                pastedVal: pastedVal,
+                                                                type: 'select'
+                                                            });
+                                                        }
                                                     } else {
                                                         currentRow.values[targetField.id] = '';
                                                     }
@@ -3508,31 +3745,55 @@
                                                     let map = masterDataLookupMaps[currentColIndex];
                                                     let searchVal = this.toLocaleLower(pastedVal);
                                                     let normVal = this.normalizeSearch(pastedVal);
-                                                    if (map && map.has(searchVal)) {
-                                                        currentRow.values[targetField.id] = map.get(searchVal);
-                                                        this.handleMasterDataChange(currentRow, targetField.id);
-                                                    } else if (map && map.has(normVal)) {
-                                                        currentRow.values[targetField.id] = map.get(normVal);
-                                                        this.handleMasterDataChange(currentRow, targetField.id);
+                                                    if (pastedVal !== '') {
+                                                        if (map && map.has(searchVal)) {
+                                                            currentRow.values[targetField.id] = map.get(searchVal);
+                                                            this.handleMasterDataChange(currentRow, targetField.id);
+                                                        } else if (map && map.has(normVal)) {
+                                                            currentRow.values[targetField.id] = map.get(normVal);
+                                                            this.handleMasterDataChange(currentRow, targetField.id);
+                                                        } else {
+                                                            currentRow.values[targetField.id] = '';
+                                                            unmatchedDropdowns.push({
+                                                                rowNum: currentRowIndex + 1,
+                                                                fieldLabel: targetField.label || 'Master Data',
+                                                                pastedVal: pastedVal,
+                                                                type: 'master_data'
+                                                            });
+                                                        }
                                                     } else {
                                                         currentRow.values[targetField.id] = '';
                                                     }
                                                 } else if (targetField.type === 'user_list') {
                                                     let searchVal = this.toLocaleLower(pastedVal);
                                                     let normVal = this.normalizeSearch(pastedVal);
-                                                    if (userListLookupMap.has(searchVal)) {
-                                                        currentRow.values[targetField.id] = userListLookupMap.get(searchVal);
-                                                    } else if (userListLookupMap.has(normVal)) {
-                                                        currentRow.values[targetField.id] = userListLookupMap.get(normVal);
-                                                    } else {
-                                                        let matched = null;
-                                                        for (let [k, canonicalName] of userListLookupMap.entries()) {
-                                                            if (k && (k === searchVal || k === normVal || k.includes(normVal) || normVal.includes(k))) {
-                                                                matched = canonicalName;
-                                                                break;
+                                                    if (pastedVal !== '') {
+                                                        if (userListLookupMap.has(searchVal)) {
+                                                            currentRow.values[targetField.id] = userListLookupMap.get(searchVal);
+                                                        } else if (userListLookupMap.has(normVal)) {
+                                                            currentRow.values[targetField.id] = userListLookupMap.get(normVal);
+                                                        } else {
+                                                            let matched = null;
+                                                            for (let [k, canonicalName] of userListLookupMap.entries()) {
+                                                                if (k && (k === searchVal || k === normVal || k.includes(normVal) || normVal.includes(k))) {
+                                                                    matched = canonicalName;
+                                                                    break;
+                                                                }
+                                                            }
+                                                            if (matched) {
+                                                                currentRow.values[targetField.id] = matched;
+                                                            } else {
+                                                                currentRow.values[targetField.id] = '';
+                                                                unmatchedDropdowns.push({
+                                                                    rowNum: currentRowIndex + 1,
+                                                                    fieldLabel: targetField.label || 'Kullanıcı Listesi',
+                                                                    pastedVal: pastedVal,
+                                                                    type: 'user_list'
+                                                                });
                                                             }
                                                         }
-                                                        currentRow.values[targetField.id] = matched || pastedVal;
+                                                    } else {
+                                                        currentRow.values[targetField.id] = '';
                                                     }
                                                 } else if (targetField.type === 'number') {
                                                     currentRow.values[targetField.id] = this.parseRawNumber(pastedVal);
@@ -3557,6 +3818,18 @@
                                     setTimeout(processPasteChunk, 10);
                                 } else {
                                     this.stopLiveTimer();
+
+                                    // Bölümlenmiş kriter alanını (Örn: İŞYERİ) tüm yapıştırılan satırlar için kesinleştir
+                                    if (this.partitionFieldId && this.partitionValue) {
+                                        this.rows.forEach(r => {
+                                            if (r && r.values) r.values[this.partitionFieldId] = this.partitionValue;
+                                        });
+                                    }
+
+                                    // Kaydedilmemiş değişiklik durumunu aktifleştir
+                                    this.hasUnsavedChanges = true;
+                                    this.autoSaveStatus = 'unsaved';
+
                                     // 4. Hesaplamaları TEK SEFERDE çalıştır ve kullanıcıya bildir
                                     this.updateRowMaps();
                                     this.calculateTotals();
@@ -3569,6 +3842,19 @@
                                         this.showUploadModal = false;
                                         this.isLargeDataset = false;
                                         this.showToast(`✓ ${totalPasteRows} satır veri başarıyla yapıştırıldı.`);
+                                        // Yapıştırılan verileri arka planda sessizce hemen taslağa kaydet
+                                        this.saveDraftAjax(true);
+
+                                        // Doğrulama uyuşmazlığı varsa uyarı modalını aç
+                                        if (partitionMismatches.length > 0 || unmatchedDropdowns.length > 0) {
+                                            this.importValidationData = {
+                                                partitionMismatches: partitionMismatches,
+                                                unmatchedDropdowns: unmatchedDropdowns
+                                            };
+                                            setTimeout(() => {
+                                                this.showImportValidationModal = true;
+                                            }, 300);
+                                        }
                                     }, 450);
                                 }
                             };
@@ -3713,7 +3999,10 @@
 
                                             // Otomatik kullanıcı alanlarını ve eksik ID'leri güvenceye al
                                             const autoUserFields = this.fields.filter(f => f.type === 'auto_user');
-                                            data.rows.forEach(r => {
+                                            let partitionMismatches = [];
+                                            let unmatchedDropdowns = [];
+
+                                            data.rows.forEach((r, rIdx) => {
                                                 if (!r.id) r.id = Date.now() + Math.random().toString(36).substr(2, 9);
                                                 if (!r.values) r.values = {};
                                                 if (autoUserFields.length > 0) {
@@ -3724,8 +4013,23 @@
                                                     });
                                                 }
 
-                                                // Değer normalizasyonu ve formül koruması
+                                                // Değer normalizasyonu, kilitli kriter koruması ve formül kontrolü
                                                 this.fields.forEach(f => {
+                                                    // Bölümlenmiş kriter uyuşmazlığı kontrolü (Örn: İŞYERİ)
+                                                    if (this.partitionFieldId && f.id == this.partitionFieldId && this.partitionValue) {
+                                                        let currentVal = r.values && r.values[f.id] !== undefined && r.values[f.id] !== null ? String(r.values[f.id]).trim() : '';
+                                                        if (currentVal !== '' && this.toLocaleLower(currentVal) !== this.toLocaleLower(this.partitionValue)) {
+                                                            partitionMismatches.push({
+                                                                rowNum: rIdx + 1,
+                                                                fieldLabel: f.label || 'Kriter',
+                                                                foundVal: currentVal,
+                                                                lockedVal: this.partitionValue
+                                                            });
+                                                        }
+                                                        r.values[f.id] = this.partitionValue;
+                                                        return;
+                                                    }
+
                                                     if (this.isFieldCalculated(f, r)) {
                                                         r.values[f.id] = '';
                                                     } else if (r.values[f.id] !== undefined && r.values[f.id] !== null && String(r.values[f.id]).trim() !== '') {
@@ -3737,6 +4041,25 @@
                                                                 r.values[f.id] = userListLookupMap.get(sVal);
                                                             } else if (userListLookupMap.has(nVal)) {
                                                                 r.values[f.id] = userListLookupMap.get(nVal);
+                                                            } else {
+                                                                let matched = null;
+                                                                for (let [k, canonicalName] of userListLookupMap.entries()) {
+                                                                    if (k && (k === sVal || k === nVal || k.includes(nVal) || nVal.includes(k))) {
+                                                                        matched = canonicalName;
+                                                                        break;
+                                                                    }
+                                                                }
+                                                                if (matched) {
+                                                                    r.values[f.id] = matched;
+                                                                } else {
+                                                                    r.values[f.id] = '';
+                                                                    unmatchedDropdowns.push({
+                                                                        rowNum: rIdx + 1,
+                                                                        fieldLabel: f.label || 'Kullanıcı Listesi',
+                                                                        pastedVal: val,
+                                                                        type: 'user_list'
+                                                                    });
+                                                                }
                                                             }
                                                         } else if (f.type === 'master_data' && masterDataLookupMaps[f.id]) {
                                                             let sVal = this.toLocaleLower(val);
@@ -3746,6 +4069,14 @@
                                                                 r.values[f.id] = map.get(sVal);
                                                             } else if (map.has(nVal)) {
                                                                 r.values[f.id] = map.get(nVal);
+                                                            } else {
+                                                                r.values[f.id] = '';
+                                                                unmatchedDropdowns.push({
+                                                                    rowNum: rIdx + 1,
+                                                                    fieldLabel: f.label || 'Master Data',
+                                                                    pastedVal: val,
+                                                                    type: 'master_data'
+                                                                });
                                                             }
                                                         } else if (f.type === 'select' && selectLookupMaps[f.id]) {
                                                             let sVal = this.toLocaleLower(val);
@@ -3755,6 +4086,14 @@
                                                                 r.values[f.id] = map.get(sVal);
                                                             } else if (map.has(nVal)) {
                                                                 r.values[f.id] = map.get(nVal);
+                                                            } else {
+                                                                r.values[f.id] = '';
+                                                                unmatchedDropdowns.push({
+                                                                    rowNum: rIdx + 1,
+                                                                    fieldLabel: f.label || 'Açılır Liste',
+                                                                    pastedVal: val,
+                                                                    type: 'select'
+                                                                });
                                                             }
                                                         } else if (f.type === 'number') {
                                                             let clean = this.parseRawNumber(val);
@@ -3813,6 +4152,17 @@
                                                     setTimeout(() => {
                                                         this.showUploadModal = false;
                                                         this.isLargeDataset = false;
+
+                                                        // Doğrulama uyuşmazlığı varsa uyarı modalını aç
+                                                        if (partitionMismatches.length > 0 || unmatchedDropdowns.length > 0) {
+                                                            this.importValidationData = {
+                                                                partitionMismatches: partitionMismatches,
+                                                                unmatchedDropdowns: unmatchedDropdowns
+                                                            };
+                                                            setTimeout(() => {
+                                                                this.showImportValidationModal = true;
+                                                            }, 300);
+                                                        }
                                                     }, 450);
 
                                                     this.hasUnsavedChanges = true;

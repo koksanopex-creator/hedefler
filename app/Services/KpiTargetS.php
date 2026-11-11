@@ -369,12 +369,30 @@ class KpiTargetS
             $targetFieldId = $target->target_field_id;
             $criteria = $target->criteria_json ?? [];
 
+            // Satır bazlı dinamik AY ve YIL alanlarını tespit et
+            $target->loadMissing('template.fields');
+            $ayField = $target->template?->fields?->first(function ($f) {
+                $lbl = mb_strtolower(trim($f->label));
+                return in_array($lbl, ['ay', 'dönem', 'donem', 'dönemi', 'donemi']) || $f->field_key === 'ay';
+            });
+            $yilField = $target->template?->fields?->first(function ($f) {
+                $lbl = mb_strtolower(trim($f->label));
+                return in_array($lbl, ['yıl', 'yil', 'kayıt yılı', 'kayit yili']) || $f->field_key === 'yil';
+            });
+
+            $turkishMonthMap = [
+                'ocak' => 1, 'şubat' => 2, 'subat' => 2, 'mart' => 3, 'nisan' => 4,
+                'mayıs' => 5, 'mayis' => 5, 'haziran' => 6, 'temmuz' => 7,
+                'ağustos' => 8, 'agustos' => 8, 'eylül' => 9, 'eylul' => 9,
+                'ekim' => 10, 'kasım' => 11, 'kasim' => 11, 'aralık' => 12, 'aralik' => 12,
+            ];
+
             // Aylık gerçekleşen toplamları tutacak dizi (1..12)
             $monthlyActuals = array_fill(1, 12, 0.0);
             $yearlyTotal = 0.0;
 
             foreach ($entries as $entry) {
-                $month = intval($entry->entry_date->format('n'));
+                $entryMonth = intval($entry->entry_date->format('n'));
 
                 foreach ($entry->rows as $row) {
                     // Satırın kriterlere uyup uymadığını kontrol et
@@ -382,11 +400,35 @@ class KpiTargetS
                         continue;
                     }
 
+                    // Yıl filtresi: Eğer satırda YIL alanı varsa ve hedef yılıyla uyuşmuyorsa atla
+                    if ($yilField) {
+                        $rowYearVal = $row->values->firstWhere('form_field_id', $yilField->id)?->value;
+                        if ($rowYearVal && is_numeric(trim($rowYearVal)) && intval(trim($rowYearVal)) !== intval($target->target_year)) {
+                            continue;
+                        }
+                    }
+
+                    // Ay belirleme: Satırda dinamik AY alanı varsa öncelikli olarak o ayın değerini al, yoksa form tarihine bak
+                    $rowMonth = $entryMonth;
+                    if ($ayField) {
+                        $rowAyVal = $row->values->firstWhere('form_field_id', $ayField->id)?->value;
+                        if ($rowAyVal !== null && trim($rowAyVal) !== '') {
+                            $cleanAy = mb_strtolower(trim($rowAyVal));
+                            if (isset($turkishMonthMap[$cleanAy])) {
+                                $rowMonth = $turkishMonthMap[$cleanAy];
+                            } elseif (is_numeric($cleanAy) && intval($cleanAy) >= 1 && intval($cleanAy) <= 12) {
+                                $rowMonth = intval($cleanAy);
+                            }
+                        }
+                    }
+
                     // Hedef alanının değerini al
                     $fieldValObj = $row->values->firstWhere('form_field_id', $targetFieldId);
                     if ($fieldValObj && is_numeric($fieldValObj->value)) {
                         $numVal = floatval($fieldValObj->value);
-                        $monthlyActuals[$month] += $numVal;
+                        if ($rowMonth >= 1 && $rowMonth <= 12) {
+                            $monthlyActuals[$rowMonth] += $numVal;
+                        }
                         $yearlyTotal += $numVal;
                     }
                 }

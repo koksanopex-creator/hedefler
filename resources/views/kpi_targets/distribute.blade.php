@@ -76,9 +76,20 @@
                         <p class="text-xs text-gray-500 mt-0.5">Her ay için beklenen hedef miktarını giriniz</p>
                     </div>
 
-                    <button type="button" @click="distributeEvenlyLocal()" class="text-xs font-bold text-indigo-600 hover:text-indigo-800 hover:underline">
-                        Değerleri Eşit Dağıt
-                    </button>
+                    <div class="flex items-center gap-2">
+                        <button type="button" @click="distributeRandomlyLocal()" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-lg transition shadow-2xs cursor-pointer">
+                            <svg class="w-3.5 h-3.5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path>
+                            </svg>
+                            <span>🎲 Rastgele Dağıt</span>
+                        </button>
+                        <button type="button" @click="distributeEvenlyLocal()" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-lg transition shadow-2xs cursor-pointer">
+                            <svg class="w-3.5 h-3.5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                            </svg>
+                            <span>⚖️ Değerleri Eşit Dağıt</span>
+                        </button>
+                    </div>
                 </div>
 
                 @php
@@ -106,10 +117,15 @@
                             </div>
 
                             <div class="relative">
-                                <input type="number" step="0.01" min="0"
+                                <input type="hidden"
                                     name="months[{{ $m }}]"
-                                    x-model.number="months[{{ $m }}]"
-                                    @input="calculateSum()"
+                                    :value="months[{{ $m }}]">
+                                <input type="text"
+                                    inputmode="decimal"
+                                    :value="displayMonths[{{ $m }}]"
+                                    @input="handleMonthInput($event, {{ $m }})"
+                                    @keydown="handleMonthKeydown($event, {{ $m }})"
+                                    @blur="handleMonthBlur($event, {{ $m }})"
                                     class="w-full text-sm font-bold rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 pr-12 text-right bg-white">
                                 <span class="absolute right-3 top-2.5 text-xs text-gray-400 font-semibold pointer-events-none">
                                     {{ $kpiTarget->unit }}
@@ -145,11 +161,92 @@
                     {{ $m }}: {{ floatval($periods[$m]->period_target_value ?? 0) }},
                 @endfor
             },
+            displayMonths: {},
             currentSum: 0,
             difference: 0,
             isMatched: false,
             init() {
+                for (let i = 1; i <= 12; i++) {
+                    this.displayMonths[i] = this.formatDisplay(this.months[i]);
+                }
                 this.calculateSum();
+            },
+            formatDisplay(val) {
+                if (val === null || val === undefined || val === '' || isNaN(val)) return '0';
+                let num = parseFloat(val);
+                if (num === 0) return '0';
+                return new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(num);
+            },
+            handleMonthKeydown(e, m) {
+                if (e.key === '.' && !e.target.value.includes(',')) {
+                    e.preventDefault();
+                    let start = e.target.selectionStart;
+                    let end = e.target.selectionEnd;
+                    let currentVal = e.target.value;
+                    e.target.value = currentVal.substring(0, start) + ',' + currentVal.substring(end);
+                    e.target.setSelectionRange(start + 1, start + 1);
+                    this.handleMonthInput(e, m);
+                }
+            },
+            handleMonthInput(e, m) {
+                let input = e.target;
+                let val = input.value;
+                let cursor = input.selectionStart;
+
+                let digitsBeforeCursor = val.slice(0, cursor).replace(/\D/g, '').length;
+                let hadCommaBefore = val.slice(0, cursor).includes(',');
+
+                let cleaned = val.replace(/[^0-9,]/g, '');
+                let parts = cleaned.split(',');
+                if (parts.length > 2) {
+                    parts = [parts[0], parts.slice(1).join('')];
+                }
+
+                let intPart = parts[0].replace(/\D/g, '');
+                let formattedInt = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+                let hasComma = parts.length > 1;
+                let decPart = hasComma ? ',' + parts[1].replace(/\D/g, '').slice(0, 2) : '';
+
+                let display = formattedInt + decPart;
+                this.displayMonths[m] = display;
+                input.value = display;
+
+                let raw = 0;
+                if (intPart) {
+                    raw = parseFloat(hasComma && parts[1] !== '' ? intPart + '.' + parts[1].replace(/\D/g, '').slice(0, 2) : intPart);
+                }
+                this.months[m] = isNaN(raw) ? 0 : raw;
+                this.calculateSum();
+
+                this.$nextTick(() => {
+                    let newPos = 0;
+                    let digitsSeen = 0;
+                    for (let i = 0; i < display.length; i++) {
+                        if (display[i] === ',') {
+                            if (hadCommaBefore) {
+                                newPos = i + 1;
+                                break;
+                            }
+                        }
+                        if (/\d/.test(display[i])) {
+                            digitsSeen++;
+                        }
+                        if (digitsSeen === digitsBeforeCursor) {
+                            newPos = i + 1;
+                            break;
+                        }
+                    }
+                    if (newPos === 0 && display.length > 0) {
+                        newPos = display.length;
+                    }
+                    input.setSelectionRange(newPos, newPos);
+                });
+            },
+            handleMonthBlur(e, m) {
+                if (String(this.displayMonths[m] || '').endsWith(',')) {
+                    this.displayMonths[m] = this.displayMonths[m].slice(0, -1);
+                    e.target.value = this.displayMonths[m];
+                }
             },
             calculateSum() {
                 let sum = 0;
@@ -166,10 +263,60 @@
                 return Math.round((val / this.targetTotal) * 1000) / 10;
             },
             distributeEvenlyLocal() {
-                const perMonth = Math.round((this.targetTotal / 12) * 100) / 100;
-                for (let i = 1; i <= 12; i++) {
+                if (this.targetTotal <= 0) return;
+                const perMonth = Math.floor((this.targetTotal / 12) * 100) / 100;
+                let running = 0;
+                for (let i = 1; i <= 11; i++) {
                     this.months[i] = perMonth;
+                    this.displayMonths[i] = this.formatDisplay(perMonth);
+                    running += perMonth;
                 }
+                const remainder = Math.round((this.targetTotal - running) * 100) / 100;
+                this.months[12] = remainder;
+                this.displayMonths[12] = this.formatDisplay(remainder);
+                this.calculateSum();
+            },
+            distributeRandomlyLocal() {
+                if (this.targetTotal <= 0) return;
+
+                // Hedef büyüklüğüne göre yuvarlama adımı (büyük rakamlar için temiz binlik yuvarlama)
+                let step = 0.01;
+                if (this.targetTotal >= 1000000) step = 1000;
+                else if (this.targetTotal >= 100000) step = 500;
+                else if (this.targetTotal >= 10000) step = 100;
+                else if (this.targetTotal >= 1000) step = 10;
+                else if (this.targetTotal >= 100) step = 1;
+
+                let weights = [];
+                let sumWeights = 0;
+                for (let i = 0; i < 12; i++) {
+                    // Doğal aylık dalgalanma (0.70 ile 1.30 arası rastgele katsayı)
+                    let w = 0.70 + Math.random() * 0.60;
+                    weights.push(w);
+                    sumWeights += w;
+                }
+
+                let runningSum = 0;
+                for (let i = 1; i <= 11; i++) {
+                    let rawVal = (weights[i - 1] / sumWeights) * this.targetTotal;
+                    let rounded = Math.round(rawVal / step) * step;
+                    if (step < 1) rounded = Math.round(rounded * 100) / 100;
+                    this.months[i] = rounded;
+                    this.displayMonths[i] = this.formatDisplay(rounded);
+                    runningSum += rounded;
+                }
+
+                // 12. ay kalan farkı kapatır ve toplamın yıllık hedefe %100 tam oturmasını sağlar
+                let remainder = Math.round((this.targetTotal - runningSum) * 100) / 100;
+                if (remainder <= 0) {
+                    let diff = Math.abs(remainder) + (step >= 1 ? step : 1);
+                    this.months[11] = Math.round((this.months[11] - diff) * 100) / 100;
+                    this.displayMonths[11] = this.formatDisplay(this.months[11]);
+                    remainder += diff;
+                }
+                this.months[12] = remainder;
+                this.displayMonths[12] = this.formatDisplay(remainder);
+
                 this.calculateSum();
             },
             formatNumber(num) {

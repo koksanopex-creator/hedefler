@@ -111,4 +111,14 @@ class FormEntryM extends Model
         }
         return $this->revisionRequests()->where('status', 'pending')->exists();
     }
+
+    public function versions()
+    {
+        return $this->hasMany(FormEntryVersionM::class, 'form_entry_id')->orderBy('version_number', 'desc');
+    }
+
+    public function latestVersion()
+    {
+        return $this->hasOne(FormEntryVersionM::class, 'form_entry_id')->latestOfMany('version_number');
+    }
 }
