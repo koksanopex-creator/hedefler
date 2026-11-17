@@ -46,19 +46,28 @@ class FormEntryC extends Controller
 
         $scope = $request->get('scope', 'all');
 
+        // Alt parçalar (bir konsolide forma bağlanmış olanlar) ana listede müstakil satır olarak değil,
+        // ana konsolide formun altında hiyerarşik alt bileşen olarak gösterilir.
+        $rootQuery = (clone $baseQuery)->whereNull('parent_id');
+
+        // Status sayaçları:
+        // Eğer kapsam 'partitions' ise tüm parçalı kayıtlar baz alınır,
+        // Diğer durumlarda (tümü veya konsolide) ana/bağımsız formlar baz alınarak mükerrer alt taslak kirliliği önlenir.
+        $countQuery = $scope === 'partitions' ? (clone $baseQuery)->whereNotNull('partition_value') : (clone $rootQuery);
+
         $statusCounts = [
-            'all' => (clone $baseQuery)->count(),
-            'submitted' => (clone $baseQuery)->where('status', 'submitted')->count(),
-            'approved' => (clone $baseQuery)->where('status', 'approved')
+            'all' => (clone $countQuery)->count(),
+            'submitted' => (clone $countQuery)->where('status', 'submitted')->count(),
+            'approved' => (clone $countQuery)->where('status', 'approved')
                 ->whereDoesntHave('revisionRequests', fn($q) => $q->where('status', 'pending'))
                 ->count(),
-            'draft' => (clone $baseQuery)->where('status', 'draft')->count(),
-            'rejected' => (clone $baseQuery)->where('status', 'rejected')->count(),
-            'revision_pending' => (clone $baseQuery)->whereHas('revisionRequests', fn($q) => $q->where('status', 'pending'))->count(),
+            'draft' => (clone $countQuery)->where('status', 'draft')->count(),
+            'rejected' => (clone $countQuery)->where('status', 'rejected')->count(),
+            'revision_pending' => (clone $countQuery)->whereHas('revisionRequests', fn($q) => $q->where('status', 'pending'))->count(),
         ];
 
         $scopeCounts = [
-            'all' => (clone $baseQuery)->count(),
+            'all' => (clone $rootQuery)->count(),
             'consolidated' => (clone $baseQuery)->where('is_consolidated', true)->count(),
             'partitions' => (clone $baseQuery)->whereNotNull('partition_value')->count(),
         ];
@@ -69,6 +78,9 @@ class FormEntryC extends Controller
             $query->where('is_consolidated', true);
         } elseif ($scope === 'partitions') {
             $query->whereNotNull('partition_value');
+        } else {
+            // 'all' görünümünde sadece kök formları getir (alt parçalar ana formun altında açılır/kapanır gösterilir)
+            $query->whereNull('parent_id');
         }
 
         if ($request->filled('status')) {
@@ -86,7 +98,7 @@ class FormEntryC extends Controller
             $query->whereDate('entry_date', today());
         }
 
-        $entries = $query->with(['template', 'user.group', 'revisionRequests', 'approver', 'children', 'parent', 'partitionField', 'versions'])
+        $entries = $query->with(['template', 'user.group', 'revisionRequests', 'approver', 'children.template', 'children.rows', 'children.versions', 'children.approver', 'children.user', 'parent', 'partitionField', 'versions'])
             ->orderBy('updated_at', 'desc')
             ->orderBy('id', 'desc')
             ->paginate(20)
@@ -350,6 +362,7 @@ class FormEntryC extends Controller
         }
 
         $formEntry->load(['template.fields', 'rows.values', 'user.group', 'revisionRequests.reviewer', 'revisionRequests.user', 'approver', 'versions.user']);
+        $formEntry->load(['template.fields', 'rows.values', 'user.group', 'revisionRequests.reviewer', 'revisionRequests.user', 'approver', 'versions.user', 'children.rows', 'parent']);
 
         // Onay Yetkisi & Grup İzolasyonu Kontrolü
         $hasGlobalApprove = $this->permissionService->hasPermission($user, 'form_entries.approve');
@@ -383,6 +396,11 @@ class FormEntryC extends Controller
         // Onaya Gönderme ve Geri Çekme Yetkileri (Form sahibi veya Superadmin)
         $canSubmitApproval = ($isSelf || $isSuperAdmin) && $formEntry->status === 'draft';
         $canWithdraw = ($isSelf || $isSuperAdmin) && in_array($formEntry->status, ['draft', 'submitted']);
+
+        // Konsolide form parçalarını toplu onaya gönderme yetkisi (Ana form zaten taslaksa ana form onaya gönderilirken tüm parçaları da gönderir; o yüzden sadece ana form submitted/approved iken taslak kalan parçalar için geçerlidir)
+        $draftChildren = $formEntry->is_consolidated ? $formEntry->children->where('status', 'draft') : collect();
+        $draftChildrenCount = $draftChildren->count();
+        $canSubmitChildrenApproval = ($isSelf || $isSuperAdmin) && $formEntry->is_consolidated && $draftChildrenCount > 0 && $formEntry->status !== 'draft';
 
         if ($canViewLogs || $canViewHistory) {
             $baseLogsQuery = \App\Models\ActivityLogM::where('model_type', FormEntryM::class)
@@ -420,7 +438,10 @@ class FormEntryC extends Controller
             'isSuperAdmin',
             'isSelf',
             'canSubmitApproval',
-            'canWithdraw'
+            'canWithdraw',
+            'draftChildren',
+            'draftChildrenCount',
+            'canSubmitChildrenApproval'
         ));
     }
 
@@ -916,6 +937,21 @@ class FormEntryC extends Controller
         $formEntry->submitted_at = now();
         $formEntry->save();
 
+        if ($formEntry->is_consolidated) {
+            foreach ($formEntry->children->where('status', 'draft') as $child) {
+                $child->status = 'submitted';
+                $child->submitted_at = now();
+                $child->save();
+
+                $pName = $child->partition_value ?: "#{$child->id}";
+                $this->activityLogService->log(
+                    'form_entry.submit',
+                    "Konsolide ana form (#{$formEntry->id}) onaya gönderildiği için [{$pName}] parçası (#{$child->id}) da onaya gönderildi.",
+                    $child
+                );
+            }
+        }
+
         $formEntry->loadMissing(['template', 'user']);
         $tName = $formEntry->template?->name ?? 'Dinamik Form';
         $eDate = $formEntry->entry_date ? $formEntry->entry_date->format('d.m.Y') : '-';
@@ -931,6 +967,68 @@ class FormEntryC extends Controller
         \App\Services\NotificationS::dispatch('form.submitted', $vars, $formEntry->user, route('form-entries.show', $formEntry));
 
         return redirect()->route('form-entries.show', $formEntry)->with('success', 'Form başarıyla onaya gönderildi.');
+    }
+
+    /**
+     * Konsolide ana forma bağlı olan taslak durumundaki parçaları doğrudan bu ekrandan onaya gönderir.
+     */
+    public function submitChildrenApproval(Request $request, FormEntryM $formEntry)
+    {
+        $user = $request->user();
+        $isSuperAdmin = ($user->role && $user->role->slug === 'sistem_yoneticisi') || $this->permissionService->hasPermission($user, 'roles.manage') || $user->id === 1;
+
+        if ($formEntry->user_id !== $user->id && !$isSuperAdmin) {
+            abort(403, 'Bu formun parçalarını sadece formu oluşturan kullanıcı veya Sistem Yöneticisi onaya gönderebilir.');
+        }
+
+        if (!$formEntry->is_consolidated) {
+            return back()->with('error', 'Bu form konsolide bir ana form değildir.');
+        }
+
+        $formEntry->loadMissing(['children.template.fields', 'children.rows.values', 'children.user']);
+
+        // Eğer tek bir child_id parametresi gönderilmişse sadece o parçayı, gönderilmemişse tüm taslak parçaları filtrele
+        $targetChildren = $formEntry->children->where('status', 'draft');
+        if ($request->filled('child_id')) {
+            $targetChildren = $targetChildren->where('id', (int) $request->input('child_id'));
+        }
+
+        if ($targetChildren->isEmpty()) {
+            return back()->with('info', 'Onaya gönderilecek taslak durumda bir form parçası bulunamadı.');
+        }
+
+        $submittedCount = 0;
+        $submittedNames = [];
+
+        foreach ($targetChildren as $child) {
+            $child->status = 'submitted';
+            $child->submitted_at = now();
+            $child->save();
+
+            $pName = $child->partition_value ?: "#{$child->id}";
+            $submittedNames[] = $pName;
+            $submittedCount++;
+
+            $this->activityLogService->log(
+                'form_entry.submit',
+                "Konsolide ana form (#{$formEntry->id}) detay sayfasından [{$pName}] parçası (#{$child->id}) doğrudan onaya gönderildi.",
+                $child
+            );
+
+            $vars = $this->getFormNotificationVariables($child);
+            \App\Services\NotificationS::dispatch('form.submitted', $vars, $child->user, route('form-entries.show', $child));
+        }
+
+        // Ana formun durumu da draft ise onu da submitted yap
+        if ($formEntry->status === 'draft') {
+            $formEntry->status = 'submitted';
+            $formEntry->submitted_at = now();
+            $formEntry->save();
+        }
+
+        $namesList = implode(', ', $submittedNames);
+        return redirect()->route('form-entries.show', $formEntry)
+            ->with('success', "Başarıyla {$submittedCount} adet taslak parça ({$namesList}) onaya gönderildi.");
     }
 
     /**
@@ -957,6 +1055,22 @@ class FormEntryC extends Controller
             $formEntry->submitted_at = null;
             $formEntry->save();
 
+            if ($formEntry->is_consolidated) {
+                foreach ($formEntry->children as $child) {
+                    if ($child->status === 'submitted') {
+                        $child->status = 'draft';
+                        $child->submitted_at = null;
+                        $child->save();
+
+                        $this->activityLogService->log(
+                            'form_entry.withdrawn',
+                            "Konsolide ana form (#{$formEntry->id}) geri çekildiği için [{$child->partition_value}] parçası (#{$child->id}) da taslağa alındı.",
+                            $child
+                        );
+                    }
+                }
+            }
+
             $this->activityLogService->log(
                 'form_entry.withdrawn',
                 "Form onay sürecinden geri çekildi ve tekrar taslak durumuna alındı. Form: [{$tName}] (Giriş Tarihi: {$eDate}, Sahibi: {$oName}, Form ID: #{$entryId})",
@@ -966,22 +1080,26 @@ class FormEntryC extends Controller
             return redirect()->route('form-entries.show', $formEntry)->with('success', 'Form onay sürecinden başarıyla geri çekildi ve taslak durumuna alındı. Dilediğiniz gibi düzenleyebilirsiniz.');
         }
 
-        // 2. Durum: Form taslak durumundaysa (draft) -> Taslağı geri çeker (siler)
+        // 2. Durum: Form taslak durumundaysa (draft) -> Taslağı siler
         if ($formEntry->status === 'draft') {
             $formEntryName = $tName;
+            if ($formEntry->is_consolidated) {
+                // Parçaların parent_id bağlantısını sıfırla ki alt parçalar bağımsız taslak olarak kalsın
+                $formEntry->children()->update(['parent_id' => null]);
+            }
             $formEntry->rows()->delete();
             $formEntry->delete();
 
             $this->activityLogService->log(
                 'form_entry.draft_deleted',
-                "Taslak form sistemden geri çekildi (silindi). Form: [{$formEntryName}] (Giriş Tarihi: {$eDate}, Sahibi: {$oName}, Kayıt ID: #{$entryId})",
+                "Taslak form silindi. Form: [{$formEntryName}] (Giriş Tarihi: {$eDate}, Sahibi: {$oName}, Kayıt ID: #{$entryId})",
                 null
             );
 
-            return redirect()->route('form-entries.index')->with('success', 'Taslak form başarıyla sistemden geri çekildi.');
+            return redirect()->route('form-entries.index')->with('success', 'Taslak form başarıyla silindi.');
         }
 
-        return back()->with('error', 'Sadece taslak veya onay bekleyen formlar geri çekilebilir.');
+        return back()->with('error', 'Sadece taslak veya onay bekleyen formlar bu işlemi yapabilir.');
     }
 
     /**
@@ -1290,9 +1408,10 @@ class FormEntryC extends Controller
         return $this->formExportService->exportToExcel($formEntry, $filters);
     }
 
-    public function downloadEmptyTemplate(FormTemplateM $formTemplate)
+    public function downloadEmptyTemplate(Request $request, FormTemplateM $formTemplate)
     {
-        return $this->formExportService->exportEmptyTemplate($formTemplate);
+        $partitionValue = $request->query('partition_value');
+        return $this->formExportService->exportEmptyTemplate($formTemplate, $partitionValue);
     }
 
     public function importExcel(Request $request, FormTemplateM $formTemplate)

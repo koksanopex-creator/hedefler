@@ -133,6 +133,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('form-entries/revision-requests/{revisionRequest}/review', [FormEntryC::class, 'reviewRevision'])->name('form-entries.revision-requests.review');
     Route::post('form-entries/revision-requests/{revisionRequest}/dismiss', [FormEntryC::class, 'dismissRevisionRejection'])->name('form-entries.revision-requests.dismiss');
     Route::post('form-entries/{formEntry}/submit-approval', [FormEntryC::class, 'submitApproval'])->name('form-entries.submit-approval');
+    Route::post('form-entries/{formEntry}/submit-children-approval', [FormEntryC::class, 'submitChildrenApproval'])->name('form-entries.submit-children-approval');
     Route::post('form-entries/{formEntry}/withdraw', [FormEntryC::class, 'withdraw'])->name('form-entries.withdraw');
     Route::get('form-entries/{formEntry}/export', [FormEntryC::class, 'export'])->name('form-entries.export');
     Route::post('user-preferences/pinned-columns', [FormEntryC::class, 'savePinnedColumns'])->name('user-preferences.pinned-columns');

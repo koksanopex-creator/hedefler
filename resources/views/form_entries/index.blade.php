@@ -1,6 +1,20 @@
 @section('title', 'Veri Girişleri (Formlar)')
 <x-app-layout>
-    <div x-data="{ openConsolidateModal: false, selectedEntries: [], selectedDeleteIds: [], openBulkDeleteModal: false, isDeletingBulk: false }" @open-consolidate-modal.window="openConsolidateModal = true">
+    <div x-data="{ 
+        openConsolidateModal: false, 
+        selectedEntries: [], 
+        selectedDeleteIds: [], 
+        openBulkDeleteModal: false, 
+        isDeletingBulk: false,
+        expandedConsolidatedIds: [],
+        toggleExpanded(id) {
+            if (this.expandedConsolidatedIds.includes(id)) {
+                this.expandedConsolidatedIds = this.expandedConsolidatedIds.filter(x => x !== id);
+            } else {
+                this.expandedConsolidatedIds.push(id);
+            }
+        }
+    }" @open-consolidate-modal.window="openConsolidateModal = true">
         <x-slot name="header">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
@@ -337,6 +351,19 @@
                                                     <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-gradient-to-r from-purple-700 to-indigo-700 text-white shadow-2xs whitespace-nowrap">
                                                         🌟 Konsolide ({{ $entry->children->count() }} Parça)
                                                     </span>
+                                                    @if($entry->children->count() > 0)
+                                                        <button type="button" @click.stop="toggleExpanded({{ $entry->id }})"
+                                                            class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold transition-all shadow-2xs cursor-pointer border"
+                                                            :class="expandedConsolidatedIds.includes({{ $entry->id }}) 
+                                                                ? 'bg-purple-100 text-purple-900 border-purple-300 ring-1 ring-purple-300' 
+                                                                : 'bg-white text-slate-700 hover:bg-slate-50 border-slate-300'"
+                                                            title="Bu konsolide formun altındaki parçaları göster / gizle">
+                                                            <svg class="w-3 h-3 transition-transform duration-200" :class="expandedConsolidatedIds.includes({{ $entry->id }}) ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                                            </svg>
+                                                            <span x-text="expandedConsolidatedIds.includes({{ $entry->id }}) ? 'Alt Parçaları Gizle' : 'Alt Parçaları Göster ({{ $entry->children->count() }})'"></span>
+                                                        </button>
+                                                    @endif
                                                 @elseif($entry->partition_value)
                                                     <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-amber-100 text-amber-800 border border-amber-300 whitespace-nowrap">
                                                         ⚡ {{ $entry->partition_value }}
@@ -530,6 +557,99 @@
                                         </div>
                                     </td>
                                 </tr>
+
+                                {{-- Konsolide Forma Bağlı Alt Parçalar (Hiyerarşik / Alt Kategori Görünümü) --}}
+                                @if($entry->is_consolidated && $entry->children && $entry->children->count() > 0)
+                                    @foreach($entry->children as $child)
+                                        <tr x-show="expandedConsolidatedIds.includes({{ $entry->id }})" x-cloak
+                                            x-transition:enter="transition ease-out duration-150"
+                                            x-transition:enter-start="opacity-0 -translate-y-1"
+                                            x-transition:enter-end="opacity-100 translate-y-0"
+                                            class="bg-slate-50/90 hover:bg-indigo-50/40 border-l-4 border-indigo-400 transition-colors">
+                                            @if(!empty($canDelete) && $canDelete)
+                                                <td class="w-10 px-3 py-2 text-center text-slate-300 select-none">
+                                                    <span class="text-xs text-indigo-400 font-black">↳</span>
+                                                </td>
+                                            @endif
+                                            <td class="px-3.5 py-2.5 whitespace-nowrap">
+                                                <div class="flex items-center text-[11px] text-slate-600 font-semibold pl-2">
+                                                    <span class="font-mono">{{ $child->entry_date->format('d M Y') }}</span>
+                                                    <span class="text-slate-400 ml-1.5 font-mono text-[10px]">{{ $child->updated_at ? $child->updated_at->format('H:i:s') : '-' }}</span>
+                                                </div>
+                                            </td>
+                                            <td class="px-3.5 py-2.5">
+                                                <div class="text-[11px] font-bold text-slate-700 truncate max-w-[130px]" title="{{ $child->user->name ?? $entry->user->name }}">
+                                                    {{ $child->user->name ?? $entry->user->name }}
+                                                </div>
+                                            </td>
+                                            <td class="px-3.5 py-2.5">
+                                                <div class="flex items-center gap-1.5 flex-wrap">
+                                                    <span class="text-indigo-500 font-black text-xs">↳</span>
+                                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-extrabold bg-amber-100 text-amber-900 border border-amber-300 shadow-2xs">
+                                                        ⚡ {{ $child->partition_value ?: ('Parça #' . $child->id) }}
+                                                    </span>
+                                                    <span class="text-[10px] font-bold text-slate-500 bg-slate-200/80 px-1.5 py-0.2 rounded">
+                                                        Bağlı Alt Parça
+                                                    </span>
+                                                    <span class="text-[11px] text-slate-500 font-medium">
+                                                        ({{ $child->rows->count() }} Satır)
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td class="px-3.5 py-2.5 whitespace-nowrap">
+                                                @if($child->status === 'draft')
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gray-100 text-gray-700 border border-gray-200">
+                                                        <span class="w-1.5 h-1.5 bg-gray-400 rounded-full mr-1"></span>
+                                                        Taslak
+                                                    </span>
+                                                @elseif($child->status === 'submitted')
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                                                        <span class="w-1.5 h-1.5 bg-blue-500 rounded-full mr-1 animate-pulse"></span>
+                                                        Onay Bekliyor
+                                                    </span>
+                                                @elseif($child->status === 'approved')
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                                        <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-1"></span>
+                                                        Onaylandı
+                                                    </span>
+                                                @elseif($child->status === 'rejected')
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-red-50 text-red-700 border border-red-200">
+                                                        <span class="w-1.5 h-1.5 bg-red-500 rounded-full mr-1"></span>
+                                                        Reddedildi
+                                                    </span>
+                                                @endif
+                                            </td>
+                                            @if(isset($canViewApprover) && $canViewApprover)
+                                                <td class="px-3.5 py-2.5 whitespace-nowrap text-[11px] text-gray-400">
+                                                    {{ $child->approver?->name ?? '-' }}
+                                                </td>
+                                            @endif
+                                            <td class="px-3.5 py-2.5 whitespace-nowrap text-right text-xs">
+                                                <div class="inline-flex items-center justify-end gap-1.5">
+                                                    @if($child->status === 'draft' && (!empty($isSuperAdmin) || Auth::id() === $child->user_id || Auth::id() === 1))
+                                                        <form action="{{ route('form-entries.submit-children-approval', $entry) }}" method="POST" class="inline"
+                                                            onsubmit="return confirm('{{ $child->partition_value ?: ('Parça #' . $child->id) }} parçasını onaya göndermek istediğinize emin misiniz?');">
+                                                            @csrf
+                                                            <input type="hidden" name="child_id" value="{{ $child->id }}">
+                                                            <button type="submit"
+                                                                class="inline-flex items-center gap-1 px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[10px] font-bold shadow-2xs transition cursor-pointer"
+                                                                title="Bu alt parçayı doğrudan onaya gönder">
+                                                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                                                                </svg>
+                                                                <span>Onaya Gönder</span>
+                                                            </button>
+                                                        </form>
+                                                    @endif
+                                                    <a href="{{ route('form-entries.show', $child) }}" 
+                                                       class="inline-flex items-center px-2 py-1 bg-white border border-gray-200 rounded-lg text-[11px] font-bold text-indigo-600 hover:text-indigo-900 hover:bg-indigo-50 transition-all shadow-2xs">
+                                                        İncele &rarr;
+                                                    </a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                @endif
                             @empty
                                 <tr>
                                     <td colspan="{{ (!empty($canDelete) && $canDelete ? 1 : 0) + ((isset($canViewApprover) && $canViewApprover) ? 6 : 5) }}" class="px-4 py-12 whitespace-nowrap text-center">

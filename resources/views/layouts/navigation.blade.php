@@ -9,6 +9,7 @@
                         @if(file_exists(public_path('storage/logo.png')))
                             <img src="{{ asset('storage/logo.png') }}?v={{ time() }}"
                                 class="block h-12 w-auto object-contain transition-transform duration-200 group-hover:scale-105"
+                                style="max-height: 48px; width: auto;"
                                 alt="Logo" />
                         @else
                             <div

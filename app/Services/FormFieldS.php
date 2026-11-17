@@ -36,6 +36,8 @@ class FormFieldS
                     'is_calculated' => $fieldData['is_calculated'] ?? false,
                     'condition_field_id' => $fieldData['condition_field_id'] ?? null,
                     'condition_value' => isset($fieldData['condition_value']) ? (is_array($fieldData['condition_value']) ? implode(',', $fieldData['condition_value']) : $fieldData['condition_value']) : null,
+                    'is_disabled_on_condition' => $fieldData['is_disabled_on_condition'] ?? false,
+                    'disabled_condition_value' => isset($fieldData['disabled_condition_value']) ? (is_array($fieldData['disabled_condition_value']) ? implode(',', $fieldData['disabled_condition_value']) : $fieldData['disabled_condition_value']) : null,
                     'calculation_formula' => $fieldData['calculation_formula'] ?? null,
                     'calc_condition_field_id' => $fieldData['calc_condition_field_id'] ?? null,
                     'calc_condition_value' => isset($fieldData['calc_condition_value']) ? (is_array($fieldData['calc_condition_value']) ? implode(',', $fieldData['calc_condition_value']) : $fieldData['calc_condition_value']) : null,

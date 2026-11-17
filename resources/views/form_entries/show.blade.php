@@ -40,32 +40,39 @@
                     @endif
                 </div>
 
-                @if(!empty($canSubmitApproval) && $canSubmitApproval)
-                    <button type="button"
-                        onclick="if(this.dataset.clicked) return; this.dataset.clicked = 'true'; window.dispatchEvent(new CustomEvent('open-submit-approval-modal')); setTimeout(() => { delete this.dataset.clicked; }, 600);"
-                        @click="$dispatch('open-submit-approval-modal')"
-                        class="inline-flex items-center px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold rounded-lg shadow-sm transition gap-1.5 cursor-pointer"
-                        title="Taslağı Onaya Gönder">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
-                        </svg>
-                        Onaya Gönder
-                    </button>
-                @endif
+                @if(!$formEntry->is_consolidated)
+                    @if(!empty($canSubmitApproval) && $canSubmitApproval)
+                        <button type="button"
+                            onclick="if(this.dataset.clicked) return; this.dataset.clicked = 'true'; window.dispatchEvent(new CustomEvent('open-submit-approval-modal')); setTimeout(() => { delete this.dataset.clicked; }, 600);"
+                            @click="$dispatch('open-submit-approval-modal')"
+                            class="inline-flex items-center px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold rounded-lg shadow-sm transition gap-1.5 cursor-pointer"
+                            title="Taslağı Onaya Gönder">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                            </svg>
+                            Onaya Gönder
+                        </button>
+                    @endif
 
-                @if(!empty($canWithdraw) && $canWithdraw)
-                    <button type="button"
-                        onclick="if(this.dataset.clicked) return; this.dataset.clicked = 'true'; window.dispatchEvent(new CustomEvent('open-withdraw-modal')); setTimeout(() => { delete this.dataset.clicked; }, 600);"
-                        @click="$dispatch('open-withdraw-modal')"
-                        class="inline-flex items-center px-3.5 py-2 {{ $formEntry->status === 'submitted' ? 'bg-amber-600 hover:bg-amber-700' : 'bg-rose-600 hover:bg-rose-700' }} active:scale-95 text-white text-xs font-bold rounded-lg shadow-sm transition gap-1.5 cursor-pointer"
-                        title="{{ $formEntry->status === 'submitted' ? 'Formu Onay Sürecinden Geri Çek (Taslağa Al)' : 'Taslağı Sistemden Geri Çek (Sil)' }}">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path>
-                        </svg>
-                        Geri Çek
-                    </button>
+                    @if(!empty($canWithdraw) && $canWithdraw)
+                        <button type="button"
+                            onclick="if(this.dataset.clicked) return; this.dataset.clicked = 'true'; window.dispatchEvent(new CustomEvent('open-withdraw-modal')); setTimeout(() => { delete this.dataset.clicked; }, 600);"
+                            @click="$dispatch('open-withdraw-modal')"
+                            class="inline-flex items-center px-3.5 py-2 {{ $formEntry->status === 'submitted' ? 'bg-amber-600 hover:bg-amber-700' : 'bg-rose-600 hover:bg-rose-700' }} active:scale-95 text-white text-xs font-bold rounded-lg shadow-sm transition gap-1.5 cursor-pointer"
+                            title="{{ $formEntry->status === 'submitted' ? 'Formu Onay Sürecinden Geri Çek (Taslağa Al)' : 'Taslağı Kalıcı Olarak Sil' }}">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                @if($formEntry->status === 'submitted')
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path>
+                                @else
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                @endif
+                            </svg>
+                            {{ $formEntry->status === 'submitted' ? 'Geri Çek' : 'Taslağı Sil' }}
+                        </button>
+                    @endif
                 @endif
 
                 @if(!empty($pendingRevision))
@@ -152,96 +159,99 @@
                             </p>
                         </div>
 
-                        @if((Auth::id() === $formEntry->user_id || Auth::user()->id === 1 || (Auth::user()->role && Auth::user()->role->slug === 'sistem_yoneticisi')) && (Auth::user()->id === 1 || (Auth::user()->role && Auth::user()->role->slug === 'sistem_yoneticisi') || app(\App\Services\PermissionS::class)->hasPermission(Auth::user(), 'form_entries.consolidate')))
-                            <div x-data="{ openDissolve: false }" class="inline-block text-left shrink-0">
-                                <button type="button" @click="openDissolve = true"
-                                    class="px-3.5 py-2 bg-white/10 hover:bg-rose-600 border border-white/20 text-white text-xs font-bold rounded-xl transition shadow-xs flex items-center gap-1.5 cursor-pointer">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                                    </svg>
-                                    <span>Konsolidasyonu Dağıt</span>
-                                </button>
+                        <div class="flex items-center gap-2 shrink-0 flex-wrap">
 
-                                <!-- Dağıtma Onay Modalı -->
-                                <div x-show="openDissolve" style="display: none;"
-                                    class="fixed inset-0 z-50 overflow-y-auto whitespace-normal"
-                                    aria-labelledby="dissolve-modal-show-title" role="dialog" aria-modal="true">
-                                    <div
-                                        class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-                                        <div x-show="openDissolve" @click="openDissolve = false" x-transition.opacity
-                                            class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity"
-                                            aria-hidden="true"></div>
-                                        <span class="hidden sm:inline-block sm:align-middle sm:h-screen"
-                                            aria-hidden="true">&#8203;</span>
-                                        <div x-show="openDissolve" x-transition
-                                            class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full border border-slate-100 whitespace-normal">
-                                            <div class="bg-white px-5 pt-6 pb-5 sm:p-6 sm:pb-5">
-                                                <div class="sm:flex sm:items-start gap-4">
-                                                    <div
-                                                        class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-2xl bg-amber-100 text-amber-700 sm:mx-0">
-                                                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24"
-                                                            stroke="currentColor">
-                                                            <path stroke-linecap="round" stroke-linejoin="round"
-                                                                stroke-width="2"
-                                                                d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                                                        </svg>
-                                                    </div>
-                                                    <div
-                                                        class="mt-3 text-center sm:mt-0 sm:text-left flex-1 min-w-0 whitespace-normal">
-                                                        <h3 class="text-lg font-black text-slate-900"
-                                                            id="dissolve-modal-show-title">Konsolidasyonu Dağıt</h3>
-                                                        <div class="mt-2 space-y-2.5">
-                                                            <p class="text-sm text-slate-600 whitespace-normal break-words">
-                                                                Bu konsolide formu dağıtmak ve altındaki
-                                                                <strong>{{ $formEntry->children->count() }} bağımsız
-                                                                    parçayı</strong> tekrar ayrı ayrı listelenecek hale getirmek
-                                                                istediğinize emin misiniz?
-                                                            </p>
-                                                            <div
-                                                                class="p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-900 flex items-start gap-2.5 whitespace-normal break-words">
-                                                                <span class="shrink-0 text-base leading-none">💡</span>
-                                                                <span
-                                                                    class="flex-1 whitespace-normal break-words leading-relaxed">Parçaların
-                                                                    girilmiş hiçbir verisi kaybolmaz; sadece ana form bağlantısı
-                                                                    çözülerek parçalar tekrar bağımsız hale gelir.</span>
+                            @if((Auth::id() === $formEntry->user_id || Auth::user()->id === 1 || (Auth::user()->role && Auth::user()->role->slug === 'sistem_yoneticisi')) && (Auth::user()->id === 1 || (Auth::user()->role && Auth::user()->role->slug === 'sistem_yoneticisi') || app(\App\Services\PermissionS::class)->hasPermission(Auth::user(), 'form_entries.consolidate')))
+                                <div x-data="{ openDissolve: false }" class="inline-block text-left shrink-0">
+                                    <button type="button" @click="openDissolve = true"
+                                        class="px-3.5 py-2 bg-white/10 hover:bg-rose-600 border border-white/20 text-white text-xs font-bold rounded-xl transition shadow-xs flex items-center gap-1.5 cursor-pointer">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                                        </svg>
+                                        <span>Konsolidasyonu Dağıt</span>
+                                    </button>
+
+                                    <!-- Dağıtma Onay Modalı -->
+                                    <div x-show="openDissolve" style="display: none;"
+                                        class="fixed inset-0 z-50 overflow-y-auto whitespace-normal"
+                                        aria-labelledby="dissolve-modal-show-title" role="dialog" aria-modal="true">
+                                        <div
+                                            class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                                            <div x-show="openDissolve" @click="openDissolve = false" x-transition.opacity
+                                                class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity"
+                                                aria-hidden="true"></div>
+                                            <span class="hidden sm:inline-block sm:align-middle sm:h-screen"
+                                                aria-hidden="true">&#8203;</span>
+                                            <div x-show="openDissolve" x-transition
+                                                class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full border border-slate-100 whitespace-normal">
+                                                <div class="bg-white px-5 pt-6 pb-5 sm:p-6 sm:pb-5">
+                                                    <div class="sm:flex sm:items-start gap-4">
+                                                        <div
+                                                            class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-2xl bg-amber-100 text-amber-700 sm:mx-0">
+                                                            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                                                                stroke="currentColor">
+                                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                                    stroke-width="2"
+                                                                    d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                                                            </svg>
+                                                        </div>
+                                                        <div
+                                                            class="mt-3 text-center sm:mt-0 sm:text-left flex-1 min-w-0 whitespace-normal">
+                                                            <h3 class="text-lg font-black text-slate-900"
+                                                                id="dissolve-modal-show-title">Konsolidasyonu Dağıt</h3>
+                                                            <div class="mt-2 space-y-2.5">
+                                                                <p class="text-sm text-slate-600 whitespace-normal break-words">
+                                                                    Bu konsolide formu dağıtmak ve altındaki
+                                                                    <strong>{{ $formEntry->children->count() }} bağımsız
+                                                                        parçayı</strong> tekrar ayrı ayrı listelenecek hale getirmek
+                                                                    istediğinize emin misiniz?
+                                                                </p>
+                                                                <div
+                                                                    class="p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-900 flex items-start gap-2.5 whitespace-normal break-words">
+                                                                    <span class="shrink-0 text-base leading-none">💡</span>
+                                                                    <span
+                                                                        class="flex-1 whitespace-normal break-words leading-relaxed">Parçaların
+                                                                        girilmiş hiçbir verisi kaybolmaz; sadece ana form bağlantısı
+                                                                        çözülerek parçalar tekrar bağımsız hale gelir.</span>
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                            <div class="bg-slate-50 px-5 py-3.5 sm:px-6 sm:flex sm:flex-row-reverse gap-2 border-t border-slate-100"
-                                                x-data="{ dissolving: false }">
-                                                <form action="{{ route('form-entries.dissolve', $formEntry) }}" method="POST"
-                                                    @submit="if(dissolving) { $event.preventDefault(); return false; } dissolving = true;">
-                                                    @csrf
-                                                    <button type="submit" :disabled="dissolving"
-                                                        :class="dissolving ? 'opacity-70 cursor-not-allowed pointer-events-none' : ''"
-                                                        class="w-full inline-flex items-center justify-center rounded-xl border border-transparent shadow-sm px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 sm:w-auto transition gap-1.5 cursor-pointer">
-                                                        <svg x-show="dissolving" style="display: none;"
-                                                            class="animate-spin -ml-1 mr-1.5 h-4 w-4 text-white"
-                                                            xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                            <circle class="opacity-25" cx="12" cy="12" r="10"
-                                                                stroke="currentColor" stroke-width="4"></circle>
-                                                            <path class="opacity-75" fill="currentColor"
-                                                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                                                            </path>
-                                                        </svg>
-                                                        <span x-text="dissolving ? 'Dağıtılıyor...' : 'Evet, Dağıt'">Evet,
-                                                            Dağıt</span>
+                                                <div class="bg-slate-50 px-5 py-3.5 sm:px-6 sm:flex sm:flex-row-reverse gap-2 border-t border-slate-100"
+                                                    x-data="{ dissolving: false }">
+                                                    <form action="{{ route('form-entries.dissolve', $formEntry) }}" method="POST"
+                                                        @submit="if(dissolving) { $event.preventDefault(); return false; } dissolving = true;">
+                                                        @csrf
+                                                        <button type="submit" :disabled="dissolving"
+                                                            :class="dissolving ? 'opacity-70 cursor-not-allowed pointer-events-none' : ''"
+                                                            class="w-full inline-flex items-center justify-center rounded-xl border border-transparent shadow-sm px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 sm:w-auto transition gap-1.5 cursor-pointer">
+                                                            <svg x-show="dissolving" style="display: none;"
+                                                                class="animate-spin -ml-1 mr-1.5 h-4 w-4 text-white"
+                                                                xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                                <circle class="opacity-25" cx="12" cy="12" r="10"
+                                                                    stroke="currentColor" stroke-width="4"></circle>
+                                                                <path class="opacity-75" fill="currentColor"
+                                                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                                                </path>
+                                                            </svg>
+                                                            <span x-text="dissolving ? 'Dağıtılıyor...' : 'Evet, Dağıt'">Evet,
+                                                                Dağıt</span>
+                                                        </button>
+                                                    </form>
+                                                    <button type="button" @click="if(!dissolving) openDissolve = false"
+                                                        :disabled="dissolving"
+                                                        class="mt-2 sm:mt-0 w-full inline-flex justify-center rounded-xl border border-slate-300 shadow-2xs px-4 py-2.5 bg-white text-sm font-semibold text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:w-auto disabled:opacity-50 cursor-pointer">
+                                                        İptal
                                                     </button>
-                                                </form>
-                                                <button type="button" @click="if(!dissolving) openDissolve = false"
-                                                    :disabled="dissolving"
-                                                    class="mt-2 sm:mt-0 w-full inline-flex justify-center rounded-xl border border-slate-300 shadow-2xs px-4 py-2.5 bg-white text-sm font-semibold text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:w-auto disabled:opacity-50 cursor-pointer">
-                                                    İptal
-                                                </button>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        @endif
+                            @endif
+                        </div>
                     </div>
 
                     <!-- Dahil Olan Parçalar Listesi -->
@@ -249,7 +259,7 @@
                         class="mt-4 pt-4 border-t border-white/10 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                         @foreach($formEntry->children as $child)
                             <div
-                                class="bg-white/10 hover:bg-white/15 border border-white/10 rounded-xl p-3 transition flex flex-col justify-between">
+                                class="bg-white/10 hover:bg-white/15 border border-white/10 rounded-xl p-3 transition flex flex-col justify-between gap-2">
                                 <div class="flex items-center justify-between gap-1">
                                     <span class="text-xs font-black text-amber-300">
                                         ⚡ {{ $child->partition_value ?: ('Parça #' . $child->id) }}
@@ -266,8 +276,8 @@
                                             class="text-[10px] font-bold bg-slate-500/30 text-slate-200 border border-slate-400/30 px-1.5 py-0.2 rounded">Taslak</span>
                                     @endif
                                 </div>
-                                <div class="mt-2 text-[11px] text-indigo-200 flex items-center justify-between">
-                                    <span>{{ $child->rows->count() }} Satır</span>
+                                <div class="mt-2 text-[11px] text-indigo-200 flex items-center justify-between gap-1 flex-wrap">
+                                    <span class="text-[11px] text-indigo-200">{{ $child->rows->count() }} Satır</span>
                                     <a href="{{ route('form-entries.show', $child) }}"
                                         class="text-amber-300 hover:text-white font-bold underline transition">
                                         Parçayı Aç &rarr;
@@ -819,16 +829,36 @@
                             </button>
                         @endif
 
+                        @if(!empty($canSubmitChildrenApproval) && $canSubmitChildrenApproval)
+                            <button type="button"
+                                onclick="if(this.dataset.clicked) return; this.dataset.clicked = 'true'; window.dispatchEvent(new CustomEvent('open-submit-children-modal')); setTimeout(() => { delete this.dataset.clicked; }, 600);"
+                                @click="$dispatch('open-submit-children-modal')"
+                                class="inline-flex items-center px-3 sm:px-4 py-1.5 sm:py-2 bg-emerald-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-emerald-700 transition cursor-pointer shadow-xs gap-1.5"
+                                title="Konsolide forma bağlı tüm taslak parçaları onaya gönder">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                                </svg>
+                                Taslak Parçaları Onaya Gönder ({{ $draftChildrenCount }})
+                            </button>
+                        @endif
+
                         @if(!empty($canWithdraw) && $canWithdraw)
                             <button type="button"
                                 onclick="if(this.dataset.clicked) return; this.dataset.clicked = 'true'; window.dispatchEvent(new CustomEvent('open-withdraw-modal')); setTimeout(() => { delete this.dataset.clicked; }, 600);"
                                 @click="$dispatch('open-withdraw-modal')"
-                                class="inline-flex items-center px-3 sm:px-4 py-1.5 sm:py-2 {{ $formEntry->status === 'submitted' ? 'bg-amber-600 hover:bg-amber-700' : 'bg-rose-600 hover:bg-rose-700' }} border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest transition cursor-pointer shadow-xs gap-1.5">
+                                class="inline-flex items-center px-3 sm:px-4 py-1.5 sm:py-2 {{ $formEntry->status === 'submitted' ? 'bg-amber-600 hover:bg-amber-700' : 'bg-rose-600 hover:bg-rose-700' }} border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest transition cursor-pointer shadow-xs gap-1.5"
+                                title="{{ $formEntry->status === 'submitted' ? 'Formu Onay Sürecinden Geri Çek (Taslağa Al)' : 'Taslağı Kalıcı Olarak Sil' }}">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path>
+                                    @if($formEntry->status === 'submitted')
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path>
+                                    @else
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                    @endif
                                 </svg>
-                                Geri Çek
+                                {{ $formEntry->status === 'submitted' ? 'Geri Çek' : 'Taslağı Sil' }}
                             </button>
                         @endif
 
@@ -2256,6 +2286,82 @@
                 </div>
             @endif
 
+            {{-- Konsolide Parçaları Onaya Gönder Modalı --}}
+            @if(!empty($canSubmitChildrenApproval) && $canSubmitChildrenApproval)
+                <div x-data="{ open: false, submitting: false }"
+                    @open-submit-children-modal.window="open = true; submitting = false" x-show="open" x-cloak
+                    class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">
+                    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+                        <div class="fixed inset-0 transition-opacity bg-slate-900/60 backdrop-blur-xs"
+                            @click="if(!submitting) open = false"></div>
+                        <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+                        <div
+                            class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full border border-gray-100">
+                            <form action="{{ route('form-entries.submit-children-approval', $formEntry) }}" method="POST"
+                                @submit="if(submitting) { $event.preventDefault(); return false; } submitting = true;">
+                                @csrf
+                                <div class="bg-emerald-700 px-6 py-4 flex items-center justify-between text-white">
+                                    <div class="flex items-center gap-2">
+                                        <svg class="w-5 h-5 text-emerald-200" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                                        </svg>
+                                        <h3 class="text-base font-extrabold tracking-tight">Taslak Parçaları Onaya Gönder</h3>
+                                    </div>
+                                    <button type="button" @click="if(!submitting) open = false"
+                                        class="text-emerald-200 hover:text-white cursor-pointer" :disabled="submitting">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M6 18L18 6M6 6l12 12"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div class="p-6 space-y-3">
+                                    <p class="text-sm font-semibold text-gray-800">
+                                        Bu konsolide forma bağlı <strong>{{ $draftChildrenCount }} adet taslak parçayı</strong> onaya göndermek istediğinize emin misiniz?
+                                    </p>
+                                    <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-700 space-y-1.5">
+                                        <div class="font-bold text-slate-800">Onaya Gönderilecek Parçalar:</div>
+                                        <div class="flex flex-wrap gap-1.5">
+                                            @foreach($draftChildren as $dc)
+                                                <span class="px-2 py-0.5 bg-amber-100 text-amber-900 border border-amber-300 font-bold rounded">
+                                                    ⚡ {{ $dc->partition_value ?: ('Parça #' . $dc->id) }}
+                                                </span>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                    <p class="text-xs text-gray-500 leading-relaxed">
+                                        Tüm taslak parçaların durumu <strong>"Onay Bekliyor"</strong> olarak güncellenecek ve yöneticinizin incelemesine sunulacaktır.
+                                    </p>
+                                </div>
+                                <div
+                                    class="bg-gray-50 px-6 py-3 flex items-center justify-end gap-3 border-t border-gray-100">
+                                    <button type="button" @click="if(!submitting) open = false" :disabled="submitting"
+                                        class="px-4 py-2 text-xs font-bold text-gray-600 hover:text-gray-800 bg-white border border-gray-200 rounded-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+                                        Vazgeç
+                                    </button>
+                                    <button type="submit" :disabled="submitting"
+                                        :class="submitting ? 'opacity-70 cursor-not-allowed pointer-events-none' : ''"
+                                        class="px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-sm cursor-pointer inline-flex items-center gap-2 transition">
+                                        <svg x-show="submitting" class="animate-spin -ml-1 mr-1 h-3.5 w-3.5 text-white"
+                                            xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                                stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor"
+                                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                            </path>
+                                        </svg>
+                                        <span x-text="submitting ? 'Gönderiliyor...' : 'Evet, Onaya Gönder'">Evet, Onaya
+                                            Gönder</span>
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
             {{-- Geri Çek Modalı --}}
             @if(!empty($canWithdraw) && $canWithdraw)
                 <div x-data="{ open: false, submitting: false }"
@@ -2275,11 +2381,16 @@
                                     <div class="flex items-center gap-2">
                                         <svg class="w-5 h-5 text-white/90" fill="none" stroke="currentColor"
                                             viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path>
+                                            @if($formEntry->status === 'submitted')
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path>
+                                            @else
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                            @endif
                                         </svg>
                                         <h3 class="text-base font-extrabold tracking-tight">
-                                            {{ $formEntry->status === 'submitted' ? 'Formu Onay Sürecinden Geri Çek' : 'Taslağı Geri Çek' }}
+                                            {{ $formEntry->status === 'submitted' ? 'Formu Onay Sürecinden Geri Çek' : 'Taslak Kaydını Sil' }}
                                         </h3>
                                     </div>
                                     <button type="button" @click="if(!submitting) open = false"
@@ -2302,11 +2413,13 @@
                                         </p>
                                     @else
                                         <p class="text-sm font-semibold text-gray-800">
-                                            Bu taslak kaydını sistemden geri çekmek (silmek) istediğinize emin misiniz?
+                                            Bu taslak kaydını silmek istediğinize emin misiniz?
                                         </p>
                                         <p class="text-xs text-rose-600 font-medium leading-relaxed">
-                                            ⚠️ Bu işlem geri alınamaz. Taslak ve içindeki tüm veriler kalıcı olarak sistemden
-                                            kaldırılacaktır.
+                                            ⚠️ Bu işlem geri alınamaz. Taslak ve formdaki girilen tüm satırlar sistemden kalıcı olarak silinecektir.
+                                            @if($formEntry->is_consolidated)
+                                                <br><span class="text-gray-600 font-normal">Bu konsolide taslak silindiğinde, birleştirilen parçalar bağımsız taslak formlar olarak korunur.</span>
+                                            @endif
                                         </p>
                                     @endif
                                 </div>
@@ -2327,7 +2440,7 @@
                                                 d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
                                             </path>
                                         </svg>
-                                        <span x-text="submitting ? 'İşleniyor...' : 'Evet, Geri Çek'">Evet, Geri Çek</span>
+                                        <span x-text="submitting ? '{{ $formEntry->status === 'submitted' ? 'İşleniyor...' : 'Siliniyor...' }}' : '{{ $formEntry->status === 'submitted' ? 'Evet, Geri Çek' : 'Evet, Taslağı Sil' }}'">{{ $formEntry->status === 'submitted' ? 'Evet, Geri Çek' : 'Evet, Taslağı Sil' }}</span>
                                     </button>
                                 </div>
                             </form>

@@ -40,6 +40,8 @@ class FormFieldC extends Controller
             'fields.*.is_calculated' => 'boolean',
             'fields.*.condition_field_id' => 'nullable|exists:form_fields,id',
             'fields.*.condition_value' => 'nullable',
+            'fields.*.is_disabled_on_condition' => 'nullable|boolean',
+            'fields.*.disabled_condition_value' => 'nullable',
             'fields.*.calculation_formula' => 'nullable|string',
             'fields.*.calc_condition_field_id' => 'nullable|exists:form_fields,id',
             'fields.*.calc_condition_value' => 'nullable',

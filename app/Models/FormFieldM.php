@@ -20,6 +20,8 @@ class FormFieldM extends Model
         'sort_order',
         'condition_field_id',
         'condition_value',
+        'is_disabled_on_condition',
+        'disabled_condition_value',
         'is_calculated',
         'calculation_formula',
         'calc_condition_field_id',
@@ -34,6 +36,7 @@ class FormFieldM extends Model
             'is_required' => 'boolean',
             'is_summable' => 'boolean',
             'is_calculated' => 'boolean',
+            'is_disabled_on_condition' => 'boolean',
             'filter_by_user_group' => 'boolean',
         ];
     }

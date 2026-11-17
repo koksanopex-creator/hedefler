@@ -85,7 +85,7 @@
                     $liveField = $liveFields[$fieldData['id']];
 
                     // Eksik olan formül ve şart alanlarını canlı şablondan tamamla
-                    $keysToCheck = ['is_calculated', 'calculation_formula', 'calc_condition_field_id', 'calc_condition_value', 'filter_by_user_group'];
+                    $keysToCheck = ['is_calculated', 'calculation_formula', 'calc_condition_field_id', 'calc_condition_value', 'filter_by_user_group', 'is_disabled_on_condition', 'disabled_condition_value', 'condition_field_id', 'condition_value'];
                     foreach ($keysToCheck as $key) {
                         if (!isset($fieldData[$key])) {
                             $fieldData[$key] = $liveField->$key;
@@ -582,13 +582,18 @@
                                                         :id="'cell_' + rIndex + '_{{ $fId }}'"
                                                         :data-field-id="'{{ $fId }}'"
                                                         :data-row-index="rIndex"
+                                                        :disabled="isFieldDisabled(fields[{{ $colIndex }}], row)"
                                                         :required="isFieldRequired(fields[{{ $colIndex }}], row)"
-                                                        x-model="row.values['{{ $fId }}']"
-                                                        @paste="handlePaste($event, rIndex, {{ $colIndex }})"
-                                                        @dblclick="promptFillDown(row, '{{ $fId }}')"
-                                                        @input="calculateTotals()"
+                                                        :value="isFieldDisabled(fields[{{ $colIndex }}], row) ? '-' : (row.values['{{ $fId }}'] ?? '')"
+                                                        @input="if (!isFieldDisabled(fields[{{ $colIndex }}], row)) { row.values['{{ $fId }}'] = $event.target.value; calculateTotals(); }"
+                                                        @paste="if (!isFieldDisabled(fields[{{ $colIndex }}], row)) handlePaste($event, rIndex, {{ $colIndex }})"
+                                                        @dblclick="if (!isFieldDisabled(fields[{{ $colIndex }}], row)) promptFillDown(row, '{{ $fId }}')"
                                                         :title="getCellDisabledReason(fields[{{ $colIndex }}], row)"
-                                                        :class="{'border-l-4 border-l-red-500 border-gray-300': isFieldRequired(fields[{{ $colIndex }}], row) && !{{ $fRequired ? 'true' : 'false' }}, 'border-gray-300': !(isFieldRequired(fields[{{ $colIndex }}], row) && !{{ $fRequired ? 'true' : 'false' }})}"
+                                                        :class="{
+                                                            'bg-slate-100 text-slate-400 border-dashed cursor-not-allowed select-none opacity-80': isFieldDisabled(fields[{{ $colIndex }}], row),
+                                                            'border-l-4 border-l-red-500 border-gray-300': isFieldRequired(fields[{{ $colIndex }}], row) && !{{ $fRequired ? 'true' : 'false' }},
+                                                            'border-gray-300': !(isFieldRequired(fields[{{ $colIndex }}], row) && !{{ $fRequired ? 'true' : 'false' }}) && !isFieldDisabled(fields[{{ $colIndex }}], row)
+                                                        }"
                                                         class="w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
                                                 @elseif ($fType === 'number')
                                                     <div class="relative w-full" :title="getCellDisabledReason(fields[{{ $colIndex }}], row)">
@@ -597,15 +602,21 @@
                                                             :id="'cell_' + rIndex + '_{{ $fId }}'"
                                                             :data-field-id="'{{ $fId }}'"
                                                             :data-row-index="rIndex"
+                                                            :disabled="isFieldDisabled(fields[{{ $colIndex }}], row)"
                                                             :required="isFieldRequired(fields[{{ $colIndex }}], row) && !isFieldCalculated(fields[{{ $colIndex }}], row)"
-                                                            :value="formatInputDisplay(row.values['{{ $fId }}'])"
-                                                            @input="handleNumberInput($event, rIndex, '{{ $fId }}')"
-                                                            @blur="handleNumberBlur($event, rIndex, '{{ $fId }}')"
-                                                            @paste="handlePaste($event, rIndex, {{ $colIndex }})"
-                                                            @dblclick="if (!isFieldCalculated(fields[{{ $colIndex }}], row)) promptFillDown(row, '{{ $fId }}')"
+                                                            :value="isFieldDisabled(fields[{{ $colIndex }}], row) ? '-' : formatInputDisplay(row.values['{{ $fId }}'])"
+                                                            @input="if (!isFieldDisabled(fields[{{ $colIndex }}], row)) handleNumberInput($event, rIndex, '{{ $fId }}')"
+                                                            @blur="if (!isFieldDisabled(fields[{{ $colIndex }}], row)) handleNumberBlur($event, rIndex, '{{ $fId }}')"
+                                                            @paste="if (!isFieldDisabled(fields[{{ $colIndex }}], row)) handlePaste($event, rIndex, {{ $colIndex }})"
+                                                            @dblclick="if (!isFieldCalculated(fields[{{ $colIndex }}], row) && !isFieldDisabled(fields[{{ $colIndex }}], row)) promptFillDown(row, '{{ $fId }}')"
                                                             :title="getCellDisabledReason(fields[{{ $colIndex }}], row)"
                                                             :readonly="isFieldCalculated(fields[{{ $colIndex }}], row)"
-                                                            :class="{'bg-gray-100 cursor-not-allowed text-gray-700 font-semibold': isFieldCalculated(fields[{{ $colIndex }}], row), 'border-l-4 border-l-red-500 border-gray-300': isFieldRequired(fields[{{ $colIndex }}], row) && !{{ $fRequired ? 'true' : 'false' }} && !isFieldCalculated(fields[{{ $colIndex }}], row), 'border-gray-300': !(isFieldRequired(fields[{{ $colIndex }}], row) && !{{ $fRequired ? 'true' : 'false' }} && !isFieldCalculated(fields[{{ $colIndex }}], row))}"
+                                                            :class="{
+                                                                'bg-slate-100 text-slate-400 border-dashed cursor-not-allowed select-none opacity-80': isFieldDisabled(fields[{{ $colIndex }}], row),
+                                                                'bg-gray-100 cursor-not-allowed text-gray-700 font-semibold': isFieldCalculated(fields[{{ $colIndex }}], row) && !isFieldDisabled(fields[{{ $colIndex }}], row),
+                                                                'border-l-4 border-l-red-500 border-gray-300': isFieldRequired(fields[{{ $colIndex }}], row) && !{{ $fRequired ? 'true' : 'false' }} && !isFieldCalculated(fields[{{ $colIndex }}], row) && !isFieldDisabled(fields[{{ $colIndex }}], row),
+                                                                'border-gray-300': !(isFieldRequired(fields[{{ $colIndex }}], row) && !{{ $fRequired ? 'true' : 'false' }} && !isFieldCalculated(fields[{{ $colIndex }}], row)) && !isFieldDisabled(fields[{{ $colIndex }}], row)
+                                                            }"
                                                             class="w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm font-medium text-right pr-2">
                                                     </div>
                                                 @elseif ($fType === 'textarea')
@@ -613,27 +624,37 @@
                                                         :id="'cell_' + rIndex + '_{{ $fId }}'"
                                                         :data-field-id="'{{ $fId }}'"
                                                         :data-row-index="rIndex"
+                                                        :disabled="isFieldDisabled(fields[{{ $colIndex }}], row)"
                                                         :required="isFieldRequired(fields[{{ $colIndex }}], row)"
-                                                        x-model="row.values['{{ $fId }}']"
-                                                        @paste="handlePaste($event, rIndex, {{ $colIndex }})"
-                                                        @dblclick="promptFillDown(row, '{{ $fId }}')"
-                                                        @input="calculateTotals()"
+                                                        :value="isFieldDisabled(fields[{{ $colIndex }}], row) ? '-' : (row.values['{{ $fId }}'] ?? '')"
+                                                        @input="if (!isFieldDisabled(fields[{{ $colIndex }}], row)) { row.values['{{ $fId }}'] = $event.target.value; calculateTotals(); }"
+                                                        @paste="if (!isFieldDisabled(fields[{{ $colIndex }}], row)) handlePaste($event, rIndex, {{ $colIndex }})"
+                                                        @dblclick="if (!isFieldDisabled(fields[{{ $colIndex }}], row)) promptFillDown(row, '{{ $fId }}')"
                                                         :title="getCellDisabledReason(fields[{{ $colIndex }}], row)"
                                                         rows="1"
-                                                        :class="{'border-l-4 border-l-red-500 border-gray-300': isFieldRequired(fields[{{ $colIndex }}], row) && !{{ $fRequired ? 'true' : 'false' }}, 'border-gray-300': !(isFieldRequired(fields[{{ $colIndex }}], row) && !{{ $fRequired ? 'true' : 'false' }})}"
+                                                        :class="{
+                                                            'bg-slate-100 text-slate-400 border-dashed cursor-not-allowed select-none opacity-80': isFieldDisabled(fields[{{ $colIndex }}], row),
+                                                            'border-l-4 border-l-red-500 border-gray-300': isFieldRequired(fields[{{ $colIndex }}], row) && !{{ $fRequired ? 'true' : 'false' }},
+                                                            'border-gray-300': !(isFieldRequired(fields[{{ $colIndex }}], row) && !{{ $fRequired ? 'true' : 'false' }}) && !isFieldDisabled(fields[{{ $colIndex }}], row)
+                                                        }"
                                                         class="w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm resize-y"></textarea>
                                                 @elseif ($fType === 'date')
                                                     <input type="date"
                                                         :id="'cell_' + rIndex + '_{{ $fId }}'"
                                                         :data-field-id="'{{ $fId }}'"
                                                         :data-row-index="rIndex"
+                                                        :disabled="isFieldDisabled(fields[{{ $colIndex }}], row)"
                                                         :required="isFieldRequired(fields[{{ $colIndex }}], row)"
                                                         x-model="row.values['{{ $fId }}']"
-                                                        @paste="handlePaste($event, rIndex, {{ $colIndex }})"
-                                                        @dblclick="promptFillDown(row, '{{ $fId }}')"
+                                                        @paste="if (!isFieldDisabled(fields[{{ $colIndex }}], row)) handlePaste($event, rIndex, {{ $colIndex }})"
+                                                        @dblclick="if (!isFieldDisabled(fields[{{ $colIndex }}], row)) promptFillDown(row, '{{ $fId }}')"
                                                         @change="calculateTotals()"
                                                         :title="getCellDisabledReason(fields[{{ $colIndex }}], row)"
-                                                        :class="{'border-l-4 border-l-red-500 border-gray-300': isFieldRequired(fields[{{ $colIndex }}], row) && !{{ $fRequired ? 'true' : 'false' }}, 'border-gray-300': !(isFieldRequired(fields[{{ $colIndex }}], row) && !{{ $fRequired ? 'true' : 'false' }})}"
+                                                        :class="{
+                                                            'bg-slate-100 text-slate-400 border-dashed cursor-not-allowed select-none opacity-80': isFieldDisabled(fields[{{ $colIndex }}], row),
+                                                            'border-l-4 border-l-red-500 border-gray-300': isFieldRequired(fields[{{ $colIndex }}], row) && !{{ $fRequired ? 'true' : 'false' }},
+                                                            'border-gray-300': !(isFieldRequired(fields[{{ $colIndex }}], row) && !{{ $fRequired ? 'true' : 'false' }}) && !isFieldDisabled(fields[{{ $colIndex }}], row)
+                                                        }"
                                                         class="w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
                                                 @elseif ($fType === 'year')
                                                     @php
@@ -660,16 +681,22 @@
                                                             :id="'cell_' + rIndex + '_{{ $fId }}'"
                                                             :data-field-id="'{{ $fId }}'"
                                                             :data-row-index="rIndex"
+                                                            :disabled="isFieldDisabled(fields[{{ $colIndex }}], row)"
                                                             :required="isFieldRequired(fields[{{ $colIndex }}], row)"
                                                             x-model="row.values['{{ $fId }}']"
-                                                            @paste="handlePaste($event, rIndex, {{ $colIndex }})"
-                                                            @keydown.delete.prevent="clearSelect(row, '{{ $fId }}', fields[{{ $colIndex }}])"
-                                                            @keydown.backspace.prevent="clearSelect(row, '{{ $fId }}', fields[{{ $colIndex }}])"
+                                                            @paste="if (!isFieldDisabled(fields[{{ $colIndex }}], row)) handlePaste($event, rIndex, {{ $colIndex }})"
+                                                            @keydown.delete.prevent="if (!isFieldDisabled(fields[{{ $colIndex }}], row)) clearSelect(row, '{{ $fId }}', fields[{{ $colIndex }}])"
+                                                            @keydown.backspace.prevent="if (!isFieldDisabled(fields[{{ $colIndex }}], row)) clearSelect(row, '{{ $fId }}', fields[{{ $colIndex }}])"
                                                             @change="calculateTotals()"
                                                             :title="getCellDisabledReason(fields[{{ $colIndex }}], row)"
                                                             class="w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm transition-colors pr-7"
-                                                            :class="{ 'bg-indigo-50 border-indigo-300 text-indigo-700 font-bold': row.values['{{ $fId }}'], 'bg-white border-gray-300 text-gray-700': !row.values['{{ $fId }}'], 'border-l-4 border-l-red-500': isFieldRequired(fields[{{ $colIndex }}], row) && !{{ $fRequired ? 'true' : 'false' }} }">
-                                                            <option value="">Yıl Seçiniz...</option>
+                                                            :class="{
+                                                                'bg-slate-100 text-slate-400 border-dashed cursor-not-allowed select-none opacity-80': isFieldDisabled(fields[{{ $colIndex }}], row),
+                                                                'bg-indigo-50 border-indigo-300 text-indigo-700 font-bold': !isFieldDisabled(fields[{{ $colIndex }}], row) && row.values['{{ $fId }}'],
+                                                                'bg-white border-gray-300 text-gray-700': !isFieldDisabled(fields[{{ $colIndex }}], row) && !row.values['{{ $fId }}'],
+                                                                'border-l-4 border-l-red-500': isFieldRequired(fields[{{ $colIndex }}], row) && !{{ $fRequired ? 'true' : 'false' }} && !isFieldDisabled(fields[{{ $colIndex }}], row)
+                                                            }">
+                                                            <option value="" x-text="isFieldDisabled(fields[{{ $colIndex }}], row) ? '-' : 'Yıl Seçiniz...'"></option>
                                                             @foreach ($rawYears as $y)
                                                                 @php
                                                                     $lbl = (string)$y;
@@ -680,7 +707,7 @@
                                                             @endforeach
                                                         </select>
                                                         <button type="button"
-                                                            x-show="row.values['{{ $fId }}']"
+                                                            x-show="row.values['{{ $fId }}'] && !isFieldDisabled(fields[{{ $colIndex }}], row)"
                                                             @click.stop.prevent="clearSelect(row, '{{ $fId }}', fields[{{ $colIndex }}])"
                                                             tabindex="-1"
                                                             title="Seçimi Temizle (Delete veya Backspace ile de silebilirsiniz)"
@@ -700,17 +727,23 @@
                                                             :id="'cell_' + rIndex + '_{{ $fId }}'"
                                                             :data-field-id="'{{ $fId }}'"
                                                             :data-row-index="rIndex"
+                                                            :disabled="isFieldDisabled(fields[{{ $colIndex }}], row)"
                                                             :required="isFieldRequired(fields[{{ $colIndex }}], row)"
                                                             x-model="row.values['{{ $fId }}']"
-                                                            @paste="handlePaste($event, rIndex, {{ $colIndex }})"
-                                                            @keydown.ctrl.v.prevent="handleSelectPaste($event, rIndex, {{ $colIndex }})"
-                                                            @keydown.delete.prevent="clearSelect(row, '{{ $fId }}', fields[{{ $colIndex }}])"
-                                                            @keydown.backspace.prevent="clearSelect(row, '{{ $fId }}', fields[{{ $colIndex }}])"
+                                                            @paste="if (!isFieldDisabled(fields[{{ $colIndex }}], row)) handlePaste($event, rIndex, {{ $colIndex }})"
+                                                            @keydown.ctrl.v.prevent="if (!isFieldDisabled(fields[{{ $colIndex }}], row)) handleSelectPaste($event, rIndex, {{ $colIndex }})"
+                                                            @keydown.delete.prevent="if (!isFieldDisabled(fields[{{ $colIndex }}], row)) clearSelect(row, '{{ $fId }}', fields[{{ $colIndex }}])"
+                                                            @keydown.backspace.prevent="if (!isFieldDisabled(fields[{{ $colIndex }}], row)) clearSelect(row, '{{ $fId }}', fields[{{ $colIndex }}])"
                                                             @change="calculateTotals()"
                                                             :title="getCellDisabledReason(fields[{{ $colIndex }}], row)"
                                                             class="w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm transition-colors pr-7"
-                                                            :class="{ 'bg-indigo-50 border-indigo-300 text-indigo-700 font-bold': row.values['{{ $fId }}'], 'bg-white border-gray-300 text-gray-700': !row.values['{{ $fId }}'], 'border-l-4 border-l-red-500': isFieldRequired(fields[{{ $colIndex }}], row) && !{{ $fRequired ? 'true' : 'false' }} }">
-                                                            <option value="">Seçiniz...</option>
+                                                            :class="{
+                                                                'bg-slate-100 text-slate-400 border-dashed cursor-not-allowed select-none opacity-80': isFieldDisabled(fields[{{ $colIndex }}], row),
+                                                                'bg-indigo-50 border-indigo-300 text-indigo-700 font-bold': !isFieldDisabled(fields[{{ $colIndex }}], row) && row.values['{{ $fId }}'],
+                                                                'bg-white border-gray-300 text-gray-700': !isFieldDisabled(fields[{{ $colIndex }}], row) && !row.values['{{ $fId }}'],
+                                                                'border-l-4 border-l-red-500': isFieldRequired(fields[{{ $colIndex }}], row) && !{{ $fRequired ? 'true' : 'false' }} && !isFieldDisabled(fields[{{ $colIndex }}], row)
+                                                            }">
+                                                            <option value="" x-text="isFieldDisabled(fields[{{ $colIndex }}], row) ? '-' : 'Seçiniz...'"></option>
                                                             @if (is_array($selectOpts))
                                                                 @foreach ($selectOpts as $k => $opt)
                                                                     <option value="{{ is_numeric($k) ? $opt : $k }}">{{ $opt }}</option>
@@ -718,7 +751,7 @@
                                                             @endif
                                                         </select>
                                                         <button type="button"
-                                                            x-show="row.values['{{ $fId }}']"
+                                                            x-show="row.values['{{ $fId }}'] && !isFieldDisabled(fields[{{ $colIndex }}], row)"
                                                             @click.stop.prevent="clearSelect(row, '{{ $fId }}', fields[{{ $colIndex }}])"
                                                             tabindex="-1"
                                                             title="Seçimi Temizle (Delete veya Backspace ile de silebilirsiniz)"
@@ -732,22 +765,23 @@
                                                             :id="'cell_' + rIndex + '_{{ $fId }}'"
                                                             :data-field-id="'{{ $fId }}'"
                                                             :data-row-index="rIndex"
+                                                            :disabled="isFieldDisabled(fields[{{ $colIndex }}], row) || isMasterDataDisabled(row, fields[{{ $colIndex }}])"
                                                             :required="isFieldRequired(fields[{{ $colIndex }}], row)"
                                                             x-model="row.values['{{ $fId }}']"
-                                                            @paste="handlePaste($event, rIndex, {{ $colIndex }})"
-                                                            @keydown.delete.prevent="clearSelect(row, '{{ $fId }}', fields[{{ $colIndex }}])"
-                                                            @keydown.backspace.prevent="clearSelect(row, '{{ $fId }}', fields[{{ $colIndex }}])"
+                                                            @paste="if (!isFieldDisabled(fields[{{ $colIndex }}], row)) handlePaste($event, rIndex, {{ $colIndex }})"
+                                                            @keydown.delete.prevent="if (!isFieldDisabled(fields[{{ $colIndex }}], row)) clearSelect(row, '{{ $fId }}', fields[{{ $colIndex }}])"
+                                                            @keydown.backspace.prevent="if (!isFieldDisabled(fields[{{ $colIndex }}], row)) clearSelect(row, '{{ $fId }}', fields[{{ $colIndex }}])"
                                                             @change="handleMasterDataChange(row, '{{ $fId }}'); calculateTotals()"
                                                             :title="getCellDisabledReason(fields[{{ $colIndex }}], row)"
-                                                            :disabled="isMasterDataDisabled(row, fields[{{ $colIndex }}])"
                                                             class="w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm transition-colors pr-7"
                                                             :class="{ 
-                                                                'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed': isMasterDataDisabled(row, fields[{{ $colIndex }}]),
-                                                                'bg-indigo-50 border-indigo-300 text-indigo-700 font-bold': !isMasterDataDisabled(row, fields[{{ $colIndex }}]) && row.values['{{ $fId }}'], 
-                                                                'bg-white border-gray-300 text-gray-700': !isMasterDataDisabled(row, fields[{{ $colIndex }}]) && !row.values['{{ $fId }}'], 
-                                                                'border-l-4 border-l-red-500': isFieldRequired(fields[{{ $colIndex }}], row) && !{{ $fRequired ? 'true' : 'false' }} 
+                                                                'bg-slate-100 text-slate-400 border-dashed cursor-not-allowed select-none opacity-80': isFieldDisabled(fields[{{ $colIndex }}], row),
+                                                                'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed': !isFieldDisabled(fields[{{ $colIndex }}], row) && isMasterDataDisabled(row, fields[{{ $colIndex }}]),
+                                                                'bg-indigo-50 border-indigo-300 text-indigo-700 font-bold': !isFieldDisabled(fields[{{ $colIndex }}], row) && !isMasterDataDisabled(row, fields[{{ $colIndex }}]) && row.values['{{ $fId }}'], 
+                                                                'bg-white border-gray-300 text-gray-700': !isFieldDisabled(fields[{{ $colIndex }}], row) && !isMasterDataDisabled(row, fields[{{ $colIndex }}]) && !row.values['{{ $fId }}'], 
+                                                                'border-l-4 border-l-red-500': isFieldRequired(fields[{{ $colIndex }}], row) && !{{ $fRequired ? 'true' : 'false' }} && !isFieldDisabled(fields[{{ $colIndex }}], row) 
                                                             }">
-                                                            <option value="" x-text="getMasterDataPlaceholder(row, fields[{{ $colIndex }}])"></option>
+                                                            <option value="" x-text="isFieldDisabled(fields[{{ $colIndex }}], row) ? '-' : getMasterDataPlaceholder(row, fields[{{ $colIndex }}])"></option>
                                                             <template x-for="opt in getMasterDataOptions(row, fields[{{ $colIndex }}])"
                                                                 :key="opt.id">
                                                                 <option :value="opt.name" x-text="opt.name"
@@ -755,7 +789,7 @@
                                                             </template>
                                                         </select>
                                                         <button type="button"
-                                                            x-show="row.values['{{ $fId }}'] && !isMasterDataDisabled(row, fields[{{ $colIndex }}])"
+                                                            x-show="row.values['{{ $fId }}'] && !isMasterDataDisabled(row, fields[{{ $colIndex }}]) && !isFieldDisabled(fields[{{ $colIndex }}], row)"
                                                             @click.stop.prevent="clearSelect(row, '{{ $fId }}', fields[{{ $colIndex }}])"
                                                             tabindex="-1"
                                                             title="Seçimi Temizle (Delete veya Backspace ile de silebilirsiniz)"
@@ -778,22 +812,28 @@
                                                             :id="'cell_' + rIndex + '_{{ $fId }}'"
                                                             :data-field-id="'{{ $fId }}'"
                                                             :data-row-index="rIndex"
+                                                            :disabled="isFieldDisabled(fields[{{ $colIndex }}], row)"
                                                             :required="isFieldRequired(fields[{{ $colIndex }}], row)"
                                                             x-model="row.values['{{ $fId }}']"
-                                                            @paste="handlePaste($event, rIndex, {{ $colIndex }})"
-                                                            @keydown.delete.prevent="clearSelect(row, '{{ $fId }}', fields[{{ $colIndex }}])"
-                                                            @keydown.backspace.prevent="clearSelect(row, '{{ $fId }}', fields[{{ $colIndex }}])"
+                                                            @paste="if (!isFieldDisabled(fields[{{ $colIndex }}], row)) handlePaste($event, rIndex, {{ $colIndex }})"
+                                                            @keydown.delete.prevent="if (!isFieldDisabled(fields[{{ $colIndex }}], row)) clearSelect(row, '{{ $fId }}', fields[{{ $colIndex }}])"
+                                                            @keydown.backspace.prevent="if (!isFieldDisabled(fields[{{ $colIndex }}], row)) clearSelect(row, '{{ $fId }}', fields[{{ $colIndex }}])"
                                                             @change="calculateTotals()"
                                                             :title="getCellDisabledReason(fields[{{ $colIndex }}], row)"
                                                             class="w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm transition-colors pr-7"
-                                                            :class="{ 'bg-indigo-50 border-indigo-300 text-indigo-700 font-bold': row.values['{{ $fId }}'], 'bg-white border-gray-300 text-gray-700': !row.values['{{ $fId }}'], 'border-l-4 border-l-red-500': isFieldRequired(fields[{{ $colIndex }}], row) && !{{ $fRequired ? 'true' : 'false' }} }">
-                                                            <option value="">Kullanıcı Seçiniz...</option>
+                                                            :class="{ 
+                                                                'bg-slate-100 text-slate-400 border-dashed cursor-not-allowed select-none opacity-80': isFieldDisabled(fields[{{ $colIndex }}], row),
+                                                                'bg-indigo-50 border-indigo-300 text-indigo-700 font-bold': !isFieldDisabled(fields[{{ $colIndex }}], row) && row.values['{{ $fId }}'], 
+                                                                'bg-white border-gray-300 text-gray-700': !isFieldDisabled(fields[{{ $colIndex }}], row) && !row.values['{{ $fId }}'], 
+                                                                'border-l-4 border-l-red-500': isFieldRequired(fields[{{ $colIndex }}], row) && !{{ $fRequired ? 'true' : 'false' }} && !isFieldDisabled(fields[{{ $colIndex }}], row) 
+                                                            }">
+                                                            <option value="" x-text="isFieldDisabled(fields[{{ $colIndex }}], row) ? '-' : 'Kullanıcı Seçiniz...'"></option>
                                                             <template x-for="u in getUserListOptions(row, fields[{{ $colIndex }}])" :key="u.id">
                                                                 <option :value="u.name" x-text="u.name" :selected="row.values['{{ $fId }}'] == u.name"></option>
                                                             </template>
                                                         </select>
                                                         <button type="button"
-                                                            x-show="row.values['{{ $fId }}']"
+                                                            x-show="row.values['{{ $fId }}'] && !isFieldDisabled(fields[{{ $colIndex }}], row)"
                                                             @click.stop.prevent="clearSelect(row, '{{ $fId }}', fields[{{ $colIndex }}])"
                                                             tabindex="-1"
                                                             title="Seçimi Temizle (Delete veya Backspace ile de silebilirsiniz)"
@@ -805,7 +845,8 @@
 
                                                 <!-- Excel Doldurma Noktası (Fill Handle) -->
                                                 @if ($fType !== 'auto_user' && !$fCalculated)
-                                                    <div @dblclick.stop="promptFillDown(row, '{{ $fId }}')"
+                                                    <div x-show="!isFieldDisabled(fields[{{ $colIndex }}], row)"
+                                                         @dblclick.stop="promptFillDown(row, '{{ $fId }}')"
                                                          class="fill-handle-dot opacity-0 group-hover/cell:opacity-100 transition-opacity"
                                                          title="Aşağı doğru doldurmak için çift tıklayın (Onaylı)"></div>
                                                 @endif
@@ -918,14 +959,15 @@
 
                             <div class="h-5 border-l border-gray-300 mx-0.5 hidden xl:block"></div>
 
-                            <a href="{{ route('form-templates.download-empty', $formTemplate) }}"
-                                class="bg-white hover:bg-green-50 text-green-700 font-semibold py-1.5 px-3 border border-green-200 rounded-lg shadow-xs transition flex items-center gap-1 text-xs">
+                            <button type="button" @click="downloadEmptyTemplate()"
+                                class="bg-white hover:bg-green-50 text-green-700 font-semibold py-1.5 px-3 border border-green-200 rounded-lg shadow-xs transition flex items-center gap-1 text-xs cursor-pointer"
+                                :title="partitionValue ? (partitionValue + ' için kilitli şablon indir') : 'Boş form şablonu indir'">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
                                 </svg>
                                 Şablon İndir
-                            </a>
+                            </button>
 
                             <button type="button" @click="$refs.excelInput.click()" :disabled="isUploading"
                                 class="bg-white hover:bg-indigo-50 text-indigo-700 font-semibold py-1.5 px-3 border border-indigo-200 rounded-lg shadow-xs transition flex items-center gap-1 text-xs cursor-pointer">
@@ -1878,6 +1920,16 @@
                     if (!field) return '';
                     let row = this.getRow(rowOrIndex);
 
+                    // 0. Koşullu Pasif Alan
+                    if (this.isFieldDisabled(field, row)) {
+                        let condField = this.fields.find(f => f.id == field.condition_field_id);
+                        let condLabel = condField ? (condField.label || condField.name) : 'Kriter';
+                        let currentVal = (this.partitionFieldId && String(field.condition_field_id) === String(this.partitionFieldId) && this.partitionValue)
+                            ? this.partitionValue
+                            : (row && row.values ? row.values[field.condition_field_id] : '');
+                        return '🔒 Bu alan [' + condLabel + ' = ' + currentVal + '] için girişe kapalıdır (Pasif).';
+                    }
+
                     // 1. Otomatik Kullanıcı
                     if (field.type === 'auto_user') {
                         return '🔒 Bu alan sisteme giriş yapan kullanıcıyı ({{ Auth::user()->name }}) otomatik gösterir ve elle değiştirilemez.';
@@ -2038,11 +2090,16 @@
                     this.fillProgressText = 'İşlem başlatılıyor...';
                     this.saveHistory();
 
+                    const targetField = this.fields.find(f => f.id == fieldId);
+
                     // Küçük veri setleri (<= 25 satır) için doğrudan hızlı işlem
                     if (totalToFill <= 25) {
                         let filledCount = 0;
                         for (let i = startIdx; i <= endIdx; i++) {
                             if (this.rows[i]) {
+                                if (targetField && this.isFieldDisabled(targetField, this.rows[i])) {
+                                    continue;
+                                }
                                 this.rows[i].values[fieldId] = valToCopy;
                                 this.handleMasterDataChange(this.rows[i], fieldId);
                                 filledCount++;
@@ -2064,6 +2121,9 @@
                         let nextBatchEnd = Math.min(currentIdx + CHUNK_SIZE, endIdx + 1);
                         for (let i = currentIdx; i < nextBatchEnd; i++) {
                             if (this.rows[i]) {
+                                if (targetField && this.isFieldDisabled(targetField, this.rows[i])) {
+                                    continue;
+                                }
                                 this.rows[i].values[fieldId] = valToCopy;
                                 this.handleMasterDataChange(this.rows[i], fieldId);
                                 filledCount++;
@@ -2674,8 +2734,8 @@
                             for (let fIdx = 0; fIdx < this.fields.length; fIdx++) {
                                 const field = this.fields[fIdx];
 
-                                // Hesaplanmış alan ise kullanıcı dolduramaz, atla
-                                if (this.isFieldCalculated(field, row)) {
+                                // Hesaplanmış alan veya pasif alan ise kullanıcı dolduramaz, atla
+                                if (this.isFieldCalculated(field, row) || this.isFieldDisabled(field, row)) {
                                     continue;
                                 }
 
@@ -2905,7 +2965,52 @@
                     }
                 },
 
+                isFieldDisabled(field, rowOrIndex) {
+                    if (!field || !field.is_disabled_on_condition) return false;
+                    if (!field.condition_field_id) return false;
+
+                    let row = this.getRow(rowOrIndex);
+                    let targetVal = null;
+
+                    // Parçalı formda kriter alanıysa ve partitionValue varsa
+                    if (this.partitionFieldId && String(field.condition_field_id) === String(this.partitionFieldId) && this.partitionValue) {
+                        targetVal = this.partitionValue;
+                    } else if (row && row.values && row.values[field.condition_field_id] !== undefined && row.values[field.condition_field_id] !== null) {
+                        targetVal = row.values[field.condition_field_id];
+                    }
+
+                    if (!targetVal || String(targetVal).trim() === '') return false;
+                    let targetValStr = String(targetVal).trim().toLowerCase();
+
+                    // Belirtilen pasif değerler listesi varsa
+                    if (field.disabled_condition_value) {
+                        if (!field._parsedDisabledConditions) {
+                            field._parsedDisabledConditions = String(field.disabled_condition_value)
+                                .split(',')
+                                .map(s => s.trim().toLowerCase());
+                        }
+                        return field._parsedDisabledConditions.includes(targetValStr);
+                    }
+
+                    // Yedek (Fallback): disabled_condition_value boşsa ama is_disabled_on_condition açıksa,
+                    // zorunlu olan condition_value dışındaki tüm değerlerde pasiftir
+                    if (field.condition_value) {
+                        if (!field._parsedConditions) {
+                            field._parsedConditions = String(field.condition_value)
+                                .split(',')
+                                .map(s => s.trim().toLowerCase());
+                        }
+                        return !field._parsedConditions.includes(targetValStr);
+                    }
+
+                    return false;
+                },
+
                 isFieldRequired(field, rowOrIndex) {
+                    if (this.isFieldDisabled(field, rowOrIndex)) {
+                        return false;
+                    }
+
                     if (field.type === 'master_data') {
                         let status = this.getMasterDataStatus(rowOrIndex, field);
                         if (status.isDisabled) {
@@ -2919,9 +3024,11 @@
                             field._parsedConditions = field.condition_value.split(',').map(s => s.trim().toLowerCase());
                         }
                         let row = this.getRow(rowOrIndex);
-                        let targetVal = row && row.values ? row.values[field.condition_field_id] : null;
+                        let targetVal = (this.partitionFieldId && String(field.condition_field_id) === String(this.partitionFieldId) && this.partitionValue)
+                            ? this.partitionValue
+                            : (row && row.values ? row.values[field.condition_field_id] : null);
                         if (targetVal) {
-                            return field._parsedConditions.includes(String(targetVal).toLowerCase());
+                            return field._parsedConditions.includes(String(targetVal).trim().toLowerCase());
                         }
                     }
                     return false;
@@ -3715,7 +3822,7 @@
                                                     continue;
                                                 }
 
-                                                if (this.isFieldCalculated(targetField, currentRow)) {
+                                                if (this.isFieldCalculated(targetField, currentRow) || this.isFieldDisabled(targetField, currentRow)) {
                                                     currentRow.values[targetField.id] = '';
                                                     continue;
                                                 }
@@ -3877,6 +3984,18 @@
                     }
                 },
 
+                downloadEmptyTemplate() {
+                    let url = '{{ route("form-templates.download-empty", $formTemplate) }}' + (this.partitionValue ? ('?partition_value=' + encodeURIComponent(this.partitionValue)) : '');
+                    // Görünmez iframe ile indirerek sayfa yönlendirmesini ve beforeunload ("Siteden çıkılsın mı?") uyarısını engeller
+                    let iframe = document.createElement('iframe');
+                    iframe.style.display = 'none';
+                    iframe.src = url;
+                    document.body.appendChild(iframe);
+                    setTimeout(() => {
+                        if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
+                    }, 20000);
+                },
+
                 handleExcelUpload(event) {
                     const file = event.target.files[0];
                     if (!file) return;
@@ -4030,7 +4149,7 @@
                                                         return;
                                                     }
 
-                                                    if (this.isFieldCalculated(f, r)) {
+                                                    if (this.isFieldCalculated(f, r) || this.isFieldDisabled(f, r)) {
                                                         r.values[f.id] = '';
                                                     } else if (r.values[f.id] !== undefined && r.values[f.id] !== null && String(r.values[f.id]).trim() !== '') {
                                                         let val = String(r.values[f.id]).trim();

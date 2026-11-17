@@ -450,87 +450,189 @@
                                     </div>
                                     
                                     <!-- Koşullu Zorunluluk Bölümü -->
-                                    <div class="md:col-span-4 mt-3 bg-orange-50 p-4 rounded-lg border border-orange-200 flex flex-col md:flex-row gap-4 shadow-sm" x-show="!field.is_required">
-                                        <div class="w-full md:w-1/2">
-                                            <label class="block text-xs font-bold text-orange-800 uppercase tracking-wider mb-1">Koşullu Zorunluluk (Hangi Alana Bağlı?)</label>
-                                            <select x-model="field.condition_field_id" :name="'fields['+index+'][condition_field_id]'" class="w-full rounded-md border-orange-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 text-sm p-2 bg-white">
-                                                <option value="">-- Şart Yok (Zorunlu Değil) --</option>
-                                                <template x-for="otherField in getAvailableConditionFields(field)" :key="otherField.id">
-                                                    <option :value="otherField.id" x-text="otherField.label"></option>
+                                    <div class="md:col-span-4 mt-3 bg-orange-50 p-4 rounded-lg border border-orange-200 shadow-sm" x-show="!field.is_required">
+                                        <div class="flex flex-col md:flex-row gap-4">
+                                            <div class="w-full md:w-1/2">
+                                                <label class="block text-xs font-bold text-orange-800 uppercase tracking-wider mb-1">Koşullu Zorunluluk (Hangi Alana Bağlı?)</label>
+                                                <select x-model="field.condition_field_id" :name="'fields['+index+'][condition_field_id]'" class="w-full rounded-md border-orange-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 text-sm p-2 bg-white">
+                                                    <option value="">-- Şart Yok (Zorunlu Değil) --</option>
+                                                    <template x-for="otherField in getAvailableConditionFields(field)" :key="otherField.id">
+                                                        <option :value="otherField.id" x-text="otherField.label"></option>
+                                                    </template>
+                                                </select>
+                                            </div>
+                                            <div class="w-full md:w-1/2" x-show="field.condition_field_id">
+                                                <label class="block text-xs font-bold text-orange-800 uppercase tracking-wider mb-1">Hangi Değer Seçilirse Zorunlu Olsun?</label>
+                                                
+                                                <!-- Master Data (Çoklu Seçim Dropdown) -->
+                                                <template x-if="getConditionFieldType(field.condition_field_id) === 'master_data'">
+                                                    <div x-data="{ open: false }" class="relative w-full">
+                                                        <div @click="open = !open" class="w-full rounded-md border-orange-300 border shadow-sm text-sm p-2 bg-white cursor-pointer flex justify-between items-center focus-within:ring-1 focus-within:ring-orange-500">
+                                                            <div class="truncate pr-4" x-text="field.condition_value_array.length ? field.condition_value_array.join(', ') : 'Seçim yapın...'"></div>
+                                                            <svg class="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                                        </div>
+                                                        <div x-show="open" @click.away="open = false" style="display: none;" class="absolute z-50 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-56 overflow-y-auto">
+                                                            <!-- Toplu Seçim Barı -->
+                                                            <div class="px-3 py-2 border-b border-orange-200 bg-orange-100 flex items-center justify-between sticky top-0 z-10 shadow-xs" x-show="getConditionFieldMasterDataItems(field.condition_field_id).length > 0">
+                                                                <label class="flex items-center text-xs font-bold text-orange-950 cursor-pointer select-none">
+                                                                    <input type="checkbox" :checked="isAllMasterDataSelected(field, field.condition_field_id, false)" @change="toggleAllMasterData(field, field.condition_field_id, $event.target.checked, false)" class="rounded border-gray-300 text-orange-600 focus:ring-orange-500 mr-2">
+                                                                    <span>Tümünü Seç</span>
+                                                                </label>
+                                                                <button type="button" @click="field.condition_value_array = []" class="text-[11px] font-bold text-orange-700 hover:text-red-700 transition" x-show="field.condition_value_array && field.condition_value_array.length > 0">
+                                                                    Seçimi Temizle (<span x-text="field.condition_value_array.length"></span>)
+                                                                </button>
+                                                            </div>
+                                                            <template x-for="item in getConditionFieldMasterDataItems(field.condition_field_id)" :key="item.id">
+                                                                <label class="flex items-center px-3 py-2 hover:bg-orange-50 cursor-pointer border-b border-gray-100 last:border-0">
+                                                                    <input type="checkbox" x-model="field.condition_value_array" @change="cleanPassiveFromRequired(field)" :value="item.name" class="rounded border-gray-300 text-orange-600 focus:ring-orange-500 mr-2">
+                                                                    <span x-text="item.name" class="text-sm text-gray-700"></span>
+                                                                </label>
+                                                            </template>
+                                                            <div x-show="getConditionFieldMasterDataItems(field.condition_field_id).length === 0" class="px-3 py-2 text-sm text-gray-500 italic">Veri bulunamadı</div>
+                                                        </div>
+                                                        <template x-for="val in field.condition_value_array">
+                                                            <input type="hidden" :name="'fields['+index+'][condition_value][]'" :value="val">
+                                                        </template>
+                                                    </div>
                                                 </template>
-                                            </select>
+                                                
+                                                <!-- Select (Çoklu Seçim Dropdown) -->
+                                                <template x-if="getConditionFieldType(field.condition_field_id) === 'select'">
+                                                    <div x-data="{ open: false }" class="relative w-full">
+                                                        <div @click="open = !open" class="w-full rounded-md border-orange-300 border shadow-sm text-sm p-2 bg-white cursor-pointer flex justify-between items-center focus-within:ring-1 focus-within:ring-orange-500">
+                                                            <div class="truncate pr-4" x-text="field.condition_value_array.length ? field.condition_value_array.join(', ') : 'Seçim yapın...'"></div>
+                                                            <svg class="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                                        </div>
+                                                        <div x-show="open" @click.away="open = false" style="display: none;" class="absolute z-50 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-56 overflow-y-auto">
+                                                            <!-- Toplu Seçim Barı -->
+                                                            <div class="px-3 py-2 border-b border-orange-200 bg-orange-100 flex items-center justify-between sticky top-0 z-10 shadow-xs" x-show="getConditionFieldSelectOptions(field.condition_field_id).length > 0">
+                                                                <label class="flex items-center text-xs font-bold text-orange-950 cursor-pointer select-none">
+                                                                    <input type="checkbox" :checked="isAllSelectOptionsSelected(field, field.condition_field_id, false)" @change="toggleAllSelectOptions(field, field.condition_field_id, $event.target.checked, false)" class="rounded border-gray-300 text-orange-600 focus:ring-orange-500 mr-2">
+                                                                    <span>Tümünü Seç</span>
+                                                                </label>
+                                                                <button type="button" @click="field.condition_value_array = []" class="text-[11px] font-bold text-orange-700 hover:text-red-700 transition" x-show="field.condition_value_array && field.condition_value_array.length > 0">
+                                                                    Seçimi Temizle (<span x-text="field.condition_value_array.length"></span>)
+                                                                </button>
+                                                            </div>
+                                                            <template x-for="opt in getConditionFieldSelectOptions(field.condition_field_id)" :key="opt">
+                                                                <label class="flex items-center px-3 py-2 hover:bg-orange-50 cursor-pointer border-b border-gray-100 last:border-0">
+                                                                    <input type="checkbox" x-model="field.condition_value_array" @change="cleanPassiveFromRequired(field)" :value="opt" class="rounded border-gray-300 text-orange-600 focus:ring-orange-500 mr-2">
+                                                                    <span x-text="opt" class="text-sm text-gray-700"></span>
+                                                                </label>
+                                                            </template>
+                                                            <div x-show="getConditionFieldSelectOptions(field.condition_field_id).length === 0" class="px-3 py-2 text-sm text-gray-500 italic">Veri bulunamadı</div>
+                                                        </div>
+                                                        <template x-for="val in field.condition_value_array">
+                                                            <input type="hidden" :name="'fields['+index+'][condition_value][]'" :value="val">
+                                                        </template>
+                                                    </div>
+                                                </template>
+                                                
+                                                <!-- Normal Metin Kutusu (Diğerleri) -->
+                                                <template x-if="getConditionFieldType(field.condition_field_id) !== 'master_data' && getConditionFieldType(field.condition_field_id) !== 'select'">
+                                                    <input type="text" x-model="field.condition_value" :name="'fields['+index+'][condition_value]'" class="w-full rounded-md border-orange-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 text-sm p-2" placeholder="Örn: Şirket İçi (Çoklu değer için virgül kullanın)">
+                                                </template>
+                                            </div>
                                         </div>
-                                        <div class="w-full md:w-1/2" x-show="field.condition_field_id">
-                                            <label class="block text-xs font-bold text-orange-800 uppercase tracking-wider mb-1">Hangi Değer Seçilirse Zorunlu Olsun?</label>
-                                            
-                                            <!-- Master Data (Çoklu Seçim Dropdown) -->
-                                            <template x-if="getConditionFieldType(field.condition_field_id) === 'master_data'">
-                                                <div x-data="{ open: false }" class="relative w-full">
-                                                    <div @click="open = !open" class="w-full rounded-md border-orange-300 border shadow-sm text-sm p-2 bg-white cursor-pointer flex justify-between items-center focus-within:ring-1 focus-within:ring-orange-500">
-                                                        <div class="truncate pr-4" x-text="field.condition_value_array.length ? field.condition_value_array.join(', ') : 'Seçim yapın...'"></div>
-                                                        <svg class="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                                                    </div>
-                                                    <div x-show="open" @click.away="open = false" style="display: none;" class="absolute z-50 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-56 overflow-y-auto">
-                                                        <!-- Toplu Seçim Barı -->
-                                                        <div class="px-3 py-2 border-b border-orange-200 bg-orange-100 flex items-center justify-between sticky top-0 z-10 shadow-xs" x-show="getConditionFieldMasterDataItems(field.condition_field_id).length > 0">
-                                                            <label class="flex items-center text-xs font-bold text-orange-950 cursor-pointer select-none">
-                                                                <input type="checkbox" :checked="isAllMasterDataSelected(field, field.condition_field_id, false)" @change="toggleAllMasterData(field, field.condition_field_id, $event.target.checked, false)" class="rounded border-gray-300 text-orange-600 focus:ring-orange-500 mr-2">
-                                                                <span>Tümünü Seç</span>
-                                                            </label>
-                                                            <button type="button" @click="field.condition_value_array = []" class="text-[11px] font-bold text-orange-700 hover:text-red-700 transition" x-show="field.condition_value_array && field.condition_value_array.length > 0">
-                                                                Seçimi Temizle (<span x-text="field.condition_value_array.length"></span>)
-                                                            </button>
-                                                        </div>
-                                                        <template x-for="item in getConditionFieldMasterDataItems(field.condition_field_id)" :key="item.id">
-                                                            <label class="flex items-center px-3 py-2 hover:bg-orange-50 cursor-pointer border-b border-gray-100 last:border-0">
-                                                                <input type="checkbox" x-model="field.condition_value_array" :value="item.name" class="rounded border-gray-300 text-orange-600 focus:ring-orange-500 mr-2">
-                                                                <span x-text="item.name" class="text-sm text-gray-700"></span>
-                                                            </label>
-                                                        </template>
-                                                        <div x-show="getConditionFieldMasterDataItems(field.condition_field_id).length === 0" class="px-3 py-2 text-sm text-gray-500 italic">Veri bulunamadı</div>
-                                                    </div>
-                                                    <template x-for="val in field.condition_value_array">
-                                                        <input type="hidden" :name="'fields['+index+'][condition_value][]'" :value="val">
-                                                    </template>
+
+                                        <!-- Koşula Bağlı Olarak Diğer Değerlerde Pasif / Kilitli Yapma -->
+                                        <div class="mt-3 pt-3 border-t border-orange-200/80" x-show="field.condition_field_id">
+                                            <div class="flex items-center justify-between flex-wrap gap-2">
+                                                <label class="flex items-center cursor-pointer select-none">
+                                                    <input type="hidden" :name="'fields['+index+'][is_disabled_on_condition]'" value="0">
+                                                    <input type="checkbox" x-model="field.is_disabled_on_condition" :name="'fields['+index+'][is_disabled_on_condition]'" value="1" class="rounded border-orange-300 text-orange-600 focus:ring-orange-500 h-4 w-4">
+                                                    <span class="ml-2 text-xs font-bold text-orange-950">Belirtilen Değerler Dışında Bu Alanı Girişe Kapat (Pasif / Kilitli Yap)</span>
+                                                </label>
+                                                
+                                                <!-- Tek Tıkla Kalanları Ekle Butonu -->
+                                                <button type="button" 
+                                                    x-show="field.is_disabled_on_condition" 
+                                                    @click="populateRemainingDisabledValues(field)" 
+                                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-md shadow-2xs transition cursor-pointer"
+                                                    title="Zorunlu seçilenler dışındaki tüm kalan seçenekleri otomatik olarak pasif listesine seçer">
+                                                    <svg class="w-3.5 h-3.5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                                                    <span>✨ Kalan Tüm Değerleri Ekle</span>
+                                                </button>
+                                            </div>
+
+                                            <!-- Pasif Değerler Seçim Listesi -->
+                                            <div class="mt-2.5 bg-white p-3 rounded-lg border border-orange-200 shadow-2xs" x-show="field.is_disabled_on_condition">
+                                                <div class="flex items-center justify-between mb-1.5">
+                                                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                                                        Hangi Değerlerde Bu Alan Pasif (Girişe Kapalı) Olsun?
+                                                    </label>
+                                                    <span class="text-[11px] text-slate-500 font-medium" x-show="field.disabled_condition_value_array && field.disabled_condition_value_array.length > 0">
+                                                        Seçili: <strong class="text-orange-700" x-text="field.disabled_condition_value_array.length"></strong> adet
+                                                    </span>
                                                 </div>
-                                            </template>
-                                            
-                                            <!-- Select (Çoklu Seçim Dropdown) -->
-                                            <template x-if="getConditionFieldType(field.condition_field_id) === 'select'">
-                                                <div x-data="{ open: false }" class="relative w-full">
-                                                    <div @click="open = !open" class="w-full rounded-md border-orange-300 border shadow-sm text-sm p-2 bg-white cursor-pointer flex justify-between items-center focus-within:ring-1 focus-within:ring-orange-500">
-                                                        <div class="truncate pr-4" x-text="field.condition_value_array.length ? field.condition_value_array.join(', ') : 'Seçim yapın...'"></div>
-                                                        <svg class="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                                                    </div>
-                                                    <div x-show="open" @click.away="open = false" style="display: none;" class="absolute z-50 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-56 overflow-y-auto">
-                                                        <!-- Toplu Seçim Barı -->
-                                                        <div class="px-3 py-2 border-b border-orange-200 bg-orange-100 flex items-center justify-between sticky top-0 z-10 shadow-xs" x-show="getConditionFieldSelectOptions(field.condition_field_id).length > 0">
-                                                            <label class="flex items-center text-xs font-bold text-orange-950 cursor-pointer select-none">
-                                                                <input type="checkbox" :checked="isAllSelectOptionsSelected(field, field.condition_field_id, false)" @change="toggleAllSelectOptions(field, field.condition_field_id, $event.target.checked, false)" class="rounded border-gray-300 text-orange-600 focus:ring-orange-500 mr-2">
-                                                                <span>Tümünü Seç</span>
-                                                            </label>
-                                                            <button type="button" @click="field.condition_value_array = []" class="text-[11px] font-bold text-orange-700 hover:text-red-700 transition" x-show="field.condition_value_array && field.condition_value_array.length > 0">
-                                                                Seçimi Temizle (<span x-text="field.condition_value_array.length"></span>)
-                                                            </button>
+
+                                                <!-- Master Data Pasif Çoklu Seçim Dropdown -->
+                                                <template x-if="getConditionFieldType(field.condition_field_id) === 'master_data'">
+                                                    <div x-data="{ open: false }" class="relative w-full">
+                                                        <div @click="open = !open" class="w-full rounded-md border-orange-300 border shadow-sm text-sm p-2 bg-white cursor-pointer flex justify-between items-center focus-within:ring-1 focus-within:ring-orange-500">
+                                                            <div class="truncate pr-4 text-slate-700 font-medium" x-text="field.disabled_condition_value_array.length ? field.disabled_condition_value_array.join(', ') : 'Pasif olacak değerleri seçiniz...'"></div>
+                                                            <svg class="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                                                         </div>
-                                                        <template x-for="opt in getConditionFieldSelectOptions(field.condition_field_id)" :key="opt">
-                                                            <label class="flex items-center px-3 py-2 hover:bg-orange-50 cursor-pointer border-b border-gray-100 last:border-0">
-                                                                <input type="checkbox" x-model="field.condition_value_array" :value="opt" class="rounded border-gray-300 text-orange-600 focus:ring-orange-500 mr-2">
-                                                                <span x-text="opt" class="text-sm text-gray-700"></span>
-                                                            </label>
+                                                        <div x-show="open" @click.away="open = false" style="display: none;" class="absolute z-50 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-56 overflow-y-auto">
+                                                            <div class="px-3 py-2 border-b border-orange-200 bg-orange-100 flex items-center justify-between sticky top-0 z-10 shadow-xs" x-show="getPassiveAvailableMasterDataItems(field).length > 0">
+                                                                <label class="flex items-center text-xs font-bold text-orange-950 cursor-pointer select-none">
+                                                                    <input type="checkbox" :checked="isAllMasterDataSelected(field, field.condition_field_id, 'disabled')" @change="toggleAllMasterData(field, field.condition_field_id, $event.target.checked, 'disabled')" class="rounded border-gray-300 text-orange-600 focus:ring-orange-500 mr-2">
+                                                                    <span>Kalanların Tümünü Seç</span>
+                                                                </label>
+                                                                <button type="button" @click="field.disabled_condition_value_array = []" class="text-[11px] font-bold text-orange-700 hover:text-red-700 transition" x-show="field.disabled_condition_value_array && field.disabled_condition_value_array.length > 0">
+                                                                    Seçimi Temizle (<span x-text="field.disabled_condition_value_array.length"></span>)
+                                                                </button>
+                                                            </div>
+                                                            <template x-for="item in getPassiveAvailableMasterDataItems(field)" :key="item.id">
+                                                                <label class="flex items-center px-3 py-2 hover:bg-orange-50 cursor-pointer border-b border-gray-100 last:border-0">
+                                                                    <input type="checkbox" x-model="field.disabled_condition_value_array" :value="item.name" class="rounded border-gray-300 text-orange-600 focus:ring-orange-500 mr-2">
+                                                                    <span x-text="item.name" class="text-sm text-gray-700"></span>
+                                                                </label>
+                                                            </template>
+                                                            <div x-show="getPassiveAvailableMasterDataItems(field).length === 0" class="px-3 py-2 text-xs text-orange-700 bg-orange-50/80 italic font-medium">Tüm seçenekler zorunlu olarak seçildiği için kalan pasif seçenek bulunmuyor.</div>
+                                                        </div>
+                                                        <template x-for="val in field.disabled_condition_value_array">
+                                                            <input type="hidden" :name="'fields['+index+'][disabled_condition_value][]'" :value="val">
                                                         </template>
-                                                        <div x-show="getConditionFieldSelectOptions(field.condition_field_id).length === 0" class="px-3 py-2 text-sm text-gray-500 italic">Veri bulunamadı</div>
                                                     </div>
-                                                    <template x-for="val in field.condition_value_array">
-                                                        <input type="hidden" :name="'fields['+index+'][condition_value][]'" :value="val">
-                                                    </template>
-                                                </div>
-                                            </template>
-                                            
-                                            <!-- Normal Metin Kutusu (Diğerleri) -->
-                                            <template x-if="getConditionFieldType(field.condition_field_id) !== 'master_data' && getConditionFieldType(field.condition_field_id) !== 'select'">
-                                                <input type="text" x-model="field.condition_value" :name="'fields['+index+'][condition_value]'" class="w-full rounded-md border-orange-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 text-sm p-2" placeholder="Örn: Şirket İçi (Çoklu değer için virgül kullanın)">
-                                            </template>
+                                                </template>
+
+                                                <!-- Select Pasif Çoklu Seçim Dropdown -->
+                                                <template x-if="getConditionFieldType(field.condition_field_id) === 'select'">
+                                                    <div x-data="{ open: false }" class="relative w-full">
+                                                        <div @click="open = !open" class="w-full rounded-md border-orange-300 border shadow-sm text-sm p-2 bg-white cursor-pointer flex justify-between items-center focus-within:ring-1 focus-within:ring-orange-500">
+                                                            <div class="truncate pr-4 text-slate-700 font-medium" x-text="field.disabled_condition_value_array.length ? field.disabled_condition_value_array.join(', ') : 'Pasif olacak değerleri seçiniz...'"></div>
+                                                            <svg class="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                                        </div>
+                                                        <div x-show="open" @click.away="open = false" style="display: none;" class="absolute z-50 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-56 overflow-y-auto">
+                                                            <div class="px-3 py-2 border-b border-orange-200 bg-orange-100 flex items-center justify-between sticky top-0 z-10 shadow-xs" x-show="getPassiveAvailableSelectOptions(field).length > 0">
+                                                                <label class="flex items-center text-xs font-bold text-orange-950 cursor-pointer select-none">
+                                                                    <input type="checkbox" :checked="isAllSelectOptionsSelected(field, field.condition_field_id, 'disabled')" @change="toggleAllSelectOptions(field, field.condition_field_id, $event.target.checked, 'disabled')" class="rounded border-gray-300 text-orange-600 focus:ring-orange-500 mr-2">
+                                                                    <span>Kalanların Tümünü Seç</span>
+                                                                </label>
+                                                                <button type="button" @click="field.disabled_condition_value_array = []" class="text-[11px] font-bold text-orange-700 hover:text-red-700 transition" x-show="field.disabled_condition_value_array && field.disabled_condition_value_array.length > 0">
+                                                                    Seçimi Temizle (<span x-text="field.disabled_condition_value_array.length"></span>)
+                                                                </button>
+                                                            </div>
+                                                            <template x-for="opt in getPassiveAvailableSelectOptions(field)" :key="opt">
+                                                                <label class="flex items-center px-3 py-2 hover:bg-orange-50 cursor-pointer border-b border-gray-100 last:border-0">
+                                                                    <input type="checkbox" x-model="field.disabled_condition_value_array" :value="opt" class="rounded border-gray-300 text-orange-600 focus:ring-orange-500 mr-2">
+                                                                    <span x-text="opt" class="text-sm text-gray-700"></span>
+                                                                </label>
+                                                            </template>
+                                                            <div x-show="getPassiveAvailableSelectOptions(field).length === 0" class="px-3 py-2 text-xs text-orange-700 bg-orange-50/80 italic font-medium">Tüm seçenekler zorunlu olarak seçildiği için kalan pasif seçenek bulunmuyor.</div>
+                                                        </div>
+                                                        <template x-for="val in field.disabled_condition_value_array">
+                                                            <input type="hidden" :name="'fields['+index+'][disabled_condition_value][]'" :value="val">
+                                                        </template>
+                                                    </div>
+                                                </template>
+
+                                                <!-- Metin Kutusu (Diğerleri) -->
+                                                <template x-if="getConditionFieldType(field.condition_field_id) !== 'master_data' && getConditionFieldType(field.condition_field_id) !== 'select'">
+                                                    <input type="text" x-model="field.disabled_condition_value" :name="'fields['+index+'][disabled_condition_value]'" class="w-full rounded-md border-orange-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 text-sm p-2" placeholder="Örn: STRECH, SHRINK (Çoklu değer için virgül kullanın)">
+                                                </template>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -643,15 +745,37 @@
                     return this.fields.filter(f => f.id && f.id != currentField.id && (f.value_type === 'nicel' || f.type === 'number') && f.label && f.label.trim() !== '');
                 },
 
+                // Pasif Seçimler İçin Kalanları Getirme ve Temizleme
+                cleanPassiveFromRequired(field) {
+                    if (field.disabled_condition_value_array && Array.isArray(field.disabled_condition_value_array) && field.condition_value_array) {
+                        field.disabled_condition_value_array = field.disabled_condition_value_array.filter(v => !field.condition_value_array.includes(v));
+                    }
+                },
+                getPassiveAvailableMasterDataItems(field) {
+                    let items = this.getConditionFieldMasterDataItems(field.condition_field_id);
+                    let reqItems = field.condition_value_array || [];
+                    return items.filter(i => !reqItems.includes(i.name));
+                },
+                getPassiveAvailableSelectOptions(field) {
+                    let opts = this.getConditionFieldSelectOptions(field.condition_field_id);
+                    let reqOpts = field.condition_value_array || [];
+                    return opts.filter(opt => !reqOpts.includes(opt));
+                },
+
                 // Toplu Seçim Fonksiyonları (Master Data)
-                isAllMasterDataSelected(field, fieldId, isCalc = false) {
-                    let items = this.getConditionFieldMasterDataItems(fieldId).map(i => i.name);
-                    let current = (isCalc ? field.calc_condition_value_array : field.condition_value_array) || [];
+                isAllMasterDataSelected(field, fieldId, mode = false) {
+                    let items = (mode === 'disabled')
+                        ? this.getPassiveAvailableMasterDataItems(field).map(i => i.name)
+                        : this.getConditionFieldMasterDataItems(fieldId).map(i => i.name);
+                    let key = (mode === true || mode === 'calc') ? 'calc_condition_value_array' : (mode === 'disabled' ? 'disabled_condition_value_array' : 'condition_value_array');
+                    let current = field[key] || [];
                     return items.length > 0 && items.every(name => current.includes(name));
                 },
-                toggleAllMasterData(field, fieldId, checkAll, isCalc = false) {
-                    let items = this.getConditionFieldMasterDataItems(fieldId).map(i => i.name);
-                    let key = isCalc ? 'calc_condition_value_array' : 'condition_value_array';
+                toggleAllMasterData(field, fieldId, checkAll, mode = false) {
+                    let items = (mode === 'disabled')
+                        ? this.getPassiveAvailableMasterDataItems(field).map(i => i.name)
+                        : this.getConditionFieldMasterDataItems(fieldId).map(i => i.name);
+                    let key = (mode === true || mode === 'calc') ? 'calc_condition_value_array' : (mode === 'disabled' ? 'disabled_condition_value_array' : 'condition_value_array');
                     if (!Array.isArray(field[key])) {
                         field[key] = [];
                     }
@@ -660,17 +784,25 @@
                     } else {
                         field[key] = field[key].filter(name => !items.includes(name));
                     }
+                    if (mode === false) {
+                        this.cleanPassiveFromRequired(field);
+                    }
                 },
 
                 // Toplu Seçim Fonksiyonları (Select Seçenekleri)
-                isAllSelectOptionsSelected(field, fieldId, isCalc = false) {
-                    let opts = this.getConditionFieldSelectOptions(fieldId);
-                    let current = (isCalc ? field.calc_condition_value_array : field.condition_value_array) || [];
+                isAllSelectOptionsSelected(field, fieldId, mode = false) {
+                    let opts = (mode === 'disabled')
+                        ? this.getPassiveAvailableSelectOptions(field)
+                        : this.getConditionFieldSelectOptions(fieldId);
+                    let key = (mode === true || mode === 'calc') ? 'calc_condition_value_array' : (mode === 'disabled' ? 'disabled_condition_value_array' : 'condition_value_array');
+                    let current = field[key] || [];
                     return opts.length > 0 && opts.every(opt => current.includes(opt));
                 },
-                toggleAllSelectOptions(field, fieldId, checkAll, isCalc = false) {
-                    let opts = this.getConditionFieldSelectOptions(fieldId);
-                    let key = isCalc ? 'calc_condition_value_array' : 'condition_value_array';
+                toggleAllSelectOptions(field, fieldId, checkAll, mode = false) {
+                    let opts = (mode === 'disabled')
+                        ? this.getPassiveAvailableSelectOptions(field)
+                        : this.getConditionFieldSelectOptions(fieldId);
+                    let key = (mode === true || mode === 'calc') ? 'calc_condition_value_array' : (mode === 'disabled' ? 'disabled_condition_value_array' : 'condition_value_array');
                     if (!Array.isArray(field[key])) {
                         field[key] = [];
                     }
@@ -678,6 +810,19 @@
                         field[key] = [...new Set([...field[key], ...opts])];
                     } else {
                         field[key] = field[key].filter(opt => !opts.includes(opt));
+                    }
+                    if (mode === false) {
+                        this.cleanPassiveFromRequired(field);
+                    }
+                },
+
+                populateRemainingDisabledValues(field) {
+                    if (!field.condition_field_id) return;
+                    let type = this.getConditionFieldType(field.condition_field_id);
+                    if (type === 'master_data') {
+                        field.disabled_condition_value_array = this.getPassiveAvailableMasterDataItems(field).map(i => i.name);
+                    } else if (type === 'select') {
+                        field.disabled_condition_value_array = this.getPassiveAvailableSelectOptions(field);
                     }
                 },
 
@@ -732,6 +877,9 @@
                                 condition_field_id: f.condition_field_id || '',
                                 condition_value: f.condition_value || '',
                                 condition_value_array: f.condition_value ? f.condition_value.split(',') : [],
+                                is_disabled_on_condition: f.is_disabled_on_condition == 1,
+                                disabled_condition_value: f.disabled_condition_value || '',
+                                disabled_condition_value_array: f.disabled_condition_value ? f.disabled_condition_value.split(',') : [],
                                 is_calculated: f.is_calculated == 1,
                                 calculation_formula: f.calculation_formula || '',
                                 calc_condition_field_id: f.calc_condition_field_id || '',
@@ -774,7 +922,10 @@
                         calc_condition_value_array: [],
                         condition_field_id: '',
                         condition_value: '',
-                        condition_value_array: []
+                        condition_value_array: [],
+                        is_disabled_on_condition: false,
+                        disabled_condition_value: '',
+                        disabled_condition_value_array: []
                     });
 
                     this.$nextTick(() => {
