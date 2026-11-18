@@ -14,12 +14,12 @@
                     <div class="flex items-center gap-2">
                         <span
                             class="text-xs font-black uppercase tracking-wider text-indigo-600 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-md">Parçalı
-                            Veri Girişi</span>
+                            Hedef Girişi</span>
                         <h2 class="font-extrabold text-xl text-slate-900 leading-tight">
                             {{ $formTemplate->name }}
                         </h2>
                     </div>
-                    <p class="text-xs text-slate-500 mt-0.5">Lütfen veri girişi yapmak istediğiniz
+                    <p class="text-xs text-slate-500 mt-0.5">Lütfen hedef girişi yapmak istediğiniz
                         <strong>{{ $partitionField->label }}</strong> değerini seçiniz</p>
                 </div>
             </div>
@@ -71,7 +71,7 @@
                         <span>⚡ Bölümlenmiş Giriş Kriteri:</span>
                         <strong class="text-amber-300">{{ $partitionField->label }}</strong>
                     </span>
-                    <h3 class="text-xl sm:text-2xl font-black">Hangi {{ $partitionField->label }} için veri girişi
+                    <h3 class="text-xl sm:text-2xl font-black">Hangi {{ $partitionField->label }} için hedef girişi
                         yapacaksınız?</h3>
                     <p class="text-xs sm:text-sm text-indigo-100/90 leading-relaxed">
                         Sistem yöneticiniz bu form için verileri <strong>{{ $partitionField->label }}</strong> bazında
@@ -162,7 +162,7 @@
                                 </div>
                             @else
                                 <p class="text-xs text-slate-500 italic py-1">
-                                    Bu {{ $partitionField->label }} için henüz bir veri kaydı bulunmuyor. Yeni bir form açarak
+                                    Bu {{ $partitionField->label }} için henüz bir hedef kaydı bulunmuyor. Yeni bir form açarak
                                     satırlarınızı girebilirsiniz.
                                 </p>
                             @endif
@@ -218,13 +218,15 @@
                                     onclick="if(this.dataset.clicked === 'true'){ return false; } this.dataset.clicked = 'true'; this.classList.add('pointer-events-none', 'opacity-70', 'cursor-not-allowed');"
                                     :class="clicking ? 'pointer-events-none opacity-70 cursor-not-allowed' : ''"
                                     class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm shadow-indigo-500/20 transition active:scale-98 select-none">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg class="w-4 h-4 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M12 4v16m8-8H4" />
                                     </svg>
-                                    <span
-                                        x-text="clicking ? 'Yönlendiriliyor...' : '{{ $option['name'] }} İçin Veri Girişi Başlat'">{{ $option['name'] }}
-                                        İçin Veri Girişi Başlat</span>
+                                    <span x-show="clicking">Yönlendiriliyor...</span>
+                                    <span x-show="!clicking" class="inline-flex items-center gap-1.5 flex-wrap justify-center">
+                                        <span class="text-amber-300 font-extrabold tracking-wide uppercase">{{ $option['name'] }}</span>
+                                        <span>İçin Hedef Girişini Başlat</span>
+                                    </span>
                                 </a>
                             @endif
                         </div>

@@ -2549,53 +2549,9 @@
                             return ['id' => $row->id, 'values' => (object) $values];
                         })) !!};
                         rawRows.forEach((r, idx) => { if (r._origIndex === undefined) r._origIndex = idx; });
-
-                        if (rawRows.length > 50) {
-                            // Büyük kayıtlı veri seti: Sayfa açılışında parçalı olarak render et
-                            this.uploadModalTitle = 'Kayıtlı Form Verileri Yükleniyor';
-                            this.uploadModalSubtitle = 'Kayıtlı satırlar optimize edilerek tabloya aktarılmaktadır.';
-                            this.uploadStepNames = ['1. Hazırlık', '2. Tablo', '3. Tamamlandı'];
-                            this.showUploadModal = true;
-                            this.totalImportRows = rawRows.length;
-                            this.isLargeDataset = true;
-                            let estSec = Math.max(2, Math.ceil(rawRows.length * 0.016));
-                            this.estimatedTimeText = estSec >= 60 ? `~${Math.ceil(estSec / 60)} dakika` : `~${estSec} saniye`;
-                            this.uploadProgress = '10.0';
-                            this.uploadStep = 2;
-                            this.uploadStatusText = `${rawRows.length} satır tabloya yerleştiriliyor...`;
-
-                            const CHUNK_SIZE = 35;
-                            let chunkIdx = 0;
-                            const loadChunk = () => {
-                                let start = chunkIdx * CHUNK_SIZE;
-                                let end = Math.min(start + CHUNK_SIZE, rawRows.length);
-                                this.rows.push(...rawRows.slice(start, end));
-
-                                let pct = (10.0 + ((end / rawRows.length) * 89.8)).toFixed(1);
-                                this.uploadProgress = pct;
-                                this.uploadStatusText = `${end} / ${rawRows.length} satır yüklendi (%${pct})...`;
-                                chunkIdx++;
-
-                                if (end < rawRows.length) {
-                                    setTimeout(loadChunk, 10);
-                                } else {
-                                    this.updateRowMaps();
-                                    this.calculateTotals();
-                                    this.uploadProgress = '100';
-                                    this.uploadStep = 3;
-                                    this.uploadStatusText = 'Tamamlandı!';
-                                    setTimeout(() => {
-                                        this.showUploadModal = false;
-                                        this.isLargeDataset = false;
-                                    }, 400);
-                                }
-                            };
-                            setTimeout(loadChunk, 20);
-                        } else {
-                            this.rows = rawRows;
-                            this.updateRowMaps();
-                            this.calculateTotals();
-                        }
+                        this.rows = rawRows;
+                        this.updateRowMaps();
+                        this.calculateTotals();
                     @elseif(old('rows_json') || old('rows'))
                         @php
                             $oldRowsData = old('rows_json') ? json_decode(old('rows_json'), true) : old('rows');
@@ -2612,47 +2568,7 @@
                         @endphp
                         let rawRows = {!! json_encode($formattedOldRows) !!};
                         rawRows.forEach((r, idx) => { if (r._origIndex === undefined) r._origIndex = idx; });
-                        if (rawRows.length > 50) {
-                            this.uploadModalTitle = 'Form Verileri Geri Yükleniyor';
-                            this.uploadModalSubtitle = 'Daha önce girdiğiniz veriler optimize edilerek tabloya aktarılmaktadır.';
-                            this.uploadStepNames = ['1. Hazırlık', '2. Tablo', '3. Tamamlandı'];
-                            this.showUploadModal = true;
-                            this.totalImportRows = rawRows.length;
-                            this.isLargeDataset = true;
-                            let estSec = Math.max(2, Math.ceil(rawRows.length * 0.016));
-                            this.estimatedTimeText = estSec >= 60 ? `~${Math.ceil(estSec / 60)} dakika` : `~${estSec} saniye`;
-                            this.uploadProgress = '10.0';
-                            this.uploadStep = 2;
-                            this.uploadStatusText = `${rawRows.length} satır tabloya yerleştiriliyor...`;
-
-                            const CHUNK_SIZE = 35;
-                            let chunkIdx = 0;
-                            const loadChunk = () => {
-                                let start = chunkIdx * CHUNK_SIZE;
-                                let end = Math.min(start + CHUNK_SIZE, rawRows.length);
-                                this.rows.push(...rawRows.slice(start, end));
-
-                                let pct = (10.0 + ((end / rawRows.length) * 89.8)).toFixed(1);
-                                this.uploadProgress = pct;
-                                this.uploadStatusText = `${end} / ${rawRows.length} satır yüklendi (%${pct})...`;
-                                chunkIdx++;
-
-                                if (end < rawRows.length) {
-                                    setTimeout(loadChunk, 10);
-                                } else {
-                                    this.updateRowMaps();
-                                    this.calculateTotals();
-                                    this.uploadProgress = '100';
-                                    this.uploadStep = 3;
-                                    this.uploadStatusText = 'Tamamlandı!';
-                                    setTimeout(() => {
-                                        this.showUploadModal = false;
-                                        this.isLargeDataset = false;
-                                    }, 400);
-                                }
-                            };
-                            setTimeout(loadChunk, 20);
-                        } else if (rawRows.length > 0) {
+                        if (rawRows.length > 0) {
                             this.rows = rawRows;
                             this.updateRowMaps();
                             this.calculateTotals();
