@@ -1,4 +1,9 @@
 @section('title', 'Master Veri Yönetimi')
+<style>
+    body.cursor-wait, body.cursor-wait * {
+        cursor: wait !important;
+    }
+</style>
 <x-app-layout>
     <x-slot name="header">
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
@@ -231,28 +236,82 @@
                             </form>
                         </div>
                         
-                        <!-- Öğe Ekleme Formu -->
-                        <div class="p-3 bg-gray-50 border-b border-gray-300 shadow-inner">
-                            <form action="{{ route('master_data.items.store') }}" method="POST" class="flex flex-col sm:flex-row sm:items-center gap-3">
+                        <!-- Öğe Ekleme Formu (Daima Görünür, Sınırlandırılmış ve Sabit Butonlu) -->
+                        <div class="p-3.5 bg-slate-50 border-b border-gray-300 shadow-inner">
+                            <form action="{{ route('master_data.items.store') }}" method="POST"
+                                @submit="if(isSubmittingItem) { $event.preventDefault(); return false; } isSubmittingItem = true; document.body.classList.add('cursor-wait');"
+                                class="flex flex-col gap-2.5">
                                 @csrf
                                 <input type="hidden" name="type_id" :value="selectedTypeId">
                                 
-                                <div class="w-full sm:flex-grow">
-                                    <textarea name="name" rows="1" placeholder="Çoklu eklemek için noktalı virgül (;) veya yeni satır (Enter) kullanın. (Örn: Fransa; İspanya; İtalya)" required class="w-full rounded-sm border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-xs p-2 bg-white resize-y" oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'"></textarea>
-                                </div>
-                                
-                                <div class="w-full sm:flex-grow" x-show="selectedTypeParentId">
-                                    <select name="parent_id" class="w-full rounded-sm border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-xs p-2 bg-white" :required="selectedTypeParentId !== null">
-                                        <option value="">-- Üst Veri Seçin --</option>
-                                        <template x-for="item in parentItems" :key="item.id">
-                                            <option :value="item.id" x-text="item.name"></option>
-                                        </template>
-                                    </select>
+                                <div class="flex flex-col sm:flex-row items-start gap-2.5">
+                                    <!-- Çoklu Veri Giriş Textarea'sı (Maksimum 160px yükseklik, iç kaydırma) -->
+                                    <div class="w-full flex-grow relative">
+                                        <textarea 
+                                            x-ref="newItemTextarea"
+                                            x-model="newItemText"
+                                            @input="handleTextareaInput($event)"
+                                            name="name" 
+                                            rows="2" 
+                                            placeholder="Tekli veya çoklu veri girişi (Excel'den veya listeden kopyalayıp buraya doğrudan yapıştırabilirsiniz. Her satır veya noktalı virgül ';' ayrı veri ekler)..." 
+                                            required 
+                                            class="w-full rounded-lg border-gray-300 shadow-xs focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-xs p-2.5 bg-white min-h-[46px] max-h-40 overflow-y-auto resize-none transition-all leading-relaxed placeholder-gray-400 font-sans"></textarea>
+                                    </div>
+                                    
+                                    <!-- Üst Veri Seçimi (Eğer kategori bir üst tipe bağlıysa) -->
+                                    <div class="w-full sm:w-64 flex-shrink-0" x-show="selectedTypeParentId" style="display: none;">
+                                        <label class="block text-[11px] font-bold text-gray-700 uppercase tracking-wide mb-1">
+                                            Bağlı Olduğu Üst Veri <span class="text-rose-500">*</span>:
+                                        </label>
+                                        <select name="parent_id" x-model="newParentId" class="w-full rounded-lg border-gray-300 shadow-xs focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-xs p-2 bg-white" :required="selectedTypeParentId !== null">
+                                            <option value="">-- Üst Veri Seçin --</option>
+                                            <template x-for="item in parentItems" :key="item.id">
+                                                <option :value="item.id" x-text="item.name"></option>
+                                            </template>
+                                        </select>
+                                    </div>
                                 </div>
 
-                                <button type="submit" class="w-full sm:w-auto bg-gray-800 hover:bg-black text-white font-semibold py-2 px-5 rounded-sm text-xs transition whitespace-nowrap shadow-sm">
-                                    Ekle
-                                </button>
+                                <!-- Alt Aksiyon ve Bilgilendirme Çubuğu (Daima Sabit & Görünür) -->
+                                <div class="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-gray-200/60">
+                                    <!-- Sol: Satır Sayacı ve Yardımcı İpuçları -->
+                                    <div class="flex items-center gap-2 flex-wrap">
+                                        <template x-if="newItemCount > 1">
+                                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-2xs">
+                                                <span class="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>
+                                                <span x-text="newItemCount.toLocaleString('tr-TR') + ' adet veri tespit edildi'"></span>
+                                            </span>
+                                        </template>
+                                        <span x-show="newItemCount <= 1" class="text-[11px] text-gray-500 hidden sm:inline">
+                                            💡 Excel veya metin listesinden çoklu kopyalayıp yapıştırabilirsiniz.
+                                        </span>
+                                    </div>
+
+                                    <!-- Sağ: Temizle ve Ekle Butonları -->
+                                    <div class="flex items-center gap-2 ml-auto">
+                                        <button type="button" 
+                                            x-show="newItemText.trim().length > 0" 
+                                            @click="clearNewItem()"
+                                            class="px-2.5 py-1.5 text-xs font-semibold text-gray-500 hover:text-rose-600 hover:bg-rose-50 rounded-md transition cursor-pointer"
+                                            title="Metin kutusunu temizle">
+                                            Temizle
+                                        </button>
+
+                                        <button type="submit" 
+                                            :disabled="isSubmittingItem || !newItemText.trim() || (selectedTypeParentId && !newParentId)"
+                                            :class="(isSubmittingItem || !newItemText.trim() || (selectedTypeParentId && !newParentId)) ? 'opacity-50 cursor-not-allowed pointer-events-none' : 'hover:bg-black active:scale-98'"
+                                            class="bg-gray-900 text-white font-bold py-2 px-5 rounded-lg text-xs transition inline-flex items-center gap-2 shadow-sm cursor-pointer whitespace-nowrap">
+                                            <svg x-show="isSubmittingItem" class="animate-spin -ml-1 mr-1 h-3.5 w-3.5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" style="display: none;">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                            <svg x-show="!isSubmittingItem" class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path>
+                                            </svg>
+                                            <span x-text="isSubmittingItem ? 'Ekleniyor...' : (newItemCount > 1 ? (newItemCount.toLocaleString('tr-TR') + ' Veriyi Ekle') : 'Ekle')">Ekle</span>
+                                        </button>
+                                    </div>
+                                </div>
                             </form>
                         </div>
 
@@ -391,6 +450,33 @@
                 selectAll: false,
                 editingItemId: null,
                 editFormData: { name: '', parent_id: '' },
+
+                // Item add form state
+                newItemText: '',
+                newParentId: '',
+                isSubmittingItem: false,
+
+                get newItemCount() {
+                    if (!this.newItemText || !this.newItemText.trim()) return 0;
+                    return this.newItemText.split(/[\n\r;]+/).filter(s => s.trim().length > 0).length;
+                },
+
+                handleTextareaInput(event) {
+                    const el = event.target;
+                    el.style.height = 'auto';
+                    el.style.height = Math.min(el.scrollHeight, 160) + 'px';
+                },
+
+                clearNewItem() {
+                    this.newItemText = '';
+                    this.newParentId = '';
+                    this.$nextTick(() => {
+                        const el = this.$refs.newItemTextarea;
+                        if (el) {
+                            el.style.height = 'auto';
+                        }
+                    });
+                },
                 
                 // Data mapping for fast lookup (passed from PHP directly)
                 typesList: @json($typesList),
@@ -415,6 +501,15 @@
                     this.selectedItemIds = [];
                     this.selectAll = false;
                     this.editingItemId = null;
+                    this.newItemText = '';
+                    this.newParentId = '';
+                    this.isSubmittingItem = false;
+                    this.$nextTick(() => {
+                        const el = this.$refs.newItemTextarea;
+                        if (el) {
+                            el.style.height = 'auto';
+                        }
+                    });
                     
                     if (parentId) {
                         let parentTypeData = this.allTypesData[parentId];
@@ -506,6 +601,10 @@
                     }, 50);
                 }
             }));
+
+            window.addEventListener('pageshow', () => {
+                document.body.classList.remove('cursor-wait');
+            });
         });
     </script>
 </x-app-layout>

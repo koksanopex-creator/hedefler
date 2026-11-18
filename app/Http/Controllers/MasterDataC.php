@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use App\Models\MasterDataTypeM;
 use App\Models\MasterDataItemM;
 use App\Models\MasterDataBatchM;
+use App\Models\UserM;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class MasterDataC extends Controller
@@ -114,43 +116,59 @@ class MasterDataC extends Controller
         $createdIds = [];
         $addedNames = [];
 
-        foreach ($names as $name) {
-            $name = trim($name);
-            if (!empty($name)) {
-                // Eğer isim sistemdeki bir kullanıcının adıyla eşleşiyorsa otomatik user_id bağla
-                $matchedUser = \App\Models\UserM::whereRaw('LOWER(TRIM(name)) = ?', [mb_strtolower(trim($name))])->first();
+        // 1. Çoklu veri eklemede N+1 sorgusunu önlemek için tüm kullanıcıları tek seferde hafızaya al
+        $userMap = UserM::select('id', 'name')->get()->keyBy(function($u) {
+            return mb_strtolower(trim($u->name));
+        });
 
-                $item = MasterDataItemM::create([
-                    'type_id' => $request->type_id,
-                    'name' => $name,
-                    'parent_id' => $request->parent_id,
-                    'user_id' => $matchedUser ? $matchedUser->id : null
-                ]);
-                $createdIds[] = $item->id;
-                $addedNames[] = $name;
+        // 2. Binlerce satır eklense dahi veri bütünlüğünü ve hızı garantiye almak için DB Transaction
+        DB::beginTransaction();
+        try {
+            foreach ($names as $name) {
+                $name = trim($name);
+                if (!empty($name)) {
+                    // İsim sistemdeki bir kullanıcının adıyla eşleşiyorsa otomatik user_id bağla
+                    $matchedUser = $userMap->get(mb_strtolower($name));
+
+                    $item = MasterDataItemM::create([
+                        'type_id' => $request->type_id,
+                        'name' => $name,
+                        'parent_id' => $request->parent_id,
+                        'user_id' => $matchedUser ? $matchedUser->id : null
+                    ]);
+                    $createdIds[] = $item->id;
+                    $addedNames[] = $name;
+                }
             }
-        }
 
-        $count = count($createdIds);
-        if ($count > 0) {
-            $preview = implode(', ', array_slice($addedNames, 0, 4)) . ($count > 4 ? " ... (+" . ($count - 4) . " veri)" : '');
-            
-            $batch = MasterDataBatchM::create([
-                'user_id' => auth()->id(),
-                'type_id' => $request->type_id,
-                'count' => $count,
-                'item_ids' => $createdIds,
-                'preview' => $preview,
-                'is_undone' => false,
-            ]);
+            $count = count($createdIds);
+            if ($count > 0) {
+                $preview = implode(', ', array_slice($addedNames, 0, 4)) . ($count > 4 ? " ... (+" . ($count - 4) . " veri)" : '');
+                
+                $batch = MasterDataBatchM::create([
+                    'user_id' => auth()->id(),
+                    'type_id' => $request->type_id,
+                    'count' => $count,
+                    'item_ids' => $createdIds,
+                    'preview' => $preview,
+                    'is_undone' => false,
+                ]);
 
-            $message = $count > 1 ? "$count adet veri başarıyla eklendi." : "Veri başarıyla eklendi.";
-            
-            return back()->with('success', $message)
-                ->with('last_batch_id', $batch->id)
-                ->with('last_batch_count', $count)
-                ->with('last_batch_type_name', $type->name)
-                ->with('selectedTypeId', $request->type_id);
+                DB::commit();
+
+                $message = $count > 1 ? "$count adet veri başarıyla eklendi." : "Veri başarıyla eklendi.";
+                
+                return back()->with('success', $message)
+                    ->with('last_batch_id', $batch->id)
+                    ->with('last_batch_count', $count)
+                    ->with('last_batch_type_name', $type->name)
+                    ->with('selectedTypeId', $request->type_id);
+            }
+
+            DB::commit();
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return back()->with('error', 'Veriler kaydedilirken bir hata oluştu: ' . $e->getMessage())->with('selectedTypeId', $request->type_id);
         }
 
         return back()->with('error', 'Geçerli bir veri girilmedi.')->with('selectedTypeId', $request->type_id);
