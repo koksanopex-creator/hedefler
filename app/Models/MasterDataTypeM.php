@@ -24,11 +24,11 @@ class MasterDataTypeM extends Model
 
     public function children()
     {
-        return $this->hasMany(MasterDataTypeM::class, 'parent_id');
+        return $this->hasMany(MasterDataTypeM::class, 'parent_id')->orderByRaw('name COLLATE utf8mb4_turkish_ci ASC');
     }
 
     public function items()
     {
-        return $this->hasMany(MasterDataItemM::class, 'type_id');
+        return $this->hasMany(MasterDataItemM::class, 'type_id')->orderByRaw('name COLLATE utf8mb4_turkish_ci ASC');
     }
 }

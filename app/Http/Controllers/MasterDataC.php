@@ -14,10 +14,10 @@ class MasterDataC extends Controller
 {
     public function index()
     {
-        // Alfabetik sıralı olarak tipleri ve altındaki öğeleri getir
+        // Türkçe alfabetik sıralı olarak tipleri ve altındaki öğeleri getir
         $allTypes = MasterDataTypeM::with(['parent', 'items' => function($query) {
-            $query->orderBy('name', 'asc');
-        }])->orderBy('name', 'asc')->get();
+            $query->orderByRaw('name COLLATE utf8mb4_turkish_ci ASC');
+        }])->orderByRaw('name COLLATE utf8mb4_turkish_ci ASC')->get();
 
         // Hiyerarşik ağaç (DFS) düzleştirme ve derinlik (depth) hesaplama
         $tree = [];
@@ -234,7 +234,7 @@ class MasterDataC extends Controller
             $query->where('parent_id', $request->parent_id);
         }
 
-        $items = $query->orderBy('name')->get(['id', 'name']);
+        $items = $query->orderByRaw('name COLLATE utf8mb4_turkish_ci ASC')->get(['id', 'name']);
         
         return response()->json($items);
     }

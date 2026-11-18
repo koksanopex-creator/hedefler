@@ -931,8 +931,7 @@
                                                             <option value="" x-text="isFieldDisabled(fields[{{ $colIndex }}], row) ? '-' : getMasterDataPlaceholder(row, fields[{{ $colIndex }}])"></option>
                                                             <template x-for="opt in getMasterDataOptions(row, fields[{{ $colIndex }}])"
                                                                 :key="opt.id">
-                                                                <option :value="opt.name" x-text="opt.name"
-                                                                    :selected="row.values['{{ $fId }}'] == opt.name"></option>
+                                                                <option :value="opt.name" x-text="opt.name"></option>
                                                             </template>
                                                         </select>
                                                         <button type="button"
@@ -2561,6 +2560,16 @@
                 },
 
                 init() {
+                    // Master Data ağacındaki tüm listeleri Türkçe alfabe (A-Z) sırasına göre bir kez önbellekte sırala
+                    if (this.masterDataTree) {
+                        Object.values(this.masterDataTree).forEach(typeObj => {
+                            if (typeObj && Array.isArray(typeObj.items) && !typeObj._sorted) {
+                                typeObj.items.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'tr', { sensitivity: 'base' }));
+                                typeObj._sorted = true;
+                            }
+                        });
+                    }
+
                     this.initFilters();
 
                     // LocalStorage kontrolü (veritabanında henüz kayıt yoksa veya yedek olarak)
@@ -3303,6 +3312,12 @@
                     if (!this.cachedMasterData) this.cachedMasterData = {};
                     let cacheKey = field.id + '_' + parentKey;
                     if (this.cachedMasterData[cacheKey]) return this.cachedMasterData[cacheKey];
+
+                    // Listenin Türkçe A-Z sıralı olduğundan emin ol
+                    if (!typeObj._sorted && Array.isArray(typeObj.items)) {
+                        typeObj.items.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'tr', { sensitivity: 'base' }));
+                        typeObj._sorted = true;
+                    }
 
                     let items = typeObj.items || [];
 
