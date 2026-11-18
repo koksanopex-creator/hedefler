@@ -1,4 +1,14 @@
 @section('title', 'Veri Detayı')
+<style>
+    body.cursor-wait, body.cursor-wait * {
+        cursor: wait !important;
+    }
+    .btn-loading {
+        pointer-events: none !important;
+        opacity: 0.70 !important;
+        cursor: wait !important;
+    }
+</style>
 <x-app-layout>
     <x-slot name="header">
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3" x-data>
@@ -43,7 +53,7 @@
                 @if(!$formEntry->is_consolidated)
                     @if(!empty($canSubmitApproval) && $canSubmitApproval)
                         <button type="button"
-                            onclick="if(this.dataset.clicked) return; this.dataset.clicked = 'true'; window.dispatchEvent(new CustomEvent('open-submit-approval-modal')); setTimeout(() => { delete this.dataset.clicked; }, 600);"
+                            onclick="if(this.dataset.clicked) return; this.dataset.clicked = 'true'; this.classList.add('btn-loading'); document.body.classList.add('cursor-wait'); window.dispatchEvent(new CustomEvent('open-submit-approval-modal')); setTimeout(() => { delete this.dataset.clicked; this.classList.remove('btn-loading'); document.body.classList.remove('cursor-wait'); }, 800);"
                             @click="$dispatch('open-submit-approval-modal')"
                             class="inline-flex items-center px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold rounded-lg shadow-sm transition gap-1.5 cursor-pointer"
                             title="Taslağı Onaya Gönder">
@@ -51,13 +61,13 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
                             </svg>
-                            Onaya Gönder
+                            <span>Onaya Gönder</span>
                         </button>
                     @endif
 
                     @if(!empty($canWithdraw) && $canWithdraw)
                         <button type="button"
-                            onclick="if(this.dataset.clicked) return; this.dataset.clicked = 'true'; window.dispatchEvent(new CustomEvent('open-withdraw-modal')); setTimeout(() => { delete this.dataset.clicked; }, 600);"
+                            onclick="if(this.dataset.clicked) return; this.dataset.clicked = 'true'; this.classList.add('btn-loading'); document.body.classList.add('cursor-wait'); window.dispatchEvent(new CustomEvent('open-withdraw-modal')); setTimeout(() => { delete this.dataset.clicked; this.classList.remove('btn-loading'); document.body.classList.remove('cursor-wait'); }, 800);"
                             @click="$dispatch('open-withdraw-modal')"
                             class="inline-flex items-center px-3.5 py-2 {{ $formEntry->status === 'submitted' ? 'bg-amber-600 hover:bg-amber-700' : 'bg-rose-600 hover:bg-rose-700' }} active:scale-95 text-white text-xs font-bold rounded-lg shadow-sm transition gap-1.5 cursor-pointer"
                             title="{{ $formEntry->status === 'submitted' ? 'Formu Onay Sürecinden Geri Çek (Taslağa Al)' : 'Taslağı Kalıcı Olarak Sil' }}">
@@ -70,7 +80,7 @@
                                         d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                                 @endif
                             </svg>
-                            {{ $formEntry->status === 'submitted' ? 'Geri Çek' : 'Taslağı Sil' }}
+                            <span>{{ $formEntry->status === 'submitted' ? 'Geri Çek' : 'Taslağı Sil' }}</span>
                         </button>
                     @endif
                 @endif
@@ -86,11 +96,11 @@
                                 d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
                             </path>
                         </svg>
-                        Düzenleme Talebi Bekliyor
+                        <span>Düzenleme Talebi Bekliyor</span>
                     </button>
                 @elseif(!empty($canRequestRevision) && $canRequestRevision)
                     <button type="button"
-                        onclick="if(this.dataset.clicked) return; this.dataset.clicked = 'true'; window.dispatchEvent(new CustomEvent('open-revision-modal')); setTimeout(() => { delete this.dataset.clicked; }, 600);"
+                        onclick="if(this.dataset.clicked) return; this.dataset.clicked = 'true'; this.classList.add('btn-loading'); document.body.classList.add('cursor-wait'); window.dispatchEvent(new CustomEvent('open-revision-modal')); setTimeout(() => { delete this.dataset.clicked; this.classList.remove('btn-loading'); document.body.classList.remove('cursor-wait'); }, 800);"
                         @click="$dispatch('open-revision-modal')"
                         class="inline-flex items-center px-3.5 py-2 bg-amber-500 hover:bg-amber-600 active:scale-95 text-white text-xs font-bold rounded-lg shadow-sm transition gap-1.5 cursor-pointer"
                         title="Form Onaylandıktan Sonra Düzenleme Talep Et">
@@ -99,13 +109,13 @@
                                 d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z">
                             </path>
                         </svg>
-                        Düzenleme Talep Et (Revizyon)
+                        <span>Düzenleme Talep Et (Revizyon)</span>
                     </button>
                 @endif
 
                 @if(!empty($canRevert) && $canRevert)
                     <button type="button"
-                        onclick="if(this.dataset.clicked) return; this.dataset.clicked = 'true'; window.dispatchEvent(new CustomEvent('open-revert-modal')); setTimeout(() => { delete this.dataset.clicked; }, 600);"
+                        onclick="if(this.dataset.clicked) return; this.dataset.clicked = 'true'; this.classList.add('btn-loading'); document.body.classList.add('cursor-wait'); window.dispatchEvent(new CustomEvent('open-revert-modal')); setTimeout(() => { delete this.dataset.clicked; this.classList.remove('btn-loading'); document.body.classList.remove('cursor-wait'); }, 800);"
                         @click="$dispatch('open-revert-modal')"
                         class="inline-flex items-center px-3.5 py-2 bg-slate-700 hover:bg-slate-800 active:scale-95 text-white text-xs font-bold rounded-lg shadow-sm transition gap-1.5 cursor-pointer"
                         title="Form Onayını Geri Al">
@@ -113,20 +123,21 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path>
                         </svg>
-                        Onayı Geri Al
+                        <span>Onayı Geri Al</span>
                     </button>
                 @endif
 
                 @if(app(\App\Services\PermissionS::class)->hasPermission(Auth::user(), 'exports.manage'))
                     <button type="button"
-                        onclick="if(document.getElementById('exportExcelBtn')) document.getElementById('exportExcelBtn').click()"
-                        class="inline-flex items-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold uppercase tracking-widest rounded-lg shadow-sm transition">
+                        onclick="if(this.dataset.clicked) return; this.dataset.clicked = 'true'; this.classList.add('btn-loading'); document.body.classList.add('cursor-wait'); let origHtml = this.innerHTML; this.innerHTML = '<svg class=\'animate-spin w-4 h-4 mr-1.5 inline-block text-white\' fill=\'none\' viewBox=\'0 0 24 24\'><circle class=\'opacity-25\' cx=\'12\' cy=\'12\' r=\'10\' stroke=\'currentColor\' stroke-width=\'4\'></circle><path class=\'opacity-75\' fill=\'currentColor\' d=\'M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z\'></path></svg> <span>İndiriliyor...</span>'; if(document.getElementById('exportExcelBtn')) document.getElementById('exportExcelBtn').click(); setTimeout(() => { this.innerHTML = origHtml; this.classList.remove('btn-loading'); document.body.classList.remove('cursor-wait'); delete this.dataset.clicked; }, 3500);"
+                        class="inline-flex items-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold uppercase tracking-widest rounded-lg shadow-sm transition cursor-pointer gap-1.5"
+                        title="Excel Olarak İndir">
                         <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
                             </path>
                         </svg>
-                        Excel
+                        <span>Excel</span>
                     </button>
                 @endif
             </div>
@@ -222,10 +233,11 @@
                                                 <div class="bg-slate-50 px-5 py-3.5 sm:px-6 sm:flex sm:flex-row-reverse gap-2 border-t border-slate-100"
                                                     x-data="{ dissolving: false }">
                                                     <form action="{{ route('form-entries.dissolve', $formEntry) }}" method="POST"
-                                                        @submit="if(dissolving) { $event.preventDefault(); return false; } dissolving = true;">
+                                                        @submit="if(dissolving) { $event.preventDefault(); return false; } dissolving = true; document.body.classList.add('cursor-wait');">
                                                         @csrf
                                                         <button type="submit" :disabled="dissolving"
-                                                            :class="dissolving ? 'opacity-70 cursor-not-allowed pointer-events-none' : ''"
+                                                            @click="if(dissolving) { $event.preventDefault(); return false; }"
+                                                            :class="dissolving ? 'opacity-70 cursor-wait pointer-events-none' : ''"
                                                             class="w-full inline-flex items-center justify-center rounded-xl border border-transparent shadow-sm px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 sm:w-auto transition gap-1.5 cursor-pointer">
                                                             <svg x-show="dissolving" style="display: none;"
                                                                 class="animate-spin -ml-1 mr-1.5 h-4 w-4 text-white"
@@ -428,6 +440,7 @@
                     </div>
                     @if(!empty($isSelf) && $isSelf)
                         <form action="{{ route('form-entries.revision-requests.dismiss', $rejectedRevision) }}" method="POST"
+                            onsubmit="this.querySelector('button').disabled = true; document.body.classList.add('cursor-wait');"
                             class="flex-shrink-0">
                             @csrf
                             <button type="submit"
@@ -794,7 +807,7 @@
             @endphp
 
             <!-- Veri Tablosu -->
-            <div x-data="formShowApp({!! htmlspecialchars(json_encode($fieldsToRender), ENT_QUOTES, 'UTF-8') !!}, {{ $formEntry->template->show_row_totals ? 'true' : 'false' }}, {!! htmlspecialchars(json_encode($versionsData), ENT_QUOTES, 'UTF-8') !!}, {{ $formEntry->template_id }})"
+            <div x-data="formShowApp({!! htmlspecialchars(json_encode($fieldsToRender), ENT_QUOTES, 'UTF-8') !!}, {{ $formEntry->template->show_row_totals ? 'true' : 'false' }}, {!! htmlspecialchars(json_encode($versionsData), ENT_QUOTES, 'UTF-8') !!}, {{ $formEntry->form_template_id ?? $formEntry->template->id }})"
                 @keydown.window.escape="if(isFullscreen) toggleFullscreen()"
                 :class="isFullscreen ? 'fixed inset-0 z-[999999] bg-white flex flex-col w-screen h-screen overflow-hidden m-0 p-0 rounded-none shadow-none ring-0' : 'bg-white shadow-xl sm:rounded-xl overflow-hidden ring-1 ring-black/5 mb-8'"
                 :style="isFullscreen ? 'position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; width: 100vw !important; height: 100vh !important; z-index: 9999999 !important; margin: 0 !important; padding: 0 !important;' : ''">
@@ -818,20 +831,20 @@
                     <div class="flex items-center gap-2 flex-wrap">
                         @if(!empty($canSubmitApproval) && $canSubmitApproval)
                             <button type="button"
-                                onclick="if(this.dataset.clicked) return; this.dataset.clicked = 'true'; window.dispatchEvent(new CustomEvent('open-submit-approval-modal')); setTimeout(() => { delete this.dataset.clicked; }, 600);"
+                                onclick="if(this.dataset.clicked) return; this.dataset.clicked = 'true'; this.classList.add('btn-loading'); document.body.classList.add('cursor-wait'); window.dispatchEvent(new CustomEvent('open-submit-approval-modal')); setTimeout(() => { delete this.dataset.clicked; this.classList.remove('btn-loading'); document.body.classList.remove('cursor-wait'); }, 800);"
                                 @click="$dispatch('open-submit-approval-modal')"
                                 class="inline-flex items-center px-3 sm:px-4 py-1.5 sm:py-2 bg-emerald-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-emerald-700 transition cursor-pointer shadow-xs gap-1.5">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
                                 </svg>
-                                Onaya Gönder
+                                <span>Onaya Gönder</span>
                             </button>
                         @endif
 
                         @if(!empty($canSubmitChildrenApproval) && $canSubmitChildrenApproval)
                             <button type="button"
-                                onclick="if(this.dataset.clicked) return; this.dataset.clicked = 'true'; window.dispatchEvent(new CustomEvent('open-submit-children-modal')); setTimeout(() => { delete this.dataset.clicked; }, 600);"
+                                onclick="if(this.dataset.clicked) return; this.dataset.clicked = 'true'; this.classList.add('btn-loading'); document.body.classList.add('cursor-wait'); window.dispatchEvent(new CustomEvent('open-submit-children-modal')); setTimeout(() => { delete this.dataset.clicked; this.classList.remove('btn-loading'); document.body.classList.remove('cursor-wait'); }, 800);"
                                 @click="$dispatch('open-submit-children-modal')"
                                 class="inline-flex items-center px-3 sm:px-4 py-1.5 sm:py-2 bg-emerald-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-emerald-700 transition cursor-pointer shadow-xs gap-1.5"
                                 title="Konsolide forma bağlı tüm taslak parçaları onaya gönder">
@@ -839,13 +852,13 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
                                 </svg>
-                                Taslak Parçaları Onaya Gönder ({{ $draftChildrenCount }})
+                                <span>Taslak Parçaları Onaya Gönder ({{ $draftChildrenCount }})</span>
                             </button>
                         @endif
 
                         @if(!empty($canWithdraw) && $canWithdraw)
                             <button type="button"
-                                onclick="if(this.dataset.clicked) return; this.dataset.clicked = 'true'; window.dispatchEvent(new CustomEvent('open-withdraw-modal')); setTimeout(() => { delete this.dataset.clicked; }, 600);"
+                                onclick="if(this.dataset.clicked) return; this.dataset.clicked = 'true'; this.classList.add('btn-loading'); document.body.classList.add('cursor-wait'); window.dispatchEvent(new CustomEvent('open-withdraw-modal')); setTimeout(() => { delete this.dataset.clicked; this.classList.remove('btn-loading'); document.body.classList.remove('cursor-wait'); }, 800);"
                                 @click="$dispatch('open-withdraw-modal')"
                                 class="inline-flex items-center px-3 sm:px-4 py-1.5 sm:py-2 {{ $formEntry->status === 'submitted' ? 'bg-amber-600 hover:bg-amber-700' : 'bg-rose-600 hover:bg-rose-700' }} border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest transition cursor-pointer shadow-xs gap-1.5"
                                 title="{{ $formEntry->status === 'submitted' ? 'Formu Onay Sürecinden Geri Çek (Taslağa Al)' : 'Taslağı Kalıcı Olarak Sil' }}">
@@ -858,19 +871,20 @@
                                             d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                                     @endif
                                 </svg>
-                                {{ $formEntry->status === 'submitted' ? 'Geri Çek' : 'Taslağı Sil' }}
+                                <span>{{ $formEntry->status === 'submitted' ? 'Geri Çek' : 'Taslağı Sil' }}</span>
                             </button>
                         @endif
 
                         @if($canEdit)
                             <a href="{{ route('form-entries.edit', $formEntry) }}"
-                                class="inline-flex items-center px-3 sm:px-4 py-1.5 sm:py-2 bg-indigo-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
+                                onclick="if(this.dataset.clicked) { event.preventDefault(); return false; } this.dataset.clicked = 'true'; this.classList.add('btn-loading'); document.body.classList.add('cursor-wait'); this.innerHTML = '<svg class=\'animate-spin w-4 h-4 mr-1.5 inline-block text-white\' fill=\'none\' viewBox=\'0 0 24 24\'><circle class=\'opacity-25\' cx=\'12\' cy=\'12\' r=\'10\' stroke=\'currentColor\' stroke-width=\'4\'></circle><path class=\'opacity-75\' fill=\'currentColor\' d=\'M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z\'></path></svg> <span>Yönlendiriliyor...</span>';"
+                                class="inline-flex items-center px-3 sm:px-4 py-1.5 sm:py-2 bg-indigo-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition gap-1.5 cursor-pointer">
                                 <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z">
                                     </path>
                                 </svg>
-                                Düzenle
+                                <span>Düzenle</span>
                             </a>
                         @endif
 
@@ -1107,13 +1121,15 @@
                                                     @click="sortColumn(field.id)"
                                                     :title="field.type === 'number' ? 'Sıralamak için tıklayın (Küçükten Büyüğe / Büyükten Küçüğe)' : 'Sıralamak için tıklayın (A\'dan Z\'ye / Z\'den A\'ya)'">
                                                     <span class="truncate" x-html="field.label + (field.is_required ? ' <span class=\'text-red-400\'>*</span>' : '')"></span>
-                                                    <span x-show="sortFieldId === field.id && sortDirection"
-                                                        class="text-[9px] font-black px-1.5 py-0.2 rounded bg-indigo-500 text-white shrink-0 shadow-2xs inline-flex items-center">
+                                                    <span class="inline-flex items-center shrink-0">
                                                         <template x-if="sortFieldId === field.id && sortDirection === 'asc'">
-                                                            <span x-text="field.type === 'number' ? '▲ 1-9' : '▲ A-Z'"></span>
+                                                            <span class="text-[9px] font-black px-1.5 py-0.2 rounded bg-indigo-500 text-white shadow-2xs inline-flex items-center" x-text="field.type === 'number' ? '▲ 1-9' : '▲ A-Z'"></span>
                                                         </template>
                                                         <template x-if="sortFieldId === field.id && sortDirection === 'desc'">
-                                                            <span x-text="field.type === 'number' ? '▼ 9-1' : '▼ Z-A'"></span>
+                                                            <span class="text-[9px] font-black px-1.5 py-0.2 rounded bg-amber-500 text-white shadow-2xs inline-flex items-center" x-text="field.type === 'number' ? '▼ 9-1' : '▼ Z-A'"></span>
+                                                        </template>
+                                                        <template x-if="sortFieldId !== field.id || !sortDirection">
+                                                            <span class="text-gray-400 hover:text-white transition-opacity text-[10px] ml-0.5 opacity-60 hover:opacity-100 font-bold" title="Sıralamak için tıklayın (A-Z / 1-9)">⇅</span>
                                                         </template>
                                                     </span>
                                                     <span x-show="field.is_disabled"
@@ -1235,18 +1251,53 @@
 
                                                         <!-- Dropdown Menu -->
                                                         <div x-show="open" x-transition.opacity
-                                                            class="absolute z-50 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5"
-                                                            style="display: none; min-width: 200px;">
-                                                            <div
-                                                                class="p-2 border-b border-gray-100 flex justify-between gap-2">
+                                                            class="absolute z-50 mt-2 w-52 rounded-xl shadow-2xl bg-white border border-gray-200 ring-1 ring-black/5 divide-y divide-gray-100"
+                                                            style="display: none; min-width: 210px;">
+                                                            <!-- Excel Tarzı Hızlı Sıralama -->
+                                                            <div class="p-1.5 bg-gray-50/70 rounded-t-xl text-xs space-y-0.5">
+                                                                <div class="px-2 py-0.5 text-[10px] font-black text-gray-400 uppercase tracking-wider">Sıralama (Excel)</div>
                                                                 <button type="button"
-                                                                    @click="selectAllFilters(field.id)"
-                                                                    class="text-[10px] font-semibold text-indigo-600 hover:text-indigo-800">Tümünü
-                                                                    Seç</button>
-                                                                <button type="button" @click="clearFilter(field.id)"
-                                                                    class="text-[10px] font-semibold text-red-600 hover:text-red-800">Temizle</button>
+                                                                    @click="setSortDirection(field.id, 'asc'); open = false;"
+                                                                    class="w-full flex items-center justify-between px-2.5 py-1.5 text-xs rounded-lg transition-colors cursor-pointer"
+                                                                    :class="sortFieldId === Number(field.id) && sortDirection === 'asc' ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-gray-700 hover:bg-gray-100'">
+                                                                    <span class="flex items-center gap-1.5">
+                                                                        <span class="text-xs font-bold text-indigo-600">▲</span>
+                                                                        <span x-text="field.type === 'number' ? 'Küçükten Büyüğe (1 → 9)' : 'A\'dan Z\'ye Sırala'"></span>
+                                                                    </span>
+                                                                    <span x-show="sortFieldId === Number(field.id) && sortDirection === 'asc'" class="text-indigo-600 text-xs font-black">✓</span>
+                                                                </button>
+                                                                <button type="button"
+                                                                    @click="setSortDirection(field.id, 'desc'); open = false;"
+                                                                    class="w-full flex items-center justify-between px-2.5 py-1.5 text-xs rounded-lg transition-colors cursor-pointer"
+                                                                    :class="sortFieldId === Number(field.id) && sortDirection === 'desc' ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-gray-700 hover:bg-gray-100'">
+                                                                    <span class="flex items-center gap-1.5">
+                                                                        <span class="text-xs font-bold text-indigo-600">▼</span>
+                                                                        <span x-text="field.type === 'number' ? 'Büyükten Küçüğe (9 → 1)' : 'Z\'den A\'ya Sırala'"></span>
+                                                                    </span>
+                                                                    <span x-show="sortFieldId === Number(field.id) && sortDirection === 'desc'" class="text-indigo-600 text-xs font-black">✓</span>
+                                                                </button>
+                                                                <template x-if="sortFieldId === Number(field.id) && sortDirection">
+                                                                    <button type="button"
+                                                                        @click="clearSort(); open = false;"
+                                                                        class="w-full flex items-center gap-1.5 px-2.5 py-1 text-[11px] text-amber-700 hover:bg-amber-50 rounded-lg font-semibold transition-colors cursor-pointer">
+                                                                        <span>↺</span>
+                                                                        <span>Sıralamayı Sıfırla</span>
+                                                                    </button>
+                                                                </template>
                                                             </div>
-                                                            <div class="max-h-60 overflow-y-auto p-2">
+
+                                                            <div class="p-2 border-b border-gray-100 flex justify-between gap-2 bg-white">
+                                                                <span class="text-[10px] font-black text-gray-400 uppercase tracking-wider self-center">Filtre</span>
+                                                                <div class="flex items-center gap-2">
+                                                                    <button type="button"
+                                                                        @click="selectAllFilters(field.id)"
+                                                                        class="text-[10px] font-semibold text-indigo-600 hover:text-indigo-800 cursor-pointer">Tümünü Seç</button>
+                                                                    <span class="text-gray-300">|</span>
+                                                                    <button type="button" @click="clearFilter(field.id)"
+                                                                        class="text-[10px] font-semibold text-red-600 hover:text-red-800 cursor-pointer">Temizle</button>
+                                                                </div>
+                                                            </div>
+                                                            <div class="max-h-56 overflow-y-auto p-2 space-y-0.5 bg-white rounded-b-xl">
                                                                 <template x-for="val in uniqueValues[field.id] || []"
                                                                     :key="val">
                                                                     <label
@@ -1412,7 +1463,7 @@
                     </div>
                     <div class="p-6">
                         <form action="{{ route('form-entries.review', $formEntry) }}" method="POST"
-                            @submit="if(submitting) { $event.preventDefault(); return false; } submitting = true;">
+                            @submit="if(submitting) { $event.preventDefault(); return false; } submitting = true; document.body.classList.add('cursor-wait');">
                             @csrf
                             <input type="hidden" name="status" x-model="action">
 
@@ -1426,8 +1477,8 @@
                             </div>
 
                             <div class="flex flex-wrap gap-3">
-                                <button type="submit" @click="action = 'approved'" :disabled="submitting"
-                                    :class="submitting ? 'opacity-70 cursor-not-allowed pointer-events-none' : ''"
+                                <button type="submit" @click="if(submitting) { $event.preventDefault(); return false; } action = 'approved'" :disabled="submitting"
+                                    :class="submitting ? 'opacity-70 cursor-wait pointer-events-none' : ''"
                                     class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-6 rounded-lg shadow-sm transition flex items-center text-xs uppercase tracking-wider cursor-pointer">
                                     <svg x-show="!submitting" class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor"
                                         viewBox="0 0 24 24">
@@ -1446,8 +1497,8 @@
                                         x-text="submitting && action === 'approved' ? 'Onaylanıyor...' : 'Veriyi Onayla'">Veriyi
                                         Onayla</span>
                                 </button>
-                                <button type="submit" @click="action = 'rejected'" :disabled="submitting"
-                                    :class="submitting ? 'opacity-70 cursor-not-allowed pointer-events-none' : ''"
+                                <button type="submit" @click="if(submitting) { $event.preventDefault(); return false; } action = 'rejected'" :disabled="submitting"
+                                    :class="submitting ? 'opacity-70 cursor-wait pointer-events-none' : ''"
                                     class="bg-rose-600 hover:bg-rose-700 text-white font-bold py-2.5 px-6 rounded-lg shadow-sm transition flex items-center text-xs uppercase tracking-wider cursor-pointer">
                                     <svg x-show="!submitting" class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor"
                                         viewBox="0 0 24 24">
@@ -1496,7 +1547,7 @@
                         </div>
 
                         <form action="{{ route('form-entries.revision-requests.review', $pendingRevision) }}" method="POST"
-                            @submit="if(submitting) { $event.preventDefault(); return false; } submitting = true;">
+                            @submit="if(submitting) { $event.preventDefault(); return false; } submitting = true; document.body.classList.add('cursor-wait');">
                             @csrf
                             <input type="hidden" name="action" x-model="revAction">
 
@@ -1510,8 +1561,8 @@
                             </div>
 
                             <div class="flex flex-wrap gap-3">
-                                <button type="submit" @click="revAction = 'approve'" :disabled="submitting"
-                                    :class="submitting ? 'opacity-70 cursor-not-allowed pointer-events-none' : ''"
+                                <button type="submit" @click="if(submitting) { $event.preventDefault(); return false; } revAction = 'approve'" :disabled="submitting"
+                                    :class="submitting ? 'opacity-70 cursor-wait pointer-events-none' : ''"
                                     class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-6 rounded-lg shadow-sm transition flex items-center text-xs uppercase tracking-wider cursor-pointer">
                                     <svg x-show="!submitting" class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor"
                                         viewBox="0 0 24 24">
@@ -1539,8 +1590,8 @@
                                     </svg>
                                     Talebi Reddet
                                 </button>
-                                <button type="submit" x-show="revAction === 'reject'" :disabled="submitting"
-                                    :class="submitting ? 'opacity-70 cursor-not-allowed pointer-events-none' : ''"
+                                <button type="submit" x-show="revAction === 'reject'" @click="if(submitting) { $event.preventDefault(); return false; }" :disabled="submitting"
+                                    :class="submitting ? 'opacity-70 cursor-wait pointer-events-none' : ''"
                                     class="bg-rose-700 hover:bg-rose-800 text-white font-bold py-2.5 px-6 rounded-lg shadow-sm transition flex items-center text-xs uppercase tracking-wider cursor-pointer">
                                     <svg x-show="submitting" class="animate-spin -ml-1 mr-1.5 h-4 w-4 text-white"
                                         xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -2253,7 +2304,7 @@
                 <div
                     class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full border border-gray-100">
                     <form action="{{ route('form-entries.request-revision', $formEntry) }}" method="POST"
-                        @submit="if(submitting) { $event.preventDefault(); return false; } submitting = true;">
+                        @submit="if(submitting) { $event.preventDefault(); return false; } submitting = true; document.body.classList.add('cursor-wait');">
                         @csrf
                         <div class="bg-indigo-600 px-6 py-4 flex items-center justify-between text-white">
                             <div class="flex items-center gap-2">
@@ -2292,7 +2343,8 @@
                                 İptal
                             </button>
                             <button type="submit" :disabled="submitting"
-                                :class="submitting ? 'opacity-70 cursor-not-allowed pointer-events-none' : ''"
+                                @click="if(submitting) { $event.preventDefault(); return false; }"
+                                :class="submitting ? 'opacity-70 cursor-wait pointer-events-none' : ''"
                                 class="px-5 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm cursor-pointer inline-flex items-center gap-2 transition">
                                 <svg x-show="submitting" class="animate-spin -ml-1 mr-1 h-3.5 w-3.5 text-white"
                                     xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -2322,7 +2374,7 @@
                     <div
                         class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full border border-gray-100">
                         <form action="{{ route('form-entries.revert-review', $formEntry) }}" method="POST"
-                            @submit="if(submitting) { $event.preventDefault(); return false; } submitting = true;">
+                            @submit="if(submitting) { $event.preventDefault(); return false; } submitting = true; document.body.classList.add('cursor-wait');">
                             @csrf
                             <div class="bg-slate-800 px-6 py-4 flex items-center justify-between text-white">
                                 <div class="flex items-center gap-2">
@@ -2359,7 +2411,8 @@
                                     Vazgeç
                                 </button>
                                 <button type="submit" :disabled="submitting"
-                                    :class="submitting ? 'opacity-70 cursor-not-allowed pointer-events-none' : ''"
+                                    @click="if(submitting) { $event.preventDefault(); return false; }"
+                                    :class="submitting ? 'opacity-70 cursor-wait pointer-events-none' : ''"
                                     class="px-5 py-2 text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 rounded-lg shadow-sm cursor-pointer inline-flex items-center gap-2 transition">
                                     <svg x-show="submitting" class="animate-spin -ml-1 mr-1 h-3.5 w-3.5 text-white"
                                         xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -2389,7 +2442,7 @@
                         <div
                             class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full border border-gray-100">
                             <form action="{{ route('form-entries.submit-approval', $formEntry) }}" method="POST"
-                                @submit="if(submitting) { $event.preventDefault(); return false; } submitting = true;">
+                                @submit="if(submitting) { $event.preventDefault(); return false; } submitting = true; document.body.classList.add('cursor-wait');">
                                 @csrf
                                 <div class="bg-emerald-700 px-6 py-4 flex items-center justify-between text-white">
                                     <div class="flex items-center gap-2">
@@ -2424,7 +2477,8 @@
                                         Vazgeç
                                     </button>
                                     <button type="submit" :disabled="submitting"
-                                        :class="submitting ? 'opacity-70 cursor-not-allowed pointer-events-none' : ''"
+                                        @click="if(submitting) { $event.preventDefault(); return false; }"
+                                        :class="submitting ? 'opacity-70 cursor-wait pointer-events-none' : ''"
                                         class="px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-sm cursor-pointer inline-flex items-center gap-2 transition">
                                         <svg x-show="submitting" class="animate-spin -ml-1 mr-1 h-3.5 w-3.5 text-white"
                                             xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -2456,7 +2510,7 @@
                         <div
                             class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full border border-gray-100">
                             <form action="{{ route('form-entries.submit-children-approval', $formEntry) }}" method="POST"
-                                @submit="if(submitting) { $event.preventDefault(); return false; } submitting = true;">
+                                @submit="if(submitting) { $event.preventDefault(); return false; } submitting = true; document.body.classList.add('cursor-wait');">
                                 @csrf
                                 <div class="bg-emerald-700 px-6 py-4 flex items-center justify-between text-white">
                                     <div class="flex items-center gap-2">
@@ -2500,7 +2554,8 @@
                                         Vazgeç
                                     </button>
                                     <button type="submit" :disabled="submitting"
-                                        :class="submitting ? 'opacity-70 cursor-not-allowed pointer-events-none' : ''"
+                                        @click="if(submitting) { $event.preventDefault(); return false; }"
+                                        :class="submitting ? 'opacity-70 cursor-wait pointer-events-none' : ''"
                                         class="px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-sm cursor-pointer inline-flex items-center gap-2 transition">
                                         <svg x-show="submitting" class="animate-spin -ml-1 mr-1 h-3.5 w-3.5 text-white"
                                             xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -2532,7 +2587,7 @@
                         <div
                             class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full border border-gray-100">
                             <form action="{{ route('form-entries.withdraw', $formEntry) }}" method="POST"
-                                @submit="if(submitting) { $event.preventDefault(); return false; } submitting = true;">
+                                @submit="if(submitting) { $event.preventDefault(); return false; } submitting = true; document.body.classList.add('cursor-wait');">
                                 @csrf
                                 <div
                                     class="{{ $formEntry->status === 'submitted' ? 'bg-amber-600' : 'bg-rose-700' }} px-6 py-4 flex items-center justify-between text-white">
@@ -2567,7 +2622,7 @@
                                         </p>
                                         <p class="text-xs text-gray-500 leading-relaxed">
                                             Form onay sürecinden geri çekildiğinde tekrar taslak durumuna dönecek, yöneticinin
-                                            onay listesinden kaldırılacak ve üzerinde dilediğiniz düzenlemeyi yapabileceksiniz.
+                                             onay listesinden kaldırılacak ve üzerinde dilediğiniz düzenlemeyi yapabileceksiniz.
                                         </p>
                                     @else
                                         <p class="text-sm font-semibold text-gray-800">
@@ -2588,7 +2643,8 @@
                                         Vazgeç
                                     </button>
                                     <button type="submit" :disabled="submitting"
-                                        :class="submitting ? 'opacity-70 cursor-not-allowed pointer-events-none' : ''"
+                                        @click="if(submitting) { $event.preventDefault(); return false; }"
+                                        :class="submitting ? 'opacity-70 cursor-wait pointer-events-none' : ''"
                                         class="px-5 py-2 text-xs font-bold text-white {{ $formEntry->status === 'submitted' ? 'bg-amber-600 hover:bg-amber-700' : 'bg-rose-600 hover:bg-rose-700' }} rounded-lg shadow-sm cursor-pointer inline-flex items-center gap-2 transition">
                                         <svg x-show="submitting" class="animate-spin -ml-1 mr-1 h-3.5 w-3.5 text-white"
                                             xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -2614,10 +2670,11 @@
                 fields: fields,
                 showTotals: showTotals,
                 versions: versions || [],
-                templateId: templateId || {{ $formEntry->template_id }},
+                templateId: templateId || {{ $formEntry->form_template_id ?? $formEntry->template->id }},
                 pinnedColumns: (() => {
                     try {
-                        let stored = localStorage.getItem(`pinned_columns_template_${templateId || {{ $formEntry->template_id }}}`);
+                        let tid = templateId || {{ $formEntry->form_template_id ?? $formEntry->template->id }};
+                        let stored = localStorage.getItem(`pinned_columns_template_${tid}`);
                         if (stored) {
                             let parsed = JSON.parse(stored);
                             if (Array.isArray(parsed)) return { left: parsed.map(Number), right: [] };
@@ -2635,7 +2692,8 @@
                 pinnedRightOffsets: {},
                 hiddenColumns: (() => {
                     try {
-                        let stored = localStorage.getItem(`hidden_columns_template_${templateId || {{ $formEntry->template_id }}}`);
+                        let tid = templateId || {{ $formEntry->form_template_id ?? $formEntry->template->id }};
+                        let stored = localStorage.getItem(`hidden_columns_template_${tid}`);
                         if (stored) return JSON.parse(stored).map(Number);
                     } catch(e) {}
                     return [];
@@ -3321,6 +3379,10 @@
                     return fVal.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                 }
             }));
+
+            window.addEventListener('pageshow', () => {
+                document.body.classList.remove('cursor-wait');
+            });
         });
     </script>
 </x-app-layout>

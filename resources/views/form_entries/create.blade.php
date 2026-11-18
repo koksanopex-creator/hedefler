@@ -1,6 +1,14 @@
 @section('title', 'Veri Girişi')
 <x-app-layout>
     <style>
+        body.cursor-wait, body.cursor-wait * {
+            cursor: wait !important;
+        }
+        .btn-loading {
+            pointer-events: none !important;
+            opacity: 0.70 !important;
+            cursor: wait !important;
+        }
         .fast-row {
             content-visibility: auto;
             contain-intrinsic-size: 1px 48px;
@@ -379,17 +387,25 @@
 
                             <!-- Tam Ekrandayken Hızlı Kaydet & Gönder Butonları (Üst Bar) -->
                             <div x-show="isFullscreen" class="flex items-center gap-1.5 pl-1.5 border-l border-slate-700">
-                                <button type="button" @click="saveDraftAjax(false)" :disabled="isSubmitting || isAutoSaving"
+                                <button type="button"
+                                    @click="if(isSubmitting || isAutoSaving) return; saveDraftAjax(false)"
+                                    :disabled="isSubmitting || isAutoSaving"
+                                    :class="{'opacity-50 cursor-wait pointer-events-none': isSubmitting || isAutoSaving}"
                                     class="bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white font-bold py-1.5 px-2.5 rounded-lg text-xs shadow-xs transition flex items-center gap-1 cursor-pointer border border-slate-700"
                                     title="Taslak Olarak Kaydet">
-                                    <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
+                                    <svg x-show="isAutoSaving" class="animate-spin -ml-0.5 mr-1 h-3.5 w-3.5 text-amber-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                    <svg x-show="!isAutoSaving" class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
                                     <span class="hidden md:inline" x-text="isAutoSaving ? 'Kaydediliyor...' : 'Taslak Kaydet'"></span>
                                 </button>
-                                <button type="button" @click="submitForm('submit')" :disabled="isSubmitting"
+                                <button type="button"
+                                    @click="if(isSubmitting) return; submitForm('submit')"
+                                    :disabled="isSubmitting"
+                                    :class="{'opacity-50 cursor-wait pointer-events-none': isSubmitting}"
                                     class="bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold py-1.5 px-3 rounded-lg text-xs shadow-xs transition flex items-center gap-1 cursor-pointer"
                                     title="Onaya Gönder">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                    <span>Onaya Gönder</span>
+                                    <svg x-show="isSubmitting" class="animate-spin -ml-0.5 mr-1 h-3.5 w-3.5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                    <svg x-show="!isSubmitting" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                    <span x-text="isSubmitting ? 'Gönderiliyor...' : 'Onaya Gönder'"></span>
                                 </button>
                             </div>
                         </div>
@@ -415,13 +431,15 @@
                                                         @click="sortColumn(field.id)"
                                                         :title="field.type === 'number' ? 'Sıralamak için tıklayın (Küçükten Büyüğe / Büyükten Küçüğe)' : 'Sıralamak için tıklayın (A\'dan Z\'ye / Z\'den A\'ya)'">
                                                         <span class="truncate" x-html="field.label + (field.is_required ? ' <span class=\'text-red-400\'>*</span>' : '')"></span>
-                                                        <span x-show="sortFieldId === field.id && sortDirection"
-                                                            class="text-[9px] font-black px-1.5 py-0.2 rounded bg-indigo-500 text-white shrink-0 shadow-2xs inline-flex items-center">
+                                                        <span class="inline-flex items-center shrink-0">
                                                             <template x-if="sortFieldId === field.id && sortDirection === 'asc'">
-                                                                <span x-text="field.type === 'number' ? '▲ 1-9' : '▲ A-Z'"></span>
+                                                                <span class="text-[9px] font-black px-1.5 py-0.2 rounded bg-indigo-500 text-white shadow-2xs inline-flex items-center" x-text="field.type === 'number' ? '▲ 1-9' : '▲ A-Z'"></span>
                                                             </template>
                                                             <template x-if="sortFieldId === field.id && sortDirection === 'desc'">
-                                                                <span x-text="field.type === 'number' ? '▼ 9-1' : '▼ Z-A'"></span>
+                                                                <span class="text-[9px] font-black px-1.5 py-0.2 rounded bg-amber-500 text-white shadow-2xs inline-flex items-center" x-text="field.type === 'number' ? '▼ 9-1' : '▼ Z-A'"></span>
+                                                            </template>
+                                                            <template x-if="sortFieldId !== field.id || !sortDirection">
+                                                                <span class="text-gray-400 hover:text-white transition-opacity text-[10px] ml-0.5 opacity-60 hover:opacity-100 font-bold" title="Sıralamak için tıklayın (A-Z / 1-9)">⇅</span>
                                                             </template>
                                                         </span>
                                                         <span x-show="field.is_disabled"
@@ -545,18 +563,53 @@
 
                                                             <!-- Dropdown Menu -->
                                                             <div x-show="open" x-transition.opacity
-                                                                class="absolute z-50 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5"
-                                                                style="display: none; min-width: 200px;">
-                                                                <div
-                                                                    class="p-2 border-b border-gray-100 flex justify-between gap-2">
+                                                                class="absolute z-50 mt-2 w-52 rounded-xl shadow-2xl bg-white border border-gray-200 ring-1 ring-black/5 divide-y divide-gray-100"
+                                                                style="display: none; min-width: 210px;">
+                                                                <!-- Excel Tarzı Hızlı Sıralama -->
+                                                                <div class="p-1.5 bg-gray-50/70 rounded-t-xl text-xs space-y-0.5">
+                                                                    <div class="px-2 py-0.5 text-[10px] font-black text-gray-400 uppercase tracking-wider">Sıralama (Excel)</div>
                                                                     <button type="button"
-                                                                        @click="selectAllFilters(field.id)"
-                                                                        class="text-[10px] font-semibold text-indigo-600 hover:text-indigo-800">Tümünü
-                                                                        Seç</button>
-                                                                    <button type="button" @click="clearFilter(field.id)"
-                                                                        class="text-[10px] font-semibold text-red-600 hover:text-red-800">Temizle</button>
+                                                                        @click="setSortDirection(field.id, 'asc'); open = false;"
+                                                                        class="w-full flex items-center justify-between px-2.5 py-1.5 text-xs rounded-lg transition-colors cursor-pointer"
+                                                                        :class="sortFieldId === Number(field.id) && sortDirection === 'asc' ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-gray-700 hover:bg-gray-100'">
+                                                                        <span class="flex items-center gap-1.5">
+                                                                            <span class="text-xs font-bold text-indigo-600">▲</span>
+                                                                            <span x-text="field.type === 'number' ? 'Küçükten Büyüğe (1 → 9)' : 'A\'dan Z\'ye Sırala'"></span>
+                                                                        </span>
+                                                                        <span x-show="sortFieldId === Number(field.id) && sortDirection === 'asc'" class="text-indigo-600 text-xs font-black">✓</span>
+                                                                    </button>
+                                                                    <button type="button"
+                                                                        @click="setSortDirection(field.id, 'desc'); open = false;"
+                                                                        class="w-full flex items-center justify-between px-2.5 py-1.5 text-xs rounded-lg transition-colors cursor-pointer"
+                                                                        :class="sortFieldId === Number(field.id) && sortDirection === 'desc' ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-gray-700 hover:bg-gray-100'">
+                                                                        <span class="flex items-center gap-1.5">
+                                                                            <span class="text-xs font-bold text-indigo-600">▼</span>
+                                                                            <span x-text="field.type === 'number' ? 'Büyükten Küçüğe (9 → 1)' : 'Z\'den A\'ya Sırala'"></span>
+                                                                        </span>
+                                                                        <span x-show="sortFieldId === Number(field.id) && sortDirection === 'desc'" class="text-indigo-600 text-xs font-black">✓</span>
+                                                                    </button>
+                                                                    <template x-if="sortFieldId === Number(field.id) && sortDirection">
+                                                                        <button type="button"
+                                                                            @click="clearSort(); open = false;"
+                                                                            class="w-full flex items-center gap-1.5 px-2.5 py-1 text-[11px] text-amber-700 hover:bg-amber-50 rounded-lg font-semibold transition-colors cursor-pointer">
+                                                                            <span>↺</span>
+                                                                            <span>Sıralamayı Sıfırla</span>
+                                                                        </button>
+                                                                    </template>
                                                                 </div>
-                                                                <div class="max-h-60 overflow-y-auto p-2">
+
+                                                                <div class="p-2 border-b border-gray-100 flex justify-between gap-2 bg-white">
+                                                                    <span class="text-[10px] font-black text-gray-400 uppercase tracking-wider self-center">Filtre</span>
+                                                                    <div class="flex items-center gap-2">
+                                                                        <button type="button"
+                                                                            @click="selectAllFilters(field.id)"
+                                                                            class="text-[10px] font-semibold text-indigo-600 hover:text-indigo-800 cursor-pointer">Tümünü Seç</button>
+                                                                        <span class="text-gray-300">|</span>
+                                                                        <button type="button" @click="clearFilter(field.id)"
+                                                                            class="text-[10px] font-semibold text-red-600 hover:text-red-800 cursor-pointer">Temizle</button>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="max-h-56 overflow-y-auto p-2 space-y-0.5 bg-white rounded-b-xl">
                                                                     <template
                                                                         x-for="val in uniqueValues[field.id] || []"
                                                                         :key="val">
@@ -1096,9 +1149,9 @@
 
                         <div class="flex items-center space-x-2 flex-shrink-0">
                             <button type="button"
-                                @click="saveDraftAjax(false)"
+                                @click="if(isSubmitting || isAutoSaving) return; saveDraftAjax(false)"
                                 :disabled="isSubmitting || isAutoSaving"
-                                :class="{'opacity-50 cursor-not-allowed': isSubmitting || isAutoSaving}"
+                                :class="{'opacity-50 cursor-wait pointer-events-none': isSubmitting || isAutoSaving}"
                                 class="bg-white hover:bg-gray-100 active:bg-gray-200 text-gray-700 font-semibold py-1.5 px-3.5 border border-gray-300 rounded-lg shadow-xs transition-colors cursor-pointer select-none inline-flex items-center justify-center text-xs"
                                 title="Formu zorunlu alan kontrolü olmadan taslak olarak kaydeder (Daha sonra devam edebilirsiniz)">
                                 <span x-show="isAutoSaving || (isSubmitting && submittingAction === 'draft')" class="inline-flex items-center">
@@ -1111,9 +1164,9 @@
                                 <span x-show="!isAutoSaving && (!isSubmitting || submittingAction !== 'draft')">Taslak Olarak Kaydet</span>
                             </button>
                             <button type="button"
-                                @click="submitForm('submit')"
+                                @click="if(isSubmitting) return; submitForm('submit')"
                                 :disabled="isSubmitting"
-                                :class="{'opacity-50 cursor-not-allowed': isSubmitting}"
+                                :class="{'opacity-50 cursor-wait pointer-events-none': isSubmitting}"
                                 class="bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-bold py-1.5 px-4 rounded-lg shadow-xs transition-colors cursor-pointer select-none inline-flex items-center justify-center text-xs"
                                 title="Formu doğrular ve onaya gönderir">
                                 <span x-show="isSubmitting && submittingAction === 'submit'" class="inline-flex items-center">
@@ -2210,27 +2263,43 @@
                         return;
                     }
 
-                    // Sadece aralıktaki ardışık boş hücreleri bul; ilk dolu hücreye rastlayınca dur (break)!
+                    const targetField = this.fields.find(f => f.id == fieldId);
+                    const fieldLabel = targetField ? (targetField.label || targetField.name) : 'Sütun';
+
+                    const isCellEmptyOrInvalid = (row) => {
+                        let cellVal = row && row.values ? row.values[fieldId] : '';
+                        if (cellVal === undefined || cellVal === null || String(cellVal).trim() === '') {
+                            return true;
+                        }
+                        if (targetField && targetField.type === 'user_list') {
+                            let opts = this.getUserListOptions(row, targetField);
+                            if (opts && opts.length > 0) {
+                                let hasMatch = opts.some(o => o.name === cellVal || String(o.id) === String(cellVal));
+                                if (!hasMatch) return true; // UI'da 'Kullanıcı Seçiniz...' görünen geçersiz/artık değer
+                            }
+                        } else if (targetField && (targetField.type === 'select' || targetField.type === 'master_data')) {
+                            if (targetField.options && Array.isArray(targetField.options) && targetField.options.length > 0) {
+                                let hasMatch = targetField.options.some(o => String(o) === String(cellVal) || (typeof o === 'object' && (o.value === cellVal || o.label === cellVal)));
+                                if (!hasMatch) return true;
+                            }
+                        }
+                        return false;
+                    };
+
+                    // Sadece aralıktaki ardışık boş veya geçersiz hücreleri bul
                     let emptyEndIdx = -1;
                     for (let i = startIdx + 1; i < this.rows.length; i++) {
-                        let cellVal = this.rows[i].values ? this.rows[i].values[fieldId] : '';
-                        let isEmpty = (cellVal === undefined || cellVal === null || String(cellVal).trim() === '');
-                        if (isEmpty) {
+                        if (isCellEmptyOrInvalid(this.rows[i])) {
                             emptyEndIdx = i;
                         } else {
-                            // Dolu bir hücreye (örn: ADT) rastlandı, DUR!
+                            // Dolu bir hücreye rastlandı, dur
                             break;
                         }
                     }
 
-                    if (emptyEndIdx === -1) {
-                        this.showToast('Altındaki ilk hücre zaten dolu veya doldurulacak boş satır yok.');
-                        return;
-                    }
-
-                    const targetCount = (emptyEndIdx - startIdx);
-                    const targetField = this.fields.find(f => f.id == fieldId);
-                    const fieldLabel = targetField ? (targetField.label || targetField.name) : 'Sütun';
+                    // Eğer hemen altında boş/geçersiz hücre bulunamazsa, tablonun sonuna kadar doldurmayı öner (Excel üzerine yazma davranışı)
+                    let targetEndIdx = emptyEndIdx !== -1 ? emptyEndIdx : (this.rows.length - 1);
+                    const targetCount = (targetEndIdx - startIdx);
 
                     this.isFillingColumn = false;
                     this.fillProgressPct = 0;
@@ -2243,7 +2312,7 @@
                         valToCopy: valToCopy,
                         targetRowCount: targetCount,
                         startRowNumber: startIdx + 2,
-                        endRowNumber: emptyEndIdx + 1
+                        endRowNumber: targetEndIdx + 1
                     };
                     this.showFillConfirmModal = true;
                 },
@@ -2971,6 +3040,7 @@
                     // 2. Taslak veya Onay için formu gönder
                     this.isSubmitting = true;
                     this.submittingAction = actionType;
+                    document.body.classList.add('cursor-wait');
 
                     // Alpine'daki tüm satırların değerler objesini JSON olarak hazırla
                     const rowsData = this.rows.map(r => r.values);
@@ -3026,6 +3096,9 @@
                         return;
                     }
 
+                    if (!isSilent) {
+                        document.body.classList.add('cursor-wait');
+                    }
                     this.isAutoSaving = true;
                     this.autoSaveStatus = 'saving';
 
@@ -3108,6 +3181,9 @@
                         if (typeof callback === 'function') callback(err);
                     } finally {
                         this.isAutoSaving = false;
+                        if (!isSilent) {
+                            document.body.classList.remove('cursor-wait');
+                        }
                         setTimeout(() => {
                             if (this.autoSaveStatus === 'saved' && !this.hasUnsavedChanges) {
                                 this.autoSaveStatus = 'idle';
@@ -4501,6 +4577,10 @@
                     event.target.value = '';
                 }
             }));
+
+            window.addEventListener('pageshow', () => {
+                document.body.classList.remove('cursor-wait');
+            });
         });
     </script>
 </x-app-layout>
