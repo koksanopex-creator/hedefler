@@ -16,6 +16,7 @@ class FormFieldM extends Model
         'options', 
         'master_data_type_id', 
         'is_required', 
+        'is_disabled',
         'is_summable', 
         'sort_order',
         'condition_field_id',
@@ -34,6 +35,7 @@ class FormFieldM extends Model
         return [
             'options' => 'array',
             'is_required' => 'boolean',
+            'is_disabled' => 'boolean',
             'is_summable' => 'boolean',
             'is_calculated' => 'boolean',
             'is_disabled_on_condition' => 'boolean',

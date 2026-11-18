@@ -97,6 +97,7 @@
                                         class="group inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 border bg-white text-slate-700 border-slate-200 hover:border-indigo-400 hover:bg-indigo-50 hover:text-indigo-700 hover:shadow-xs active:scale-95 cursor-pointer">
                                     <span class="text-[10px] font-bold text-slate-400 group-hover:text-indigo-600" x-text="(i + 1) + '.'"></span>
                                     <span x-text="f.label && f.label.trim() !== '' ? f.label : '(İsimsiz ' + (i + 1) + ')'" class="truncate max-w-[170px]"></span>
+                                    <span x-show="f.is_disabled" class="text-[9px] font-black text-rose-700 bg-rose-100 border border-rose-200 px-1 py-0.2 rounded">PASİF</span>
                                     <span class="w-1.5 h-1.5 rounded-full" 
                                           :class="{
                                               'bg-indigo-500': f.type === 'master_data',
@@ -201,6 +202,13 @@
                                             <input type="hidden" :name="'fields['+index+'][is_required]'" value="0">
                                             <input type="checkbox" x-model="field.is_required" :name="'fields['+index+'][is_required]'" value="1" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 mr-2">
                                             Bu Alan Zorunlu
+                                        </label>
+
+                                        <label class="flex items-center text-sm font-semibold text-rose-700 bg-rose-50/70 hover:bg-rose-50 px-2.5 py-1 rounded-lg border border-rose-200 cursor-pointer transition shadow-2xs select-none"
+                                            title="İşaretlenirse bu alan form girişinde görünür ancak veri girişi ve seçimi engellenir (kilitli/pasif kalır). Excel yüklemede ve kopyala-yapıştırda bu alan es geçilir.">
+                                            <input type="hidden" :name="'fields['+index+'][is_disabled]'" value="0">
+                                            <input type="checkbox" x-model="field.is_disabled" :name="'fields['+index+'][is_disabled]'" value="1" class="h-4 w-4 text-rose-600 border-rose-300 rounded focus:ring-rose-500 mr-2">
+                                            🔒 Bu Alan Form Girişinde Pasif Olsun (Girişe Kapalı)
                                         </label>
 
                                         <label class="flex items-center text-sm text-gray-700" x-show="field.value_type === 'nicel' && field.type === 'number'">
@@ -873,6 +881,7 @@
                                 ...f,
                                 _uid: uid,
                                 is_required: f.is_required == 1,
+                                is_disabled: f.is_disabled == 1,
                                 is_summable: f.is_summable == 1,
                                 condition_field_id: f.condition_field_id || '',
                                 condition_value: f.condition_value || '',
@@ -914,6 +923,7 @@
                         year_future: 2,
                         year_custom_list: '',
                         is_required: false,
+                        is_disabled: false,
                         is_summable: false,
                         is_calculated: false,
                         calculation_formula: '',

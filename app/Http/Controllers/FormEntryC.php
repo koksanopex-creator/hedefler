@@ -1448,6 +1448,13 @@ class FormEntryC extends Controller
                 $isEmptyRow = true;
 
                 foreach ($fields as $field) {
+                    // Pasif / Girişe Kapalı alana Excel'den veri yükleme (es geç)
+                    if (!empty($field->is_disabled)) {
+                        $rowData[$field->id] = '';
+                        $colIndex++;
+                        continue;
+                    }
+
                     $cellValue = $sheet->getCell([$colIndex, $row])->getFormattedValue();
 
                     // Hesaplama alanı veya formül olabilir diye hesaplanmış değere bakalım

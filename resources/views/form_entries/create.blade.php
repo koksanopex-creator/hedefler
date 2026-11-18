@@ -304,6 +304,49 @@
 
                             <div class="h-5 border-l mx-1" :class="isFullscreen ? 'border-slate-700' : 'border-gray-300'"></div>
 
+                            <!-- Sütunları Göster / Gizle Menüsü -->
+                            <div class="relative" x-data="{ colManageOpen: false }">
+                                <button type="button" @click.stop="colManageOpen = !colManageOpen" @click.away="colManageOpen = false"
+                                    class="py-1.5 px-2.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-xs border cursor-pointer select-none"
+                                    :class="hiddenColumns.length > 0 
+                                        ? 'bg-amber-100 text-amber-900 border-amber-300 ring-1 ring-amber-400/50' 
+                                        : (isFullscreen ? 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700' : 'bg-white hover:bg-gray-100 text-gray-700 border-gray-300')"
+                                    title="Tablodaki sütunları göster veya gizle">
+                                    <svg class="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                    </svg>
+                                    <span class="hidden sm:inline">Sütunlar</span>
+                                    <span x-show="hiddenColumns.length > 0" class="px-1.5 py-0.2 bg-amber-500 text-white rounded-full text-[10px] font-black" x-text="hiddenColumns.length + ' Gizli'"></span>
+                                </button>
+
+                                <!-- Dropdown Popover -->
+                                <div x-show="colManageOpen" x-transition.opacity
+                                    @click.stop
+                                    class="absolute right-0 mt-2 w-72 rounded-xl shadow-2xl bg-white border border-gray-200 z-50 p-3 text-left"
+                                    style="display: none; max-height: 420px;">
+                                    <div class="flex items-center justify-between pb-2 border-b border-gray-100">
+                                        <span class="text-xs font-black text-gray-800 uppercase tracking-wide">Sütun Görünürlüğü</span>
+                                        <button type="button" @click="showAllColumns()" x-show="hiddenColumns.length > 0"
+                                            class="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 cursor-pointer">
+                                            Tümünü Göster
+                                        </button>
+                                    </div>
+                                    <div class="max-h-64 overflow-y-auto py-2 space-y-1">
+                                        <template x-for="f in fields" :key="f.id">
+                                            <label class="flex items-center justify-between p-1.5 rounded-lg hover:bg-gray-50 cursor-pointer transition select-none">
+                                                <div class="flex items-center gap-2 truncate">
+                                                    <input type="checkbox" :checked="!isColumnHidden(f.id)" @change="toggleColumn(f.id)"
+                                                        class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 h-4 w-4">
+                                                    <span class="text-xs font-medium text-gray-700 truncate" x-text="f.label || f.name"></span>
+                                                </div>
+                                                <span x-show="f.is_disabled" class="text-[9px] font-bold text-rose-700 bg-rose-50 border border-rose-200 px-1.5 py-0.2 rounded shrink-0">Pasif</span>
+                                            </label>
+                                        </template>
+                                    </div>
+                                </div>
+                            </div>
+
                             <!-- Geniş Ekran Geçiş Butonu -->
                             <button type="button" @click="toggleWide()"
                                 class="py-1.5 px-2.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-xs border cursor-pointer select-none"
@@ -367,11 +410,26 @@
                                             :class="getColumnStickyClass(field.id, 'th')"
                                             class="px-2 sm:px-4 py-3 text-left text-[10px] sm:text-xs font-medium text-white uppercase tracking-wider group relative bg-gray-800 min-w-[160px]">
                                             <div class="flex flex-col space-y-1">
-                                                <div class="flex items-center justify-between">
-                                                    <span
-                                                        x-html="field.label + (field.is_required ? ' <span class=\'text-red-400\'>*</span>' : '')"></span>
-                                                    <div class="flex items-center space-x-1">
-                                                        <!-- Sütunu Sabitle Menüsü (Sola / Sağa / Kaldır) -->
+                                                <div class="flex items-center justify-between gap-1">
+                                                    <div class="flex items-center gap-1.5 cursor-pointer select-none truncate hover:text-indigo-200 transition-colors"
+                                                        @click="sortColumn(field.id)"
+                                                        :title="field.type === 'number' ? 'Sıralamak için tıklayın (Küçükten Büyüğe / Büyükten Küçüğe)' : 'Sıralamak için tıklayın (A\'dan Z\'ye / Z\'den A\'ya)'">
+                                                        <span class="truncate" x-html="field.label + (field.is_required ? ' <span class=\'text-red-400\'>*</span>' : '')"></span>
+                                                        <span x-show="sortFieldId === field.id && sortDirection"
+                                                            class="text-[9px] font-black px-1.5 py-0.2 rounded bg-indigo-500 text-white shrink-0 shadow-2xs inline-flex items-center">
+                                                            <template x-if="sortFieldId === field.id && sortDirection === 'asc'">
+                                                                <span x-text="field.type === 'number' ? '▲ 1-9' : '▲ A-Z'"></span>
+                                                            </template>
+                                                            <template x-if="sortFieldId === field.id && sortDirection === 'desc'">
+                                                                <span x-text="field.type === 'number' ? '▼ 9-1' : '▼ Z-A'"></span>
+                                                            </template>
+                                                        </span>
+                                                        <span x-show="field.is_disabled"
+                                                            class="text-[8px] font-black px-1 py-0.2 rounded bg-rose-900/90 text-rose-200 border border-rose-500/50 shrink-0 tracking-wider"
+                                                            title="Bu alan şablonda pasif (girişe kapalı) olarak tanımlanmıştır">PASİF</span>
+                                                    </div>
+                                                    <div class="flex items-center space-x-1 shrink-0">
+                                                        <!-- Sütun İşlemleri Menüsü (Sabitle / Sırala / Gizle) -->
                                                         <div class="relative" x-data="{ pinOpen: false }">
                                                             <button type="button" @click.stop="pinOpen = !pinOpen"
                                                                 @click.away="pinOpen = false"
@@ -382,10 +440,10 @@
                                                                         ? 'text-emerald-400 hover:text-emerald-300 bg-gray-700/90 shadow-xs ring-1 ring-emerald-400/50'
                                                                         : 'text-gray-400 hover:text-indigo-200 hover:bg-gray-700/60 opacity-0 group-hover:opacity-100')"
                                                                 :title="isColumnPinnedLeft(field.id) 
-                                                                    ? 'Sola Sabitlendi (Değiştirmek için tıklayın)' 
+                                                                    ? 'Sola Sabitlendi (Sütun işlemleri için tıklayın)' 
                                                                     : (isColumnPinnedRight(field.id) 
-                                                                        ? 'Sağa Sabitlendi (Değiştirmek için tıklayın)' 
-                                                                        : 'Sütunu Sabitle (Sola veya Sağa)')">
+                                                                        ? 'Sağa Sabitlendi (Sütun işlemleri için tıklayın)' 
+                                                                        : 'Sütun Seçenekleri (Sabitle / Sırala / Gizle)')">
                                                                 <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
                                                                           d="M16 12l2-2a2.828 2.828 0 10-4-4l-2 2m-4 4l-4 4m6-6l-4-4m10 6l-6 6M5 19l4-4" />
@@ -394,11 +452,13 @@
                                                                 <span x-show="isColumnPinnedRight(field.id)" class="text-[9px] font-bold leading-none">→</span>
                                                             </button>
 
-                                                            <!-- Sabitleme Seçenekleri Menüsü -->
+                                                            <!-- Sütun İşlemleri Açılır Menüsü -->
                                                             <div x-show="pinOpen" x-transition.opacity
                                                                 @click.stop
-                                                                class="absolute z-50 mt-1 right-0 rounded-md shadow-xl bg-gray-900 border border-gray-700 py-1 text-xs text-left"
-                                                                style="display: none; min-width: 140px;">
+                                                                class="absolute z-50 mt-1 right-0 rounded-xl shadow-2xl bg-gray-900 border border-gray-700 py-1.5 text-xs text-left"
+                                                                style="display: none; min-width: 175px;">
+                                                                <!-- Sabitleme Seçenekleri -->
+                                                                <div class="px-2.5 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Sabitleme</div>
                                                                 <button type="button"
                                                                     @click="setColumnPin(field.id, 'left'); pinOpen = false"
                                                                     class="w-full flex items-center px-3 py-1.5 transition-colors cursor-pointer"
@@ -416,9 +476,6 @@
                                                                     <span x-show="isColumnPinnedRight(field.id)" class="ml-auto text-emerald-400 text-xs">✓</span>
                                                                 </button>
                                                                 <template x-if="isColumnPinned(field.id)">
-                                                                    <div class="border-t border-gray-700/80 my-1"></div>
-                                                                </template>
-                                                                <template x-if="isColumnPinned(field.id)">
                                                                     <button type="button"
                                                                         @click="setColumnPin(field.id, 'none'); pinOpen = false"
                                                                         class="w-full flex items-center px-3 py-1.5 text-red-300 hover:bg-red-500/20 hover:text-red-200 transition-colors cursor-pointer">
@@ -426,6 +483,43 @@
                                                                         <span>Sabitlemeyi Kaldır</span>
                                                                     </button>
                                                                 </template>
+
+                                                                <div class="border-t border-gray-700/80 my-1"></div>
+                                                                <!-- Sıralama Seçenekleri -->
+                                                                <div class="px-2.5 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Sıralama</div>
+                                                                <button type="button"
+                                                                    @click="setSortDirection(field.id, 'asc'); pinOpen = false"
+                                                                    class="w-full flex items-center px-3 py-1.5 text-gray-200 hover:bg-gray-800 hover:text-white transition-colors cursor-pointer"
+                                                                    :class="sortFieldId === field.id && sortDirection === 'asc' ? 'bg-indigo-600/30 text-indigo-300 font-semibold' : ''">
+                                                                    <span class="mr-2 text-xs font-bold">▲</span>
+                                                                    <span x-text="field.type === 'number' ? 'Küçükten Büyüğe (1 → 9)' : 'A\'dan Z\'ye Sırala'"></span>
+                                                                    <span x-show="sortFieldId === field.id && sortDirection === 'asc'" class="ml-auto text-indigo-400 text-xs">✓</span>
+                                                                </button>
+                                                                <button type="button"
+                                                                    @click="setSortDirection(field.id, 'desc'); pinOpen = false"
+                                                                    class="w-full flex items-center px-3 py-1.5 text-gray-200 hover:bg-gray-800 hover:text-white transition-colors cursor-pointer"
+                                                                    :class="sortFieldId === field.id && sortDirection === 'desc' ? 'bg-indigo-600/30 text-indigo-300 font-semibold' : ''">
+                                                                    <span class="mr-2 text-xs font-bold">▼</span>
+                                                                    <span x-text="field.type === 'number' ? 'Büyükten Küçüğe (9 → 1)' : 'Z\'den A\'ya Sırala'"></span>
+                                                                    <span x-show="sortFieldId === field.id && sortDirection === 'desc'" class="ml-auto text-indigo-400 text-xs">✓</span>
+                                                                </button>
+                                                                <template x-if="sortFieldId === field.id && sortDirection">
+                                                                    <button type="button"
+                                                                        @click="clearSort(); pinOpen = false"
+                                                                        class="w-full flex items-center px-3 py-1.5 text-amber-300 hover:bg-amber-500/20 hover:text-amber-200 transition-colors cursor-pointer">
+                                                                        <span class="mr-2 text-xs font-bold">↺</span>
+                                                                        <span>Sıralamayı Sıfırla</span>
+                                                                    </button>
+                                                                </template>
+
+                                                                <div class="border-t border-gray-700/80 my-1"></div>
+                                                                <!-- Sütunu Gizle -->
+                                                                <button type="button"
+                                                                    @click="hideColumn(field.id); pinOpen = false"
+                                                                    class="w-full flex items-center px-3 py-1.5 text-gray-300 hover:bg-gray-800 hover:text-white transition-colors cursor-pointer">
+                                                                    <span class="mr-2 text-xs">👁️</span>
+                                                                    <span>Bu Sütunu Gizle</span>
+                                                                </button>
                                                             </div>
                                                         </div>
 
@@ -1490,6 +1584,15 @@
                 })(),
                 pinnedLeftOffsets: {},
                 pinnedRightOffsets: {},
+                hiddenColumns: (() => {
+                    try {
+                        let stored = localStorage.getItem(`hidden_columns_template_${formTemplateId || {{ $formTemplate->id }}}`);
+                        if (stored) return JSON.parse(stored).map(Number);
+                    } catch(e) {}
+                    return [];
+                })(),
+                sortFieldId: null,
+                sortDirection: null, // 'asc' | 'desc' | null
                 rows: [],
                 rowNumberMap: new Map(),
                 rowIndexMap: new Map(),
@@ -1729,6 +1832,9 @@
 
                 getColumnStickyStyle(fieldId) {
                     const idStr = String(fieldId);
+                    if (this.isColumnHidden(idStr)) {
+                        return { display: 'none' };
+                    }
                     if (this.isColumnPinnedLeft(idStr)) {
                         return { left: this.getPinnedLeftOffset(idStr) };
                     }
@@ -1736,6 +1842,124 @@
                         return { right: this.getPinnedRightOffset(idStr) };
                     }
                     return {};
+                },
+
+                isColumnHidden(fieldId) {
+                    if (!fieldId || !this.hiddenColumns) return false;
+                    const numId = Number(fieldId);
+                    return this.hiddenColumns.some(id => Number(id) === numId);
+                },
+
+                hideColumn(fieldId) {
+                    const numId = Number(fieldId);
+                    if (!this.isColumnHidden(numId)) {
+                        this.hiddenColumns.push(numId);
+                        this.saveHiddenColumns();
+                        this.updatePinnedOffsets();
+                        const f = this.fields.find(item => Number(item.id) === numId);
+                        const name = f ? (f.label || f.name) : 'Sütun';
+                        this.showToast(`👁️ [${name}] sütunu gizlendi.`);
+                    }
+                },
+
+                showColumn(fieldId) {
+                    const numId = Number(fieldId);
+                    this.hiddenColumns = this.hiddenColumns.filter(id => Number(id) !== numId);
+                    this.saveHiddenColumns();
+                    this.updatePinnedOffsets();
+                },
+
+                toggleColumn(fieldId) {
+                    if (this.isColumnHidden(fieldId)) {
+                        this.showColumn(fieldId);
+                    } else {
+                        this.hideColumn(fieldId);
+                    }
+                },
+
+                showAllColumns() {
+                    this.hiddenColumns = [];
+                    this.saveHiddenColumns();
+                    this.updatePinnedOffsets();
+                    this.showToast('✓ Tüm sütunlar görünür hale getirildi.');
+                },
+
+                saveHiddenColumns() {
+                    try {
+                        localStorage.setItem(`hidden_columns_template_${this.formTemplateId}`, JSON.stringify(this.hiddenColumns));
+                    } catch(e) {}
+                },
+
+                sortColumn(fieldId) {
+                    const numId = Number(fieldId);
+                    const field = this.fields.find(f => Number(f.id) === numId);
+                    if (!field) return;
+
+                    if (this.sortFieldId === numId) {
+                        if (this.sortDirection === 'asc') {
+                            this.sortDirection = 'desc';
+                        } else if (this.sortDirection === 'desc') {
+                            this.sortDirection = null;
+                            this.sortFieldId = null;
+                        }
+                    } else {
+                        this.sortFieldId = numId;
+                        this.sortDirection = 'asc';
+                    }
+
+                    this.applySort();
+                },
+
+                setSortDirection(fieldId, dir) {
+                    this.sortFieldId = Number(fieldId);
+                    this.sortDirection = dir;
+                    this.applySort();
+                },
+
+                applySort() {
+                    if (!this.sortDirection || !this.sortFieldId) {
+                        this.rows.sort((a, b) => (a._origIndex ?? 0) - (b._origIndex ?? 0));
+                        this.updateRowMaps();
+                        return;
+                    }
+
+                    const field = this.fields.find(f => Number(f.id) === Number(this.sortFieldId));
+                    if (!field) return;
+
+                    const dir = this.sortDirection === 'asc' ? 1 : -1;
+                    const isNum = field.type === 'number';
+
+                    this.rows.sort((a, b) => {
+                        let valA = a.values ? a.values[field.id] : '';
+                        let valB = b.values ? b.values[field.id] : '';
+
+                        let emptyA = valA === undefined || valA === null || String(valA).trim() === '' || String(valA).trim() === '-';
+                        let emptyB = valB === undefined || valB === null || String(valB).trim() === '' || String(valB).trim() === '-';
+
+                        if (emptyA && emptyB) return 0;
+                        if (emptyA) return 1;
+                        if (emptyB) return -1;
+
+                        if (isNum) {
+                            let numA = parseFloat(String(valA).replace(/\./g, '').replace(',', '.'));
+                            let numB = parseFloat(String(valB).replace(/\./g, '').replace(',', '.'));
+                            if (isNaN(numA)) numA = 0;
+                            if (isNaN(numB)) numB = 0;
+                            return (numA - numB) * dir;
+                        } else {
+                            return String(valA).localeCompare(String(valB), 'tr', { numeric: true, sensitivity: 'base' }) * dir;
+                        }
+                    });
+
+                    this.updateRowMaps();
+                },
+
+                clearSort() {
+                    this.sortFieldId = null;
+                    this.sortDirection = null;
+                    this.rows.sort((a, b) => (a._origIndex ?? 0) - (b._origIndex ?? 0));
+                    this.updateRowMaps();
+                    this.showToast('✓ Sıralama sıfırlandı, orijinal satır sırasına dönüldü.');
                 },
 
                 getColumnStickyClass(fieldId, type = 'td') {
@@ -1812,7 +2036,7 @@
                         let leftOffsets = {};
                         for (let i = 0; i < this.fields.length; i++) {
                             const f = this.fields[i];
-                            if (this.isColumnPinnedLeft(f.id)) {
+                            if (this.isColumnPinnedLeft(f.id) && !this.isColumnHidden(f.id)) {
                                 leftOffsets[String(f.id)] = currentLeft + 'px';
                                 const thEl = document.getElementById('th-field-' + f.id);
                                 const w = thEl ? thEl.offsetWidth : 160;
@@ -1826,7 +2050,7 @@
                         let rightOffsets = {};
                         for (let i = this.fields.length - 1; i >= 0; i--) {
                             const f = this.fields[i];
-                            if (this.isColumnPinnedRight(f.id)) {
+                            if (this.isColumnPinnedRight(f.id) && !this.isColumnHidden(f.id)) {
                                 rightOffsets[String(f.id)] = currentRight + 'px';
                                 const thEl = document.getElementById('th-field-' + f.id);
                                 const w = thEl ? thEl.offsetWidth : 160;
@@ -1920,7 +2144,12 @@
                     if (!field) return '';
                     let row = this.getRow(rowOrIndex);
 
-                    // 0. Koşullu Pasif Alan
+                    // 0. Doğrudan Şablondan Pasif Alan
+                    if (field.is_disabled) {
+                        return '🔒 Bu alan şablon ayarlarında pasif (girişe kapalı) olarak tanımlanmıştır.';
+                    }
+
+                    // 0.1 Koşullu Pasif Alan
                     if (this.isFieldDisabled(field, row)) {
                         let condField = this.fields.find(f => f.id == field.condition_field_id);
                         let condLabel = condField ? (condField.label || condField.name) : 'Kriter';
@@ -2319,6 +2548,7 @@
                             }
                             return ['id' => $row->id, 'values' => (object) $values];
                         })) !!};
+                        rawRows.forEach((r, idx) => { if (r._origIndex === undefined) r._origIndex = idx; });
 
                         if (rawRows.length > 50) {
                             // Büyük kayıtlı veri seti: Sayfa açılışında parçalı olarak render et
@@ -2381,6 +2611,7 @@
                             }
                         @endphp
                         let rawRows = {!! json_encode($formattedOldRows) !!};
+                        rawRows.forEach((r, idx) => { if (r._origIndex === undefined) r._origIndex = idx; });
                         if (rawRows.length > 50) {
                             this.uploadModalTitle = 'Form Verileri Geri Yükleniyor';
                             this.uploadModalSubtitle = 'Daha önce girdiğiniz veriler optimize edilerek tabloya aktarılmaktadır.';
@@ -2457,7 +2688,11 @@
                 },
 
                 createEmptyRowObject() {
-                    const newRow = { id: Date.now() + Math.random().toString(36).substr(2, 9), values: {} };
+                    const newRow = { 
+                        id: Date.now() + Math.random().toString(36).substr(2, 9), 
+                        _origIndex: this.rows ? this.rows.length : 0,
+                        values: {} 
+                    };
                     this.fields.forEach(f => {
                         if (this.partitionFieldId && (f.id == this.partitionFieldId) && this.partitionValue) {
                             newRow.values[f.id] = this.partitionValue;
@@ -2966,7 +3201,12 @@
                 },
 
                 isFieldDisabled(field, rowOrIndex) {
-                    if (!field || !field.is_disabled_on_condition) return false;
+                    if (!field) return false;
+                    // 1. Şablondan doğrudan pasif/girişe kapalı yapılmış alan
+                    if (field.is_disabled) return true;
+
+                    // 2. Koşullu pasif alan
+                    if (!field.is_disabled_on_condition) return false;
                     if (!field.condition_field_id) return false;
 
                     let row = this.getRow(rowOrIndex);

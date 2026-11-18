@@ -794,7 +794,7 @@
             @endphp
 
             <!-- Veri Tablosu -->
-            <div x-data="formShowApp({!! htmlspecialchars(json_encode($fieldsToRender), ENT_QUOTES, 'UTF-8') !!}, {{ $formEntry->template->show_row_totals ? 'true' : 'false' }}, {!! htmlspecialchars(json_encode($versionsData), ENT_QUOTES, 'UTF-8') !!})"
+            <div x-data="formShowApp({!! htmlspecialchars(json_encode($fieldsToRender), ENT_QUOTES, 'UTF-8') !!}, {{ $formEntry->template->show_row_totals ? 'true' : 'false' }}, {!! htmlspecialchars(json_encode($versionsData), ENT_QUOTES, 'UTF-8') !!}, {{ $formEntry->template_id }})"
                 @keydown.window.escape="if(isFullscreen) toggleFullscreen()"
                 :class="isFullscreen ? 'fixed inset-0 z-[999999] bg-white flex flex-col w-screen h-screen overflow-hidden m-0 p-0 rounded-none shadow-none ring-0' : 'bg-white shadow-xl sm:rounded-xl overflow-hidden ring-1 ring-black/5 mb-8'"
                 :style="isFullscreen ? 'position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; width: 100vw !important; height: 100vh !important; z-index: 9999999 !important; margin: 0 !important; padding: 0 !important;' : ''">
@@ -891,6 +891,49 @@
                                     x-text="versions.length + ' Sürüm'"></span>
                             </button>
                         @endif
+
+                        <!-- Sütunları Göster / Gizle Menüsü -->
+                        <div class="relative" x-data="{ colManageOpen: false }">
+                            <button type="button" @click.stop="colManageOpen = !colManageOpen" @click.away="colManageOpen = false"
+                                class="inline-flex items-center px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg font-semibold text-xs transition cursor-pointer shadow-xs gap-1.5 select-none"
+                                :class="hiddenColumns.length > 0 
+                                    ? 'bg-amber-100 text-amber-900 border border-amber-300 ring-1 ring-amber-400/50' 
+                                    : (isFullscreen ? 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700' : 'bg-white hover:bg-gray-100 text-gray-700 border border-gray-300')"
+                                title="Tablodaki sütunları göster veya gizle">
+                                <svg class="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                </svg>
+                                <span>Sütunlar</span>
+                                <span x-show="hiddenColumns.length > 0" class="px-1.5 py-0.2 bg-amber-500 text-white rounded-full text-[10px] font-black" x-text="hiddenColumns.length + ' Gizli'"></span>
+                            </button>
+
+                            <!-- Dropdown Popover -->
+                            <div x-show="colManageOpen" x-transition.opacity
+                                @click.stop
+                                class="absolute right-0 mt-2 w-72 rounded-xl shadow-2xl bg-white border border-gray-200 z-50 p-3 text-left"
+                                style="display: none; max-height: 420px;">
+                                <div class="flex items-center justify-between pb-2 border-b border-gray-100">
+                                    <span class="text-xs font-black text-gray-800 uppercase tracking-wide">Sütun Görünürlüğü</span>
+                                    <button type="button" @click="showAllColumns()" x-show="hiddenColumns.length > 0"
+                                        class="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 cursor-pointer">
+                                        Tümünü Göster
+                                    </button>
+                                </div>
+                                <div class="max-h-64 overflow-y-auto py-2 space-y-1">
+                                    <template x-for="f in fields" :key="f.id">
+                                        <label class="flex items-center justify-between p-1.5 rounded-lg hover:bg-gray-50 cursor-pointer transition select-none">
+                                            <div class="flex items-center gap-2 truncate">
+                                                <input type="checkbox" :checked="!isColumnHidden(f.id)" @change="toggleColumn(f.id)"
+                                                    class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 h-4 w-4">
+                                                <span class="text-xs font-medium text-gray-700 truncate" x-text="f.label || f.name"></span>
+                                            </div>
+                                            <span x-show="f.is_disabled" class="text-[9px] font-bold text-rose-700 bg-rose-50 border border-rose-200 px-1.5 py-0.2 rounded shrink-0">Pasif</span>
+                                        </label>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
 
                         <!-- Tam Ekran Butonu -->
                         <button type="button" @click="toggleFullscreen()"
@@ -1049,18 +1092,127 @@
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-800 sticky top-0 z-20 shadow-md">
                             <tr>
-                                <th
-                                    class="w-12 px-4 py-3 text-center text-xs font-medium text-white uppercase tracking-wider bg-gray-800">
+                                <th class="w-12 px-4 py-3 text-center text-xs font-medium text-white uppercase tracking-wider bg-gray-800 sticky left-0 z-30 border-r border-gray-700 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.3)]">
                                     #</th>
 
                                 <template x-for="field in fields" :key="field.id">
-                                    <th
+                                    <th :id="'show-th-field-' + field.id"
+                                        :style="getColumnStickyStyle(field.id)"
+                                        :class="getColumnStickyClass(field.id, 'th')"
                                         class="px-2 sm:px-4 py-3 text-left text-[10px] sm:text-xs font-medium text-white uppercase tracking-wider group relative bg-gray-800 min-w-[160px]">
                                         <div class="flex flex-col space-y-1">
-                                            <div class="flex items-center justify-between">
-                                                <span
-                                                    x-html="field.label + (field.is_required ? ' <span class=\'text-red-400\'>*</span>' : '')"></span>
-                                                <div class="flex items-center space-x-1">
+                                            <div class="flex items-center justify-between gap-1">
+                                                <!-- Sütun Başlığı ve Tıklanabilir Sıralama -->
+                                                <div class="flex items-center gap-1.5 cursor-pointer select-none truncate hover:text-indigo-200 transition-colors"
+                                                    @click="sortColumn(field.id)"
+                                                    :title="field.type === 'number' ? 'Sıralamak için tıklayın (Küçükten Büyüğe / Büyükten Küçüğe)' : 'Sıralamak için tıklayın (A\'dan Z\'ye / Z\'den A\'ya)'">
+                                                    <span class="truncate" x-html="field.label + (field.is_required ? ' <span class=\'text-red-400\'>*</span>' : '')"></span>
+                                                    <span x-show="sortFieldId === field.id && sortDirection"
+                                                        class="text-[9px] font-black px-1.5 py-0.2 rounded bg-indigo-500 text-white shrink-0 shadow-2xs inline-flex items-center">
+                                                        <template x-if="sortFieldId === field.id && sortDirection === 'asc'">
+                                                            <span x-text="field.type === 'number' ? '▲ 1-9' : '▲ A-Z'"></span>
+                                                        </template>
+                                                        <template x-if="sortFieldId === field.id && sortDirection === 'desc'">
+                                                            <span x-text="field.type === 'number' ? '▼ 9-1' : '▼ Z-A'"></span>
+                                                        </template>
+                                                    </span>
+                                                    <span x-show="field.is_disabled"
+                                                        class="text-[8px] font-black px-1 py-0.2 rounded bg-rose-900/90 text-rose-200 border border-rose-500/50 shrink-0 tracking-wider"
+                                                        title="Bu alan şablonda pasif (girişe kapalı) olarak tanımlanmıştır">PASİF</span>
+                                                </div>
+
+                                                <div class="flex items-center space-x-1 shrink-0">
+                                                    <!-- Sütun İşlemleri Menüsü (Sabitle / Sırala / Gizle) -->
+                                                    <div class="relative" x-data="{ pinOpen: false }">
+                                                        <button type="button" @click.stop="pinOpen = !pinOpen"
+                                                            @click.away="pinOpen = false"
+                                                            class="flex items-center space-x-0.5 p-1 rounded transition-all cursor-pointer text-xs"
+                                                            :class="isColumnPinnedLeft(field.id)
+                                                                ? 'text-amber-400 hover:text-amber-300 bg-gray-700/90 shadow-xs ring-1 ring-amber-400/50'
+                                                                : (isColumnPinnedRight(field.id)
+                                                                    ? 'text-emerald-400 hover:text-emerald-300 bg-gray-700/90 shadow-xs ring-1 ring-emerald-400/50'
+                                                                    : 'text-gray-400 hover:text-indigo-200 hover:bg-gray-700/60 opacity-0 group-hover:opacity-100')"
+                                                            :title="isColumnPinnedLeft(field.id) 
+                                                                ? 'Sola Sabitlendi (Sütun işlemleri için tıklayın)' 
+                                                                : (isColumnPinnedRight(field.id) 
+                                                                    ? 'Sağa Sabitlendi (Sütun işlemleri için tıklayın)' 
+                                                                    : 'Sütun Seçenekleri (Sabitle / Sırala / Gizle)')">
+                                                            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                                                      d="M16 12l2-2a2.828 2.828 0 10-4-4l-2 2m-4 4l-4 4m6-6l-4-4m10 6l-6 6M5 19l4-4" />
+                                                            </svg>
+                                                            <span x-show="isColumnPinnedLeft(field.id)" class="text-[9px] font-bold leading-none">←</span>
+                                                            <span x-show="isColumnPinnedRight(field.id)" class="text-[9px] font-bold leading-none">→</span>
+                                                        </button>
+
+                                                        <!-- Sütun İşlemleri Açılır Menüsü -->
+                                                        <div x-show="pinOpen" x-transition.opacity
+                                                            @click.stop
+                                                            class="absolute z-50 mt-1 right-0 rounded-xl shadow-2xl bg-gray-900 border border-gray-700 py-1.5 text-xs text-left"
+                                                            style="display: none; min-width: 175px;">
+                                                            <div class="px-2.5 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Sabitleme</div>
+                                                            <button type="button"
+                                                                @click="setColumnPin(field.id, 'left'); pinOpen = false"
+                                                                class="w-full flex items-center px-3 py-1.5 transition-colors cursor-pointer"
+                                                                :class="isColumnPinnedLeft(field.id) ? 'bg-amber-500/20 text-amber-300 font-semibold' : 'text-gray-200 hover:bg-gray-800 hover:text-white'">
+                                                                <span class="mr-2 text-sm font-bold">←</span>
+                                                                <span>Sola Sabitle</span>
+                                                                <span x-show="isColumnPinnedLeft(field.id)" class="ml-auto text-amber-400 text-xs">✓</span>
+                                                            </button>
+                                                            <button type="button"
+                                                                @click="setColumnPin(field.id, 'right'); pinOpen = false"
+                                                                class="w-full flex items-center px-3 py-1.5 transition-colors cursor-pointer"
+                                                                :class="isColumnPinnedRight(field.id) ? 'bg-emerald-500/20 text-emerald-300 font-semibold' : 'text-gray-200 hover:bg-gray-800 hover:text-white'">
+                                                                <span class="mr-2 text-sm font-bold">→</span>
+                                                                <span>Sağa Sabitle</span>
+                                                                <span x-show="isColumnPinnedRight(field.id)" class="ml-auto text-emerald-400 text-xs">✓</span>
+                                                            </button>
+                                                            <template x-if="isColumnPinned(field.id)">
+                                                                <button type="button"
+                                                                    @click="setColumnPin(field.id, 'none'); pinOpen = false"
+                                                                    class="w-full flex items-center px-3 py-1.5 text-red-300 hover:bg-red-500/20 hover:text-red-200 transition-colors cursor-pointer">
+                                                                    <span class="mr-2 text-xs font-bold">✕</span>
+                                                                    <span>Sabitlemeyi Kaldır</span>
+                                                                </button>
+                                                            </template>
+
+                                                            <div class="border-t border-gray-700/80 my-1"></div>
+                                                            <div class="px-2.5 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Sıralama</div>
+                                                            <button type="button"
+                                                                @click="setSortDirection(field.id, 'asc'); pinOpen = false"
+                                                                class="w-full flex items-center px-3 py-1.5 text-gray-200 hover:bg-gray-800 hover:text-white transition-colors cursor-pointer"
+                                                                :class="sortFieldId === field.id && sortDirection === 'asc' ? 'bg-indigo-600/30 text-indigo-300 font-semibold' : ''">
+                                                                <span class="mr-2 text-xs font-bold">▲</span>
+                                                                <span x-text="field.type === 'number' ? 'Küçükten Büyüğe (1 → 9)' : 'A\'dan Z\'ye Sırala'"></span>
+                                                                <span x-show="sortFieldId === field.id && sortDirection === 'asc'" class="ml-auto text-indigo-400 text-xs">✓</span>
+                                                            </button>
+                                                            <button type="button"
+                                                                @click="setSortDirection(field.id, 'desc'); pinOpen = false"
+                                                                class="w-full flex items-center px-3 py-1.5 text-gray-200 hover:bg-gray-800 hover:text-white transition-colors cursor-pointer"
+                                                                :class="sortFieldId === field.id && sortDirection === 'desc' ? 'bg-indigo-600/30 text-indigo-300 font-semibold' : ''">
+                                                                <span class="mr-2 text-xs font-bold">▼</span>
+                                                                <span x-text="field.type === 'number' ? 'Büyükten Küçüğe (9 → 1)' : 'Z\'den A\'ya Sırala'"></span>
+                                                                <span x-show="sortFieldId === field.id && sortDirection === 'desc'" class="ml-auto text-indigo-400 text-xs">✓</span>
+                                                            </button>
+                                                            <template x-if="sortFieldId === field.id && sortDirection">
+                                                                <button type="button"
+                                                                    @click="clearSort(); pinOpen = false"
+                                                                    class="w-full flex items-center px-3 py-1.5 text-amber-300 hover:bg-amber-500/20 hover:text-amber-200 transition-colors cursor-pointer">
+                                                                    <span class="mr-2 text-xs font-bold">↺</span>
+                                                                    <span>Sıralamayı Sıfırla</span>
+                                                                </button>
+                                                            </template>
+
+                                                            <div class="border-t border-gray-700/80 my-1"></div>
+                                                            <button type="button"
+                                                                @click="hideColumn(field.id); pinOpen = false"
+                                                                class="w-full flex items-center px-3 py-1.5 text-gray-300 hover:bg-gray-800 hover:text-white transition-colors cursor-pointer">
+                                                                <span class="mr-2 text-xs">👁️</span>
+                                                                <span>Bu Sütunu Gizle</span>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+
                                                     <!-- Filter Dropdown Button -->
                                                     <div class="relative" x-data="{ open: false }">
                                                         <button type="button"
@@ -1125,27 +1277,30 @@
                         <tbody class="bg-white divide-y divide-gray-200">
                             <template x-for="(row, originalRowIndex) in visibleRows()" :key="row.id">
                                 <tr class="hover:bg-indigo-50 transition-colors group"
-                                    :class="isRowNew(originalRowIndex) ? 'bg-emerald-50/40' : ''">
-                                    <td
-                                        class="px-4 py-3 whitespace-nowrap text-center text-sm font-medium text-gray-500">
+                                    :class="isRowNew(row._origIndex ?? originalRowIndex) ? 'bg-emerald-50/40' : ''">
+                                    <td class="w-12 px-4 py-3 whitespace-nowrap text-center text-sm font-medium text-gray-500 sticky left-0 z-10 bg-white group-hover:bg-indigo-50 border-r border-gray-200 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)]">
                                         <div class="flex flex-col items-center justify-center">
                                             <span x-text="originalRowIndex + 1"></span>
-                                            <template x-if="isRowNew(originalRowIndex)">
+                                            <template x-if="isRowNew(row._origIndex ?? originalRowIndex)">
                                                 <span
                                                     class="text-[9px] font-black text-emerald-700 bg-emerald-100 px-1 py-0.2 rounded mt-0.5">YENİ</span>
                                             </template>
                                         </div>
                                     </td>
                                     <template x-for="field in fields" :key="field.id">
-                                        <td class="px-4 py-3 text-sm text-gray-900 whitespace-nowrap relative group/cell hover:z-50 focus-within:z-50 transition-colors"
-                                            :class="{
-                                                'text-right': field.type === 'number',
-                                                'bg-amber-100/90 text-amber-950 font-black ring-1 ring-amber-400 border border-amber-300': isCellChanged(originalRowIndex, field.id)
-                                            }">
+                                        <td :style="getColumnStickyStyle(field.id)"
+                                            :class="[
+                                                getColumnStickyClass(field.id, 'td'),
+                                                {
+                                                    'text-right': field.type === 'number',
+                                                    'bg-amber-100/90 text-amber-950 font-black ring-1 ring-amber-400 border border-amber-300': isCellChanged(row._origIndex ?? originalRowIndex, field.id)
+                                                }
+                                            ]"
+                                            class="px-4 py-3 text-sm text-gray-900 whitespace-nowrap relative group/cell hover:z-50 focus-within:z-50 transition-colors">
                                             <div class="flex items-center gap-1.5"
                                                 :class="field.type === 'number' ? 'justify-end' : ''">
                                                 <span x-text="formatValue(row.values[field.id], field.type)"></span>
-                                                <template x-if="isCellChanged(originalRowIndex, field.id)">
+                                                <template x-if="isCellChanged(row._origIndex ?? originalRowIndex, field.id)">
                                                     <span
                                                         class="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full text-[9px] font-black bg-amber-500 text-white shadow-2xs shrink-0"
                                                         title="Sürümler Arası Farklı Değer">Δ</span>
@@ -1153,7 +1308,7 @@
                                             </div>
 
                                             <!-- HOVER TOOLTIP: Sürümler Arası Çoklu Değer Karşılaştırması -->
-                                            <template x-if="isCellChanged(originalRowIndex, field.id)">
+                                            <template x-if="isCellChanged(row._origIndex ?? originalRowIndex, field.id)">
                                                 <div class="absolute left-1/2 -translate-x-1/2 hidden group-hover/cell:flex flex-col z-50 p-2.5 bg-slate-900 text-white text-[11px] rounded-xl shadow-2xl pointer-events-none min-w-[240px] max-w-[340px] border border-slate-700 animate-in fade-in duration-100"
                                                     :class="originalRowIndex <= 1 ? 'top-full mt-1.5' : 'bottom-full mb-1.5'">
                                                     <div
@@ -1174,7 +1329,7 @@
                                                     </div>
                                                     <div class="space-y-1 py-0.5">
                                                         <template
-                                                            x-for="item in getCellVersionHistory(originalRowIndex, field.id)"
+                                                            x-for="item in getCellVersionHistory(row._origIndex ?? originalRowIndex, field.id)"
                                                             :key="item.version_key">
                                                             <div class="flex items-center justify-between gap-3 py-1 px-1.5 rounded transition-colors"
                                                                 :class="item.isDifferent ? 'bg-amber-500/20 border border-amber-400/40 text-amber-200' : 'bg-slate-800/40 text-slate-300'">
@@ -1210,10 +1365,11 @@
                         <template x-if="showTotals">
                             <tfoot class="bg-gray-100">
                                 <tr class="bg-indigo-50/50">
-                                    <td class="px-4 py-3 font-bold text-right text-indigo-800 text-[11px] uppercase border-b border-indigo-100"
+                                    <td class="sticky left-0 z-10 bg-indigo-50 px-4 py-3 font-bold text-right text-indigo-800 text-[11px] uppercase border-b border-indigo-100 border-r border-indigo-200 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)]"
                                         colspan="1">Görünen Toplam:</td>
                                     <template x-for="field in fields" :key="'filtered-'+field.id">
-                                        <td
+                                        <td :style="getColumnStickyStyle(field.id)"
+                                            :class="getColumnStickyClass(field.id, 'tfoot-sub')"
                                             class="px-4 py-3 font-bold text-indigo-700 text-right whitespace-nowrap border-b border-indigo-100">
                                             <template x-if="field.is_summable && field.type === 'number'">
                                                 <span x-text="formatTotalDisplay(filteredTotals[field.id])"></span>
@@ -1222,10 +1378,12 @@
                                     </template>
                                 </tr>
                                 <tr>
-                                    <td class="px-4 py-3 font-bold text-right text-gray-500 text-[10px] uppercase"
+                                    <td class="sticky left-0 z-10 bg-gray-100 px-4 py-3 font-bold text-right text-gray-500 text-[10px] uppercase border-r border-gray-200 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)]"
                                         colspan="1">Genel Toplam (Tümü):</td>
                                     <template x-for="field in fields" :key="'all-'+field.id">
-                                        <td class="px-4 py-3 font-bold text-gray-500 text-right whitespace-nowrap">
+                                        <td :style="getColumnStickyStyle(field.id)"
+                                            :class="getColumnStickyClass(field.id, 'tfoot-total')"
+                                            class="px-4 py-3 font-bold text-gray-500 text-right whitespace-nowrap">
                                             <template x-if="field.is_summable && field.type === 'number'">
                                                 <span x-text="formatTotalDisplay(totals[field.id])"></span>
                                             </template>
@@ -2452,10 +2610,38 @@
             <!-- AlpineJS Grid Logic for Show -->
             <script>
         document.addEventListener('alpine:init', () => {
-            Alpine.data('formShowApp', (fields, showTotals, versions = []) => ({
+            Alpine.data('formShowApp', (fields, showTotals, versions = [], templateId = null) => ({
                 fields: fields,
                 showTotals: showTotals,
                 versions: versions || [],
+                templateId: templateId || {{ $formEntry->template_id }},
+                pinnedColumns: (() => {
+                    try {
+                        let stored = localStorage.getItem(`pinned_columns_template_${templateId || {{ $formEntry->template_id }}}`);
+                        if (stored) {
+                            let parsed = JSON.parse(stored);
+                            if (Array.isArray(parsed)) return { left: parsed.map(Number), right: [] };
+                            if (parsed && typeof parsed === 'object') {
+                                return {
+                                    left: Array.isArray(parsed.left) ? parsed.left.map(Number) : [],
+                                    right: Array.isArray(parsed.right) ? parsed.right.map(Number) : []
+                                };
+                            }
+                        }
+                    } catch(e) {}
+                    return { left: [], right: [] };
+                })(),
+                pinnedLeftOffsets: {},
+                pinnedRightOffsets: {},
+                hiddenColumns: (() => {
+                    try {
+                        let stored = localStorage.getItem(`hidden_columns_template_${templateId || {{ $formEntry->template_id }}}`);
+                        if (stored) return JSON.parse(stored).map(Number);
+                    } catch(e) {}
+                    return [];
+                })(),
+                sortFieldId: null,
+                sortDirection: null, // 'asc' | 'desc' | null
                 rows: [],
                 totals: {},
                 filteredTotals: {},
@@ -2674,6 +2860,306 @@
                             }
                         } catch(e) {}
                     }
+                    this.$nextTick(() => {
+                        this.updatePinnedOffsets();
+                    });
+                },
+
+                isColumnPinned(fieldId) {
+                    return this.isColumnPinnedLeft(fieldId) || this.isColumnPinnedRight(fieldId);
+                },
+
+                isColumnPinnedLeft(fieldId) {
+                    if (!fieldId || !this.pinnedColumns || !Array.isArray(this.pinnedColumns.left)) return false;
+                    const numId = Number(fieldId);
+                    return this.pinnedColumns.left.some(id => Number(id) === numId);
+                },
+
+                isColumnPinnedRight(fieldId) {
+                    if (!fieldId || !this.pinnedColumns || !Array.isArray(this.pinnedColumns.right)) return false;
+                    const numId = Number(fieldId);
+                    return this.pinnedColumns.right.some(id => Number(id) === numId);
+                },
+
+                isLastPinnedLeft(fieldId) {
+                    const numId = Number(fieldId);
+                    if (!this.isColumnPinnedLeft(numId)) return false;
+                    for (let i = this.fields.length - 1; i >= 0; i--) {
+                        if (this.isColumnPinnedLeft(this.fields[i].id) && !this.isColumnHidden(this.fields[i].id)) {
+                            return Number(this.fields[i].id) === numId;
+                        }
+                    }
+                    return false;
+                },
+
+                isFirstPinnedRight(fieldId) {
+                    const numId = Number(fieldId);
+                    if (!this.isColumnPinnedRight(numId)) return false;
+                    for (let i = 0; i < this.fields.length; i++) {
+                        if (this.isColumnPinnedRight(this.fields[i].id) && !this.isColumnHidden(this.fields[i].id)) {
+                            return Number(this.fields[i].id) === numId;
+                        }
+                    }
+                    return false;
+                },
+
+                getPinnedLeftOffset(fieldId) {
+                    const idStr = String(fieldId);
+                    if (!this.isColumnPinnedLeft(idStr)) return '';
+                    return this.pinnedLeftOffsets[idStr] || '48px';
+                },
+
+                getPinnedRightOffset(fieldId) {
+                    const idStr = String(fieldId);
+                    if (!this.isColumnPinnedRight(idStr)) return '';
+                    return this.pinnedRightOffsets[idStr] || '0px';
+                },
+
+                getColumnStickyStyle(fieldId) {
+                    const idStr = String(fieldId);
+                    if (this.isColumnHidden(idStr)) {
+                        return { display: 'none' };
+                    }
+                    if (this.isColumnPinnedLeft(idStr)) {
+                        return { left: this.getPinnedLeftOffset(idStr) };
+                    }
+                    if (this.isColumnPinnedRight(idStr)) {
+                        return { right: this.getPinnedRightOffset(idStr) };
+                    }
+                    return {};
+                },
+
+                getColumnStickyClass(fieldId, type = 'td') {
+                    const isLeft = this.isColumnPinnedLeft(fieldId);
+                    const isRight = this.isColumnPinnedRight(fieldId);
+                    if (!isLeft && !isRight) return '';
+
+                    const isLastLeft = isLeft && this.isLastPinnedLeft(fieldId);
+                    const isFirstRight = isRight && this.isFirstPinnedRight(fieldId);
+
+                    if (type === 'th') {
+                        let cls = 'sticky z-30 bg-gray-800 ';
+                        if (isLastLeft) {
+                            cls += 'border-r-2 border-indigo-400 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.3)]';
+                        } else if (isLeft) {
+                            cls += 'border-r border-gray-700 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.2)]';
+                        } else if (isFirstRight) {
+                            cls += 'border-l-2 border-indigo-400 shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.3)]';
+                        } else if (isRight) {
+                            cls += 'border-l border-gray-700 shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.2)]';
+                        }
+                        return cls;
+                    }
+
+                    if (type === 'td') {
+                        let cls = 'sticky z-10 bg-white group-hover:bg-indigo-50 ';
+                        if (isLastLeft) {
+                            cls += 'border-r-2 border-indigo-400 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.08)]';
+                        } else if (isLeft) {
+                            cls += 'border-r border-gray-200 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.04)]';
+                        } else if (isFirstRight) {
+                            cls += 'border-l-2 border-indigo-400 shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.08)]';
+                        } else if (isRight) {
+                            cls += 'border-l border-gray-200 shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.04)]';
+                        }
+                        return cls;
+                    }
+
+                    if (type === 'tfoot-sub') {
+                        let cls = 'sticky z-10 bg-indigo-50 ';
+                        if (isLastLeft) {
+                            cls += 'border-r-2 border-indigo-400 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.08)]';
+                        } else if (isLeft) {
+                            cls += 'border-r border-indigo-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.04)]';
+                        } else if (isFirstRight) {
+                            cls += 'border-l-2 border-indigo-400 shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.08)]';
+                        } else if (isRight) {
+                            cls += 'border-l border-indigo-100 shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.04)]';
+                        }
+                        return cls;
+                    }
+
+                    if (type === 'tfoot-total') {
+                        let cls = 'sticky z-10 bg-gray-100 ';
+                        if (isLastLeft) {
+                            cls += 'border-r-2 border-indigo-400 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.08)]';
+                        } else if (isLeft) {
+                            cls += 'border-r border-gray-200 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.04)]';
+                        } else if (isFirstRight) {
+                            cls += 'border-l-2 border-indigo-400 shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.08)]';
+                        } else if (isRight) {
+                            cls += 'border-l border-gray-200 shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.04)]';
+                        }
+                        return cls;
+                    }
+
+                    return '';
+                },
+
+                updatePinnedOffsets() {
+                    this.$nextTick(() => {
+                        // 1. Sola sabitlenen sütunların ofsetlerini hesapla (soldan sağa)
+                        let currentLeft = 48; // '#' sütunu w-12 = 48px
+                        let leftOffsets = {};
+                        for (let i = 0; i < this.fields.length; i++) {
+                            const f = this.fields[i];
+                            if (this.isColumnPinnedLeft(f.id) && !this.isColumnHidden(f.id)) {
+                                leftOffsets[String(f.id)] = currentLeft + 'px';
+                                const thEl = document.getElementById('show-th-field-' + f.id);
+                                const w = thEl ? thEl.offsetWidth : 160;
+                                currentLeft += w;
+                            }
+                        }
+                        this.pinnedLeftOffsets = leftOffsets;
+
+                        // 2. Sağa sabitlenen sütunların ofsetlerini hesapla (sağdan sola)
+                        let currentRight = 0; // show ekranında sağda sil sütunu yok
+                        let rightOffsets = {};
+                        for (let i = this.fields.length - 1; i >= 0; i--) {
+                            const f = this.fields[i];
+                            if (this.isColumnPinnedRight(f.id) && !this.isColumnHidden(f.id)) {
+                                rightOffsets[String(f.id)] = currentRight + 'px';
+                                const thEl = document.getElementById('show-th-field-' + f.id);
+                                const w = thEl ? thEl.offsetWidth : 160;
+                                currentRight += w;
+                            }
+                        }
+                        this.pinnedRightOffsets = rightOffsets;
+                    });
+                },
+
+                setColumnPin(fieldId, side) {
+                    const numId = Number(fieldId);
+                    if (!this.pinnedColumns || typeof this.pinnedColumns !== 'object') {
+                        this.pinnedColumns = { left: [], right: [] };
+                    }
+                    this.pinnedColumns.left = (this.pinnedColumns.left || []).filter(id => Number(id) !== numId);
+                    this.pinnedColumns.right = (this.pinnedColumns.right || []).filter(id => Number(id) !== numId);
+
+                    if (side === 'left') {
+                        this.pinnedColumns.left.push(numId);
+                    } else if (side === 'right') {
+                        this.pinnedColumns.right.push(numId);
+                    }
+
+                    this.updatePinnedOffsets();
+
+                    try {
+                        localStorage.setItem(`pinned_columns_template_${this.templateId}`, JSON.stringify(this.pinnedColumns));
+                    } catch(e) {}
+                },
+
+                isColumnHidden(fieldId) {
+                    if (!fieldId || !this.hiddenColumns) return false;
+                    const numId = Number(fieldId);
+                    return this.hiddenColumns.some(id => Number(id) === numId);
+                },
+
+                hideColumn(fieldId) {
+                    const numId = Number(fieldId);
+                    if (!this.isColumnHidden(numId)) {
+                        this.hiddenColumns.push(numId);
+                        this.saveHiddenColumns();
+                        this.updatePinnedOffsets();
+                    }
+                },
+
+                showColumn(fieldId) {
+                    const numId = Number(fieldId);
+                    this.hiddenColumns = this.hiddenColumns.filter(id => Number(id) !== numId);
+                    this.saveHiddenColumns();
+                    this.updatePinnedOffsets();
+                },
+
+                toggleColumn(fieldId) {
+                    if (this.isColumnHidden(fieldId)) {
+                        this.showColumn(fieldId);
+                    } else {
+                        this.hideColumn(fieldId);
+                    }
+                },
+
+                showAllColumns() {
+                    this.hiddenColumns = [];
+                    this.saveHiddenColumns();
+                    this.updatePinnedOffsets();
+                },
+
+                saveHiddenColumns() {
+                    try {
+                        localStorage.setItem(`hidden_columns_template_${this.templateId}`, JSON.stringify(this.hiddenColumns));
+                    } catch(e) {}
+                },
+
+                sortColumn(fieldId) {
+                    const numId = Number(fieldId);
+                    const field = this.fields.find(f => Number(f.id) === numId);
+                    if (!field) return;
+
+                    if (this.sortFieldId === numId) {
+                        if (this.sortDirection === 'asc') {
+                            this.sortDirection = 'desc';
+                        } else if (this.sortDirection === 'desc') {
+                            this.sortDirection = null;
+                            this.sortFieldId = null;
+                        }
+                    } else {
+                        this.sortFieldId = numId;
+                        this.sortDirection = 'asc';
+                    }
+
+                    this.applySort();
+                },
+
+                setSortDirection(fieldId, dir) {
+                    this.sortFieldId = Number(fieldId);
+                    this.sortDirection = dir;
+                    this.applySort();
+                },
+
+                applySort() {
+                    if (!this.sortDirection || !this.sortFieldId) {
+                        this.rows.sort((a, b) => (a._origIndex ?? 0) - (b._origIndex ?? 0));
+                        this.calculateTotals();
+                        return;
+                    }
+
+                    const field = this.fields.find(f => Number(f.id) === Number(this.sortFieldId));
+                    if (!field) return;
+
+                    const dir = this.sortDirection === 'asc' ? 1 : -1;
+                    const isNum = field.type === 'number';
+
+                    this.rows.sort((a, b) => {
+                        let valA = a.values ? a.values[field.id] : '';
+                        let valB = b.values ? b.values[field.id] : '';
+
+                        let emptyA = valA === undefined || valA === null || String(valA).trim() === '' || String(valA).trim() === '-';
+                        let emptyB = valB === undefined || valB === null || String(valB).trim() === '' || String(valB).trim() === '-';
+
+                        if (emptyA && emptyB) return 0;
+                        if (emptyA) return 1;
+                        if (emptyB) return -1;
+
+                        if (isNum) {
+                            let numA = parseFloat(String(valA).replace(/\./g, '').replace(',', '.'));
+                            let numB = parseFloat(String(valB).replace(/\./g, '').replace(',', '.'));
+                            if (isNaN(numA)) numA = 0;
+                            if (isNaN(numB)) numB = 0;
+                            return (numA - numB) * dir;
+                        } else {
+                            return String(valA).localeCompare(String(valB), 'tr', { numeric: true, sensitivity: 'base' }) * dir;
+                        }
+                    });
+
+                    this.calculateTotals();
+                },
+
+                clearSort() {
+                    this.sortFieldId = null;
+                    this.sortDirection = null;
+                    this.rows.sort((a, b) => (a._origIndex ?? 0) - (b._origIndex ?? 0));
+                    this.calculateTotals();
                 },
 
                 init() {
@@ -2685,6 +3171,7 @@
     }
     return ['id' => $row->id, 'values' => (object) $values];
 })) !!};
+                    existingRows.forEach((r, idx) => { r._origIndex = idx; });
                     this.rows = existingRows;
 
                     this.fields.forEach(f => {
@@ -2693,6 +3180,10 @@
                     });
 
                     this.calculateTotals();
+                    this.updatePinnedOffsets();
+                    window.addEventListener('resize', () => {
+                        this.updatePinnedOffsets();
+                    });
                 },
 
                 calcUniqueValues(fieldId) {

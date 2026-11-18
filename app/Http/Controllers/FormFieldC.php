@@ -36,6 +36,7 @@ class FormFieldC extends Controller
             'fields.*.options' => 'nullable',
             'fields.*.master_data_type_id' => 'nullable|exists:master_data_types,id',
             'fields.*.is_required' => 'boolean',
+            'fields.*.is_disabled' => 'nullable|boolean',
             'fields.*.is_summable' => 'boolean',
             'fields.*.is_calculated' => 'boolean',
             'fields.*.condition_field_id' => 'nullable|exists:form_fields,id',

@@ -32,6 +32,7 @@ class FormFieldS
                     'options' => $options,
                     'master_data_type_id' => isset($fieldData['master_data_type_id']) && $fieldData['type'] === 'master_data' ? $fieldData['master_data_type_id'] : null,
                     'is_required' => $fieldData['is_required'] ?? false,
+                    'is_disabled' => $fieldData['is_disabled'] ?? false,
                     'is_summable' => $fieldData['is_summable'] ?? false,
                     'is_calculated' => $fieldData['is_calculated'] ?? false,
                     'condition_field_id' => $fieldData['condition_field_id'] ?? null,
