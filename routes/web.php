@@ -189,4 +189,12 @@ Route::middleware(['auth'])->group(function () {
     });
 });
 
+// Hata Sayfaları Önizleme Rotası
+Route::get('/errors-preview/{code}', function ($code) {
+    if (view()->exists("errors.{$code}")) {
+        return response()->view("errors.{$code}", [], (int) $code);
+    }
+    abort(404);
+})->name('errors.preview');
+
 require __DIR__.'/auth.php';
