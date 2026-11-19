@@ -1,0 +1,2481 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <base href="./">
+  <title>Köksan Hedefler Uygulaması | İnteraktif Kullanım ve Eğitim Rehberi</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&display=swap');
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+    .slide {
+      display: none;
+      opacity: 0;
+      transition: opacity 0.25s ease-in-out;
+    }
+    .slide.active {
+      display: block;
+      opacity: 1;
+    }
+
+    /* EKRAN ÜZERİNE YERLEŞTİRİLEN NUMARALI KARELER (HOTSPOT ROZETLERİ) */
+    .hotspot-pin {
+      position: absolute;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      font-weight: 900;
+      color: #ffffff;
+      background: #4f46e5;
+      border: 2px solid #ffffff;
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.4), 0 4px 12px rgba(0, 0, 0, 0.35);
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 30;
+      transform: translate(-50%, -50%);
+    }
+    .hotspot-pin:hover {
+      transform: translate(-50%, -50%) scale(1.25);
+      z-index: 40;
+    }
+    .hotspot-pin.pulse {
+      animation: pin-pulse 2s infinite;
+    }
+    @keyframes pin-pulse {
+      0% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.7), 0 4px 12px rgba(0, 0, 0, 0.35); }
+      70% { box-shadow: 0 0 0 10px rgba(79, 70, 229, 0), 0 4px 12px rgba(0, 0, 0, 0.35); }
+      100% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0), 0 4px 12px rgba(0, 0, 0, 0.35); }
+    }
+    .hotspot-pin.emerald {
+      background: #059669;
+      box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.4), 0 4px 12px rgba(0, 0, 0, 0.35);
+    }
+    .hotspot-pin.amber {
+      background: #d97706;
+      box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.4), 0 4px 12px rgba(0, 0, 0, 0.35);
+    }
+    .hotspot-pin.blue {
+      background: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.4), 0 4px 12px rgba(0, 0, 0, 0.35);
+    }
+
+    /* Sağ Paneldeki Numaralı Kartlar */
+    .pin-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      font-weight: 800;
+      color: #ffffff;
+      background: #4f46e5;
+      flex-shrink: 0;
+    }
+    .pin-badge.emerald { background: #059669; }
+    .pin-badge.amber { background: #d97706; }
+    .pin-badge.blue { background: #2563eb; }
+
+    .card-note {
+      transition: all 0.2s ease-in-out;
+    }
+    .card-note:hover, .card-note.active-focus {
+      border-color: #6366f1 !important;
+      background-color: #f5f3ff !important;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.12);
+    }
+
+    .hotspot-pin.active-target-pin {
+      transform: translate(-50%, -50%) scale(1.6) !important;
+      outline: 4px solid #ef4444 !important;
+      box-shadow: 0 0 0 10px rgba(239, 68, 68, 0.45), 0 12px 28px rgba(0, 0, 0, 0.5) !important;
+      z-index: 100 !important;
+      animation: pin-target-flash 0.5s ease-in-out infinite alternate !important;
+    }
+    @keyframes pin-target-flash {
+      0% { transform: translate(-50%, -50%) scale(1.4); }
+      100% { transform: translate(-50%, -50%) scale(1.75); }
+    }
+
+    /* DÜZENLEME MODU STİLLERİ (YÖNETİCİ DRAG & DROP) */
+    body.edit-mode .hotspot-pin {
+      cursor: grab !important;
+      border: 2px dashed #ffffff !important;
+      outline: 3px solid rgba(245, 158, 11, 0.9) !important;
+      animation: pin-edit-pulse 1.5s infinite alternate !important;
+      z-index: 50 !important;
+    }
+    body.edit-mode .hotspot-pin:active, body.edit-mode .hotspot-pin.is-dragging {
+      cursor: grabbing !important;
+      transform: translate(-50%, -50%) scale(1.3) !important;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4) !important;
+      z-index: 60 !important;
+    }
+    body.edit-mode .hotspot-pin.selected-pin {
+      outline: 4px solid #facc15 !important;
+      transform: translate(-50%, -50%) scale(1.25) !important;
+      box-shadow: 0 0 0 5px rgba(250, 204, 21, 0.5) !important;
+    }
+    body.edit-mode .image-pin-container {
+      cursor: crosshair;
+      border: 2px dashed #f59e0b !important;
+    }
+    @keyframes pin-edit-pulse {
+      0% { transform: translate(-50%, -50%) scale(1); }
+      100% { transform: translate(-50%, -50%) scale(1.12); }
+    }
+    #coordTooltip {
+      position: absolute;
+      pointer-events: none;
+      background: #0f172a;
+      color: #38bdf8;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 4px 8px;
+      border-radius: 6px;
+      z-index: 100;
+      white-space: nowrap;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      display: none;
+      border: 1px solid #334155;
+    }
+    #toastNotification {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 9999;
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      pointer-events: none;
+    }
+    #toastNotification.show {
+      transform: translateY(0);
+      opacity: 1;
+      pointer-events: auto;
+    }
+    /* ZOOM MODAL */
+    #zoomModal {
+      display: none;
+      opacity: 0;
+      transition: opacity 0.2s ease-in-out;
+    }
+    #zoomModal.active {
+      display: flex;
+      opacity: 1;
+    }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col justify-between antialiased selection:bg-indigo-600 selection:text-white">
+
+  <!-- ÜST HEADER (KURUMSAL TEMALI & TAM MOBİL UYUMLU) -->
+  <header class="border-b border-slate-200 bg-white/95 backdrop-blur sticky top-0 z-40 px-3 sm:px-6 py-2 shadow-xs">
+    <div class="max-w-[1700px] mx-auto flex items-center justify-between gap-2 sm:gap-4">
+      
+      <!-- SOL: LOGO VE BAŞLIK -->
+      <div class="flex items-center gap-2 sm:gap-3 min-w-0">
+        <div class="shrink-0 flex items-center bg-white px-2 py-1 rounded-xl border border-slate-100 shadow-2xs">
+          <img src="./app_logo.png" onerror="if(!this.dataset.retried){this.dataset.retried=1;this.src='../app_logo.png';}" alt="Köksan Logo" class="h-8 sm:h-9 w-auto object-contain">
+        </div>
+        <div class="h-6 sm:h-7 w-px bg-slate-200 hidden sm:block"></div>
+        <div class="flex flex-col justify-center min-w-0">
+          <h1 class="text-xs sm:text-base font-extrabold text-slate-900 tracking-tight leading-snug truncate">Köksan Hedefler Uygulaması</h1>
+          <span class="text-[10px] sm:text-xs font-bold text-indigo-600 tracking-tight truncate">İnteraktif Kullanım &amp; Eğitim Rehberi</span>
+        </div>
+      </div>
+
+      <!-- SAĞ KONTROLLER -->
+      <div class="flex items-center gap-1.5 sm:gap-3 shrink-0">
+        <!-- GİZLİ YÖNETİCİ BUTONU (?admin=1) -->
+        <button id="toggleEditBtn" onclick="toggleEditMode()" class="hidden px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl border border-indigo-200 bg-white hover:bg-indigo-50 text-indigo-700 text-xs font-bold flex items-center gap-1.5 shadow-2xs transition whitespace-nowrap" title="Pinlerin konumlarını sürükleyip ayarlayın ve kaydedin">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+          <span id="editBtnText" class="hidden md:inline">🎯 Pinleri Konumlandır</span>
+        </button>
+
+        <!-- ADIM GÖSTERGESİ -->
+        <div class="flex items-center gap-1.5 sm:gap-2 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-xl border-2 border-indigo-400/50 shadow-sm shrink-0 whitespace-nowrap">
+          <span class="flex h-1.5 sm:h-2 w-1.5 sm:w-2 relative shrink-0">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-1.5 sm:h-2 w-1.5 sm:w-2 bg-emerald-400"></span>
+          </span>
+          <span class="text-[10px] font-black uppercase tracking-wider text-indigo-200 hidden md:inline">ADIM:</span>
+          <span id="slideIndicator" class="font-black text-amber-300 font-mono text-xs sm:text-base tracking-tight whitespace-nowrap">1 / 11</span>
+        </div>
+
+        <!-- ÖNCEKİ / OYNAT / SONRAKİ BUTONLARI -->
+        <div class="flex items-center gap-1 bg-slate-100 p-0.5 sm:p-1 rounded-xl border border-slate-200 shrink-0 whitespace-nowrap">
+          <button id="prevBtn" onclick="prevSlide()" class="p-1.5 sm:p-2 rounded-lg hover:bg-white text-slate-600 hover:text-slate-900 transition disabled:opacity-30 disabled:cursor-not-allowed shadow-2xs" title="Önceki Adım (←)">
+            <svg class="w-3.5 sm:w-4 h-3.5 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+          </button>
+          <button id="playPauseBtn" onclick="togglePlayPause()" class="px-2 sm:px-3.5 py-1 sm:py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center gap-1 shadow-sm transition whitespace-nowrap" title="Otomatik Oynat / Duraklat (Boşluk)">
+            <svg id="playIcon" class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+            <span id="playText" class="hidden sm:inline">Otomatik Oynat</span>
+          </button>
+          <button id="nextBtn" onclick="nextSlide()" class="p-1.5 sm:p-2 rounded-lg hover:bg-white text-slate-600 hover:text-slate-900 transition disabled:opacity-30 disabled:cursor-not-allowed shadow-2xs" title="Sonraki Adım (→)">
+            <svg class="w-3.5 sm:w-4 h-3.5 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- İlerleme Çubuğu -->
+    <div class="w-full bg-slate-100 h-1 mt-1.5 sm:mt-2 rounded-full overflow-hidden">
+      <div id="progressBar" class="bg-indigo-600 h-full w-[9.09%] transition-all duration-300"></div>
+    </div>
+  </header>
+
+  <!-- ANA SLAYT İÇERİĞİ -->
+  <main class="max-w-[1700px] mx-auto w-full px-3 sm:px-6 py-3 sm:py-5 flex-1 flex flex-col justify-center">
+
+    <!-- PİN DÜZENLEME ARAÇ ÇUBUĞU (YÖNETİCİ KONTROL PANELİ) -->
+    <div id="pinEditorBar" class="hidden mb-4 p-3.5 bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 border-2 border-amber-300 rounded-2xl flex flex-wrap items-center justify-between gap-3 shadow-md transition-all">
+      <div class="flex items-center gap-3 text-xs text-amber-950 font-semibold">
+        <span class="flex h-3 w-3 relative">
+          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+          <span class="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span>
+        </span>
+        <div>
+          <span class="font-extrabold text-amber-900 text-sm">🎯 Pin Konumlandırma Modu Aktif:</span>
+          <span class="text-slate-700 ms-1">Numaralı kareleri farenizle tutup görsel üzerinde <strong>istediğiniz noktaya sürükleyip bırakın</strong>. Bitince <strong>"💾 Konumları Kaydet"</strong> butonuna basın.</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="savePinPositions()" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs flex items-center gap-1.5 shadow-md hover:shadow-emerald-200 transition transform hover:-translate-y-0.5 cursor-pointer">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
+          <span>💾 Konumları Kaydet</span>
+        </button>
+        <button onclick="resetPinPositions()" class="px-3 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 font-bold text-xs transition cursor-pointer">
+          ↩️ Varsayılana Dön
+        </button>
+        <button onclick="toggleEditMode()" class="px-3.5 py-2 rounded-xl border border-amber-300 bg-amber-200 hover:bg-amber-300 text-amber-950 font-bold text-xs transition cursor-pointer">
+          ✖️ Düzenlemeyi Kapat
+        </button>
+      </div>
+    </div>
+
+        <!-- ========================================== -->
+    <!-- SLAYT 1: MERKEZİ SİSTEME GİRİŞ &amp; KİMLİK DOĞRULAMA -->
+    <!-- ========================================== -->
+    <section id="slide-1" class="slide active">
+      <!-- ADIM BAŞLIĞI & ERİŞİM ÇUBUĞU -->
+      <div class="flex flex-wrap items-center justify-between bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 text-white px-3.5 py-2.5 sm:px-5 sm:py-3.5 rounded-xl sm:rounded-2xl border-t-4 border-t-indigo-500 border-x border-b border-slate-800 shadow-md gap-3 mb-3">
+        <div class="flex items-center gap-3 flex-wrap">
+          <!-- Adım Rozeti -->
+          <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-blue-600 text-white font-black text-xs sm:text-sm tracking-wider uppercase shadow-md shadow-indigo-950 border border-indigo-400/40">
+            <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse shadow-xs"></span>
+            <span>1. ADIM</span>
+          </div>
+          <!-- Başlık -->
+          <h2 class="text-xs sm:text-base md:text-xl font-black text-white tracking-tight drop-shadow-sm">
+            MERKEZİ SİSTEME GİRİŞ &amp; KİMLİK DOĞRULAMA          </h2>
+          <!-- Toplam Adım -->
+          <span class="hidden md:inline-flex items-center px-2.5 py-1 rounded-lg bg-white/10 text-indigo-200 font-mono text-xs font-extrabold border border-white/10">
+            1 / 11          </span>
+        </div>
+        <!-- URL ve Canlı Durum Rozeti -->
+        <div class="flex items-center gap-2">
+          <a href="https://kys.koksan.com" target="_blank" rel="noopener noreferrer" class="slide-url-toplink flex items-center gap-2 bg-slate-900/95 hover:bg-slate-800 px-3.5 py-1.5 rounded-xl border border-slate-700/80 hover:border-indigo-400 text-slate-300 hover:text-white font-mono text-xs shadow-inner transition group shrink-0" title="İlgili sayfayı yeni sekmede aç">
+            <span class="flex h-2 w-2 relative">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-400"></span>
+            </span>
+            <span class="text-emerald-400 text-[10px] font-bold uppercase tracking-wider hidden sm:inline">CANLI:</span>
+            <span class="slide-url-text font-bold text-slate-200 group-hover:text-amber-300 transition truncate max-w-[280px] sm:max-w-none">https://kys.koksan.com</span>
+            <svg class="w-3.5 h-3.5 text-slate-400 group-hover:text-amber-300 transition shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+          </a>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <!-- SOL PANEL: EKRAN GÖRÜNTÜSÜ VE HOTSPOT PINLERİ -->
+        <div class="lg:col-span-8 bg-white p-3 rounded-2xl border border-slate-200/90 shadow-sm relative">
+          
+          <!-- SİMÜLE EDİLMİŞ CANLI TARAYICI ÇUBUĞU -->
+          <div class="mb-3 rounded-xl border border-slate-200 bg-slate-50/90 p-2 shadow-2xs">
+            <div class="flex items-center gap-2">
+              <div class="flex items-center gap-1.5 px-1.5">
+                <span class="w-2.5 h-2.5 rounded-full bg-rose-400"></span>
+                <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+              </div>
+              <div class="flex-1 flex items-center justify-between bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-inner">
+                <div class="flex items-center gap-2 text-xs font-mono text-slate-700">
+                  <span class="flex items-center gap-1 text-emerald-600 font-bold bg-emerald-50 px-1.5 py-0.5 rounded text-[10px] border border-emerald-200">
+                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clip-rule="evenodd"></path></svg>
+                    Güvenli
+                  </span>
+                  <span class="font-semibold text-slate-800 flex items-center">
+                    <span>https://kys.koksan.com</span>
+                    <span class="inline-block w-1.5 h-3.5 bg-indigo-600 ms-0.5 animate-pulse"></span>
+                  </span>
+                </div>
+                <div class="flex items-center gap-2 text-slate-400 text-xs">
+                  <span class="text-[10px] bg-indigo-50 text-indigo-700 font-bold px-2 py-0.5 rounded border border-indigo-100 hidden sm:inline-block">🌐 Canlı Sistem</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- GÖRSEL VE PIN KONTEYNERİ -->
+          <div class="image-pin-container relative overflow-hidden rounded-xl border border-slate-200 bg-slate-50 min-h-[380px] sm:min-h-[460px] flex items-center justify-center group/img">
+            <img src="./slide_1_giris.png" alt="MERKEZİ SİSTEME GİRİŞ &amp; KİMLİK DOĞRULAMA" class="w-full object-cover cursor-zoom-in transition-transform duration-200" onclick="openZoomModal(this.src)">
+
+            <!-- TAM BOY BÜYÜT BUTONU (HOVER OVERLAY) -->
+            <button onclick="openZoomModal('./slide_1_giris.png')" class="absolute top-3 right-3 bg-slate-900/80 hover:bg-slate-900 text-white text-xs font-bold px-3 py-1.5 rounded-xl border border-slate-700 shadow-md flex items-center gap-1.5 opacity-80 hover:opacity-100 transition z-20 cursor-pointer">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
+              <span>Tam Boy İncele</span>
+            </button>
+
+            <!-- EKRAN ÜZERİNDEKİ NUMARALI HOTSPOT PINLERİ -->
+                        <div class="hotspot-pin " 
+                 style="top: 43.5%; left: 49.8%;"
+                 data-slide="1" 
+                 data-pin="1" 
+                 onmousedown="onPinMouseDown(event)" 
+                 ontouchstart="onPinTouchStart(event)" 
+                 onclick="focusNote('s1-n1')" 
+                 title="E-Posta veya T.C. Kimlik No">
+              1            </div>
+                        <div class="hotspot-pin " 
+                 style="top: 52.8%; left: 49.8%;"
+                 data-slide="1" 
+                 data-pin="2" 
+                 onmousedown="onPinMouseDown(event)" 
+                 ontouchstart="onPinTouchStart(event)" 
+                 onclick="focusNote('s1-n2')" 
+                 title="Kullanıcı Şifresi">
+              2            </div>
+                        <div class="hotspot-pin emerald" 
+                 style="top: 62.0%; left: 49.8%;"
+                 data-slide="1" 
+                 data-pin="3" 
+                 onmousedown="onPinMouseDown(event)" 
+                 ontouchstart="onPinTouchStart(event)" 
+                 onclick="focusNote('s1-n3')" 
+                 title="Sisteme Giriş Yap Butonu">
+              3            </div>
+                        <div class="hotspot-pin blue" 
+                 style="top: 69.5%; left: 49.8%;"
+                 data-slide="1" 
+                 data-pin="4" 
+                 onmousedown="onPinMouseDown(event)" 
+                 ontouchstart="onPinTouchStart(event)" 
+                 onclick="focusNote('s1-n4')" 
+                 title="Şifre Sıfırlama Bağlantısı">
+              4            </div>
+                      </div>
+
+          <div class="flex items-center justify-between text-[11px] text-slate-500 mt-2 font-medium">
+            <span>🔍 Ekran üzerindeki <strong>numaralı rozetlere</strong> tıklayarak açıklamasını odaklayabilirsiniz.</span>
+            <span class="text-indigo-600 font-semibold cursor-pointer hover:underline" onclick="openZoomModal('./slide_1_giris.png')">Tam Boyut Büyüt ↗</span>
+          </div>
+        </div>
+
+        <!-- SAĞ PANEL: DETAY KARTLARI -->
+        <div class="lg:col-span-4 space-y-3">
+          <!-- Modül Başlık Kartı -->
+          <div class="p-4 rounded-xl bg-gradient-to-br from-indigo-50/90 to-blue-50/60 border-2 border-indigo-200/80 shadow-xs">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-indigo-600 text-white font-black text-xs uppercase tracking-wider shadow-xs">
+                <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                ADIM 1 / 11              </span>
+              <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Oturum Açma</span>
+            </div>
+            <h2 class="text-lg sm:text-xl font-black text-slate-900 tracking-tight">Köksan Portal Güvenli Giriş Ekranı</h2>
+            <p class="text-slate-600 text-xs mt-1 leading-relaxed">
+              Köksan Kurumsal Yönetim Sistemi merkezi portalına tanımlı kurumsal e-posta veya T.C. Kimlik numaranız ile güvenli oturum açılır.            </p>
+          </div>
+
+          <!-- Numaralı Açıklama Kartları -->
+          <div class="space-y-2.5 text-xs max-h-[580px] overflow-y-auto pr-1">
+                        <div id="s1-n1" class="card-note p-3.5 rounded-xl bg-white border border-slate-200 shadow-2xs cursor-pointer" onclick="highlightPin(1, 1)">
+              <div class="flex items-center gap-2 font-bold text-slate-900 text-[13px]">
+                <span class="pin-badge ">1</span>
+                <span>E-Posta veya T.C. Kimlik No</span>
+              </div>
+              <p class="text-slate-600 mt-1.5 leading-relaxed text-xs">
+                Şirketiniz tarafından tanımlanmış kurumsal e-posta adresinizi (<code class="text-indigo-700 bg-indigo-50 px-1 rounded font-mono">adiniz@koksan.com</code>) veya T.C. Kimlik numaranızı yazınız.              </p>
+            </div>
+                        <div id="s1-n2" class="card-note p-3.5 rounded-xl bg-white border border-slate-200 shadow-2xs cursor-pointer" onclick="highlightPin(1, 2)">
+              <div class="flex items-center gap-2 font-bold text-slate-900 text-[13px]">
+                <span class="pin-badge ">2</span>
+                <span>Kullanıcı Şifresi</span>
+              </div>
+              <p class="text-slate-600 mt-1.5 leading-relaxed text-xs">
+                Sisteme giriş için oluşturulmuş güvenli şifrenizi giriniz. Şifrenizi kimseyle paylaşmayınız.              </p>
+            </div>
+                        <div id="s1-n3" class="card-note p-3.5 rounded-xl bg-white border border-slate-200 shadow-2xs cursor-pointer" onclick="highlightPin(1, 3)">
+              <div class="flex items-center gap-2 font-bold text-slate-900 text-[13px]">
+                <span class="pin-badge emerald">3</span>
+                <span>Sisteme Giriş Yap Butonu</span>
+              </div>
+              <p class="text-slate-600 mt-1.5 leading-relaxed text-xs">
+                Bilgileri doldurduktan sonra yeşil renkli <strong>"Sisteme Giriş Yap"</strong> butonuna tıklayarak kurumsal ana panele geçiş yapınız.              </p>
+            </div>
+                        <div id="s1-n4" class="card-note p-3.5 rounded-xl bg-white border border-slate-200 shadow-2xs cursor-pointer" onclick="highlightPin(1, 4)">
+              <div class="flex items-center gap-2 font-bold text-slate-900 text-[13px]">
+                <span class="pin-badge blue">4</span>
+                <span>Şifre Sıfırlama Bağlantısı</span>
+              </div>
+              <p class="text-slate-600 mt-1.5 leading-relaxed text-xs">
+                Şifrenizi unuttuysanız <em>"Şifre Sıfırlama"</em> bağlantısına tıklayarak e-posta adresinize sıfırlama talimatı isteyebilirsiniz.              </p>
+            </div>
+                      </div>
+        </div>
+      </div>
+    </section>
+        <!-- ========================================== -->
+    <!-- SLAYT 2: HEDEFLER UYGULAMASINI BAŞLATMA -->
+    <!-- ========================================== -->
+    <section id="slide-2" class="slide ">
+      <!-- ADIM BAŞLIĞI & ERİŞİM ÇUBUĞU -->
+      <div class="flex flex-wrap items-center justify-between bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 text-white px-3.5 py-2.5 sm:px-5 sm:py-3.5 rounded-xl sm:rounded-2xl border-t-4 border-t-indigo-500 border-x border-b border-slate-800 shadow-md gap-3 mb-3">
+        <div class="flex items-center gap-3 flex-wrap">
+          <!-- Adım Rozeti -->
+          <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-blue-600 text-white font-black text-xs sm:text-sm tracking-wider uppercase shadow-md shadow-indigo-950 border border-indigo-400/40">
+            <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse shadow-xs"></span>
+            <span>2. ADIM</span>
+          </div>
+          <!-- Başlık -->
+          <h2 class="text-xs sm:text-base md:text-xl font-black text-white tracking-tight drop-shadow-sm">
+            HEDEFLER UYGULAMASINI BAŞLATMA          </h2>
+          <!-- Toplam Adım -->
+          <span class="hidden md:inline-flex items-center px-2.5 py-1 rounded-lg bg-white/10 text-indigo-200 font-mono text-xs font-extrabold border border-white/10">
+            2 / 11          </span>
+        </div>
+        <!-- URL ve Canlı Durum Rozeti -->
+        <div class="flex items-center gap-2">
+          <a href="https://kys.koksan.com/dashboard" target="_blank" rel="noopener noreferrer" class="slide-url-toplink flex items-center gap-2 bg-slate-900/95 hover:bg-slate-800 px-3.5 py-1.5 rounded-xl border border-slate-700/80 hover:border-indigo-400 text-slate-300 hover:text-white font-mono text-xs shadow-inner transition group shrink-0" title="İlgili sayfayı yeni sekmede aç">
+            <span class="flex h-2 w-2 relative">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-400"></span>
+            </span>
+            <span class="text-emerald-400 text-[10px] font-bold uppercase tracking-wider hidden sm:inline">CANLI:</span>
+            <span class="slide-url-text font-bold text-slate-200 group-hover:text-amber-300 transition truncate max-w-[280px] sm:max-w-none">https://kys.koksan.com/dashboard</span>
+            <svg class="w-3.5 h-3.5 text-slate-400 group-hover:text-amber-300 transition shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+          </a>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <!-- SOL PANEL: EKRAN GÖRÜNTÜSÜ VE HOTSPOT PINLERİ -->
+        <div class="lg:col-span-8 bg-white p-3 rounded-2xl border border-slate-200/90 shadow-sm relative">
+          
+          <!-- SİMÜLE EDİLMİŞ CANLI TARAYICI ÇUBUĞU -->
+          <div class="mb-3 rounded-xl border border-slate-200 bg-slate-50/90 p-2 shadow-2xs">
+            <div class="flex items-center gap-2">
+              <div class="flex items-center gap-1.5 px-1.5">
+                <span class="w-2.5 h-2.5 rounded-full bg-rose-400"></span>
+                <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+              </div>
+              <div class="flex-1 flex items-center justify-between bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-inner">
+                <div class="flex items-center gap-2 text-xs font-mono text-slate-700">
+                  <span class="flex items-center gap-1 text-emerald-600 font-bold bg-emerald-50 px-1.5 py-0.5 rounded text-[10px] border border-emerald-200">
+                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clip-rule="evenodd"></path></svg>
+                    Güvenli
+                  </span>
+                  <span class="font-semibold text-slate-800 flex items-center">
+                    <span>https://kys.koksan.com/dashboard</span>
+                    <span class="inline-block w-1.5 h-3.5 bg-indigo-600 ms-0.5 animate-pulse"></span>
+                  </span>
+                </div>
+                <div class="flex items-center gap-2 text-slate-400 text-xs">
+                  <span class="text-[10px] bg-indigo-50 text-indigo-700 font-bold px-2 py-0.5 rounded border border-indigo-100 hidden sm:inline-block">🌐 Canlı Sistem</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- GÖRSEL VE PIN KONTEYNERİ -->
+          <div class="image-pin-container relative overflow-hidden rounded-xl border border-slate-200 bg-slate-50 min-h-[380px] sm:min-h-[460px] flex items-center justify-center group/img">
+            <img src="./slide_2_portal_uygulamalar.png" alt="HEDEFLER UYGULAMASINI BAŞLATMA" class="w-full object-cover cursor-zoom-in transition-transform duration-200" onclick="openZoomModal(this.src)">
+
+            <!-- TAM BOY BÜYÜT BUTONU (HOVER OVERLAY) -->
+            <button onclick="openZoomModal('./slide_2_portal_uygulamalar.png')" class="absolute top-3 right-3 bg-slate-900/80 hover:bg-slate-900 text-white text-xs font-bold px-3 py-1.5 rounded-xl border border-slate-700 shadow-md flex items-center gap-1.5 opacity-80 hover:opacity-100 transition z-20 cursor-pointer">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
+              <span>Tam Boy İncele</span>
+            </button>
+
+            <!-- EKRAN ÜZERİNDEKİ NUMARALI HOTSPOT PINLERİ -->
+                        <div class="hotspot-pin " 
+                 style="top: 38.0%; left: 45.0%;"
+                 data-slide="2" 
+                 data-pin="1" 
+                 onmousedown="onPinMouseDown(event)" 
+                 ontouchstart="onPinTouchStart(event)" 
+                 onclick="focusNote('s2-n1')" 
+                 title="Hedefler Uygulaması Kartı">
+              1            </div>
+                        <div class="hotspot-pin emerald" 
+                 style="top: 62.5%; left: 45.0%;"
+                 data-slide="2" 
+                 data-pin="2" 
+                 onmousedown="onPinMouseDown(event)" 
+                 ontouchstart="onPinTouchStart(event)" 
+                 onclick="focusNote('s2-n2')" 
+                 title="Uygulamayı Başlat Butonu">
+              2            </div>
+                      </div>
+
+          <div class="flex items-center justify-between text-[11px] text-slate-500 mt-2 font-medium">
+            <span>🔍 Ekran üzerindeki <strong>numaralı rozetlere</strong> tıklayarak açıklamasını odaklayabilirsiniz.</span>
+            <span class="text-indigo-600 font-semibold cursor-pointer hover:underline" onclick="openZoomModal('./slide_2_portal_uygulamalar.png')">Tam Boyut Büyüt ↗</span>
+          </div>
+        </div>
+
+        <!-- SAĞ PANEL: DETAY KARTLARI -->
+        <div class="lg:col-span-4 space-y-3">
+          <!-- Modül Başlık Kartı -->
+          <div class="p-4 rounded-xl bg-gradient-to-br from-indigo-50/90 to-blue-50/60 border-2 border-indigo-200/80 shadow-xs">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-indigo-600 text-white font-black text-xs uppercase tracking-wider shadow-xs">
+                <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                ADIM 2 / 11              </span>
+              <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Uygulama Seçimi</span>
+            </div>
+            <h2 class="text-lg sm:text-xl font-black text-slate-900 tracking-tight">Merkezi Portal Ana Paneli</h2>
+            <p class="text-slate-600 text-xs mt-1 leading-relaxed">
+              Başarıyla giriş yapıldığında Merkezi Portal sizi karşılar. Yetkili olduğunuz kurumsal uygulamalar arasından Hedef Yönetimi başlatılır.            </p>
+          </div>
+
+          <!-- Numaralı Açıklama Kartları -->
+          <div class="space-y-2.5 text-xs max-h-[580px] overflow-y-auto pr-1">
+                        <div id="s2-n1" class="card-note p-3.5 rounded-xl bg-white border border-slate-200 shadow-2xs cursor-pointer" onclick="highlightPin(2, 1)">
+              <div class="flex items-center gap-2 font-bold text-slate-900 text-[13px]">
+                <span class="pin-badge ">1</span>
+                <span>Hedefler Uygulaması Kartı</span>
+              </div>
+              <p class="text-slate-600 mt-1.5 leading-relaxed text-xs">
+                Ana panelde tanımlı uygulamalarınız içerisinde <strong>"Hedefler Uygulaması"</strong> modülünü bulunuz.              </p>
+            </div>
+                        <div id="s2-n2" class="card-note p-3.5 rounded-xl bg-white border border-slate-200 shadow-2xs cursor-pointer" onclick="highlightPin(2, 2)">
+              <div class="flex items-center gap-2 font-bold text-slate-900 text-[13px]">
+                <span class="pin-badge emerald">2</span>
+                <span>Uygulamayı Başlat Butonu</span>
+              </div>
+              <p class="text-slate-600 mt-1.5 leading-relaxed text-xs">
+                Kartın hemen altındaki <strong>"Uygulamayı Başlat"</strong> butonuna tıklayarak doğrudan Hedef Portalı çalışma alanına erişiniz.              </p>
+            </div>
+                      </div>
+        </div>
+      </div>
+    </section>
+        <!-- ========================================== -->
+    <!-- SLAYT 3: ÖZET GÖSTERGE PANELİ (DASHBOARD) -->
+    <!-- ========================================== -->
+    <section id="slide-3" class="slide ">
+      <!-- ADIM BAŞLIĞI & ERİŞİM ÇUBUĞU -->
+      <div class="flex flex-wrap items-center justify-between bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 text-white px-3.5 py-2.5 sm:px-5 sm:py-3.5 rounded-xl sm:rounded-2xl border-t-4 border-t-indigo-500 border-x border-b border-slate-800 shadow-md gap-3 mb-3">
+        <div class="flex items-center gap-3 flex-wrap">
+          <!-- Adım Rozeti -->
+          <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-blue-600 text-white font-black text-xs sm:text-sm tracking-wider uppercase shadow-md shadow-indigo-950 border border-indigo-400/40">
+            <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse shadow-xs"></span>
+            <span>3. ADIM</span>
+          </div>
+          <!-- Başlık -->
+          <h2 class="text-xs sm:text-base md:text-xl font-black text-white tracking-tight drop-shadow-sm">
+            ÖZET GÖSTERGE PANELİ (DASHBOARD)          </h2>
+          <!-- Toplam Adım -->
+          <span class="hidden md:inline-flex items-center px-2.5 py-1 rounded-lg bg-white/10 text-indigo-200 font-mono text-xs font-extrabold border border-white/10">
+            3 / 11          </span>
+        </div>
+        <!-- URL ve Canlı Durum Rozeti -->
+        <div class="flex items-center gap-2">
+          <a href="https://kys.koksan.com/hedefler/dashboard" target="_blank" rel="noopener noreferrer" class="slide-url-toplink flex items-center gap-2 bg-slate-900/95 hover:bg-slate-800 px-3.5 py-1.5 rounded-xl border border-slate-700/80 hover:border-indigo-400 text-slate-300 hover:text-white font-mono text-xs shadow-inner transition group shrink-0" title="İlgili sayfayı yeni sekmede aç">
+            <span class="flex h-2 w-2 relative">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-400"></span>
+            </span>
+            <span class="text-emerald-400 text-[10px] font-bold uppercase tracking-wider hidden sm:inline">CANLI:</span>
+            <span class="slide-url-text font-bold text-slate-200 group-hover:text-amber-300 transition truncate max-w-[280px] sm:max-w-none">https://kys.koksan.com/hedefler/dashboard</span>
+            <svg class="w-3.5 h-3.5 text-slate-400 group-hover:text-amber-300 transition shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+          </a>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <!-- SOL PANEL: EKRAN GÖRÜNTÜSÜ VE HOTSPOT PINLERİ -->
+        <div class="lg:col-span-8 bg-white p-3 rounded-2xl border border-slate-200/90 shadow-sm relative">
+          
+          <!-- SİMÜLE EDİLMİŞ CANLI TARAYICI ÇUBUĞU -->
+          <div class="mb-3 rounded-xl border border-slate-200 bg-slate-50/90 p-2 shadow-2xs">
+            <div class="flex items-center gap-2">
+              <div class="flex items-center gap-1.5 px-1.5">
+                <span class="w-2.5 h-2.5 rounded-full bg-rose-400"></span>
+                <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+              </div>
+              <div class="flex-1 flex items-center justify-between bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-inner">
+                <div class="flex items-center gap-2 text-xs font-mono text-slate-700">
+                  <span class="flex items-center gap-1 text-emerald-600 font-bold bg-emerald-50 px-1.5 py-0.5 rounded text-[10px] border border-emerald-200">
+                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clip-rule="evenodd"></path></svg>
+                    Güvenli
+                  </span>
+                  <span class="font-semibold text-slate-800 flex items-center">
+                    <span>https://kys.koksan.com/hedefler/dashboard</span>
+                    <span class="inline-block w-1.5 h-3.5 bg-indigo-600 ms-0.5 animate-pulse"></span>
+                  </span>
+                </div>
+                <div class="flex items-center gap-2 text-slate-400 text-xs">
+                  <span class="text-[10px] bg-indigo-50 text-indigo-700 font-bold px-2 py-0.5 rounded border border-indigo-100 hidden sm:inline-block">🌐 Canlı Sistem</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- GÖRSEL VE PIN KONTEYNERİ -->
+          <div class="image-pin-container relative overflow-hidden rounded-xl border border-slate-200 bg-slate-50 min-h-[380px] sm:min-h-[460px] flex items-center justify-center group/img">
+            <img src="./slide_3_dashboard_ozet.png" alt="ÖZET GÖSTERGE PANELİ (DASHBOARD)" class="w-full object-cover cursor-zoom-in transition-transform duration-200" onclick="openZoomModal(this.src)">
+
+            <!-- TAM BOY BÜYÜT BUTONU (HOVER OVERLAY) -->
+            <button onclick="openZoomModal('./slide_3_dashboard_ozet.png')" class="absolute top-3 right-3 bg-slate-900/80 hover:bg-slate-900 text-white text-xs font-bold px-3 py-1.5 rounded-xl border border-slate-700 shadow-md flex items-center gap-1.5 opacity-80 hover:opacity-100 transition z-20 cursor-pointer">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
+              <span>Tam Boy İncele</span>
+            </button>
+
+            <!-- EKRAN ÜZERİNDEKİ NUMARALI HOTSPOT PINLERİ -->
+                        <div class="hotspot-pin amber" 
+                 style="top: 34.0%; left: 45.0%;"
+                 data-slide="3" 
+                 data-pin="1" 
+                 onmousedown="onPinMouseDown(event)" 
+                 ontouchstart="onPinTouchStart(event)" 
+                 onclick="focusNote('s3-n1')" 
+                 title="Durum Sayaç Kartları">
+              1            </div>
+                        <div class="hotspot-pin blue" 
+                 style="top: 21.5%; left: 35.0%;"
+                 data-slide="3" 
+                 data-pin="2" 
+                 onmousedown="onPinMouseDown(event)" 
+                 ontouchstart="onPinTouchStart(event)" 
+                 onclick="focusNote('s3-n2')" 
+                 title="Yıl ve Dönem Filtreleri">
+              2            </div>
+                        <div class="hotspot-pin emerald" 
+                 style="top: 12.0%; left: 45.0%;"
+                 data-slide="3" 
+                 data-pin="3" 
+                 onmousedown="onPinMouseDown(event)" 
+                 ontouchstart="onPinTouchStart(event)" 
+                 onclick="focusNote('s3-n3')" 
+                 title="Üst Gezinme Menüsü">
+              3            </div>
+                      </div>
+
+          <div class="flex items-center justify-between text-[11px] text-slate-500 mt-2 font-medium">
+            <span>🔍 Ekran üzerindeki <strong>numaralı rozetlere</strong> tıklayarak açıklamasını odaklayabilirsiniz.</span>
+            <span class="text-indigo-600 font-semibold cursor-pointer hover:underline" onclick="openZoomModal('./slide_3_dashboard_ozet.png')">Tam Boyut Büyüt ↗</span>
+          </div>
+        </div>
+
+        <!-- SAĞ PANEL: DETAY KARTLARI -->
+        <div class="lg:col-span-4 space-y-3">
+          <!-- Modül Başlık Kartı -->
+          <div class="p-4 rounded-xl bg-gradient-to-br from-indigo-50/90 to-blue-50/60 border-2 border-indigo-200/80 shadow-xs">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-indigo-600 text-white font-black text-xs uppercase tracking-wider shadow-xs">
+                <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                ADIM 3 / 11              </span>
+              <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Gösterge Paneli</span>
+            </div>
+            <h2 class="text-lg sm:text-xl font-black text-slate-900 tracking-tight">Durum Takibi ve İstatistikler</h2>
+            <p class="text-slate-600 text-xs mt-1 leading-relaxed">
+              Hedefler sistemine giriş yaptığınızda açılan ana özet ekranıdır. Süreçlerin genel durumunu gösterir; bu alana veri yazılmaz.            </p>
+          </div>
+
+          <!-- Numaralı Açıklama Kartları -->
+          <div class="space-y-2.5 text-xs max-h-[580px] overflow-y-auto pr-1">
+                        <div id="s3-n1" class="card-note p-3.5 rounded-xl bg-white border border-slate-200 shadow-2xs cursor-pointer" onclick="highlightPin(3, 1)">
+              <div class="flex items-center gap-2 font-bold text-slate-900 text-[13px]">
+                <span class="pin-badge amber">1</span>
+                <span>Durum Sayaç Kartları</span>
+              </div>
+              <p class="text-slate-600 mt-1.5 leading-relaxed text-xs">
+                <strong>Toplam Giriş</strong>, <strong>Onay Bekliyor</strong>, <strong>Taslak</strong> ve <strong>Onaylandı</strong> kutuları mevcut hedef kayıtlarınızın toplam sayısını gösterir.              </p>
+            </div>
+                        <div id="s3-n2" class="card-note p-3.5 rounded-xl bg-white border border-slate-200 shadow-2xs cursor-pointer" onclick="highlightPin(3, 2)">
+              <div class="flex items-center gap-2 font-bold text-slate-900 text-[13px]">
+                <span class="pin-badge blue">2</span>
+                <span>Yıl ve Dönem Filtreleri</span>
+              </div>
+              <p class="text-slate-600 mt-1.5 leading-relaxed text-xs">
+                İlgili çalışma yılı ve hedef dönemine göre paneldeki istatistikleri ve grafikleri filtreleyebilirsiniz.              </p>
+            </div>
+                        <div id="s3-n3" class="card-note p-3.5 rounded-xl bg-white border border-slate-200 shadow-2xs cursor-pointer" onclick="highlightPin(3, 3)">
+              <div class="flex items-center gap-2 font-bold text-slate-900 text-[13px]">
+                <span class="pin-badge emerald">3</span>
+                <span>Üst Gezinme Menüsü</span>
+              </div>
+              <p class="text-slate-600 mt-1.5 leading-relaxed text-xs">
+                Yeni hedef girmek ve kayıtları listelemek için üstteki <strong>"Veri Girişleri"</strong> sekmesini kullanacaksınız.              </p>
+            </div>
+                      </div>
+        </div>
+      </div>
+    </section>
+        <!-- ========================================== -->
+    <!-- SLAYT 4: VERİ GİRİŞLERİ LİSTESİ &amp; YENİ KAYIT -->
+    <!-- ========================================== -->
+    <section id="slide-4" class="slide ">
+      <!-- ADIM BAŞLIĞI & ERİŞİM ÇUBUĞU -->
+      <div class="flex flex-wrap items-center justify-between bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 text-white px-3.5 py-2.5 sm:px-5 sm:py-3.5 rounded-xl sm:rounded-2xl border-t-4 border-t-indigo-500 border-x border-b border-slate-800 shadow-md gap-3 mb-3">
+        <div class="flex items-center gap-3 flex-wrap">
+          <!-- Adım Rozeti -->
+          <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-blue-600 text-white font-black text-xs sm:text-sm tracking-wider uppercase shadow-md shadow-indigo-950 border border-indigo-400/40">
+            <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse shadow-xs"></span>
+            <span>4. ADIM</span>
+          </div>
+          <!-- Başlık -->
+          <h2 class="text-xs sm:text-base md:text-xl font-black text-white tracking-tight drop-shadow-sm">
+            VERİ GİRİŞLERİ LİSTESİ &amp; YENİ KAYIT          </h2>
+          <!-- Toplam Adım -->
+          <span class="hidden md:inline-flex items-center px-2.5 py-1 rounded-lg bg-white/10 text-indigo-200 font-mono text-xs font-extrabold border border-white/10">
+            4 / 11          </span>
+        </div>
+        <!-- URL ve Canlı Durum Rozeti -->
+        <div class="flex items-center gap-2">
+          <a href="https://kys.koksan.com/hedefler/form-entries" target="_blank" rel="noopener noreferrer" class="slide-url-toplink flex items-center gap-2 bg-slate-900/95 hover:bg-slate-800 px-3.5 py-1.5 rounded-xl border border-slate-700/80 hover:border-indigo-400 text-slate-300 hover:text-white font-mono text-xs shadow-inner transition group shrink-0" title="İlgili sayfayı yeni sekmede aç">
+            <span class="flex h-2 w-2 relative">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-400"></span>
+            </span>
+            <span class="text-emerald-400 text-[10px] font-bold uppercase tracking-wider hidden sm:inline">CANLI:</span>
+            <span class="slide-url-text font-bold text-slate-200 group-hover:text-amber-300 transition truncate max-w-[280px] sm:max-w-none">https://kys.koksan.com/hedefler/form-entries</span>
+            <svg class="w-3.5 h-3.5 text-slate-400 group-hover:text-amber-300 transition shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+          </a>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <!-- SOL PANEL: EKRAN GÖRÜNTÜSÜ VE HOTSPOT PINLERİ -->
+        <div class="lg:col-span-8 bg-white p-3 rounded-2xl border border-slate-200/90 shadow-sm relative">
+          
+          <!-- SİMÜLE EDİLMİŞ CANLI TARAYICI ÇUBUĞU -->
+          <div class="mb-3 rounded-xl border border-slate-200 bg-slate-50/90 p-2 shadow-2xs">
+            <div class="flex items-center gap-2">
+              <div class="flex items-center gap-1.5 px-1.5">
+                <span class="w-2.5 h-2.5 rounded-full bg-rose-400"></span>
+                <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+              </div>
+              <div class="flex-1 flex items-center justify-between bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-inner">
+                <div class="flex items-center gap-2 text-xs font-mono text-slate-700">
+                  <span class="flex items-center gap-1 text-emerald-600 font-bold bg-emerald-50 px-1.5 py-0.5 rounded text-[10px] border border-emerald-200">
+                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clip-rule="evenodd"></path></svg>
+                    Güvenli
+                  </span>
+                  <span class="font-semibold text-slate-800 flex items-center">
+                    <span>https://kys.koksan.com/hedefler/form-entries</span>
+                    <span class="inline-block w-1.5 h-3.5 bg-indigo-600 ms-0.5 animate-pulse"></span>
+                  </span>
+                </div>
+                <div class="flex items-center gap-2 text-slate-400 text-xs">
+                  <span class="text-[10px] bg-indigo-50 text-indigo-700 font-bold px-2 py-0.5 rounded border border-indigo-100 hidden sm:inline-block">🌐 Canlı Sistem</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- GÖRSEL VE PIN KONTEYNERİ -->
+          <div class="image-pin-container relative overflow-hidden rounded-xl border border-slate-200 bg-slate-50 min-h-[380px] sm:min-h-[460px] flex items-center justify-center group/img">
+            <img src="./slide_4_yeni_veri_girisi.png" alt="VERİ GİRİŞLERİ LİSTESİ &amp; YENİ KAYIT" class="w-full object-cover cursor-zoom-in transition-transform duration-200" onclick="openZoomModal(this.src)">
+
+            <!-- TAM BOY BÜYÜT BUTONU (HOVER OVERLAY) -->
+            <button onclick="openZoomModal('./slide_4_yeni_veri_girisi.png')" class="absolute top-3 right-3 bg-slate-900/80 hover:bg-slate-900 text-white text-xs font-bold px-3 py-1.5 rounded-xl border border-slate-700 shadow-md flex items-center gap-1.5 opacity-80 hover:opacity-100 transition z-20 cursor-pointer">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
+              <span>Tam Boy İncele</span>
+            </button>
+
+            <!-- EKRAN ÜZERİNDEKİ NUMARALI HOTSPOT PINLERİ -->
+                        <div class="hotspot-pin " 
+                 style="top: 14.5%; left: 41.5%;"
+                 data-slide="4" 
+                 data-pin="1" 
+                 onmousedown="onPinMouseDown(event)" 
+                 ontouchstart="onPinTouchStart(event)" 
+                 onclick="focusNote('s4-n1')" 
+                 title="Veri Girişleri Menüsü">
+              1            </div>
+                        <div class="hotspot-pin emerald" 
+                 style="top: 34.0%; left: 88.0%;"
+                 data-slide="4" 
+                 data-pin="2" 
+                 onmousedown="onPinMouseDown(event)" 
+                 ontouchstart="onPinTouchStart(event)" 
+                 onclick="focusNote('s4-n2')" 
+                 title="+ Yeni Veri Girişi Butonu">
+              2            </div>
+                        <div class="hotspot-pin blue" 
+                 style="top: 34.0%; left: 28.0%;"
+                 data-slide="4" 
+                 data-pin="3" 
+                 onmousedown="onPinMouseDown(event)" 
+                 ontouchstart="onPinTouchStart(event)" 
+                 onclick="focusNote('s4-n3')" 
+                 title="Filtreleme &amp; Arama Çubuğu">
+              3            </div>
+                      </div>
+
+          <div class="flex items-center justify-between text-[11px] text-slate-500 mt-2 font-medium">
+            <span>🔍 Ekran üzerindeki <strong>numaralı rozetlere</strong> tıklayarak açıklamasını odaklayabilirsiniz.</span>
+            <span class="text-indigo-600 font-semibold cursor-pointer hover:underline" onclick="openZoomModal('./slide_4_yeni_veri_girisi.png')">Tam Boyut Büyüt ↗</span>
+          </div>
+        </div>
+
+        <!-- SAĞ PANEL: DETAY KARTLARI -->
+        <div class="lg:col-span-4 space-y-3">
+          <!-- Modül Başlık Kartı -->
+          <div class="p-4 rounded-xl bg-gradient-to-br from-indigo-50/90 to-blue-50/60 border-2 border-indigo-200/80 shadow-xs">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-indigo-600 text-white font-black text-xs uppercase tracking-wider shadow-xs">
+                <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                ADIM 4 / 11              </span>
+              <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Kayıt Yönetimi</span>
+            </div>
+            <h2 class="text-lg sm:text-xl font-black text-slate-900 tracking-tight">Kayıt Listesi ve Yeni Hedef Başlatma</h2>
+            <p class="text-slate-600 text-xs mt-1 leading-relaxed">
+              Daha önce hazırladığınız taslakları, onaya gönderilmiş hedefleri inceleyebilir ve sıfırdan yeni veri girişi başlatabilirsiniz.            </p>
+          </div>
+
+          <!-- Numaralı Açıklama Kartları -->
+          <div class="space-y-2.5 text-xs max-h-[580px] overflow-y-auto pr-1">
+                        <div id="s4-n1" class="card-note p-3.5 rounded-xl bg-white border border-slate-200 shadow-2xs cursor-pointer" onclick="highlightPin(4, 1)">
+              <div class="flex items-center gap-2 font-bold text-slate-900 text-[13px]">
+                <span class="pin-badge ">1</span>
+                <span>Veri Girişleri Menüsü</span>
+              </div>
+              <p class="text-slate-600 mt-1.5 leading-relaxed text-xs">
+                Üst menü çubuğundaki <strong>"Veri Girişleri"</strong> sekmesi sizi bu listeye ulaştırır.              </p>
+            </div>
+                        <div id="s4-n2" class="card-note p-3.5 rounded-xl bg-white border border-slate-200 shadow-2xs cursor-pointer" onclick="highlightPin(4, 2)">
+              <div class="flex items-center gap-2 font-bold text-slate-900 text-[13px]">
+                <span class="pin-badge emerald">2</span>
+                <span>+ Yeni Veri Girişi Butonu</span>
+              </div>
+              <p class="text-slate-600 mt-1.5 leading-relaxed text-xs">
+                Sağ üst köşede yer alan yeşil <strong>"+ Yeni Veri Girişi"</strong> butonuna tıklayarak hedef giriş sihirbazını başlatınız.              </p>
+            </div>
+                        <div id="s4-n3" class="card-note p-3.5 rounded-xl bg-white border border-slate-200 shadow-2xs cursor-pointer" onclick="highlightPin(4, 3)">
+              <div class="flex items-center gap-2 font-bold text-slate-900 text-[13px]">
+                <span class="pin-badge blue">3</span>
+                <span>Filtreleme &amp; Arama Çubuğu</span>
+              </div>
+              <p class="text-slate-600 mt-1.5 leading-relaxed text-xs">
+                Yıl, dönem, durum (Taslak / Onay Bekliyor / Onaylandı) filtreleriyle geçmiş kayıtlarınızı anında bulunuz.              </p>
+            </div>
+                      </div>
+        </div>
+      </div>
+    </section>
+        <!-- ========================================== -->
+    <!-- SLAYT 5: HEDEF ŞABLONU VE İŞ YERİ SEÇİMİ -->
+    <!-- ========================================== -->
+    <section id="slide-5" class="slide ">
+      <!-- ADIM BAŞLIĞI & ERİŞİM ÇUBUĞU -->
+      <div class="flex flex-wrap items-center justify-between bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 text-white px-3.5 py-2.5 sm:px-5 sm:py-3.5 rounded-xl sm:rounded-2xl border-t-4 border-t-indigo-500 border-x border-b border-slate-800 shadow-md gap-3 mb-3">
+        <div class="flex items-center gap-3 flex-wrap">
+          <!-- Adım Rozeti -->
+          <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-blue-600 text-white font-black text-xs sm:text-sm tracking-wider uppercase shadow-md shadow-indigo-950 border border-indigo-400/40">
+            <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse shadow-xs"></span>
+            <span>5. ADIM</span>
+          </div>
+          <!-- Başlık -->
+          <h2 class="text-xs sm:text-base md:text-xl font-black text-white tracking-tight drop-shadow-sm">
+            HEDEF ŞABLONU VE İŞ YERİ SEÇİMİ          </h2>
+          <!-- Toplam Adım -->
+          <span class="hidden md:inline-flex items-center px-2.5 py-1 rounded-lg bg-white/10 text-indigo-200 font-mono text-xs font-extrabold border border-white/10">
+            5 / 11          </span>
+        </div>
+        <!-- URL ve Canlı Durum Rozeti -->
+        <div class="flex items-center gap-2">
+          <a href="https://kys.koksan.com/hedefler/form-entries/create" target="_blank" rel="noopener noreferrer" class="slide-url-toplink flex items-center gap-2 bg-slate-900/95 hover:bg-slate-800 px-3.5 py-1.5 rounded-xl border border-slate-700/80 hover:border-indigo-400 text-slate-300 hover:text-white font-mono text-xs shadow-inner transition group shrink-0" title="İlgili sayfayı yeni sekmede aç">
+            <span class="flex h-2 w-2 relative">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-400"></span>
+            </span>
+            <span class="text-emerald-400 text-[10px] font-bold uppercase tracking-wider hidden sm:inline">CANLI:</span>
+            <span class="slide-url-text font-bold text-slate-200 group-hover:text-amber-300 transition truncate max-w-[280px] sm:max-w-none">https://kys.koksan.com/hedefler/form-entries/create</span>
+            <svg class="w-3.5 h-3.5 text-slate-400 group-hover:text-amber-300 transition shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+          </a>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <!-- SOL PANEL: EKRAN GÖRÜNTÜSÜ VE HOTSPOT PINLERİ -->
+        <div class="lg:col-span-8 bg-white p-3 rounded-2xl border border-slate-200/90 shadow-sm relative">
+          
+          <!-- SİMÜLE EDİLMİŞ CANLI TARAYICI ÇUBUĞU -->
+          <div class="mb-3 rounded-xl border border-slate-200 bg-slate-50/90 p-2 shadow-2xs">
+            <div class="flex items-center gap-2">
+              <div class="flex items-center gap-1.5 px-1.5">
+                <span class="w-2.5 h-2.5 rounded-full bg-rose-400"></span>
+                <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+              </div>
+              <div class="flex-1 flex items-center justify-between bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-inner">
+                <div class="flex items-center gap-2 text-xs font-mono text-slate-700">
+                  <span class="flex items-center gap-1 text-emerald-600 font-bold bg-emerald-50 px-1.5 py-0.5 rounded text-[10px] border border-emerald-200">
+                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clip-rule="evenodd"></path></svg>
+                    Güvenli
+                  </span>
+                  <span class="font-semibold text-slate-800 flex items-center">
+                    <span>https://kys.koksan.com/hedefler/form-entries/create</span>
+                    <span class="inline-block w-1.5 h-3.5 bg-indigo-600 ms-0.5 animate-pulse"></span>
+                  </span>
+                </div>
+                <div class="flex items-center gap-2 text-slate-400 text-xs">
+                  <span class="text-[10px] bg-indigo-50 text-indigo-700 font-bold px-2 py-0.5 rounded border border-indigo-100 hidden sm:inline-block">🌐 Canlı Sistem</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- GÖRSEL VE PIN KONTEYNERİ -->
+          <div class="image-pin-container relative overflow-hidden rounded-xl border border-slate-200 bg-slate-50 min-h-[380px] sm:min-h-[460px] flex items-center justify-center group/img">
+            <img src="./slide_5_isyeri_secimi.png" alt="HEDEF ŞABLONU VE İŞ YERİ SEÇİMİ" class="w-full object-cover cursor-zoom-in transition-transform duration-200" onclick="openZoomModal(this.src)">
+
+            <!-- TAM BOY BÜYÜT BUTONU (HOVER OVERLAY) -->
+            <button onclick="openZoomModal('./slide_5_isyeri_secimi.png')" class="absolute top-3 right-3 bg-slate-900/80 hover:bg-slate-900 text-white text-xs font-bold px-3 py-1.5 rounded-xl border border-slate-700 shadow-md flex items-center gap-1.5 opacity-80 hover:opacity-100 transition z-20 cursor-pointer">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
+              <span>Tam Boy İncele</span>
+            </button>
+
+            <!-- EKRAN ÜZERİNDEKİ NUMARALI HOTSPOT PINLERİ -->
+                        <div class="hotspot-pin " 
+                 style="top: 22.0%; left: 30.0%;"
+                 data-slide="5" 
+                 data-pin="1" 
+                 onmousedown="onPinMouseDown(event)" 
+                 ontouchstart="onPinTouchStart(event)" 
+                 onclick="focusNote('s5-n1')" 
+                 title="HEDEFLER ŞABLONU Kartı">
+              1            </div>
+                        <div class="hotspot-pin amber" 
+                 style="top: 48.0%; left: 32.0%;"
+                 data-slide="5" 
+                 data-pin="2" 
+                 onmousedown="onPinMouseDown(event)" 
+                 ontouchstart="onPinTouchStart(event)" 
+                 onclick="focusNote('s5-n2')" 
+                 title="İş Yeri / Bölüm Kartları">
+              2            </div>
+                        <div class="hotspot-pin emerald" 
+                 style="top: 65.0%; left: 32.0%;"
+                 data-slide="5" 
+                 data-pin="3" 
+                 onmousedown="onPinMouseDown(event)" 
+                 ontouchstart="onPinTouchStart(event)" 
+                 onclick="focusNote('s5-n3')" 
+                 title="Veri Girişi Başlat Butonu">
+              3            </div>
+                      </div>
+
+          <div class="flex items-center justify-between text-[11px] text-slate-500 mt-2 font-medium">
+            <span>🔍 Ekran üzerindeki <strong>numaralı rozetlere</strong> tıklayarak açıklamasını odaklayabilirsiniz.</span>
+            <span class="text-indigo-600 font-semibold cursor-pointer hover:underline" onclick="openZoomModal('./slide_5_isyeri_secimi.png')">Tam Boyut Büyüt ↗</span>
+          </div>
+        </div>
+
+        <!-- SAĞ PANEL: DETAY KARTLARI -->
+        <div class="lg:col-span-4 space-y-3">
+          <!-- Modül Başlık Kartı -->
+          <div class="p-4 rounded-xl bg-gradient-to-br from-indigo-50/90 to-blue-50/60 border-2 border-indigo-200/80 shadow-xs">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-indigo-600 text-white font-black text-xs uppercase tracking-wider shadow-xs">
+                <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                ADIM 5 / 11              </span>
+              <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Form Seçimi</span>
+            </div>
+            <h2 class="text-lg sm:text-xl font-black text-slate-900 tracking-tight">Şablon ve Bölümlenmiş Fabrika Kartları</h2>
+            <p class="text-slate-600 text-xs mt-1 leading-relaxed">
+              Hedeflerin girileceği şablon seçilir ve fabrikanıza/iş yerinize ait olan bölüm kartı üzerinden veri girişi açılır.            </p>
+          </div>
+
+          <!-- Numaralı Açıklama Kartları -->
+          <div class="space-y-2.5 text-xs max-h-[580px] overflow-y-auto pr-1">
+                        <div id="s5-n1" class="card-note p-3.5 rounded-xl bg-white border border-slate-200 shadow-2xs cursor-pointer" onclick="highlightPin(5, 1)">
+              <div class="flex items-center gap-2 font-bold text-slate-900 text-[13px]">
+                <span class="pin-badge ">1</span>
+                <span>HEDEFLER ŞABLONU Kartı</span>
+              </div>
+              <p class="text-slate-600 mt-1.5 leading-relaxed text-xs">
+                Genel hedef giriş şablonu kartında bulunan <strong>"Forma Veri Gir"</strong> butonuna tıklayınız.              </p>
+            </div>
+                        <div id="s5-n2" class="card-note p-3.5 rounded-xl bg-white border border-slate-200 shadow-2xs cursor-pointer" onclick="highlightPin(5, 2)">
+              <div class="flex items-center gap-2 font-bold text-slate-900 text-[13px]">
+                <span class="pin-badge amber">2</span>
+                <span>İş Yeri / Bölüm Kartları</span>
+              </div>
+              <p class="text-slate-600 mt-1.5 leading-relaxed text-xs">
+                Hedeflerin ait olduğu fabrikayı bulunuz (Örn: <strong>KAPAK</strong>, <strong>PREFORM</strong>, <strong>PET LEVHA</strong> vb.).              </p>
+            </div>
+                        <div id="s5-n3" class="card-note p-3.5 rounded-xl bg-white border border-slate-200 shadow-2xs cursor-pointer" onclick="highlightPin(5, 3)">
+              <div class="flex items-center gap-2 font-bold text-slate-900 text-[13px]">
+                <span class="pin-badge emerald">3</span>
+                <span>Veri Girişi Başlat Butonu</span>
+              </div>
+              <p class="text-slate-600 mt-1.5 leading-relaxed text-xs">
+                İlgili iş yeri kartının altındaki <strong>"Veri Girişi Başlat"</strong> düğmesine tıklayarak Excel tablosuna geçiniz.              </p>
+            </div>
+                      </div>
+        </div>
+      </div>
+    </section>
+        <!-- ========================================== -->
+    <!-- SLAYT 6: DİNAMİK VERİ GİRİŞ TABLOSU (EXCEL GRID) -->
+    <!-- ========================================== -->
+    <section id="slide-6" class="slide ">
+      <!-- ADIM BAŞLIĞI & ERİŞİM ÇUBUĞU -->
+      <div class="flex flex-wrap items-center justify-between bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 text-white px-3.5 py-2.5 sm:px-5 sm:py-3.5 rounded-xl sm:rounded-2xl border-t-4 border-t-indigo-500 border-x border-b border-slate-800 shadow-md gap-3 mb-3">
+        <div class="flex items-center gap-3 flex-wrap">
+          <!-- Adım Rozeti -->
+          <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-blue-600 text-white font-black text-xs sm:text-sm tracking-wider uppercase shadow-md shadow-indigo-950 border border-indigo-400/40">
+            <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse shadow-xs"></span>
+            <span>6. ADIM</span>
+          </div>
+          <!-- Başlık -->
+          <h2 class="text-xs sm:text-base md:text-xl font-black text-white tracking-tight drop-shadow-sm">
+            DİNAMİK VERİ GİRİŞ TABLOSU (EXCEL GRID)          </h2>
+          <!-- Toplam Adım -->
+          <span class="hidden md:inline-flex items-center px-2.5 py-1 rounded-lg bg-white/10 text-indigo-200 font-mono text-xs font-extrabold border border-white/10">
+            6 / 11          </span>
+        </div>
+        <!-- URL ve Canlı Durum Rozeti -->
+        <div class="flex items-center gap-2">
+          <a href="https://kys.koksan.com/hedefler/form-entries/create/2?partition_value=KAPAK" target="_blank" rel="noopener noreferrer" class="slide-url-toplink flex items-center gap-2 bg-slate-900/95 hover:bg-slate-800 px-3.5 py-1.5 rounded-xl border border-slate-700/80 hover:border-indigo-400 text-slate-300 hover:text-white font-mono text-xs shadow-inner transition group shrink-0" title="İlgili sayfayı yeni sekmede aç">
+            <span class="flex h-2 w-2 relative">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-400"></span>
+            </span>
+            <span class="text-emerald-400 text-[10px] font-bold uppercase tracking-wider hidden sm:inline">CANLI:</span>
+            <span class="slide-url-text font-bold text-slate-200 group-hover:text-amber-300 transition truncate max-w-[280px] sm:max-w-none">https://kys.koksan.com/hedefler/form-entries/create/2?partition_value=KAPAK</span>
+            <svg class="w-3.5 h-3.5 text-slate-400 group-hover:text-amber-300 transition shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+          </a>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <!-- SOL PANEL: EKRAN GÖRÜNTÜSÜ VE HOTSPOT PINLERİ -->
+        <div class="lg:col-span-8 bg-white p-3 rounded-2xl border border-slate-200/90 shadow-sm relative">
+          
+          <!-- SİMÜLE EDİLMİŞ CANLI TARAYICI ÇUBUĞU -->
+          <div class="mb-3 rounded-xl border border-slate-200 bg-slate-50/90 p-2 shadow-2xs">
+            <div class="flex items-center gap-2">
+              <div class="flex items-center gap-1.5 px-1.5">
+                <span class="w-2.5 h-2.5 rounded-full bg-rose-400"></span>
+                <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+              </div>
+              <div class="flex-1 flex items-center justify-between bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-inner">
+                <div class="flex items-center gap-2 text-xs font-mono text-slate-700">
+                  <span class="flex items-center gap-1 text-emerald-600 font-bold bg-emerald-50 px-1.5 py-0.5 rounded text-[10px] border border-emerald-200">
+                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clip-rule="evenodd"></path></svg>
+                    Güvenli
+                  </span>
+                  <span class="font-semibold text-slate-800 flex items-center">
+                    <span>https://kys.koksan.com/hedefler/form-entries/create/2?partition_value=KAPAK</span>
+                    <span class="inline-block w-1.5 h-3.5 bg-indigo-600 ms-0.5 animate-pulse"></span>
+                  </span>
+                </div>
+                <div class="flex items-center gap-2 text-slate-400 text-xs">
+                  <span class="text-[10px] bg-indigo-50 text-indigo-700 font-bold px-2 py-0.5 rounded border border-indigo-100 hidden sm:inline-block">🌐 Canlı Sistem</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- GÖRSEL VE PIN KONTEYNERİ -->
+          <div class="image-pin-container relative overflow-hidden rounded-xl border border-slate-200 bg-slate-50 min-h-[380px] sm:min-h-[460px] flex items-center justify-center group/img">
+            <img src="./slide_6_tablo_veri_girisi.png" alt="DİNAMİK VERİ GİRİŞ TABLOSU (EXCEL GRID)" class="w-full object-cover cursor-zoom-in transition-transform duration-200" onclick="openZoomModal(this.src)">
+
+            <!-- TAM BOY BÜYÜT BUTONU (HOVER OVERLAY) -->
+            <button onclick="openZoomModal('./slide_6_tablo_veri_girisi.png')" class="absolute top-3 right-3 bg-slate-900/80 hover:bg-slate-900 text-white text-xs font-bold px-3 py-1.5 rounded-xl border border-slate-700 shadow-md flex items-center gap-1.5 opacity-80 hover:opacity-100 transition z-20 cursor-pointer">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
+              <span>Tam Boy İncele</span>
+            </button>
+
+            <!-- EKRAN ÜZERİNDEKİ NUMARALI HOTSPOT PINLERİ -->
+                        <div class="hotspot-pin " 
+                 style="top: 45.0%; left: 30.0%;"
+                 data-slide="6" 
+                 data-pin="1" 
+                 onmousedown="onPinMouseDown(event)" 
+                 ontouchstart="onPinTouchStart(event)" 
+                 onclick="focusNote('s6-n1')" 
+                 title="Tablo Satır ve Hücreleri">
+              1            </div>
+                        <div class="hotspot-pin blue" 
+                 style="top: 45.0%; left: 52.0%;"
+                 data-slide="6" 
+                 data-pin="2" 
+                 onmousedown="onPinMouseDown(event)" 
+                 ontouchstart="onPinTouchStart(event)" 
+                 onclick="focusNote('s6-n2')" 
+                 title="Anlık Arama Kutulu Dropdown">
+              2            </div>
+                        <div class="hotspot-pin emerald" 
+                 style="top: 80.0%; left: 5.0%;"
+                 data-slide="6" 
+                 data-pin="3" 
+                 onmousedown="onPinMouseDown(event)" 
+                 ontouchstart="onPinTouchStart(event)" 
+                 onclick="focusNote('s6-n3')" 
+                 title="+ Satır Ekle Butonu">
+              3            </div>
+                        <div class="hotspot-pin amber" 
+                 style="top: 42.5%; left: 61.0%;"
+                 data-slide="6" 
+                 data-pin="4" 
+                 onmousedown="onPinMouseDown(event)" 
+                 ontouchstart="onPinTouchStart(event)" 
+                 onclick="focusNote('s6-n4')" 
+                 title="Sütun Sabitleme &amp; Tam Ekran">
+              4            </div>
+                      </div>
+
+          <div class="flex items-center justify-between text-[11px] text-slate-500 mt-2 font-medium">
+            <span>🔍 Ekran üzerindeki <strong>numaralı rozetlere</strong> tıklayarak açıklamasını odaklayabilirsiniz.</span>
+            <span class="text-indigo-600 font-semibold cursor-pointer hover:underline" onclick="openZoomModal('./slide_6_tablo_veri_girisi.png')">Tam Boyut Büyüt ↗</span>
+          </div>
+        </div>
+
+        <!-- SAĞ PANEL: DETAY KARTLARI -->
+        <div class="lg:col-span-4 space-y-3">
+          <!-- Modül Başlık Kartı -->
+          <div class="p-4 rounded-xl bg-gradient-to-br from-indigo-50/90 to-blue-50/60 border-2 border-indigo-200/80 shadow-xs">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-indigo-600 text-white font-black text-xs uppercase tracking-wider shadow-xs">
+                <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                ADIM 6 / 11              </span>
+              <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Veri Girişi</span>
+            </div>
+            <h2 class="text-lg sm:text-xl font-black text-slate-900 tracking-tight">Satır Bazlı Veri Girişi ve Arama Kutulu Dropdownlar</h2>
+            <p class="text-slate-600 text-xs mt-1 leading-relaxed">
+              Excel pratikliğinde çalışan dinamik grid tablosunda satır satır hedef bilgileri işlenir.            </p>
+          </div>
+
+          <!-- Numaralı Açıklama Kartları -->
+          <div class="space-y-2.5 text-xs max-h-[580px] overflow-y-auto pr-1">
+                        <div id="s6-n1" class="card-note p-3.5 rounded-xl bg-white border border-slate-200 shadow-2xs cursor-pointer" onclick="highlightPin(6, 1)">
+              <div class="flex items-center gap-2 font-bold text-slate-900 text-[13px]">
+                <span class="pin-badge ">1</span>
+                <span>Tablo Satır ve Hücreleri</span>
+              </div>
+              <p class="text-slate-600 mt-1.5 leading-relaxed text-xs">
+                Malzeme, Ülke, Şehir, Sipariş Veren (Müşteri) gibi hedefleri satırdaki hücrelere yazınız. Hücreler arasında Ok tuşları veya Tab ile gezinebilirsiniz.              </p>
+            </div>
+                        <div id="s6-n2" class="card-note p-3.5 rounded-xl bg-white border border-slate-200 shadow-2xs cursor-pointer" onclick="highlightPin(6, 2)">
+              <div class="flex items-center gap-2 font-bold text-slate-900 text-[13px]">
+                <span class="pin-badge blue">2</span>
+                <span>Anlık Arama Kutulu Dropdown</span>
+              </div>
+              <p class="text-slate-600 mt-1.5 leading-relaxed text-xs">
+                Dropdown hücresine tıklandığında açılan <strong>🔍 arama kutusuna</strong> harfleri yazdığınız anda 1.900+ müşteri arasından anında filtreleme yapılır; Enter ile seçilir.              </p>
+            </div>
+                        <div id="s6-n3" class="card-note p-3.5 rounded-xl bg-white border border-slate-200 shadow-2xs cursor-pointer" onclick="highlightPin(6, 3)">
+              <div class="flex items-center gap-2 font-bold text-slate-900 text-[13px]">
+                <span class="pin-badge emerald">3</span>
+                <span>+ Satır Ekle Butonu</span>
+              </div>
+              <p class="text-slate-600 mt-1.5 leading-relaxed text-xs">
+                Her yeni hedef kaydı için sol altta yer alan <strong>"+ Satır Ekle"</strong> butonuna basınız veya klavyeden hızlıca satır açınız.              </p>
+            </div>
+                        <div id="s6-n4" class="card-note p-3.5 rounded-xl bg-white border border-slate-200 shadow-2xs cursor-pointer" onclick="highlightPin(6, 4)">
+              <div class="flex items-center gap-2 font-bold text-slate-900 text-[13px]">
+                <span class="pin-badge amber">4</span>
+                <span>Sütun Sabitleme &amp; Tam Ekran</span>
+              </div>
+              <p class="text-slate-600 mt-1.5 leading-relaxed text-xs">
+                Sağ üst köşedeki <strong>"Tam Ekran"</strong> butonu ile tabloyu tüm monitöre yayabilir, <strong>"Sütunlar"</strong> menüsüyle istediğiniz sütunları sabitleyebilirsiniz.              </p>
+            </div>
+                      </div>
+        </div>
+      </div>
+    </section>
+        <!-- ========================================== -->
+    <!-- SLAYT 7: EXCEL İLE TOPLU YÜKLEME VE TASLAK SAKLAMA -->
+    <!-- ========================================== -->
+    <section id="slide-7" class="slide ">
+      <!-- ADIM BAŞLIĞI & ERİŞİM ÇUBUĞU -->
+      <div class="flex flex-wrap items-center justify-between bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 text-white px-3.5 py-2.5 sm:px-5 sm:py-3.5 rounded-xl sm:rounded-2xl border-t-4 border-t-indigo-500 border-x border-b border-slate-800 shadow-md gap-3 mb-3">
+        <div class="flex items-center gap-3 flex-wrap">
+          <!-- Adım Rozeti -->
+          <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-blue-600 text-white font-black text-xs sm:text-sm tracking-wider uppercase shadow-md shadow-indigo-950 border border-indigo-400/40">
+            <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse shadow-xs"></span>
+            <span>7. ADIM</span>
+          </div>
+          <!-- Başlık -->
+          <h2 class="text-xs sm:text-base md:text-xl font-black text-white tracking-tight drop-shadow-sm">
+            EXCEL İLE TOPLU YÜKLEME VE TASLAK SAKLAMA          </h2>
+          <!-- Toplam Adım -->
+          <span class="hidden md:inline-flex items-center px-2.5 py-1 rounded-lg bg-white/10 text-indigo-200 font-mono text-xs font-extrabold border border-white/10">
+            7 / 11          </span>
+        </div>
+        <!-- URL ve Canlı Durum Rozeti -->
+        <div class="flex items-center gap-2">
+          <a href="https://kys.koksan.com/hedefler/form-entries/create/2" target="_blank" rel="noopener noreferrer" class="slide-url-toplink flex items-center gap-2 bg-slate-900/95 hover:bg-slate-800 px-3.5 py-1.5 rounded-xl border border-slate-700/80 hover:border-indigo-400 text-slate-300 hover:text-white font-mono text-xs shadow-inner transition group shrink-0" title="İlgili sayfayı yeni sekmede aç">
+            <span class="flex h-2 w-2 relative">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-400"></span>
+            </span>
+            <span class="text-emerald-400 text-[10px] font-bold uppercase tracking-wider hidden sm:inline">CANLI:</span>
+            <span class="slide-url-text font-bold text-slate-200 group-hover:text-amber-300 transition truncate max-w-[280px] sm:max-w-none">https://kys.koksan.com/hedefler/form-entries/create/2</span>
+            <svg class="w-3.5 h-3.5 text-slate-400 group-hover:text-amber-300 transition shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+          </a>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <!-- SOL PANEL: EKRAN GÖRÜNTÜSÜ VE HOTSPOT PINLERİ -->
+        <div class="lg:col-span-8 bg-white p-3 rounded-2xl border border-slate-200/90 shadow-sm relative">
+          
+          <!-- SİMÜLE EDİLMİŞ CANLI TARAYICI ÇUBUĞU -->
+          <div class="mb-3 rounded-xl border border-slate-200 bg-slate-50/90 p-2 shadow-2xs">
+            <div class="flex items-center gap-2">
+              <div class="flex items-center gap-1.5 px-1.5">
+                <span class="w-2.5 h-2.5 rounded-full bg-rose-400"></span>
+                <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+              </div>
+              <div class="flex-1 flex items-center justify-between bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-inner">
+                <div class="flex items-center gap-2 text-xs font-mono text-slate-700">
+                  <span class="flex items-center gap-1 text-emerald-600 font-bold bg-emerald-50 px-1.5 py-0.5 rounded text-[10px] border border-emerald-200">
+                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clip-rule="evenodd"></path></svg>
+                    Güvenli
+                  </span>
+                  <span class="font-semibold text-slate-800 flex items-center">
+                    <span>https://kys.koksan.com/hedefler/form-entries/create/2</span>
+                    <span class="inline-block w-1.5 h-3.5 bg-indigo-600 ms-0.5 animate-pulse"></span>
+                  </span>
+                </div>
+                <div class="flex items-center gap-2 text-slate-400 text-xs">
+                  <span class="text-[10px] bg-indigo-50 text-indigo-700 font-bold px-2 py-0.5 rounded border border-indigo-100 hidden sm:inline-block">🌐 Canlı Sistem</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- GÖRSEL VE PIN KONTEYNERİ -->
+          <div class="image-pin-container relative overflow-hidden rounded-xl border border-slate-200 bg-slate-50 min-h-[380px] sm:min-h-[460px] flex items-center justify-center group/img">
+            <img src="./slide_7_excel_yukleme.png" alt="EXCEL İLE TOPLU YÜKLEME VE TASLAK SAKLAMA" class="w-full object-cover cursor-zoom-in transition-transform duration-200" onclick="openZoomModal(this.src)">
+
+            <!-- TAM BOY BÜYÜT BUTONU (HOVER OVERLAY) -->
+            <button onclick="openZoomModal('./slide_7_excel_yukleme.png')" class="absolute top-3 right-3 bg-slate-900/80 hover:bg-slate-900 text-white text-xs font-bold px-3 py-1.5 rounded-xl border border-slate-700 shadow-md flex items-center gap-1.5 opacity-80 hover:opacity-100 transition z-20 cursor-pointer">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
+              <span>Tam Boy İncele</span>
+            </button>
+
+            <!-- EKRAN ÜZERİNDEKİ NUMARALI HOTSPOT PINLERİ -->
+                        <div class="hotspot-pin blue" 
+                 style="top: 82.5%; left: 64.0%;"
+                 data-slide="7" 
+                 data-pin="1" 
+                 onmousedown="onPinMouseDown(event)" 
+                 ontouchstart="onPinTouchStart(event)" 
+                 onclick="focusNote('s7-n1')" 
+                 title="📥 Şablon İndir Butonu">
+              1            </div>
+                        <div class="hotspot-pin emerald" 
+                 style="top: 82.5%; left: 74.0%;"
+                 data-slide="7" 
+                 data-pin="2" 
+                 onmousedown="onPinMouseDown(event)" 
+                 ontouchstart="onPinTouchStart(event)" 
+                 onclick="focusNote('s7-n2')" 
+                 title="📤 Excel&#039;den Yükle Butonu">
+              2            </div>
+                        <div class="hotspot-pin amber" 
+                 style="top: 82.5%; left: 86.0%;"
+                 data-slide="7" 
+                 data-pin="3" 
+                 onmousedown="onPinMouseDown(event)" 
+                 ontouchstart="onPinTouchStart(event)" 
+                 onclick="focusNote('s7-n3')" 
+                 title="💾 Taslak Olarak Kaydet Butonu">
+              3            </div>
+                      </div>
+
+          <div class="flex items-center justify-between text-[11px] text-slate-500 mt-2 font-medium">
+            <span>🔍 Ekran üzerindeki <strong>numaralı rozetlere</strong> tıklayarak açıklamasını odaklayabilirsiniz.</span>
+            <span class="text-indigo-600 font-semibold cursor-pointer hover:underline" onclick="openZoomModal('./slide_7_excel_yukleme.png')">Tam Boyut Büyüt ↗</span>
+          </div>
+        </div>
+
+        <!-- SAĞ PANEL: DETAY KARTLARI -->
+        <div class="lg:col-span-4 space-y-3">
+          <!-- Modül Başlık Kartı -->
+          <div class="p-4 rounded-xl bg-gradient-to-br from-indigo-50/90 to-blue-50/60 border-2 border-indigo-200/80 shadow-xs">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-indigo-600 text-white font-black text-xs uppercase tracking-wider shadow-xs">
+                <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                ADIM 7 / 11              </span>
+              <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Toplu İşlemler</span>
+            </div>
+            <h2 class="text-lg sm:text-xl font-black text-slate-900 tracking-tight">Excel Entegrasyonu ve Otomatik Kayıt Güvencesi</h2>
+            <p class="text-slate-600 text-xs mt-1 leading-relaxed">
+              Yüzlerce satırlık hedefi tek seferde girmek için Excel şablonunu indirebilir veya formunuzu taslak olarak saklayabilirsiniz.            </p>
+          </div>
+
+          <!-- Numaralı Açıklama Kartları -->
+          <div class="space-y-2.5 text-xs max-h-[580px] overflow-y-auto pr-1">
+                        <div id="s7-n1" class="card-note p-3.5 rounded-xl bg-white border border-slate-200 shadow-2xs cursor-pointer" onclick="highlightPin(7, 1)">
+              <div class="flex items-center gap-2 font-bold text-slate-900 text-[13px]">
+                <span class="pin-badge blue">1</span>
+                <span>📥 Şablon İndir Butonu</span>
+              </div>
+              <p class="text-slate-600 mt-1.5 leading-relaxed text-xs">
+                Seçili iş yerine ait doğru sütun başlıklarını ve veri formatlarını içeren boş Excel şablonunu bilgisayarınıza indirir.              </p>
+            </div>
+                        <div id="s7-n2" class="card-note p-3.5 rounded-xl bg-white border border-slate-200 shadow-2xs cursor-pointer" onclick="highlightPin(7, 2)">
+              <div class="flex items-center gap-2 font-bold text-slate-900 text-[13px]">
+                <span class="pin-badge emerald">2</span>
+                <span>📤 Excel&#039;den Yükle Butonu</span>
+              </div>
+              <p class="text-slate-600 mt-1.5 leading-relaxed text-xs">
+                Excel dosyanızı doldurup kaydettikten sonra bu butona basarak dosyanızı seçin; tüm satırlar otomatik doğrulanarak tabloya doldurulur.              </p>
+            </div>
+                        <div id="s7-n3" class="card-note p-3.5 rounded-xl bg-white border border-slate-200 shadow-2xs cursor-pointer" onclick="highlightPin(7, 3)">
+              <div class="flex items-center gap-2 font-bold text-slate-900 text-[13px]">
+                <span class="pin-badge amber">3</span>
+                <span>💾 Taslak Olarak Kaydet Butonu</span>
+              </div>
+              <p class="text-slate-600 mt-1.5 leading-relaxed text-xs">
+                Verileriniz henüz tamamlanmadıysa <strong>"Taslak Olarak Kaydet"</strong> butonuna basınız. Ayrıca sistem her 45 saniyede bir otomatik taslak kaydı alır.              </p>
+            </div>
+                      </div>
+        </div>
+      </div>
+    </section>
+        <!-- ========================================== -->
+    <!-- SLAYT 8: ZORUNLU ALANLAR VE OTOMATİK HESAPLAMALAR -->
+    <!-- ========================================== -->
+    <section id="slide-8" class="slide ">
+      <!-- ADIM BAŞLIĞI & ERİŞİM ÇUBUĞU -->
+      <div class="flex flex-wrap items-center justify-between bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 text-white px-3.5 py-2.5 sm:px-5 sm:py-3.5 rounded-xl sm:rounded-2xl border-t-4 border-t-indigo-500 border-x border-b border-slate-800 shadow-md gap-3 mb-3">
+        <div class="flex items-center gap-3 flex-wrap">
+          <!-- Adım Rozeti -->
+          <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-blue-600 text-white font-black text-xs sm:text-sm tracking-wider uppercase shadow-md shadow-indigo-950 border border-indigo-400/40">
+            <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse shadow-xs"></span>
+            <span>8. ADIM</span>
+          </div>
+          <!-- Başlık -->
+          <h2 class="text-xs sm:text-base md:text-xl font-black text-white tracking-tight drop-shadow-sm">
+            ZORUNLU ALANLAR VE OTOMATİK HESAPLAMALAR          </h2>
+          <!-- Toplam Adım -->
+          <span class="hidden md:inline-flex items-center px-2.5 py-1 rounded-lg bg-white/10 text-indigo-200 font-mono text-xs font-extrabold border border-white/10">
+            8 / 11          </span>
+        </div>
+        <!-- URL ve Canlı Durum Rozeti -->
+        <div class="flex items-center gap-2">
+          <a href="https://kys.koksan.com/hedefler/form-entries/create/2" target="_blank" rel="noopener noreferrer" class="slide-url-toplink flex items-center gap-2 bg-slate-900/95 hover:bg-slate-800 px-3.5 py-1.5 rounded-xl border border-slate-700/80 hover:border-indigo-400 text-slate-300 hover:text-white font-mono text-xs shadow-inner transition group shrink-0" title="İlgili sayfayı yeni sekmede aç">
+            <span class="flex h-2 w-2 relative">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-400"></span>
+            </span>
+            <span class="text-emerald-400 text-[10px] font-bold uppercase tracking-wider hidden sm:inline">CANLI:</span>
+            <span class="slide-url-text font-bold text-slate-200 group-hover:text-amber-300 transition truncate max-w-[280px] sm:max-w-none">https://kys.koksan.com/hedefler/form-entries/create/2</span>
+            <svg class="w-3.5 h-3.5 text-slate-400 group-hover:text-amber-300 transition shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+          </a>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <!-- SOL PANEL: EKRAN GÖRÜNTÜSÜ VE HOTSPOT PINLERİ -->
+        <div class="lg:col-span-8 bg-white p-3 rounded-2xl border border-slate-200/90 shadow-sm relative">
+          
+          <!-- SİMÜLE EDİLMİŞ CANLI TARAYICI ÇUBUĞU -->
+          <div class="mb-3 rounded-xl border border-slate-200 bg-slate-50/90 p-2 shadow-2xs">
+            <div class="flex items-center gap-2">
+              <div class="flex items-center gap-1.5 px-1.5">
+                <span class="w-2.5 h-2.5 rounded-full bg-rose-400"></span>
+                <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+              </div>
+              <div class="flex-1 flex items-center justify-between bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-inner">
+                <div class="flex items-center gap-2 text-xs font-mono text-slate-700">
+                  <span class="flex items-center gap-1 text-emerald-600 font-bold bg-emerald-50 px-1.5 py-0.5 rounded text-[10px] border border-emerald-200">
+                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clip-rule="evenodd"></path></svg>
+                    Güvenli
+                  </span>
+                  <span class="font-semibold text-slate-800 flex items-center">
+                    <span>https://kys.koksan.com/hedefler/form-entries/create/2</span>
+                    <span class="inline-block w-1.5 h-3.5 bg-indigo-600 ms-0.5 animate-pulse"></span>
+                  </span>
+                </div>
+                <div class="flex items-center gap-2 text-slate-400 text-xs">
+                  <span class="text-[10px] bg-indigo-50 text-indigo-700 font-bold px-2 py-0.5 rounded border border-indigo-100 hidden sm:inline-block">🌐 Canlı Sistem</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- GÖRSEL VE PIN KONTEYNERİ -->
+          <div class="image-pin-container relative overflow-hidden rounded-xl border border-slate-200 bg-slate-50 min-h-[380px] sm:min-h-[460px] flex items-center justify-center group/img">
+            <img src="./slide_8_zorunlu_ve_formuller.png" alt="ZORUNLU ALANLAR VE OTOMATİK HESAPLAMALAR" class="w-full object-cover cursor-zoom-in transition-transform duration-200" onclick="openZoomModal(this.src)">
+
+            <!-- TAM BOY BÜYÜT BUTONU (HOVER OVERLAY) -->
+            <button onclick="openZoomModal('./slide_8_zorunlu_ve_formuller.png')" class="absolute top-3 right-3 bg-slate-900/80 hover:bg-slate-900 text-white text-xs font-bold px-3 py-1.5 rounded-xl border border-slate-700 shadow-md flex items-center gap-1.5 opacity-80 hover:opacity-100 transition z-20 cursor-pointer">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
+              <span>Tam Boy İncele</span>
+            </button>
+
+            <!-- EKRAN ÜZERİNDEKİ NUMARALI HOTSPOT PINLERİ -->
+                        <div class="hotspot-pin " 
+                 style="top: 45.0%; left: 25.0%;"
+                 data-slide="8" 
+                 data-pin="1" 
+                 onmousedown="onPinMouseDown(event)" 
+                 ontouchstart="onPinTouchStart(event)" 
+                 onclick="focusNote('s8-n1')" 
+                 title="Toplam Teslimat Miktarı (Adet)">
+              1            </div>
+                        <div class="hotspot-pin blue" 
+                 style="top: 45.0%; left: 42.0%;"
+                 data-slide="8" 
+                 data-pin="2" 
+                 onmousedown="onPinMouseDown(event)" 
+                 ontouchstart="onPinTouchStart(event)" 
+                 onclick="focusNote('s8-n2')" 
+                 title="Gramaj ve Ürün Tipi Seçimi">
+              2            </div>
+                        <div class="hotspot-pin emerald" 
+                 style="top: 45.0%; left: 62.0%;"
+                 data-slide="8" 
+                 data-pin="3" 
+                 onmousedown="onPinMouseDown(event)" 
+                 ontouchstart="onPinTouchStart(event)" 
+                 onclick="focusNote('s8-n3')" 
+                 title="Otomatik Hesaplanan Tonaj">
+              3            </div>
+                        <div class="hotspot-pin amber" 
+                 style="top: 45.0%; left: 18.5%;"
+                 data-slide="8" 
+                 data-pin="4" 
+                 onmousedown="onPinMouseDown(event)" 
+                 ontouchstart="onPinTouchStart(event)" 
+                 onclick="focusNote('s8-n4')" 
+                 title="Zorunlu Alan Kırmızı Çizgisi">
+              4            </div>
+                      </div>
+
+          <div class="flex items-center justify-between text-[11px] text-slate-500 mt-2 font-medium">
+            <span>🔍 Ekran üzerindeki <strong>numaralı rozetlere</strong> tıklayarak açıklamasını odaklayabilirsiniz.</span>
+            <span class="text-indigo-600 font-semibold cursor-pointer hover:underline" onclick="openZoomModal('./slide_8_zorunlu_ve_formuller.png')">Tam Boyut Büyüt ↗</span>
+          </div>
+        </div>
+
+        <!-- SAĞ PANEL: DETAY KARTLARI -->
+        <div class="lg:col-span-4 space-y-3">
+          <!-- Modül Başlık Kartı -->
+          <div class="p-4 rounded-xl bg-gradient-to-br from-indigo-50/90 to-blue-50/60 border-2 border-indigo-200/80 shadow-xs">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-indigo-600 text-white font-black text-xs uppercase tracking-wider shadow-xs">
+                <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                ADIM 8 / 11              </span>
+              <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Validasyon &amp; Formül</span>
+            </div>
+            <h2 class="text-lg sm:text-xl font-black text-slate-900 tracking-tight">Hata Önleme, Tonaj Formülü ve Toplamlar</h2>
+            <p class="text-slate-600 text-xs mt-1 leading-relaxed">
+              Sistem veri girişinde hataları önlemek için zorunlu alanları kırmızı işaretler ve tonaj değerlerini otomatik hesaplar.            </p>
+          </div>
+
+          <!-- Numaralı Açıklama Kartları -->
+          <div class="space-y-2.5 text-xs max-h-[580px] overflow-y-auto pr-1">
+                        <div id="s8-n1" class="card-note p-3.5 rounded-xl bg-white border border-slate-200 shadow-2xs cursor-pointer" onclick="highlightPin(8, 1)">
+              <div class="flex items-center gap-2 font-bold text-slate-900 text-[13px]">
+                <span class="pin-badge ">1</span>
+                <span>Toplam Teslimat Miktarı (Adet)</span>
+              </div>
+              <p class="text-slate-600 mt-1.5 leading-relaxed text-xs">
+                Hedeflenen ürün sipariş adedini sayısal olarak giriniz (Örn: 50.000).              </p>
+            </div>
+                        <div id="s8-n2" class="card-note p-3.5 rounded-xl bg-white border border-slate-200 shadow-2xs cursor-pointer" onclick="highlightPin(8, 2)">
+              <div class="flex items-center gap-2 font-bold text-slate-900 text-[13px]">
+                <span class="pin-badge blue">2</span>
+                <span>Gramaj ve Ürün Tipi Seçimi</span>
+              </div>
+              <p class="text-slate-600 mt-1.5 leading-relaxed text-xs">
+                Ürünün gramajını açılır listeden seçiniz. Bu seçim tonaj hesaplaması için kritiktir.              </p>
+            </div>
+                        <div id="s8-n3" class="card-note p-3.5 rounded-xl bg-white border border-slate-200 shadow-2xs cursor-pointer" onclick="highlightPin(8, 3)">
+              <div class="flex items-center gap-2 font-bold text-slate-900 text-[13px]">
+                <span class="pin-badge emerald">3</span>
+                <span>Otomatik Hesaplanan Tonaj</span>
+              </div>
+              <p class="text-slate-600 mt-1.5 leading-relaxed text-xs">
+                Adet ve Gramaj girildiğinde formül devreye girer: <code class="text-indigo-700 bg-indigo-50 px-1 font-mono rounded">Adet × Gramaj / 1.000.000</code> formülüyle Tonaj otomatik hesaplanır.              </p>
+            </div>
+                        <div id="s8-n4" class="card-note p-3.5 rounded-xl bg-white border border-slate-200 shadow-2xs cursor-pointer" onclick="highlightPin(8, 4)">
+              <div class="flex items-center gap-2 font-bold text-slate-900 text-[13px]">
+                <span class="pin-badge amber">4</span>
+                <span>Zorunlu Alan Kırmızı Çizgisi</span>
+              </div>
+              <p class="text-slate-600 mt-1.5 leading-relaxed text-xs">
+                Sol kenarında kırmızı şerit bulunan alanlar zorunludur. Doldurulmadan onaya gönderilmeye çalışılırsa sistem eksik alanı otomatik odaklar.              </p>
+            </div>
+                      </div>
+        </div>
+      </div>
+    </section>
+        <!-- ========================================== -->
+    <!-- SLAYT 9: ÇOKLU İŞ YERİ KAYITLARINI BİRLEŞTİRME -->
+    <!-- ========================================== -->
+    <section id="slide-9" class="slide ">
+      <!-- ADIM BAŞLIĞI & ERİŞİM ÇUBUĞU -->
+      <div class="flex flex-wrap items-center justify-between bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 text-white px-3.5 py-2.5 sm:px-5 sm:py-3.5 rounded-xl sm:rounded-2xl border-t-4 border-t-indigo-500 border-x border-b border-slate-800 shadow-md gap-3 mb-3">
+        <div class="flex items-center gap-3 flex-wrap">
+          <!-- Adım Rozeti -->
+          <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-blue-600 text-white font-black text-xs sm:text-sm tracking-wider uppercase shadow-md shadow-indigo-950 border border-indigo-400/40">
+            <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse shadow-xs"></span>
+            <span>9. ADIM</span>
+          </div>
+          <!-- Başlık -->
+          <h2 class="text-xs sm:text-base md:text-xl font-black text-white tracking-tight drop-shadow-sm">
+            ÇOKLU İŞ YERİ KAYITLARINI BİRLEŞTİRME          </h2>
+          <!-- Toplam Adım -->
+          <span class="hidden md:inline-flex items-center px-2.5 py-1 rounded-lg bg-white/10 text-indigo-200 font-mono text-xs font-extrabold border border-white/10">
+            9 / 11          </span>
+        </div>
+        <!-- URL ve Canlı Durum Rozeti -->
+        <div class="flex items-center gap-2">
+          <a href="https://kys.koksan.com/hedefler/form-entries" target="_blank" rel="noopener noreferrer" class="slide-url-toplink flex items-center gap-2 bg-slate-900/95 hover:bg-slate-800 px-3.5 py-1.5 rounded-xl border border-slate-700/80 hover:border-indigo-400 text-slate-300 hover:text-white font-mono text-xs shadow-inner transition group shrink-0" title="İlgili sayfayı yeni sekmede aç">
+            <span class="flex h-2 w-2 relative">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-400"></span>
+            </span>
+            <span class="text-emerald-400 text-[10px] font-bold uppercase tracking-wider hidden sm:inline">CANLI:</span>
+            <span class="slide-url-text font-bold text-slate-200 group-hover:text-amber-300 transition truncate max-w-[280px] sm:max-w-none">https://kys.koksan.com/hedefler/form-entries</span>
+            <svg class="w-3.5 h-3.5 text-slate-400 group-hover:text-amber-300 transition shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+          </a>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <!-- SOL PANEL: EKRAN GÖRÜNTÜSÜ VE HOTSPOT PINLERİ -->
+        <div class="lg:col-span-8 bg-white p-3 rounded-2xl border border-slate-200/90 shadow-sm relative">
+          
+          <!-- SİMÜLE EDİLMİŞ CANLI TARAYICI ÇUBUĞU -->
+          <div class="mb-3 rounded-xl border border-slate-200 bg-slate-50/90 p-2 shadow-2xs">
+            <div class="flex items-center gap-2">
+              <div class="flex items-center gap-1.5 px-1.5">
+                <span class="w-2.5 h-2.5 rounded-full bg-rose-400"></span>
+                <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+              </div>
+              <div class="flex-1 flex items-center justify-between bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-inner">
+                <div class="flex items-center gap-2 text-xs font-mono text-slate-700">
+                  <span class="flex items-center gap-1 text-emerald-600 font-bold bg-emerald-50 px-1.5 py-0.5 rounded text-[10px] border border-emerald-200">
+                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clip-rule="evenodd"></path></svg>
+                    Güvenli
+                  </span>
+                  <span class="font-semibold text-slate-800 flex items-center">
+                    <span>https://kys.koksan.com/hedefler/form-entries</span>
+                    <span class="inline-block w-1.5 h-3.5 bg-indigo-600 ms-0.5 animate-pulse"></span>
+                  </span>
+                </div>
+                <div class="flex items-center gap-2 text-slate-400 text-xs">
+                  <span class="text-[10px] bg-indigo-50 text-indigo-700 font-bold px-2 py-0.5 rounded border border-indigo-100 hidden sm:inline-block">🌐 Canlı Sistem</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- GÖRSEL VE PIN KONTEYNERİ -->
+          <div class="image-pin-container relative overflow-hidden rounded-xl border border-slate-200 bg-slate-50 min-h-[380px] sm:min-h-[460px] flex items-center justify-center group/img">
+            <img src="./slide_9_parcalari_birlestir.png" alt="ÇOKLU İŞ YERİ KAYITLARINI BİRLEŞTİRME" class="w-full object-cover cursor-zoom-in transition-transform duration-200" onclick="openZoomModal(this.src)">
+
+            <!-- TAM BOY BÜYÜT BUTONU (HOVER OVERLAY) -->
+            <button onclick="openZoomModal('./slide_9_parcalari_birlestir.png')" class="absolute top-3 right-3 bg-slate-900/80 hover:bg-slate-900 text-white text-xs font-bold px-3 py-1.5 rounded-xl border border-slate-700 shadow-md flex items-center gap-1.5 opacity-80 hover:opacity-100 transition z-20 cursor-pointer">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
+              <span>Tam Boy İncele</span>
+            </button>
+
+            <!-- EKRAN ÜZERİNDEKİ NUMARALI HOTSPOT PINLERİ -->
+                        <div class="hotspot-pin blue" 
+                 style="top: 35.0%; left: 68.0%;"
+                 data-slide="9" 
+                 data-pin="1" 
+                 onmousedown="onPinMouseDown(event)" 
+                 ontouchstart="onPinTouchStart(event)" 
+                 onclick="focusNote('s9-n1')" 
+                 title="Parçaları Birleştir Butonu">
+              1            </div>
+                        <div class="hotspot-pin amber" 
+                 style="top: 55.0%; left: 40.0%;"
+                 data-slide="9" 
+                 data-pin="2" 
+                 onmousedown="onPinMouseDown(event)" 
+                 ontouchstart="onPinTouchStart(event)" 
+                 onclick="focusNote('s9-n2')" 
+                 title="Birleştirilecek Kayıtların Seçimi">
+              2            </div>
+                        <div class="hotspot-pin emerald" 
+                 style="top: 78.0%; left: 70.0%;"
+                 data-slide="9" 
+                 data-pin="3" 
+                 onmousedown="onPinMouseDown(event)" 
+                 ontouchstart="onPinTouchStart(event)" 
+                 onclick="focusNote('s9-n3')" 
+                 title="Seçilen Parçaları Birleştir Butonu">
+              3            </div>
+                      </div>
+
+          <div class="flex items-center justify-between text-[11px] text-slate-500 mt-2 font-medium">
+            <span>🔍 Ekran üzerindeki <strong>numaralı rozetlere</strong> tıklayarak açıklamasını odaklayabilirsiniz.</span>
+            <span class="text-indigo-600 font-semibold cursor-pointer hover:underline" onclick="openZoomModal('./slide_9_parcalari_birlestir.png')">Tam Boyut Büyüt ↗</span>
+          </div>
+        </div>
+
+        <!-- SAĞ PANEL: DETAY KARTLARI -->
+        <div class="lg:col-span-4 space-y-3">
+          <!-- Modül Başlık Kartı -->
+          <div class="p-4 rounded-xl bg-gradient-to-br from-indigo-50/90 to-blue-50/60 border-2 border-indigo-200/80 shadow-xs">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-indigo-600 text-white font-black text-xs uppercase tracking-wider shadow-xs">
+                <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                ADIM 9 / 11              </span>
+              <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Konsolidasyon</span>
+            </div>
+            <h2 class="text-lg sm:text-xl font-black text-slate-900 tracking-tight">Parçalı Fabrika Taslaklarını Tek Formda Toplama</h2>
+            <p class="text-slate-600 text-xs mt-1 leading-relaxed">
+              Birden fazla iş yeri için (Örn. hem KAPAK hem PREFORM) ayrı ayrı hazırladığınız taslakları tek bir ana kayıt altında toplayabilirsiniz.            </p>
+          </div>
+
+          <!-- Numaralı Açıklama Kartları -->
+          <div class="space-y-2.5 text-xs max-h-[580px] overflow-y-auto pr-1">
+                        <div id="s9-n1" class="card-note p-3.5 rounded-xl bg-white border border-slate-200 shadow-2xs cursor-pointer" onclick="highlightPin(9, 1)">
+              <div class="flex items-center gap-2 font-bold text-slate-900 text-[13px]">
+                <span class="pin-badge blue">1</span>
+                <span>Parçaları Birleştir Butonu</span>
+              </div>
+              <p class="text-slate-600 mt-1.5 leading-relaxed text-xs">
+                Veri Girişleri listesinde, aynı döneme ait parçalı taslaklarınız varsa üst taraftaki <strong>"Parçaları Birleştir"</strong> butonu aktifleşir.              </p>
+            </div>
+                        <div id="s9-n2" class="card-note p-3.5 rounded-xl bg-white border border-slate-200 shadow-2xs cursor-pointer" onclick="highlightPin(9, 2)">
+              <div class="flex items-center gap-2 font-bold text-slate-900 text-[13px]">
+                <span class="pin-badge amber">2</span>
+                <span>Birleştirilecek Kayıtların Seçimi</span>
+              </div>
+              <p class="text-slate-600 mt-1.5 leading-relaxed text-xs">
+                Açılan pencerede aynı anda onaya göndermek istediğiniz iş yeri kayıtlarının solundaki onay kutularını işaretleyiniz (En az 2 kayıt seçilmelidir).              </p>
+            </div>
+                        <div id="s9-n3" class="card-note p-3.5 rounded-xl bg-white border border-slate-200 shadow-2xs cursor-pointer" onclick="highlightPin(9, 3)">
+              <div class="flex items-center gap-2 font-bold text-slate-900 text-[13px]">
+                <span class="pin-badge emerald">3</span>
+                <span>Seçilen Parçaları Birleştir Butonu</span>
+              </div>
+              <p class="text-slate-600 mt-1.5 leading-relaxed text-xs">
+                Seçimi tamamladıktan sonra butona basınız. Seçtiğiniz tüm fabrikaların hedefleri tek bir konsolide kayıt haline getirilir.              </p>
+            </div>
+                      </div>
+        </div>
+      </div>
+    </section>
+        <!-- ========================================== -->
+    <!-- SLAYT 10: SON KONTROL VE ONAYA GÖNDERME -->
+    <!-- ========================================== -->
+    <section id="slide-10" class="slide ">
+      <!-- ADIM BAŞLIĞI & ERİŞİM ÇUBUĞU -->
+      <div class="flex flex-wrap items-center justify-between bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 text-white px-3.5 py-2.5 sm:px-5 sm:py-3.5 rounded-xl sm:rounded-2xl border-t-4 border-t-indigo-500 border-x border-b border-slate-800 shadow-md gap-3 mb-3">
+        <div class="flex items-center gap-3 flex-wrap">
+          <!-- Adım Rozeti -->
+          <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-blue-600 text-white font-black text-xs sm:text-sm tracking-wider uppercase shadow-md shadow-indigo-950 border border-indigo-400/40">
+            <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse shadow-xs"></span>
+            <span>10. ADIM</span>
+          </div>
+          <!-- Başlık -->
+          <h2 class="text-xs sm:text-base md:text-xl font-black text-white tracking-tight drop-shadow-sm">
+            SON KONTROL VE ONAYA GÖNDERME          </h2>
+          <!-- Toplam Adım -->
+          <span class="hidden md:inline-flex items-center px-2.5 py-1 rounded-lg bg-white/10 text-indigo-200 font-mono text-xs font-extrabold border border-white/10">
+            10 / 11          </span>
+        </div>
+        <!-- URL ve Canlı Durum Rozeti -->
+        <div class="flex items-center gap-2">
+          <a href="https://kys.koksan.com/hedefler/form-entries/51" target="_blank" rel="noopener noreferrer" class="slide-url-toplink flex items-center gap-2 bg-slate-900/95 hover:bg-slate-800 px-3.5 py-1.5 rounded-xl border border-slate-700/80 hover:border-indigo-400 text-slate-300 hover:text-white font-mono text-xs shadow-inner transition group shrink-0" title="İlgili sayfayı yeni sekmede aç">
+            <span class="flex h-2 w-2 relative">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-400"></span>
+            </span>
+            <span class="text-emerald-400 text-[10px] font-bold uppercase tracking-wider hidden sm:inline">CANLI:</span>
+            <span class="slide-url-text font-bold text-slate-200 group-hover:text-amber-300 transition truncate max-w-[280px] sm:max-w-none">https://kys.koksan.com/hedefler/form-entries/51</span>
+            <svg class="w-3.5 h-3.5 text-slate-400 group-hover:text-amber-300 transition shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+          </a>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <!-- SOL PANEL: EKRAN GÖRÜNTÜSÜ VE HOTSPOT PINLERİ -->
+        <div class="lg:col-span-8 bg-white p-3 rounded-2xl border border-slate-200/90 shadow-sm relative">
+          
+          <!-- SİMÜLE EDİLMİŞ CANLI TARAYICI ÇUBUĞU -->
+          <div class="mb-3 rounded-xl border border-slate-200 bg-slate-50/90 p-2 shadow-2xs">
+            <div class="flex items-center gap-2">
+              <div class="flex items-center gap-1.5 px-1.5">
+                <span class="w-2.5 h-2.5 rounded-full bg-rose-400"></span>
+                <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+              </div>
+              <div class="flex-1 flex items-center justify-between bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-inner">
+                <div class="flex items-center gap-2 text-xs font-mono text-slate-700">
+                  <span class="flex items-center gap-1 text-emerald-600 font-bold bg-emerald-50 px-1.5 py-0.5 rounded text-[10px] border border-emerald-200">
+                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clip-rule="evenodd"></path></svg>
+                    Güvenli
+                  </span>
+                  <span class="font-semibold text-slate-800 flex items-center">
+                    <span>https://kys.koksan.com/hedefler/form-entries/51</span>
+                    <span class="inline-block w-1.5 h-3.5 bg-indigo-600 ms-0.5 animate-pulse"></span>
+                  </span>
+                </div>
+                <div class="flex items-center gap-2 text-slate-400 text-xs">
+                  <span class="text-[10px] bg-indigo-50 text-indigo-700 font-bold px-2 py-0.5 rounded border border-indigo-100 hidden sm:inline-block">🌐 Canlı Sistem</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- GÖRSEL VE PIN KONTEYNERİ -->
+          <div class="image-pin-container relative overflow-hidden rounded-xl border border-slate-200 bg-slate-50 min-h-[380px] sm:min-h-[460px] flex items-center justify-center group/img">
+            <img src="./slide_10_onaya_gonderme.png" alt="SON KONTROL VE ONAYA GÖNDERME" class="w-full object-cover cursor-zoom-in transition-transform duration-200" onclick="openZoomModal(this.src)">
+
+            <!-- TAM BOY BÜYÜT BUTONU (HOVER OVERLAY) -->
+            <button onclick="openZoomModal('./slide_10_onaya_gonderme.png')" class="absolute top-3 right-3 bg-slate-900/80 hover:bg-slate-900 text-white text-xs font-bold px-3 py-1.5 rounded-xl border border-slate-700 shadow-md flex items-center gap-1.5 opacity-80 hover:opacity-100 transition z-20 cursor-pointer">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
+              <span>Tam Boy İncele</span>
+            </button>
+
+            <!-- EKRAN ÜZERİNDEKİ NUMARALI HOTSPOT PINLERİ -->
+                        <div class="hotspot-pin blue" 
+                 style="top: 38.0%; left: 68.0%;"
+                 data-slide="10" 
+                 data-pin="1" 
+                 onmousedown="onPinMouseDown(event)" 
+                 ontouchstart="onPinTouchStart(event)" 
+                 onclick="focusNote('s10-n1')" 
+                 title="Düzenle Butonu">
+              1            </div>
+                        <div class="hotspot-pin emerald" 
+                 style="top: 38.0%; left: 80.0%;"
+                 data-slide="10" 
+                 data-pin="2" 
+                 onmousedown="onPinMouseDown(event)" 
+                 ontouchstart="onPinTouchStart(event)" 
+                 onclick="focusNote('s10-n2')" 
+                 title="Onaya Gönder Butonu">
+              2            </div>
+                        <div class="hotspot-pin amber" 
+                 style="top: 38.0%; left: 32.0%;"
+                 data-slide="10" 
+                 data-pin="3" 
+                 onmousedown="onPinMouseDown(event)" 
+                 ontouchstart="onPinTouchStart(event)" 
+                 onclick="focusNote('s10-n3')" 
+                 title="Onay Durumu Rozeti">
+              3            </div>
+                        <div class="hotspot-pin emerald" 
+                 style="top: 24.0%; left: 88.0%;"
+                 data-slide="10" 
+                 data-pin="4" 
+                 onmousedown="onPinMouseDown(event)" 
+                 ontouchstart="onPinTouchStart(event)" 
+                 onclick="focusNote('s10-n4')" 
+                 title="Excel Çıktısı Al Butonu">
+              4            </div>
+                      </div>
+
+          <div class="flex items-center justify-between text-[11px] text-slate-500 mt-2 font-medium">
+            <span>🔍 Ekran üzerindeki <strong>numaralı rozetlere</strong> tıklayarak açıklamasını odaklayabilirsiniz.</span>
+            <span class="text-indigo-600 font-semibold cursor-pointer hover:underline" onclick="openZoomModal('./slide_10_onaya_gonderme.png')">Tam Boyut Büyüt ↗</span>
+          </div>
+        </div>
+
+        <!-- SAĞ PANEL: DETAY KARTLARI -->
+        <div class="lg:col-span-4 space-y-3">
+          <!-- Modül Başlık Kartı -->
+          <div class="p-4 rounded-xl bg-gradient-to-br from-indigo-50/90 to-blue-50/60 border-2 border-indigo-200/80 shadow-xs">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-indigo-600 text-white font-black text-xs uppercase tracking-wider shadow-xs">
+                <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                ADIM 10 / 11              </span>
+              <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Onay Süreci</span>
+            </div>
+            <h2 class="text-lg sm:text-xl font-black text-slate-900 tracking-tight">Detay İnceleme, Revizyon ve Onay Akışı</h2>
+            <p class="text-slate-600 text-xs mt-1 leading-relaxed">
+              Hedeflerin son kontrolü yapılır. Bilgiler doğru ve eksiksizse yönetici incelemesine sunulmak üzere onaya gönderilir.            </p>
+          </div>
+
+          <!-- Numaralı Açıklama Kartları -->
+          <div class="space-y-2.5 text-xs max-h-[580px] overflow-y-auto pr-1">
+                        <div id="s10-n1" class="card-note p-3.5 rounded-xl bg-white border border-slate-200 shadow-2xs cursor-pointer" onclick="highlightPin(10, 1)">
+              <div class="flex items-center gap-2 font-bold text-slate-900 text-[13px]">
+                <span class="pin-badge blue">1</span>
+                <span>Düzenle Butonu</span>
+              </div>
+              <p class="text-slate-600 mt-1.5 leading-relaxed text-xs">
+                Kayıt detayında bir hata veya güncelleme ihtiyacı görürseniz <strong>"Düzenle"</strong> butonuna basarak tabloyu tekrar açabilirsiniz.              </p>
+            </div>
+                        <div id="s10-n2" class="card-note p-3.5 rounded-xl bg-white border border-slate-200 shadow-2xs cursor-pointer" onclick="highlightPin(10, 2)">
+              <div class="flex items-center gap-2 font-bold text-slate-900 text-[13px]">
+                <span class="pin-badge emerald">2</span>
+                <span>Onaya Gönder Butonu</span>
+              </div>
+              <p class="text-slate-600 mt-1.5 leading-relaxed text-xs">
+                Tüm bilgiler eksiksizse yeşil <strong>"Onaya Gönder"</strong> butonuna tıklayınız. Onay diyaloğunda işlemi onaylayınız.              </p>
+            </div>
+                        <div id="s10-n3" class="card-note p-3.5 rounded-xl bg-white border border-slate-200 shadow-2xs cursor-pointer" onclick="highlightPin(10, 3)">
+              <div class="flex items-center gap-2 font-bold text-slate-900 text-[13px]">
+                <span class="pin-badge amber">3</span>
+                <span>Onay Durumu Rozeti</span>
+              </div>
+              <p class="text-slate-600 mt-1.5 leading-relaxed text-xs">
+                Gönderim sonrası kayıt durumu <strong>"Onay Bekliyor"</strong> rozetine döner. Yöneticiniz onayladığında <strong>"Onaylandı"</strong> olarak güncellenir.              </p>
+            </div>
+                        <div id="s10-n4" class="card-note p-3.5 rounded-xl bg-white border border-slate-200 shadow-2xs cursor-pointer" onclick="highlightPin(10, 4)">
+              <div class="flex items-center gap-2 font-bold text-slate-900 text-[13px]">
+                <span class="pin-badge emerald">4</span>
+                <span>Excel Çıktısı Al Butonu</span>
+              </div>
+              <p class="text-slate-600 mt-1.5 leading-relaxed text-xs">
+                İstediğiniz an sağ üstteki yeşil <strong>"EXCEL"</strong> butonuna basarak tüm verileri resmi rapor formatında bilgisayarınıza indirebilirsiniz.              </p>
+            </div>
+                      </div>
+        </div>
+      </div>
+    </section>
+        <!-- ========================================== -->
+    <!-- SLAYT 11: YÖNETİCİ ONAY VE DEĞERLENDİRME MODÜLÜ -->
+    <!-- ========================================== -->
+    <section id="slide-11" class="slide ">
+      <!-- ADIM BAŞLIĞI & ERİŞİM ÇUBUĞU -->
+      <div class="flex flex-wrap items-center justify-between bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 text-white px-3.5 py-2.5 sm:px-5 sm:py-3.5 rounded-xl sm:rounded-2xl border-t-4 border-t-indigo-500 border-x border-b border-slate-800 shadow-md gap-3 mb-3">
+        <div class="flex items-center gap-3 flex-wrap">
+          <!-- Adım Rozeti -->
+          <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-blue-600 text-white font-black text-xs sm:text-sm tracking-wider uppercase shadow-md shadow-indigo-950 border border-indigo-400/40">
+            <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse shadow-xs"></span>
+            <span>11. ADIM</span>
+          </div>
+          <!-- Başlık -->
+          <h2 class="text-xs sm:text-base md:text-xl font-black text-white tracking-tight drop-shadow-sm">
+            YÖNETİCİ ONAY VE DEĞERLENDİRME MODÜLÜ          </h2>
+          <!-- Toplam Adım -->
+          <span class="hidden md:inline-flex items-center px-2.5 py-1 rounded-lg bg-white/10 text-indigo-200 font-mono text-xs font-extrabold border border-white/10">
+            11 / 11          </span>
+        </div>
+        <!-- URL ve Canlı Durum Rozeti -->
+        <div class="flex items-center gap-2">
+          <a href="https://kys.koksan.com/hedefler/form-entries/51" target="_blank" rel="noopener noreferrer" class="slide-url-toplink flex items-center gap-2 bg-slate-900/95 hover:bg-slate-800 px-3.5 py-1.5 rounded-xl border border-slate-700/80 hover:border-indigo-400 text-slate-300 hover:text-white font-mono text-xs shadow-inner transition group shrink-0" title="İlgili sayfayı yeni sekmede aç">
+            <span class="flex h-2 w-2 relative">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-400"></span>
+            </span>
+            <span class="text-emerald-400 text-[10px] font-bold uppercase tracking-wider hidden sm:inline">CANLI:</span>
+            <span class="slide-url-text font-bold text-slate-200 group-hover:text-amber-300 transition truncate max-w-[280px] sm:max-w-none">https://kys.koksan.com/hedefler/form-entries/51</span>
+            <svg class="w-3.5 h-3.5 text-slate-400 group-hover:text-amber-300 transition shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+          </a>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <!-- SOL PANEL: EKRAN GÖRÜNTÜSÜ VE HOTSPOT PINLERİ -->
+        <div class="lg:col-span-8 bg-white p-3 rounded-2xl border border-slate-200/90 shadow-sm relative">
+          
+          <!-- SİMÜLE EDİLMİŞ CANLI TARAYICI ÇUBUĞU -->
+          <div class="mb-3 rounded-xl border border-slate-200 bg-slate-50/90 p-2 shadow-2xs">
+            <div class="flex items-center gap-2">
+              <div class="flex items-center gap-1.5 px-1.5">
+                <span class="w-2.5 h-2.5 rounded-full bg-rose-400"></span>
+                <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+              </div>
+              <div class="flex-1 flex items-center justify-between bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-inner">
+                <div class="flex items-center gap-2 text-xs font-mono text-slate-700">
+                  <span class="flex items-center gap-1 text-emerald-600 font-bold bg-emerald-50 px-1.5 py-0.5 rounded text-[10px] border border-emerald-200">
+                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clip-rule="evenodd"></path></svg>
+                    Güvenli
+                  </span>
+                  <span class="font-semibold text-slate-800 flex items-center">
+                    <span>https://kys.koksan.com/hedefler/form-entries/51</span>
+                    <span class="inline-block w-1.5 h-3.5 bg-indigo-600 ms-0.5 animate-pulse"></span>
+                  </span>
+                </div>
+                <div class="flex items-center gap-2 text-slate-400 text-xs">
+                  <span class="text-[10px] bg-indigo-50 text-indigo-700 font-bold px-2 py-0.5 rounded border border-indigo-100 hidden sm:inline-block">🌐 Canlı Sistem</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- GÖRSEL VE PIN KONTEYNERİ -->
+          <div class="image-pin-container relative overflow-hidden rounded-xl border border-slate-200 bg-slate-50 min-h-[380px] sm:min-h-[460px] flex items-center justify-center group/img">
+            <img src="./slide_11_yonetici_onay_modulu.png" alt="YÖNETİCİ ONAY VE DEĞERLENDİRME MODÜLÜ" class="w-full object-cover cursor-zoom-in transition-transform duration-200" onclick="openZoomModal(this.src)">
+
+            <!-- TAM BOY BÜYÜT BUTONU (HOVER OVERLAY) -->
+            <button onclick="openZoomModal('./slide_11_yonetici_onay_modulu.png')" class="absolute top-3 right-3 bg-slate-900/80 hover:bg-slate-900 text-white text-xs font-bold px-3 py-1.5 rounded-xl border border-slate-700 shadow-md flex items-center gap-1.5 opacity-80 hover:opacity-100 transition z-20 cursor-pointer">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
+              <span>Tam Boy İncele</span>
+            </button>
+
+            <!-- EKRAN ÜZERİNDEKİ NUMARALI HOTSPOT PINLERİ -->
+                        <div class="hotspot-pin blue" 
+                 style="top: 82.0%; left: 20.0%;"
+                 data-slide="11" 
+                 data-pin="1" 
+                 onmousedown="onPinMouseDown(event)" 
+                 ontouchstart="onPinTouchStart(event)" 
+                 onclick="focusNote('s11-n1')" 
+                 title="Form Değerlendirme &amp; Onay Modülü">
+              1            </div>
+                        <div class="hotspot-pin emerald" 
+                 style="top: 96.0%; left: 17.5%;"
+                 data-slide="11" 
+                 data-pin="2" 
+                 onmousedown="onPinMouseDown(event)" 
+                 ontouchstart="onPinTouchStart(event)" 
+                 onclick="focusNote('s11-n2')" 
+                 title="Veriyi Onayla Butonu">
+              2            </div>
+                        <div class="hotspot-pin amber" 
+                 style="top: 96.0%; left: 25.0%;"
+                 data-slide="11" 
+                 data-pin="3" 
+                 onmousedown="onPinMouseDown(event)" 
+                 ontouchstart="onPinTouchStart(event)" 
+                 onclick="focusNote('s11-n3')" 
+                 title="Veriyi Reddet &amp; Gerekçe Alanı">
+              3            </div>
+                        <div class="hotspot-pin emerald" 
+                 style="top: 82.0%; left: 49.5%;"
+                 data-slide="11" 
+                 data-pin="4" 
+                 onmousedown="onPinMouseDown(event)" 
+                 ontouchstart="onPinTouchStart(event)" 
+                 onclick="focusNote('s11-n4')" 
+                 title="Sorumlu Yönetici (Serhat TÜMER)">
+              4            </div>
+                      </div>
+
+          <div class="flex items-center justify-between text-[11px] text-slate-500 mt-2 font-medium">
+            <span>🔍 Ekran üzerindeki <strong>numaralı rozetlere</strong> tıklayarak açıklamasını odaklayabilirsiniz.</span>
+            <span class="text-indigo-600 font-semibold cursor-pointer hover:underline" onclick="openZoomModal('./slide_11_yonetici_onay_modulu.png')">Tam Boyut Büyüt ↗</span>
+          </div>
+        </div>
+
+        <!-- SAĞ PANEL: DETAY KARTLARI -->
+        <div class="lg:col-span-4 space-y-3">
+          <!-- Modül Başlık Kartı -->
+          <div class="p-4 rounded-xl bg-gradient-to-br from-indigo-50/90 to-blue-50/60 border-2 border-indigo-200/80 shadow-xs">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-indigo-600 text-white font-black text-xs uppercase tracking-wider shadow-xs">
+                <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                ADIM 11 / 11              </span>
+              <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Yönetici Onayı</span>
+            </div>
+            <h2 class="text-lg sm:text-xl font-black text-slate-900 tracking-tight">Grup Yöneticisi (Serhat TÜMER) Onay/Red İşlemleri</h2>
+            <p class="text-slate-600 text-xs mt-1 leading-relaxed">
+              Personele (Örn: Mithat Terzi) ait onay bekleyen hedefler Grup Yöneticisi Serhat Tümer tarafından incelenir; gerekçeli olarak onaylanır veya reddedilir.            </p>
+          </div>
+
+          <!-- Numaralı Açıklama Kartları -->
+          <div class="space-y-2.5 text-xs max-h-[580px] overflow-y-auto pr-1">
+                        <div id="s11-n1" class="card-note p-3.5 rounded-xl bg-white border border-slate-200 shadow-2xs cursor-pointer" onclick="highlightPin(11, 1)">
+              <div class="flex items-center gap-2 font-bold text-slate-900 text-[13px]">
+                <span class="pin-badge blue">1</span>
+                <span>Form Değerlendirme &amp; Onay Modülü</span>
+              </div>
+              <p class="text-slate-600 mt-1.5 leading-relaxed text-xs">
+                Onay bekleyen kaydın altında yöneticilere özel <strong>"Form Değerlendirme & Onay Modülü"</strong> açılır. Formu giren personelin adı ve grubu (YURT İÇİ • Mithat TERZİ) rozette yer alır.              </p>
+            </div>
+                        <div id="s11-n2" class="card-note p-3.5 rounded-xl bg-white border border-slate-200 shadow-2xs cursor-pointer" onclick="highlightPin(11, 2)">
+              <div class="flex items-center gap-2 font-bold text-slate-900 text-[13px]">
+                <span class="pin-badge emerald">2</span>
+                <span>Veriyi Onayla Butonu</span>
+              </div>
+              <p class="text-slate-600 mt-1.5 leading-relaxed text-xs">
+                Veriler kontrol edilip uygun bulunduğunda yeşil <strong>"VERİYİ ONAYLA"</strong> butonuna basılır. Form durumu anında <em>"Onaylandı"</em> olur ve resmi KPI hedeflerine işlenir.              </p>
+            </div>
+                        <div id="s11-n3" class="card-note p-3.5 rounded-xl bg-white border border-slate-200 shadow-2xs cursor-pointer" onclick="highlightPin(11, 3)">
+              <div class="flex items-center gap-2 font-bold text-slate-900 text-[13px]">
+                <span class="pin-badge amber">3</span>
+                <span>Veriyi Reddet &amp; Gerekçe Alanı</span>
+              </div>
+              <p class="text-slate-600 mt-1.5 leading-relaxed text-xs">
+                Hatalı veya eksik veri tespit edilirse <em>"Reddetme Gerekçesi"</em> kutusuna personelin düzeltmesi gereken detaylar yazılır ve kırmızı <strong>"VERİYİ REDDET"</strong> butonuna tıklanır.              </p>
+            </div>
+                        <div id="s11-n4" class="card-note p-3.5 rounded-xl bg-white border border-slate-200 shadow-2xs cursor-pointer" onclick="highlightPin(11, 4)">
+              <div class="flex items-center gap-2 font-bold text-slate-900 text-[13px]">
+                <span class="pin-badge emerald">4</span>
+                <span>Sorumlu Yönetici (Serhat TÜMER)</span>
+              </div>
+              <p class="text-slate-600 mt-1.5 leading-relaxed text-xs">
+                Bu işlem yetkili Grup Yöneticisi (Serhat TÜMER) veya Sistem Yöneticisi tarafından güvenli oturum altında gerçekleştirilir ve tarihçeye kaydedilir.              </p>
+            </div>
+                      </div>
+        </div>
+      </div>
+    </section>
+    
+  </main>
+
+  <!-- ALT MODÜL SEÇİCİ & KLAVYE KISAYOLLARI BİLGİ BARI -->
+  <footer class="border-t border-slate-200 bg-white/95 backdrop-blur px-3 sm:px-6 py-2.5 shadow-xs">
+    <div class="max-w-[1700px] mx-auto flex flex-wrap items-center justify-between gap-3">
+      
+      <!-- HIZLI SLAYT BUTONLARI -->
+      <div class="flex items-center gap-1.5 overflow-x-auto py-1 max-w-full">
+        <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider shrink-0 me-1">Adımlar:</span>
+                <button onclick="goToSlide(1)" id="thumbBtn-1" class="px-2.5 py-1 rounded-lg text-xs font-bold transition border cursor-pointer whitespace-nowrap bg-indigo-600 text-white border-indigo-600 shadow-xs">
+          1. Oturum Açma        </button>
+                <button onclick="goToSlide(2)" id="thumbBtn-2" class="px-2.5 py-1 rounded-lg text-xs font-bold transition border cursor-pointer whitespace-nowrap bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200">
+          2. Uygulama Seçimi        </button>
+                <button onclick="goToSlide(3)" id="thumbBtn-3" class="px-2.5 py-1 rounded-lg text-xs font-bold transition border cursor-pointer whitespace-nowrap bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200">
+          3. Gösterge Paneli        </button>
+                <button onclick="goToSlide(4)" id="thumbBtn-4" class="px-2.5 py-1 rounded-lg text-xs font-bold transition border cursor-pointer whitespace-nowrap bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200">
+          4. Kayıt Yönetimi        </button>
+                <button onclick="goToSlide(5)" id="thumbBtn-5" class="px-2.5 py-1 rounded-lg text-xs font-bold transition border cursor-pointer whitespace-nowrap bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200">
+          5. Form Seçimi        </button>
+                <button onclick="goToSlide(6)" id="thumbBtn-6" class="px-2.5 py-1 rounded-lg text-xs font-bold transition border cursor-pointer whitespace-nowrap bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200">
+          6. Veri Girişi        </button>
+                <button onclick="goToSlide(7)" id="thumbBtn-7" class="px-2.5 py-1 rounded-lg text-xs font-bold transition border cursor-pointer whitespace-nowrap bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200">
+          7. Toplu İşlemler        </button>
+                <button onclick="goToSlide(8)" id="thumbBtn-8" class="px-2.5 py-1 rounded-lg text-xs font-bold transition border cursor-pointer whitespace-nowrap bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200">
+          8. Validasyon &amp; Formül        </button>
+                <button onclick="goToSlide(9)" id="thumbBtn-9" class="px-2.5 py-1 rounded-lg text-xs font-bold transition border cursor-pointer whitespace-nowrap bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200">
+          9. Konsolidasyon        </button>
+                <button onclick="goToSlide(10)" id="thumbBtn-10" class="px-2.5 py-1 rounded-lg text-xs font-bold transition border cursor-pointer whitespace-nowrap bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200">
+          10. Onay Süreci        </button>
+                <button onclick="goToSlide(11)" id="thumbBtn-11" class="px-2.5 py-1 rounded-lg text-xs font-bold transition border cursor-pointer whitespace-nowrap bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200">
+          11. Yönetici Onayı        </button>
+              </div>
+
+      <!-- KLAVYE KISAYOLLARI -->
+      <div class="hidden xl:flex items-center gap-3 text-[11px] text-slate-500">
+        <span class="flex items-center gap-1"><kbd class="px-1.5 py-0.5 bg-slate-100 border border-slate-300 rounded text-slate-700 font-mono font-bold">←</kbd> <kbd class="px-1.5 py-0.5 bg-slate-100 border border-slate-300 rounded text-slate-700 font-mono font-bold">→</kbd> Adım Değiştir</span>
+        <span class="flex items-center gap-1"><kbd class="px-2 py-0.5 bg-slate-100 border border-slate-300 rounded text-slate-700 font-mono font-bold">Boşluk</kbd> Oynat/Duraklat</span>
+        <span class="flex items-center gap-1"><kbd class="px-1.5 py-0.5 bg-slate-100 border border-slate-300 rounded text-slate-700 font-mono font-bold">Esc</kbd> Kapat</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- KOORDİNAT TOOLTİP (DÜZENLEME MODU) -->
+  <div id="coordTooltip"></div>
+
+  <!-- TOAST BİLDİRİM -->
+  <div id="toastNotification" class="bg-slate-900 text-white px-4 py-3 rounded-xl shadow-2xl border border-slate-700 flex items-center gap-3 text-xs max-w-sm">
+    <span class="flex h-2.5 w-2.5 relative shrink-0">
+      <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+      <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+    </span>
+    <div>
+      <div id="toastTitle" class="font-bold text-white text-sm">Bildirim</div>
+      <div id="toastMessage" class="text-slate-300 text-xs mt-0.5">İşlem tamamlandı.</div>
+    </div>
+  </div>
+
+  <!-- TAM BOY GÖRSEL İNCELEME MODALI (ZOOM LIGHTBOX) -->
+  <div id="zoomModal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4" onclick="closeZoomModal(event)">
+    <div class="relative max-w-[95vw] max-h-[95vh] bg-white rounded-2xl overflow-hidden shadow-2xl border border-slate-700 flex flex-col" onclick="event.stopPropagation()">
+      <div class="p-3 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800">
+        <span class="text-xs font-bold text-indigo-300 flex items-center gap-1.5">
+          <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"/></svg>
+          Tam Boy Ekran Görüntüsü
+        </span>
+        <button onclick="closeZoomModal()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition text-lg font-bold">
+          &times;
+        </button>
+      </div>
+      <div class="overflow-auto max-h-[85vh] p-2 bg-slate-950 flex items-center justify-center">
+        <img id="zoomModalImg" src="" alt="Tam Boy Ekran" class="max-w-none rounded-lg shadow-lg">
+      </div>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT ETKİLEŞİM & STATE YÖNETİMİ -->
+  <script>
+    let currentSlide = 1;
+    const totalSlides = 11;
+    let autoPlayTimer = null;
+    let isPlaying = false;
+    let isEditMode = false;
+    let isAdminUser = false;
+    const ADMIN_TOKEN = "koksan_egitim_admin_2026";
+    let customPins = {};
+    let activeDraggingPin = null;
+    let selectedPin = null;
+    let activeContainer = null;
+
+    // SLAYT GEÇİŞİ
+    function goToSlide(n) {
+      if (n < 1 || n > totalSlides) return;
+      document.querySelectorAll(".slide").forEach(s => s.classList.remove("active"));
+      const target = document.getElementById("slide-" + n);
+      if (target) target.classList.add("active");
+
+      currentSlide = n;
+      document.getElementById("slideIndicator").textContent = `${currentSlide} / ${totalSlides}`;
+      document.getElementById("prevBtn").disabled = currentSlide === 1;
+      document.getElementById("nextBtn").disabled = currentSlide === totalSlides;
+
+      const progressPercent = ((currentSlide / totalSlides) * 100).toFixed(1) + "%";
+      document.getElementById("progressBar").style.width = progressPercent;
+
+      // Thumbnail butonlarını güncelle
+      for (let i = 1; i <= totalSlides; i++) {
+        const btn = document.getElementById("thumbBtn-" + i);
+        if (btn) {
+          if (i === currentSlide) {
+            btn.className = "px-2.5 py-1 rounded-lg text-xs font-bold transition border cursor-pointer whitespace-nowrap bg-indigo-600 text-white border-indigo-600 shadow-xs";
+          } else {
+            btn.className = "px-2.5 py-1 rounded-lg text-xs font-bold transition border cursor-pointer whitespace-nowrap bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200";
+          }
+        }
+      }
+    }
+
+    function nextSlide() {
+      if (currentSlide < totalSlides) {
+        goToSlide(currentSlide + 1);
+      } else if (isPlaying) {
+        goToSlide(1);
+      }
+    }
+
+    function prevSlide() {
+      if (currentSlide > 1) {
+        goToSlide(currentSlide - 1);
+      }
+    }
+
+    // OTOMATİK OYNAT / DURDUR
+    function togglePlayPause() {
+      const playText = document.getElementById("playText");
+      const playIcon = document.getElementById("playIcon");
+
+      if (isPlaying) {
+        clearInterval(autoPlayTimer);
+        isPlaying = false;
+        playText.textContent = "Otomatik Oynat";
+        playIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
+        showToast("⏸️ Duraklatıldı", "Otomatik slayt geçişi durduruldu.");
+      } else {
+        isPlaying = true;
+        playText.textContent = "Durdur";
+        playIcon.innerHTML = '<path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"/>';
+        showToast("▶️ Oynatılıyor", "Her 6 saniyede bir sonraki adıma geçilecek.");
+        autoPlayTimer = setInterval(() => {
+          nextSlide();
+        }, 6000);
+      }
+    }
+
+    // KART - PİN ETKİLEŞİMİ (ODAKLAMA)
+    function focusNote(noteId) {
+      document.querySelectorAll(".card-note").forEach(c => c.classList.remove("active-focus"));
+      const note = document.getElementById(noteId);
+      if (note) {
+        note.classList.add("active-focus");
+        note.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
+    }
+
+    function highlightPin(slideId, pinId) {
+      document.querySelectorAll(".hotspot-pin").forEach(p => p.classList.remove("active-target-pin"));
+      const pin = document.querySelector(`.hotspot-pin[data-slide="${slideId}"][data-pin="${pinId}"]`);
+      if (pin) {
+        pin.classList.add("active-target-pin");
+        setTimeout(() => {
+          pin.classList.remove("active-target-pin");
+        }, 2500);
+      }
+      focusNote(`s${slideId}-n${pinId}`);
+    }
+
+    // ZOOM MODAL
+    function openZoomModal(imgSrc) {
+      const modal = document.getElementById("zoomModal");
+      const modalImg = document.getElementById("zoomModalImg");
+      modalImg.src = imgSrc;
+      modal.classList.add("active");
+    }
+
+    function closeZoomModal() {
+      const modal = document.getElementById("zoomModal");
+      modal.classList.remove("active");
+    }
+
+    // KLAVYE KISAYOLLARI
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        closeZoomModal();
+      } else if (e.key === "ArrowRight") {
+        nextSlide();
+      } else if (e.key === "ArrowLeft") {
+        prevSlide();
+      } else if (e.key === " " && e.target.tagName !== "INPUT" && e.target.tagName !== "TEXTAREA") {
+        e.preventDefault();
+        togglePlayPause();
+      }
+    });
+
+    // YÖNETİCİ DÜZENLEME MODU (?admin=1)
+    function checkAdminAuth() {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get("admin") === "1") {
+        isAdminUser = true;
+        const btn = document.getElementById("toggleEditBtn");
+        if (btn) btn.classList.remove("hidden");
+      }
+    }
+
+    function toggleEditMode() {
+      if (!isAdminUser) return;
+      isEditMode = !isEditMode;
+      document.body.classList.toggle("edit-mode", isEditMode);
+      const bar = document.getElementById("pinEditorBar");
+      const btnText = document.getElementById("editBtnText");
+
+      if (isEditMode) {
+        bar.classList.remove("hidden");
+        btnText.textContent = "✖️ Düzenlemeyi Kapat";
+        showToast("🎯 Pin Düzenleme Açık", "Numaralı kareleri farenizle görsel üzerinde istediğiniz yere sürükleyip kaydedebilirsiniz.");
+      } else {
+        bar.classList.add("hidden");
+        btnText.textContent = "🎯 Pinleri Konumlandır";
+        if (selectedPin) {
+          selectedPin.classList.remove("selected-pin");
+          selectedPin = null;
+        }
+      }
+    }
+
+    function onPinMouseDown(e) {
+      if (!isEditMode || !isAdminUser) return;
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (selectedPin) selectedPin.classList.remove("selected-pin");
+      activeDraggingPin = e.currentTarget;
+      selectedPin = activeDraggingPin;
+      selectedPin.classList.add("selected-pin");
+      activeDraggingPin.classList.add("is-dragging");
+      activeContainer = activeDraggingPin.closest(".image-pin-container");
+
+      document.body.style.userSelect = "none";
+      showCoordTooltip(activeDraggingPin);
+    }
+
+    function onPinTouchStart(e) {
+      if (!isEditMode || !isAdminUser) return;
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (selectedPin) selectedPin.classList.remove("selected-pin");
+      activeDraggingPin = e.currentTarget;
+      selectedPin = activeDraggingPin;
+      selectedPin.classList.add("selected-pin");
+      activeDraggingPin.classList.add("is-dragging");
+      activeContainer = activeDraggingPin.closest(".image-pin-container");
+
+      showCoordTooltip(activeDraggingPin);
+    }
+
+    document.addEventListener("mousemove", (e) => {
+      if (!activeDraggingPin || !activeContainer) return;
+      handlePinMove(e.clientX, e.clientY);
+    });
+
+    document.addEventListener("touchmove", (e) => {
+      if (!activeDraggingPin || !activeContainer) return;
+      const touch = e.touches[0];
+      handlePinMove(touch.clientX, touch.clientY);
+    }, { passive: false });
+
+    function handlePinMove(clientX, clientY) {
+      const rect = activeContainer.getBoundingClientRect();
+      let x = clientX - rect.left;
+      let y = clientY - rect.top;
+
+      x = Math.max(16, Math.min(rect.width - 16, x));
+      y = Math.max(16, Math.min(rect.height - 16, y));
+
+      const leftPercent = ((x / rect.width) * 100).toFixed(1) + "%";
+      const topPercent = ((y / rect.height) * 100).toFixed(1) + "%";
+
+      activeDraggingPin.style.left = leftPercent;
+      activeDraggingPin.style.top = topPercent;
+
+      showCoordTooltip(activeDraggingPin, leftPercent, topPercent);
+    }
+
+    document.addEventListener("mouseup", endPinDrag);
+    document.addEventListener("touchend", endPinDrag);
+
+    function endPinDrag() {
+      if (activeDraggingPin) {
+        activeDraggingPin.classList.remove("is-dragging");
+        const s = activeDraggingPin.getAttribute("data-slide");
+        const p = activeDraggingPin.getAttribute("data-pin");
+
+        if (!customPins["slide-" + s]) customPins["slide-" + s] = {};
+        customPins["slide-" + s]["pin-" + p] = {
+          top: activeDraggingPin.style.top,
+          left: activeDraggingPin.style.left
+        };
+
+        activeDraggingPin = null;
+        document.body.style.userSelect = "";
+        hideCoordTooltip();
+      }
+    }
+
+    function showCoordTooltip(el, leftText, topText) {
+      const tooltip = document.getElementById("coordTooltip");
+      if (!tooltip || !el) return;
+      const l = leftText || el.style.left;
+      const t = topText || el.style.top;
+      const p = el.getAttribute("data-pin") || el.textContent.trim();
+      tooltip.textContent = `Pin ${p} ➔ X: ${l}, Y: ${t}`;
+      tooltip.style.display = "block";
+
+      const pinRect = el.getBoundingClientRect();
+      tooltip.style.left = (pinRect.left + window.scrollX) + "px";
+      tooltip.style.top = (pinRect.top + window.scrollY - 32) + "px";
+    }
+
+    function hideCoordTooltip() {
+      const tooltip = document.getElementById("coordTooltip");
+      if (tooltip) tooltip.style.display = "none";
+    }
+
+    function savePinPositions() {
+      if (!isAdminUser) {
+        showToast("🔒 Yetkisiz İşlem", "Yönetici yetkisi olmadan pinler kaydedilemez.");
+        return;
+      }
+
+      document.querySelectorAll(".hotspot-pin").forEach(pin => {
+        const s = pin.getAttribute("data-slide");
+        const p = pin.getAttribute("data-pin");
+        if (s && p && pin.style.top && pin.style.left) {
+          if (!customPins["slide-" + s]) customPins["slide-" + s] = {};
+          customPins["slide-" + s]["pin-" + p] = {
+            top: pin.style.top,
+            left: pin.style.left
+          };
+        }
+      });
+
+      localStorage.setItem("koksan_hedefler_pins", JSON.stringify(customPins));
+
+      fetch("save_pins.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          pins: customPins,
+          admin_token: ADMIN_TOKEN
+        })
+      })
+      .then(res => res.json())
+      .then(data => {
+        showToast("💾 Başarıyla Kaydedildi!", "Tüm pin konumları kalıcı olarak kaydedildi.");
+      })
+      .catch(err => {
+        showToast("💾 Tarayıcıya Kaydedildi", "Konumlar yerel olarak güncellendi.");
+      });
+    }
+
+    function resetPinPositions() {
+      if (!isAdminUser) return;
+      if (!confirm("Tüm pin konumlarını varsayılan ayarlara döndürmek istediğinize emin misiniz?")) return;
+      localStorage.removeItem("koksan_hedefler_pins");
+      location.reload();
+    }
+
+    function loadSavedPinPositions() {
+      fetch("pins.json?t=" + Date.now())
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+          let loaded = (data && data.pins) ? data.pins : null;
+          const localStr = localStorage.getItem("koksan_hedefler_pins");
+          if (localStr) {
+            try {
+              const localData = JSON.parse(localStr);
+              loaded = Object.assign({}, loaded || {}, localData);
+            } catch(e) {}
+          }
+
+          if (loaded) {
+            customPins = loaded;
+            applyAllPinPositions(loaded);
+          }
+        })
+        .catch(() => {
+          const localStr = localStorage.getItem("koksan_hedefler_pins");
+          if (localStr) {
+            try {
+              customPins = JSON.parse(localStr);
+              applyAllPinPositions(customPins);
+            } catch(e) {}
+          }
+        });
+    }
+
+    function applyAllPinPositions(data) {
+      for (const [slideKey, pins] of Object.entries(data)) {
+        const slideNum = slideKey.replace("slide-", "");
+        for (const [pinKey, pos] of Object.entries(pins)) {
+          const pinNum = pinKey.replace("pin-", "");
+          const el = document.querySelector(`.hotspot-pin[data-slide="${slideNum}"][data-pin="${pinNum}"]`);
+          if (el && pos.top && pos.left) {
+            el.style.top = pos.top;
+            el.style.left = pos.left;
+          }
+        }
+      }
+    }
+
+    let toastTimer = null;
+    function showToast(title, message) {
+      const toast = document.getElementById("toastNotification");
+      const tTitle = document.getElementById("toastTitle");
+      const tMsg = document.getElementById("toastMessage");
+      if (!toast) return;
+
+      tTitle.textContent = title;
+      tMsg.textContent = message;
+      toast.classList.add("show");
+
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        toast.classList.remove("show");
+      }, 4500);
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      checkAdminAuth();
+      loadSavedPinPositions();
+      
+      const urlParams = new URLSearchParams(window.location.search);
+      let initSlide = parseInt(urlParams.get("slide"));
+      if (!initSlide && window.location.hash) {
+        const hashMatch = window.location.hash.match(/slide-(\d+)/);
+        if (hashMatch) initSlide = parseInt(hashMatch[1]);
+      }
+      goToSlide(initSlide && initSlide >= 1 && initSlide <= totalSlides ? initSlide : 1);
+    });
+  </script>
+</body>
+</html>

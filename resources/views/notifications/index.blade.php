@@ -74,13 +74,16 @@
                                 <div class="mt-3 flex flex-wrap items-center gap-3">
                                     @if(isset($notification->data['actionUrl']) && !str_contains($notification->data['body'] ?? '', '<a href'))
                                         @php
-                                            $rawUrl = $notification->data['actionUrl'];
+                                            $rawUrl = $notification->data['actionUrl'] ?? '';
                                             $parsedUrl = parse_url($rawUrl);
-                                            if (isset($parsedUrl['path'])) {
-                                                $pathWithQuery = $parsedUrl['path'] . (isset($parsedUrl['query']) ? '?' . $parsedUrl['query'] : '');
-                                                $safeUrl = url($pathWithQuery);
+                                            if (!empty($parsedUrl['path'])) {
+                                                $path = '/' . ltrim($parsedUrl['path'], '/');
+                                                $cleanedPath = preg_replace('#^(/hedefler)+(/|$)#i', '$2', $path);
+                                                $finalPath = ($cleanedPath === '' || $cleanedPath === '/') ? '/' : '/' . ltrim($cleanedPath, '/');
+                                                $query = isset($parsedUrl['query']) ? '?' . $parsedUrl['query'] : '';
+                                                $safeUrl = url($finalPath . $query);
                                             } else {
-                                                $safeUrl = $rawUrl;
+                                                $safeUrl = $rawUrl ?: '#';
                                             }
                                         @endphp
                                         <a href="{{ $safeUrl }}" class="inline-flex items-center px-4 py-1.5 text-xs font-bold rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none transition-all duration-300 shadow-sm">

@@ -128,13 +128,16 @@
                                                         <div>
                                                             @if(!empty($notification->data['actionUrl']))
                                                                 @php
-                                                                    $rawUrl = $notification->data['actionUrl'];
+                                                                    $rawUrl = $notification->data['actionUrl'] ?? '';
                                                                     $parsedUrl = parse_url($rawUrl);
-                                                                    if (isset($parsedUrl['path'])) {
-                                                                        $pathWithQuery = $parsedUrl['path'] . (isset($parsedUrl['query']) ? '?' . $parsedUrl['query'] : '');
-                                                                        $safeUrl = url($pathWithQuery);
+                                                                    if (!empty($parsedUrl['path'])) {
+                                                                        $path = '/' . ltrim($parsedUrl['path'], '/');
+                                                                        $cleanedPath = preg_replace('#^(/hedefler)+(/|$)#i', '$2', $path);
+                                                                        $finalPath = ($cleanedPath === '' || $cleanedPath === '/') ? '/' : '/' . ltrim($cleanedPath, '/');
+                                                                        $query = isset($parsedUrl['query']) ? '?' . $parsedUrl['query'] : '';
+                                                                        $safeUrl = url($finalPath . $query);
                                                                     } else {
-                                                                        $safeUrl = $rawUrl;
+                                                                        $safeUrl = $rawUrl ?: '#';
                                                                     }
                                                                 @endphp
                                                                 <a href="{{ $safeUrl }}"
