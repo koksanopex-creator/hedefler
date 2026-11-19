@@ -870,33 +870,31 @@
                                                         }
                                                     @endphp
                                                     <div class="relative w-full" :title="getCellDisabledReason(fields[{{ $colIndex }}], row)">
-                                                        <select
+                                                        <button type="button"
                                                             :id="'cell_' + rIndex + '_{{ $fId }}'"
                                                             :data-field-id="'{{ $fId }}'"
                                                             :data-row-index="rIndex"
                                                             :disabled="isFieldDisabled(fields[{{ $colIndex }}], row)"
-                                                            :required="isFieldRequired(fields[{{ $colIndex }}], row)"
-                                                            x-model="row.values['{{ $fId }}']"
+                                                            @click="openSearchableDropdown($event, row, fields[{{ $colIndex }}], rIndex)"
+                                                            @keydown.enter.prevent="openSearchableDropdown($event, row, fields[{{ $colIndex }}], rIndex)"
+                                                            @keydown.space.prevent="openSearchableDropdown($event, row, fields[{{ $colIndex }}], rIndex)"
+                                                            @keydown.arrow-down.prevent="openSearchableDropdown($event, row, fields[{{ $colIndex }}], rIndex)"
                                                             @paste="if (!isFieldDisabled(fields[{{ $colIndex }}], row)) handlePaste($event, rIndex, {{ $colIndex }})"
-                                                            @keydown.ctrl.v.prevent="if (!isFieldDisabled(fields[{{ $colIndex }}], row)) handleSelectPaste($event, rIndex, {{ $colIndex }})"
                                                             @keydown.delete.prevent="if (!isFieldDisabled(fields[{{ $colIndex }}], row)) clearSelect(row, '{{ $fId }}', fields[{{ $colIndex }}])"
                                                             @keydown.backspace.prevent="if (!isFieldDisabled(fields[{{ $colIndex }}], row)) clearSelect(row, '{{ $fId }}', fields[{{ $colIndex }}])"
-                                                            @change="calculateTotals()"
                                                             :title="getCellDisabledReason(fields[{{ $colIndex }}], row)"
-                                                            class="w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm transition-colors pr-7"
+                                                            class="w-full text-left rounded-md shadow-sm text-sm transition-colors pr-7 pl-3 py-1.5 flex items-center justify-between border cursor-pointer select-none"
                                                             :class="{
                                                                 'bg-slate-100 text-slate-400 border-dashed cursor-not-allowed select-none opacity-80': isFieldDisabled(fields[{{ $colIndex }}], row),
                                                                 'bg-indigo-50 border-indigo-300 text-indigo-700 font-bold': !isFieldDisabled(fields[{{ $colIndex }}], row) && row.values['{{ $fId }}'],
-                                                                'bg-white border-gray-300 text-gray-700': !isFieldDisabled(fields[{{ $colIndex }}], row) && !row.values['{{ $fId }}'],
+                                                                'bg-white border-gray-300 text-gray-700 hover:border-indigo-400': !isFieldDisabled(fields[{{ $colIndex }}], row) && !row.values['{{ $fId }}'],
                                                                 'border-l-4 border-l-red-500': isFieldRequired(fields[{{ $colIndex }}], row) && !{{ $fRequired ? 'true' : 'false' }} && !isFieldDisabled(fields[{{ $colIndex }}], row)
                                                             }">
-                                                            <option value="" x-text="isFieldDisabled(fields[{{ $colIndex }}], row) ? '-' : 'Seçiniz...'"></option>
-                                                            @if (is_array($selectOpts))
-                                                                @foreach ($selectOpts as $k => $opt)
-                                                                    <option value="{{ is_numeric($k) ? $opt : $k }}">{{ $opt }}</option>
-                                                                @endforeach
-                                                            @endif
-                                                        </select>
+                                                            <span class="truncate block flex-1" x-text="row.values['{{ $fId }}'] || (isFieldDisabled(fields[{{ $colIndex }}], row) ? '-' : 'Seçiniz...')"></span>
+                                                            <svg class="w-4 h-4 text-gray-400 shrink-0 ml-1 transition-transform" :class="activeDropdown.isOpen && activeDropdown.rowIndex === rIndex && activeDropdown.field && activeDropdown.field.id == '{{ $fId }}' ? 'rotate-180 text-indigo-600' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                                            </svg>
+                                                        </button>
                                                         <button type="button"
                                                             x-show="row.values['{{ $fId }}'] && !isFieldDisabled(fields[{{ $colIndex }}], row)"
                                                             @click.stop.prevent="clearSelect(row, '{{ $fId }}', fields[{{ $colIndex }}])"
@@ -908,32 +906,32 @@
                                                     </div>
                                                 @elseif ($fType === 'master_data')
                                                     <div class="relative w-full" :title="getCellDisabledReason(fields[{{ $colIndex }}], row)">
-                                                        <select
+                                                        <button type="button"
                                                             :id="'cell_' + rIndex + '_{{ $fId }}'"
                                                             :data-field-id="'{{ $fId }}'"
                                                             :data-row-index="rIndex"
                                                             :disabled="isFieldDisabled(fields[{{ $colIndex }}], row) || isMasterDataDisabled(row, fields[{{ $colIndex }}])"
-                                                            :required="isFieldRequired(fields[{{ $colIndex }}], row)"
-                                                            x-model="row.values['{{ $fId }}']"
+                                                            @click="openSearchableDropdown($event, row, fields[{{ $colIndex }}], rIndex)"
+                                                            @keydown.enter.prevent="openSearchableDropdown($event, row, fields[{{ $colIndex }}], rIndex)"
+                                                            @keydown.space.prevent="openSearchableDropdown($event, row, fields[{{ $colIndex }}], rIndex)"
+                                                            @keydown.arrow-down.prevent="openSearchableDropdown($event, row, fields[{{ $colIndex }}], rIndex)"
                                                             @paste="if (!isFieldDisabled(fields[{{ $colIndex }}], row)) handlePaste($event, rIndex, {{ $colIndex }})"
                                                             @keydown.delete.prevent="if (!isFieldDisabled(fields[{{ $colIndex }}], row)) clearSelect(row, '{{ $fId }}', fields[{{ $colIndex }}])"
                                                             @keydown.backspace.prevent="if (!isFieldDisabled(fields[{{ $colIndex }}], row)) clearSelect(row, '{{ $fId }}', fields[{{ $colIndex }}])"
-                                                            @change="handleMasterDataChange(row, '{{ $fId }}'); calculateTotals()"
                                                             :title="getCellDisabledReason(fields[{{ $colIndex }}], row)"
-                                                            class="w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm transition-colors pr-7"
+                                                            class="w-full text-left rounded-md shadow-sm text-sm transition-colors pr-7 pl-3 py-1.5 flex items-center justify-between border cursor-pointer select-none"
                                                             :class="{ 
                                                                 'bg-slate-100 text-slate-400 border-dashed cursor-not-allowed select-none opacity-80': isFieldDisabled(fields[{{ $colIndex }}], row),
                                                                 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed': !isFieldDisabled(fields[{{ $colIndex }}], row) && isMasterDataDisabled(row, fields[{{ $colIndex }}]),
                                                                 'bg-indigo-50 border-indigo-300 text-indigo-700 font-bold': !isFieldDisabled(fields[{{ $colIndex }}], row) && !isMasterDataDisabled(row, fields[{{ $colIndex }}]) && row.values['{{ $fId }}'], 
-                                                                'bg-white border-gray-300 text-gray-700': !isFieldDisabled(fields[{{ $colIndex }}], row) && !isMasterDataDisabled(row, fields[{{ $colIndex }}]) && !row.values['{{ $fId }}'], 
+                                                                'bg-white border-gray-300 text-gray-700 hover:border-indigo-400': !isFieldDisabled(fields[{{ $colIndex }}], row) && !isMasterDataDisabled(row, fields[{{ $colIndex }}]) && !row.values['{{ $fId }}'], 
                                                                 'border-l-4 border-l-red-500': isFieldRequired(fields[{{ $colIndex }}], row) && !{{ $fRequired ? 'true' : 'false' }} && !isFieldDisabled(fields[{{ $colIndex }}], row) 
                                                             }">
-                                                            <option value="" x-text="isFieldDisabled(fields[{{ $colIndex }}], row) ? '-' : getMasterDataPlaceholder(row, fields[{{ $colIndex }}])"></option>
-                                                            <template x-for="opt in getMasterDataOptions(row, fields[{{ $colIndex }}])"
-                                                                :key="opt.id">
-                                                                <option :value="opt.name" x-text="opt.name"></option>
-                                                            </template>
-                                                        </select>
+                                                            <span class="truncate block flex-1" x-text="row.values['{{ $fId }}'] || (isFieldDisabled(fields[{{ $colIndex }}], row) ? '-' : getMasterDataPlaceholder(row, fields[{{ $colIndex }}]))"></span>
+                                                            <svg class="w-4 h-4 text-gray-400 shrink-0 ml-1 transition-transform" :class="activeDropdown.isOpen && activeDropdown.rowIndex === rIndex && activeDropdown.field && activeDropdown.field.id == '{{ $fId }}' ? 'rotate-180 text-indigo-600' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                                            </svg>
+                                                        </button>
                                                         <button type="button"
                                                             x-show="row.values['{{ $fId }}'] && !isMasterDataDisabled(row, fields[{{ $colIndex }}]) && !isFieldDisabled(fields[{{ $colIndex }}], row)"
                                                             @click.stop.prevent="clearSelect(row, '{{ $fId }}', fields[{{ $colIndex }}])"
@@ -954,30 +952,31 @@
                                                     </div>
                                                 @elseif ($fType === 'user_list')
                                                     <div class="relative w-full" :title="getCellDisabledReason(fields[{{ $colIndex }}], row)">
-                                                        <select
+                                                        <button type="button"
                                                             :id="'cell_' + rIndex + '_{{ $fId }}'"
                                                             :data-field-id="'{{ $fId }}'"
                                                             :data-row-index="rIndex"
                                                             :disabled="isFieldDisabled(fields[{{ $colIndex }}], row)"
-                                                            :required="isFieldRequired(fields[{{ $colIndex }}], row)"
-                                                            x-model="row.values['{{ $fId }}']"
+                                                            @click="openSearchableDropdown($event, row, fields[{{ $colIndex }}], rIndex)"
+                                                            @keydown.enter.prevent="openSearchableDropdown($event, row, fields[{{ $colIndex }}], rIndex)"
+                                                            @keydown.space.prevent="openSearchableDropdown($event, row, fields[{{ $colIndex }}], rIndex)"
+                                                            @keydown.arrow-down.prevent="openSearchableDropdown($event, row, fields[{{ $colIndex }}], rIndex)"
                                                             @paste="if (!isFieldDisabled(fields[{{ $colIndex }}], row)) handlePaste($event, rIndex, {{ $colIndex }})"
                                                             @keydown.delete.prevent="if (!isFieldDisabled(fields[{{ $colIndex }}], row)) clearSelect(row, '{{ $fId }}', fields[{{ $colIndex }}])"
                                                             @keydown.backspace.prevent="if (!isFieldDisabled(fields[{{ $colIndex }}], row)) clearSelect(row, '{{ $fId }}', fields[{{ $colIndex }}])"
-                                                            @change="calculateTotals()"
                                                             :title="getCellDisabledReason(fields[{{ $colIndex }}], row)"
-                                                            class="w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm transition-colors pr-7"
+                                                            class="w-full text-left rounded-md shadow-sm text-sm transition-colors pr-7 pl-3 py-1.5 flex items-center justify-between border cursor-pointer select-none"
                                                             :class="{ 
                                                                 'bg-slate-100 text-slate-400 border-dashed cursor-not-allowed select-none opacity-80': isFieldDisabled(fields[{{ $colIndex }}], row),
                                                                 'bg-indigo-50 border-indigo-300 text-indigo-700 font-bold': !isFieldDisabled(fields[{{ $colIndex }}], row) && row.values['{{ $fId }}'], 
-                                                                'bg-white border-gray-300 text-gray-700': !isFieldDisabled(fields[{{ $colIndex }}], row) && !row.values['{{ $fId }}'], 
+                                                                'bg-white border-gray-300 text-gray-700 hover:border-indigo-400': !isFieldDisabled(fields[{{ $colIndex }}], row) && !row.values['{{ $fId }}'], 
                                                                 'border-l-4 border-l-red-500': isFieldRequired(fields[{{ $colIndex }}], row) && !{{ $fRequired ? 'true' : 'false' }} && !isFieldDisabled(fields[{{ $colIndex }}], row) 
                                                             }">
-                                                            <option value="" x-text="isFieldDisabled(fields[{{ $colIndex }}], row) ? '-' : 'Kullanıcı Seçiniz...'"></option>
-                                                            <template x-for="u in getUserListOptions(row, fields[{{ $colIndex }}])" :key="u.id">
-                                                                <option :value="u.name" x-text="u.name" :selected="row.values['{{ $fId }}'] == u.name"></option>
-                                                            </template>
-                                                        </select>
+                                                            <span class="truncate block flex-1" x-text="row.values['{{ $fId }}'] || (isFieldDisabled(fields[{{ $colIndex }}], row) ? '-' : 'Kullanıcı Seçiniz...')"></span>
+                                                            <svg class="w-4 h-4 text-gray-400 shrink-0 ml-1 transition-transform" :class="activeDropdown.isOpen && activeDropdown.rowIndex === rIndex && activeDropdown.field && activeDropdown.field.id == '{{ $fId }}' ? 'rotate-180 text-indigo-600' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                                            </svg>
+                                                        </button>
                                                         <button type="button"
                                                             x-show="row.values['{{ $fId }}'] && !isFieldDisabled(fields[{{ $colIndex }}], row)"
                                                             @click.stop.prevent="clearSelect(row, '{{ $fId }}', fields[{{ $colIndex }}])"
@@ -1605,6 +1604,104 @@
                 </span>
                 <span x-text="toastMessage"></span>
             </div>
+
+            <!-- Global Arama Kutulu Dropdown Popover (Tüm Tablo İçin Tekil, Yüksek Performanslı) -->
+            <div x-show="activeDropdown.isOpen"
+                 x-cloak
+                 @click.away="closeSearchableDropdown()"
+                 :style="dropdownPopoverStyle"
+                 class="fixed z-[99999999] bg-white rounded-xl shadow-2xl border border-indigo-200 overflow-hidden flex flex-col transition-all duration-150 animate-in fade-in zoom-in-95"
+                 style="display: none; width: 340px; max-width: 90vw;">
+                
+                <!-- Arama Kutusu Başlığı / Input -->
+                <div class="p-2.5 bg-slate-50/90 border-b border-gray-100 flex items-center gap-2">
+                    <div class="relative flex-1">
+                        <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-gray-400">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                        </span>
+                        <input type="text"
+                               x-ref="searchableDropdownInput"
+                               x-model="activeDropdown.search"
+                               @input="activeDropdown.highlightedIndex = 0"
+                               @keydown.arrow-down.prevent="navigateDropdownHighlight(1)"
+                               @keydown.arrow-up.prevent="navigateDropdownHighlight(-1)"
+                               @keydown.enter.prevent="selectHighlightedDropdownOption()"
+                               placeholder="🔍 Listede anlık ara..."
+                               class="w-full pl-8 pr-7 py-1.5 text-xs bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow">
+                        <button type="button"
+                                x-show="activeDropdown.search"
+                                @click="activeDropdown.search = ''; $refs.searchableDropdownInput.focus()"
+                                class="absolute inset-y-0 right-0 pr-2 flex items-center text-gray-400 hover:text-gray-600 cursor-pointer">
+                            <span class="text-sm font-bold">&times;</span>
+                        </button>
+                    </div>
+                    <!-- Liste Sayacı -->
+                    <span class="text-[10px] font-semibold px-2 py-1 bg-indigo-50 text-indigo-700 rounded-full shrink-0"
+                          x-text="filteredDropdownOptions.length + ' / ' + getActiveDropdownRawOptions().length">
+                    </span>
+                </div>
+
+                <!-- Seçenekler Listesi (Kaydırılabilir) -->
+                <div x-ref="dropdownItemsList"
+                     class="max-h-60 overflow-y-auto divide-y divide-gray-50 py-1 text-xs select-none">
+                    
+                    <!-- Boş Durum (Eğer değer atanmışsa temizleme seçeneği) -->
+                    <div @click="clearActiveDropdownSelection()"
+                         class="px-3 py-2 text-rose-600 hover:bg-rose-50 cursor-pointer flex items-center gap-2 font-medium transition-colors border-b border-gray-100">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                        </svg>
+                        <span>Seçimi Temizle (Boş Bırak)</span>
+                    </div>
+
+                    <!-- Filtrelenmiş Seçenekler -->
+                    <template x-for="(opt, idx) in visibleDropdownOptions" :key="opt.id || idx">
+                        <div @click="selectDropdownOption(opt)"
+                             @mouseenter="activeDropdown.highlightedIndex = idx"
+                             :id="'dropdown_opt_' + idx"
+                             :class="{
+                                 'bg-indigo-600 text-white font-medium': activeDropdown.highlightedIndex === idx,
+                                 'bg-indigo-50/70 text-indigo-900 font-semibold': isDropdownOptionSelected(opt) && activeDropdown.highlightedIndex !== idx,
+                                 'text-gray-700 hover:bg-gray-100': !isDropdownOptionSelected(opt) && activeDropdown.highlightedIndex !== idx
+                             }"
+                             class="px-3 py-2 cursor-pointer flex items-center justify-between transition-colors">
+                            <span class="truncate flex-1" x-text="getDropdownOptionLabel(opt)"></span>
+                            <span x-show="isDropdownOptionSelected(opt)" class="shrink-0 ml-2" :class="activeDropdown.highlightedIndex === idx ? 'text-white' : 'text-indigo-600'">
+                                <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                </svg>
+                            </span>
+                        </div>
+                    </template>
+
+                    <!-- Fazla Sonuç Bilgisi -->
+                    <div x-show="filteredDropdownOptions.length > 100" class="px-3 py-1.5 text-center text-[11px] text-gray-400 bg-gray-50 border-t border-gray-100">
+                        İlk 100 sonuç gösteriliyor. Arama kutusuna yazarak daraltabilirsiniz.
+                    </div>
+
+                    <!-- Hiç Sonuç Bulunamadı -->
+                    <div x-show="filteredDropdownOptions.length === 0" class="px-4 py-6 text-center text-gray-400">
+                        <svg class="w-7 h-7 mx-auto text-gray-300 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <p class="text-xs font-medium text-gray-500">Eşleşen sonuç bulunamadı</p>
+                        <p class="text-[11px] text-gray-400 mt-0.5" x-text="'\"' + activeDropdown.search + '\" arandı'"></p>
+                    </div>
+                </div>
+
+                <!-- Alt Bilgi / Klavye Kısayolları -->
+                <div class="px-3 py-1.5 bg-slate-50 border-t border-gray-100 flex items-center justify-between text-[10px] text-gray-400">
+                    <span class="flex items-center gap-1">
+                        <kbd class="px-1 py-0.5 bg-white border border-gray-200 rounded text-gray-500 font-mono">↑↓</kbd> Gezin
+                        <kbd class="px-1 py-0.5 bg-white border border-gray-200 rounded text-gray-500 font-mono ml-1">↵</kbd> Seç
+                    </span>
+                    <span class="flex items-center gap-1">
+                        <kbd class="px-1 py-0.5 bg-white border border-gray-200 rounded text-gray-500 font-mono">Esc</kbd> Kapat
+                    </span>
+                </div>
+            </div>
                 </div>
             </form>
 
@@ -1654,6 +1751,60 @@
                 isWide: false,
                 isFullscreen: false,
                 normalCardHeight: 'calc(100vh - 180px)',
+
+                // Arama Kutulu Dinamik Dropdown Durumu
+                activeDropdown: {
+                    isOpen: false,
+                    rowIndex: null,
+                    row: null,
+                    field: null,
+                    search: '',
+                    highlightedIndex: 0,
+                    top: 0,
+                    left: 0,
+                    width: 320,
+                    openUpward: false,
+                    triggerEl: null
+                },
+
+                get dropdownPopoverStyle() {
+                    if (!this.activeDropdown.isOpen) return 'display: none;';
+                    const top = this.activeDropdown.top;
+                    const left = this.activeDropdown.left;
+                    const width = Math.max(300, this.activeDropdown.width);
+                    if (this.activeDropdown.openUpward) {
+                        return `bottom: ${Math.max(8, window.innerHeight - top + 4)}px; left: ${left}px; width: ${width}px; z-index: 99999999;`;
+                    }
+                    return `top: ${top + 4}px; left: ${left}px; width: ${width}px; z-index: 99999999;`;
+                },
+
+                getActiveDropdownRawOptions() {
+                    if (!this.activeDropdown.isOpen || !this.activeDropdown.field) return [];
+                    const field = this.activeDropdown.field;
+                    const row = this.activeDropdown.row;
+                    if (field.type === 'master_data') {
+                        return this.getMasterDataOptions(row, field) || [];
+                    } else if (field.type === 'user_list') {
+                        return this.getUserListOptions(row, field) || [];
+                    } else if (field.type === 'select') {
+                        return this.getSelectOptions(field) || [];
+                    }
+                    return [];
+                },
+
+                get filteredDropdownOptions() {
+                    const raw = this.getActiveDropdownRawOptions();
+                    const q = (this.activeDropdown.search || '').trim().toLocaleLowerCase('tr');
+                    if (!q) return raw;
+                    return raw.filter(opt => {
+                        const val = typeof opt === 'object' && opt !== null ? (opt.name ?? opt.value ?? '') : String(opt);
+                        return String(val).toLocaleLowerCase('tr').includes(q);
+                    });
+                },
+
+                get visibleDropdownOptions() {
+                    return this.filteredDropdownOptions.slice(0, 100);
+                },
                 autoSaveStatus: 'idle', // 'idle' | 'saving' | 'saved' | 'error'
                 autoSaveLastTime: @if(isset($existingEntry) && $existingEntry->status === 'draft') '{{ $existingEntry->updated_at->format("H:i") }}' @else null @endif,
                 hasUnsavedChanges: false,
@@ -2570,6 +2721,19 @@
                         });
                     }
 
+                    // Kullanıcı listesini de Türkçe alfabe (A-Z) sırasına göre sırala
+                    if (this.usersList && Array.isArray(this.usersList) && !this.usersList._sorted) {
+                        this.usersList.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'tr', { sensitivity: 'base' }));
+                        this.usersList._sorted = true;
+                    }
+
+                    // Dropdown açıkken pencere kaydırma / yeniden boyutlandırmada konum güncelleme
+                    window.addEventListener('scroll', () => {
+                        if (this.activeDropdown && this.activeDropdown.isOpen) {
+                            this.updateActiveDropdownPosition();
+                        }
+                    }, true);
+
                     this.initFilters();
 
                     // LocalStorage kontrolü (veritabanında henüz kayıt yoksa veya yedek olarak)
@@ -2755,6 +2919,10 @@
                 },
 
                 handleEscapeKey() {
+                    if (this.activeDropdown && this.activeDropdown.isOpen) {
+                        this.closeSearchableDropdown();
+                        return;
+                    }
                     if (this.showConfirmModal) {
                         this.showConfirmModal = false;
                         return;
@@ -3534,6 +3702,181 @@
                     }
 
                     this.calculateTotals();
+                },
+
+                getSelectOptions(field) {
+                    if (!field) return [];
+                    let opts = field.options;
+                    if (typeof opts === 'string') {
+                        try { opts = JSON.parse(opts); } catch(e) { opts = []; }
+                    }
+                    if (!Array.isArray(opts)) return [];
+                    return opts.map((opt, idx) => {
+                        if (typeof opt === 'object' && opt !== null) {
+                            return { id: opt.id || opt.value || opt.name || idx, name: opt.name || opt.label || opt.value || '' };
+                        }
+                        return { id: opt, name: String(opt) };
+                    });
+                },
+
+                getDropdownOptionLabel(opt) {
+                    if (typeof opt === 'object' && opt !== null) {
+                        return opt.name ?? opt.label ?? opt.value ?? '';
+                    }
+                    return String(opt);
+                },
+
+                isDropdownOptionSelected(opt) {
+                    if (!this.activeDropdown.row || !this.activeDropdown.field) return false;
+                    const currentVal = this.activeDropdown.row.values ? this.activeDropdown.row.values[this.activeDropdown.field.id] : null;
+                    const optVal = typeof opt === 'object' && opt !== null ? (opt.name ?? opt.value ?? '') : String(opt);
+                    return String(currentVal || '') === String(optVal || '');
+                },
+
+                openSearchableDropdown(event, rowOrIndex, field, rowIndex) {
+                    if (this.isFieldDisabled(field, rowOrIndex)) return;
+                    if (field.type === 'master_data' && this.isMasterDataDisabled(rowOrIndex, field)) return;
+
+                    const row = this.getRow(rowOrIndex);
+                    const triggerEl = event.currentTarget || event.target;
+                    const rect = triggerEl.getBoundingClientRect();
+
+                    const spaceBelow = window.innerHeight - rect.bottom;
+                    const openUpward = spaceBelow < 280 && rect.top > 280;
+
+                    let targetLeft = rect.left;
+                    const targetWidth = Math.max(300, rect.width);
+                    if (targetLeft + targetWidth > window.innerWidth - 16) {
+                        targetLeft = Math.max(16, window.innerWidth - targetWidth - 16);
+                    }
+
+                    this.activeDropdown.isOpen = true;
+                    this.activeDropdown.rowIndex = rowIndex;
+                    this.activeDropdown.row = row;
+                    this.activeDropdown.field = field;
+                    this.activeDropdown.search = '';
+                    this.activeDropdown.highlightedIndex = 0;
+                    this.activeDropdown.top = openUpward ? rect.top : rect.bottom;
+                    this.activeDropdown.left = targetLeft;
+                    this.activeDropdown.width = targetWidth;
+                    this.activeDropdown.openUpward = openUpward;
+                    this.activeDropdown.triggerEl = triggerEl;
+
+                    const currentVal = row && row.values ? row.values[field.id] : null;
+                    if (currentVal) {
+                        const raw = this.getActiveDropdownRawOptions();
+                        const foundIdx = raw.findIndex(opt => {
+                            const v = typeof opt === 'object' && opt !== null ? (opt.name ?? opt.value ?? '') : String(opt);
+                            return String(v) === String(currentVal);
+                        });
+                        if (foundIdx >= 0) {
+                            this.activeDropdown.highlightedIndex = Math.min(foundIdx, 99);
+                        }
+                    }
+
+                    this.$nextTick(() => {
+                        if (this.$refs.searchableDropdownInput) {
+                            this.$refs.searchableDropdownInput.focus();
+                            this.$refs.searchableDropdownInput.select();
+                        }
+                        const itemEl = document.getElementById('dropdown_opt_' + this.activeDropdown.highlightedIndex);
+                        if (itemEl && this.$refs.dropdownItemsList) {
+                            itemEl.scrollIntoView({ block: 'nearest' });
+                        }
+                    });
+                },
+
+                closeSearchableDropdown() {
+                    this.activeDropdown.isOpen = false;
+                    this.activeDropdown.rowIndex = null;
+                    this.activeDropdown.row = null;
+                    this.activeDropdown.field = null;
+                    this.activeDropdown.search = '';
+                    this.activeDropdown.highlightedIndex = 0;
+                    this.activeDropdown.triggerEl = null;
+                },
+
+                updateActiveDropdownPosition() {
+                    if (!this.activeDropdown.isOpen || !this.activeDropdown.triggerEl) return;
+                    const rect = this.activeDropdown.triggerEl.getBoundingClientRect();
+                    if (rect.bottom < 0 || rect.top > window.innerHeight) {
+                        this.closeSearchableDropdown();
+                        return;
+                    }
+                    const spaceBelow = window.innerHeight - rect.bottom;
+                    const openUpward = spaceBelow < 280 && rect.top > 280;
+                    let targetLeft = rect.left;
+                    const targetWidth = Math.max(300, rect.width);
+                    if (targetLeft + targetWidth > window.innerWidth - 16) {
+                        targetLeft = Math.max(16, window.innerWidth - targetWidth - 16);
+                    }
+                    this.activeDropdown.top = openUpward ? rect.top : rect.bottom;
+                    this.activeDropdown.left = targetLeft;
+                    this.activeDropdown.openUpward = openUpward;
+                },
+
+                selectDropdownOption(opt) {
+                    if (!this.activeDropdown.isOpen || !this.activeDropdown.row || !this.activeDropdown.field) return;
+                    const row = this.activeDropdown.row;
+                    const field = this.activeDropdown.field;
+                    const rowIndex = this.activeDropdown.rowIndex;
+                    const val = typeof opt === 'object' && opt !== null ? (opt.name ?? opt.value ?? '') : String(opt);
+
+                    row.values[field.id] = val;
+                    this.hasUnsavedChanges = true;
+
+                    if (field.type === 'master_data') {
+                        this.handleMasterDataChange(row, field.id);
+                    }
+                    this.calculateTotals();
+
+                    const triggerId = 'cell_' + rowIndex + '_' + field.id;
+                    this.closeSearchableDropdown();
+                    this.$nextTick(() => {
+                        const btn = document.getElementById(triggerId);
+                        if (btn) btn.focus();
+                    });
+                },
+
+                clearActiveDropdownSelection() {
+                    if (!this.activeDropdown.isOpen || !this.activeDropdown.row || !this.activeDropdown.field) return;
+                    const row = this.activeDropdown.row;
+                    const field = this.activeDropdown.field;
+                    const rowIndex = this.activeDropdown.rowIndex;
+
+                    this.clearSelect(row, field.id, field);
+
+                    const triggerId = 'cell_' + rowIndex + '_' + field.id;
+                    this.closeSearchableDropdown();
+                    this.$nextTick(() => {
+                        const btn = document.getElementById(triggerId);
+                        if (btn) btn.focus();
+                    });
+                },
+
+                navigateDropdownHighlight(delta) {
+                    const list = this.visibleDropdownOptions;
+                    if (!list || list.length === 0) return;
+                    let next = this.activeDropdown.highlightedIndex + delta;
+                    if (next < 0) next = list.length - 1;
+                    if (next >= list.length) next = 0;
+                    this.activeDropdown.highlightedIndex = next;
+
+                    this.$nextTick(() => {
+                        const itemEl = document.getElementById('dropdown_opt_' + next);
+                        if (itemEl && this.$refs.dropdownItemsList) {
+                            itemEl.scrollIntoView({ block: 'nearest' });
+                        }
+                    });
+                },
+
+                selectHighlightedDropdownOption() {
+                    const list = this.visibleDropdownOptions;
+                    if (!list || list.length === 0) return;
+                    const current = list[this.activeDropdown.highlightedIndex] || list[0];
+                    if (current) {
+                        this.selectDropdownOption(current);
+                    }
                 },
 
                 calculateTotals() {
