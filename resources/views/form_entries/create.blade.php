@@ -4602,6 +4602,9 @@
 
                     const formData = new FormData();
                     formData.append('excel_file', file);
+                    if (this.partitionValue) {
+                        formData.append('partition_value', this.partitionValue);
+                    }
                     formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
 
                     const xhr = new XMLHttpRequest();

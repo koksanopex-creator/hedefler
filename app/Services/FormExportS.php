@@ -211,7 +211,8 @@ class FormExportS
 
             foreach ($fieldsToExport as $field) {
                 $isPartitionCol = ($partitionField && $field->id == $partitionField->id && !empty($partitionValue));
-                $isPassive = (!empty($partitionValue) && $partitionField && $field->condition_field_id == $partitionField->id && $this->isFieldPassiveForValue($field, $partitionValue));
+                $isPassive = !empty($field->is_disabled) 
+                    || (!empty($partitionValue) && $partitionField && $field->condition_field_id == $partitionField->id && $this->isFieldPassiveForValue($field, $partitionValue));
 
                 $sheet->setCellValue([$colIndex, 1], $field->label);
                 $columnMeta[$colIndex] = [
@@ -325,9 +326,15 @@ class FormExportS
                     $validation->setShowInputMessage(true);
                     $validation->setShowErrorMessage(true);
                     $validation->setErrorTitle('Kilitli / Pasif Alan');
-                    $validation->setError("Bu sütun '{$partitionValue}' için girişe kapalıdır. Veri girilemez.");
+                    $errMsg = !empty($field->is_disabled) 
+                        ? 'Bu sütun form tanımında pasif (girişe kapalı) olarak belirlenmiştir. Veri girilemez.' 
+                        : "Bu sütun '{$partitionValue}' için girişe kapalıdır. Veri girilemez.";
+                    $validation->setError($errMsg);
                     $validation->setPromptTitle('Pasif Alan');
-                    $validation->setPrompt("Bu alan bu işyeri için pasiftir.");
+                    $promptMsg = !empty($field->is_disabled) 
+                        ? 'Bu alan form tanımında girişe kapalıdır.' 
+                        : 'Bu alan bu işyeri için pasiftir.';
+                    $validation->setPrompt($promptMsg);
                     $validation->setFormula1('="-"');
                     $sheet->setDataValidation("{$colLetter}2:{$colLetter}{$maxValidationRow}", $validation);
                     continue;

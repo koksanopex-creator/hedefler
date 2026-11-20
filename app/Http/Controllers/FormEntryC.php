@@ -1421,6 +1421,9 @@ class FormEntryC extends Controller
         ]);
 
         try {
+            $partitionValue = $request->input('partition_value');
+            $partitionField = $formTemplate->partition_field_id ? $formTemplate->fields->firstWhere('id', $formTemplate->partition_field_id) : null;
+
             $file = $request->file('excel_file');
             $spreadsheet = IOFactory::load($file->getPathname());
             $sheet = $spreadsheet->getActiveSheet();
@@ -1449,7 +1452,16 @@ class FormEntryC extends Controller
 
                 foreach ($fields as $field) {
                     // Pasif / Girişe Kapalı alana Excel'den veri yükleme (es geç)
-                    if (!empty($field->is_disabled)) {
+                    // 1. Şablondan doğrudan pasif yapılmış alan (is_disabled)
+                    // 2. Parçalama değerine göre veya koşullu alana göre pasif yapılmış alan
+                    $condVal = (!empty($partitionValue) && $partitionField && $field->condition_field_id == $partitionField->id)
+                        ? $partitionValue
+                        : ($rowData[$field->condition_field_id] ?? null);
+
+                    $isFieldPassive = !empty($field->is_disabled) 
+                        || (!empty($condVal) && $this->formExportService->isFieldPassiveForValue($field, $condVal));
+
+                    if ($isFieldPassive) {
                         $rowData[$field->id] = '';
                         $colIndex++;
                         continue;
