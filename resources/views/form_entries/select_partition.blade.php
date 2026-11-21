@@ -25,7 +25,7 @@
 
             <a href="{{ route('form-entries.index') }}"
                 class="text-xs font-bold text-slate-600 hover:text-indigo-600 bg-white border border-slate-200 px-3.5 py-2 rounded-xl shadow-2xs transition">
-                {{ __('Tüm Veri Girişleri Listesi &rarr;') }}
+                {{ __('Tüm Veri Girişleri Listesi') }} &rarr;
             </a>
         </div>
     </x-slot>
@@ -239,7 +239,7 @@
                 </div>
                 <a href="{{ route('form-entries.index') }}"
                     class="text-xs font-black text-indigo-600 hover:text-indigo-800 hover:underline">
-                    {{ __('Veri Girişleri Listesine Git &rarr;') }}
+                    {{ __('Veri Girişleri Listesine Git') }} &rarr;
                 </a>
             </div>
 
