@@ -40,6 +40,7 @@ class FormExportS
             // Şablona göre dışa aktar
             $spreadsheet = IOFactory::load($templatePath);
             $sheet = $spreadsheet->getActiveSheet();
+            $sheet->freezePane('B6');
         } else {
             // Şablon yoksa sıfırdan oluştur
             $spreadsheet = new Spreadsheet();
@@ -59,6 +60,9 @@ class FormExportS
             $sheet->getStyle($headerRange)->getFont()->setSize(13);
             $sheet->getStyle($headerRange)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
                 ->getStartColor()->setARGB('FF1E3A8A'); // Koyu Mavi (Tailwind indigo-900 civarı)
+
+            // Sıra No ve Başlık Satırını dondur
+            $sheet->freezePane('B2');
         }
 
         // Verileri Yaz
@@ -197,6 +201,7 @@ class FormExportS
             // Var olan tasarım şablonunu doğrudan indir
             $spreadsheet = IOFactory::load($templatePath);
             $sheet = $spreadsheet->getActiveSheet();
+            $sheet->freezePane('B6');
         } else {
             // Şablon yoksa sıfırdan başlıkları oluştur
             $spreadsheet = new Spreadsheet();
@@ -438,13 +443,21 @@ class FormExportS
                 }
             }
 
-            // Autofit Tüm Sütunlar
-            $highestColumn = $sheet->getHighestDataColumn();
-            $highestColumnIndex = Coordinate::columnIndexFromString($highestColumn);
-            for ($i = 1; $i <= $highestColumnIndex; $i++) {
-                $colLetter = Coordinate::stringFromColumnIndex($i);
-                $sheet->getColumnDimension($colLetter)->setAutoSize(true);
+            // Autofit Tüm Sütunlar ve Pasif Sütunları Gizleme
+            $sheet->getColumnDimension('A')->setAutoSize(true);
+            foreach ($columnMeta as $cIdx => $meta) {
+                $colLetter = Coordinate::stringFromColumnIndex($cIdx);
+                if ($meta['is_passive']) {
+                    // Pasif sütun Excel çıktısında gizli olarak indirilir (silinmez, gizlenir)
+                    $sheet->getColumnDimension($colLetter)->setVisible(false);
+                } else {
+                    $sheet->getColumnDimension($colLetter)->setAutoSize(true);
+                }
             }
+
+            // Sıra No (Kolon A) ve Başlık Satırını sabitle (Freeze Panes)
+            // Sağa/sola kaydırırken Sıra No her zaman solda sabit kalır, aşağı kaydırırken başlık satırı sabit kalır
+            $sheet->freezePane('B2');
 
             // Helper sheet'i gizle ve aktif sekmeyi ana sayfa yap
             if ($helperSheet) {
