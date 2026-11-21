@@ -101,12 +101,18 @@
                 <!-- Kart Üst Aksan Çizgisi -->
                 <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 to-purple-500"></div>
 
-                <!-- Kart Başlığı -->
-                <div class="mb-8">
-                    <h2 class="text-2xl font-extrabold text-white tracking-tight">Kullanıcı Girişi</h2>
-                    <p class="text-xs text-slate-400 mt-1.5 leading-relaxed">
-                        Sisteme erişmek için kurumsal e-posta ve şifrenizi giriniz.
-                    </p>
+                <!-- Kart Başlığı ve Dil Seçici -->
+                <div class="flex items-start justify-between mb-8">
+                    <div>
+                        <h2 class="text-2xl font-extrabold text-white tracking-tight">{{ __('Giriş Yap') }}</h2>
+                        <p class="text-xs text-slate-400 mt-1.5 leading-relaxed">
+                            {{ __('Sisteme erişmek için kurumsal e-posta ve şifrenizi giriniz.') }}
+                        </p>
+                    </div>
+                    <div class="flex items-center gap-1 bg-white/10 p-1 rounded-xl border border-white/10 shrink-0 ml-3">
+                        <a href="{{ route('locale.switch', 'tr') }}" class="px-2 py-1 text-xs font-bold rounded-lg transition-all {{ app()->getLocale() === 'tr' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-400 hover:text-white' }}">TR</a>
+                        <a href="{{ route('locale.switch', 'en') }}" class="px-2 py-1 text-xs font-bold rounded-lg transition-all {{ app()->getLocale() === 'en' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-400 hover:text-white' }}">EN</a>
+                    </div>
                 </div>
 
                 <!-- Oturum Durumu Bildirimi -->
@@ -139,7 +145,7 @@
                     <!-- E-Posta Alanı -->
                     <div>
                         <label for="email" class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
-                            E-Posta Adresi
+                            {{ __('E-Posta Adresi') }}
                         </label>
                         <div class="relative">
                             <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -161,11 +167,11 @@
                     <div x-data="{ show: false }">
                         <div class="flex items-center justify-between mb-2">
                             <label for="password" class="block text-xs font-bold uppercase tracking-wider text-slate-300">
-                                Şifre
+                                {{ __('Şifre') }}
                             </label>
                             @if (Route::has('password.request'))
                                 <a href="{{ route('password.request') }}" class="text-xs text-indigo-400 hover:text-indigo-300 transition hover:underline">
-                                    Şifremi Unuttum?
+                                    {{ __('Şifremi Unuttum?') }}
                                 </a>
                             @endif
                         </div>
@@ -203,7 +209,7 @@
                                    type="checkbox" 
                                    name="remember" 
                                    class="w-4 h-4 rounded bg-white/5 border border-white/20 text-indigo-600 focus:ring-indigo-500/50 focus:ring-offset-0 focus:ring-1 cursor-pointer">
-                            <span class="text-xs text-slate-400 group-hover:text-slate-300 transition">Oturumu açık tut (Beni Hatırla)</span>
+                            <span class="text-xs text-slate-400 group-hover:text-slate-300 transition">{{ __('Oturumu açık tut (Beni Hatırla)') }}</span>
                         </label>
                     </div>
 
@@ -212,7 +218,7 @@
                         <button type="submit" 
                                 class="w-full group relative inline-flex items-center justify-center px-6 py-3.5 overflow-hidden font-bold text-white transition-all duration-300 bg-gradient-to-r from-indigo-600 to-indigo-700 rounded-xl hover:from-indigo-500 hover:to-indigo-600 hover:shadow-[0_0_25px_rgba(99,102,241,0.4)] hover:scale-[1.01] active:scale-[0.99] shadow-lg shadow-indigo-600/30 text-sm">
                             <span class="relative flex items-center gap-2">
-                                <span>Giriş Yap</span>
+                                <span>{{ __('Giriş Yap') }}</span>
                                 <svg class="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
                             </span>
                         </button>

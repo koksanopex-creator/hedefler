@@ -6,14 +6,14 @@
                 <h2 class="font-extrabold text-2xl text-gray-900 tracking-tight">
                     {{ __('Yetki Matrisi Yönetimi') }}
                 </h2>
-                <p class="text-sm text-gray-500 mt-1">Rollere yetki atayarak kullanıcıların erişimlerini kontrol edin</p>
+                <p class="text-sm text-gray-500 mt-1">{{ __('Rollere yetki atayarak kullanıcıların erişimlerini kontrol edin') }}</p>
             </div>
             <form action="{{ route('roles.store') }}" method="POST" class="flex items-center gap-2">
                 @csrf
-                <input type="text" name="name" placeholder="Yeni rol adı (ör: Tasarımcı)" required
+                <input type="text" name="name" placeholder="{{ __('Yeni rol adı (ör: Tasarımcı)') }}" required
                     class="rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm py-2 px-3 w-48 sm:w-56">
                 <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-semibold text-sm transition shadow-sm whitespace-nowrap">
-                    + Rol Ekle
+                    + {{ __('Rol Ekle') }}
                 </button>
             </form>
         </div>
@@ -44,7 +44,7 @@
                         <thead class="sticky top-0 lg:top-[56px] z-30">
                             <tr>
                                 <th class="sticky top-0 lg:top-[56px] z-30 bg-slate-900 text-white text-left px-4 py-3.5 sm:px-6 sm:py-4 text-xs sm:text-sm font-extrabold uppercase tracking-wider border-b-2 border-r border-slate-700 min-w-[220px] shadow-sm first:rounded-tl-2xl">
-                                    Yetki / Rol
+                                    {{ __('Yetki / Rol') }}
                                 </th>
                                 @foreach($roles as $role)
                                     <th class="sticky top-0 lg:top-[56px] z-30 bg-slate-900 text-white text-center px-2 py-3.5 sm:px-4 sm:py-4 text-[10px] sm:text-xs font-extrabold uppercase tracking-wider border-b-2 border-r border-slate-700 relative group min-w-[120px] shadow-sm {{ $loop->last ? 'rounded-tr-2xl' : '' }}">
@@ -53,9 +53,9 @@
 
                                         @if(!in_array($role->slug, ['sistem_yoneticisi', 'yonetici', 'standart_kullanici']))
                                             <button type="button"
-                                                onclick="if(confirm('Bu rolü tamamen silmek istediğinize emin misiniz?')) { document.getElementById('delete-role-{{ $role->id }}').submit(); }"
+                                                onclick="if(confirm('{{ __('Bu rolü tamamen silmek istediğinize emin misiniz?') }}')) { document.getElementById('delete-role-{{ $role->id }}').submit(); }"
                                                 class="absolute top-1 right-1 text-slate-400 hover:text-red-400 opacity-0 group-hover:opacity-100 transition"
-                                                title="Rolü Sil">
+                                                title="{{ __('Rolü Sil') }}">
                                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                             </button>
                                         @endif
@@ -67,15 +67,15 @@
                         @php
                             $moduleTitles = [
                                 'kpi_targets' => 'Dinamik KPI ve Hoshin Kanri Hedefleri',
-                                'users' => 'Kullanıcı Yönetimi',
-                                'groups' => 'Grup ve Departman Yönetimi',
+                                'users' => __('Kullanıcı Yönetimi'),
+                                'groups' => __('Grup ve Departman Yönetimi'),
                                 'roles' => 'Rol ve Yetki Matrisi',
-                                'form_templates' => 'Form Şablonları ve Alan Tasarımı',
+                                'form_templates' => __('Form Şablonları ve Alan Tasarımı'),
                                 'form_schedules' => 'Form Takvimi ve Zamanlama',
-                                'form_entries' => 'Form Veri Girişleri ve Onay Süreci',
-                                'exports' => 'Dışa Aktarma (Excel Export)',
-                                'logs' => 'Sistem ve İşlem Logları',
-                                'system' => 'Sistem ve Oturum Yönetimi (Login Takibi)',
+                                'form_entries' => __('Form Veri Girişleri ve Onay Süreci'),
+                                'exports' => __('Dışa Aktarma (Excel Export)'),
+                                'logs' => __('Sistem ve İşlem Logları'),
+                                'system' => __('Sistem ve Oturum Yönetimi (Login Takibi)'),
                                 'dashboard' => 'Dashboard ve Performans Grafikleri',
                             ];
                         @endphp
@@ -130,10 +130,10 @@
                 {{-- Kaydet Alanı: Sayfanın altına yapışık --}}
                 <div class="sticky bottom-0 z-10 mt-0 bg-white/95 backdrop-blur-sm border-t border-gray-200 shadow-[0_-4px_12px_rgba(0,0,0,0.08)] rounded-b-lg px-4 sm:px-6 py-4 flex flex-col sm:flex-row justify-between items-center gap-3">
                     <div class="text-xs sm:text-sm text-gray-500 text-center sm:text-left">
-                        <strong>Not:</strong> Sistem Yöneticisi rolünün yetkileri kilitlidir ve değiştirilemez.
+                        <strong>{{ __('Not') }}:</strong> {{ __('Sistem Yöneticisi rolünün yetkileri kilitlidir ve değiştirilemez.') }}
                     </div>
                     <button type="submit" class="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-8 rounded-lg shadow-md hover:shadow-lg transition-all text-sm">
-                        Matrisi Kaydet
+                        {{ __('Matrisi Kaydet') }}
                     </button>
                 </div>
             </form>

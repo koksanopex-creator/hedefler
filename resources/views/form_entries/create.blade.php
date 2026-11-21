@@ -65,14 +65,14 @@
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-1.5">
             <div>
                 <h2 class="font-extrabold text-lg sm:text-xl text-gray-900 tracking-tight">
-                    {{ $formTemplate->name }} - Veri Girişi
+                    {{ __($formTemplate->name) }} - {{ __('Veri Girişi') }}
                 </h2>
             </div>
             <div class="text-xs text-gray-500 flex flex-wrap items-center gap-2 sm:gap-3">
-                <span>Tarih: {{ $date ?? now()->format('Y-m-d') }}</span>
+                <span>{{ __('Tarih') }}: {{ $date ?? now()->format('Y-m-d') }}</span>
                 @if(isset($existingEntry) && $existingEntry->status === 'draft')
                     <span class="text-indigo-600 font-semibold">
-                        Son Kayıt: {{ $existingEntry->updated_at->format('d.m.Y H:i') }} (Taslak)
+                        {{ __('Son Kayıt') }}: {{ $existingEntry->updated_at->format('d.m.Y H:i') }} ({{ __('Taslak') }})
                     </span>
                 @endif
             </div>
@@ -104,6 +104,14 @@
             }
             $fieldsToRender = $updatedSnapshot;
         }
+
+        // Çoklu dil desteği: Tablo başlıklarının ve alan isimlerinin yerelleştirilmesi
+        foreach ($fieldsToRender as &$fItem) {
+            if (isset($fItem['label'])) {
+                $fItem['label'] = __($fItem['label']);
+            }
+        }
+        unset($fItem);
     @endphp
 
     <div class="py-1.5 sm:py-2"
@@ -138,7 +146,7 @@
                         <svg class="w-4 h-4 mr-1.5 text-red-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
                         </svg>
-                        Lütfen aşağıdaki hataları kontrol ediniz:
+                        {{ __('Lütfen aşağıdaki hataları kontrol ediniz:') }}
                     </div>
                     <ul class="list-disc list-inside space-y-0.5 text-xs text-red-700 ml-2">
                         @foreach($errors->all() as $error)
@@ -151,11 +159,11 @@
             @if($existingEntry || !empty($partitionValue))
                 @php
                     $statusMap = [
-                        'draft' => 'Taslak',
-                        'submitted' => 'Onay Bekliyor',
-                        'approved' => 'Onaylandı',
-                        'rejected' => 'Reddedildi',
-                        'revised' => 'Revize Edildi',
+                        'draft' => __('Taslak'),
+                        'submitted' => __('Onay Bekliyor'),
+                        'approved' => __('Onaylandı'),
+                        'rejected' => __('Reddedildi'),
+                        'revised' => __('Revize Edildi'),
                     ];
                     $entryStatusLabel = $existingEntry ? ($statusMap[strtolower($existingEntry->status)] ?? $existingEntry->status) : null;
                 @endphp
@@ -163,17 +171,17 @@
                     <div class="flex items-center gap-2 flex-wrap">
                         @if(!empty($partitionValue))
                             <span class="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider bg-amber-400 text-slate-950 px-2 py-0.5 rounded shadow-xs">
-                                <span>⚡ PARÇALI GİRİŞ</span>
+                                <span>⚡ {{ __('PARÇALI GİRİŞ') }}</span>
                             </span>
-                            <span class="text-indigo-200 text-xs">{{ $partitionField->label ?? 'Kriter' }}:</span>
-                            <strong class="text-xs font-black text-amber-300 bg-amber-400/20 border border-amber-300/40 px-2 py-0.5 rounded">{{ $partitionValue }}</strong>
+                            <span class="text-indigo-200 text-xs">{{ __($partitionField->label ?? 'Kriter') }}:</span>
+                            <strong class="text-xs font-black text-amber-300 bg-amber-400/20 border border-amber-300/40 px-2 py-0.5 rounded">{{ __($partitionValue) }}</strong>
                         @endif
 
                         @if($existingEntry)
                             @if(!empty($partitionValue))
                                 <span class="text-slate-500 font-bold">&bull;</span>
                             @endif
-                            <span class="text-slate-300 text-xs">Düzenleme Modu:</span>
+                            <span class="text-slate-300 text-xs">{{ __('Düzenleme Modu:') }}</span>
                             <span class="px-2 py-0.5 rounded text-[11px] font-extrabold {{ $existingEntry->status === 'draft' ? 'bg-amber-400/20 text-amber-300 border border-amber-400/40' : 'bg-blue-400/20 text-blue-200 border border-blue-400/40' }}">
                                 {{ $entryStatusLabel }}
                             </span>
@@ -182,7 +190,7 @@
 
                     @if(!$existingEntry && $formTemplate->isPartitioned())
                         <a href="{{ route('form-entries.create', $formTemplate) }}" class="text-[11px] font-bold text-indigo-200 hover:text-white underline shrink-0">
-                            ← Bölüm Değiştir
+                            ← {{ __('Bölüm Değiştir') }}
                         </a>
                     @endif
                 </div>
@@ -214,14 +222,14 @@
                         :class="isFullscreen ? 'bg-slate-900 text-white border-b border-slate-800 shadow-md' : 'bg-slate-50 border-b border-gray-200 sm:rounded-t-lg'">
                         <div class="flex items-center gap-2.5">
                             <span class="text-xs font-bold" :class="isFullscreen ? 'text-white' : 'text-gray-800'">
-                                {{ $formTemplate->name }}
+                                {{ __($formTemplate->name) }}
                             </span>
                             <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-extrabold"
                                 :class="isFullscreen ? 'bg-indigo-500/30 text-indigo-200 border border-indigo-400/30' : 'bg-indigo-100 text-indigo-800 border border-indigo-200'"
-                                x-text="rows.length + ' Satır'"></span>
+                                x-text="rows.length + ' ' + '{{ __('Satır') }}'"></span>
                             <span x-show="isFullscreen" class="text-xs text-slate-400 hidden sm:inline">&bull; {{ $date ?? now()->format('d.m.Y') }}</span>
                             @if(isset($existingEntry) && $existingEntry->status === 'draft')
-                                <span x-show="isFullscreen" class="text-xs text-amber-400 font-semibold hidden md:inline">&bull; Taslak Modu</span>
+                                <span x-show="isFullscreen" class="text-xs text-amber-400 font-semibold hidden md:inline">&bull; {{ __('Taslak Modu') }}</span>
                             @endif
 
                             <!-- Otomatik Taslak Kayıt Rozeti -->
@@ -238,29 +246,29 @@
                                      'bg-blue-500/20 text-blue-200 border-blue-400/30': isFullscreen && autoSaveStatus === 'idle' && hasUnsavedChanges,
                                      'bg-blue-50 text-blue-700 border-blue-200': !isFullscreen && autoSaveStatus === 'idle' && hasUnsavedChanges
                                  }"
-                                 :title="autoSaveLastTime ? 'Son kayıt: ' + autoSaveLastTime : 'Otomatik taslak kaydetme koruması aktif'">
+                                 :title="autoSaveLastTime ? '{{ __('Son kayıt:') }} ' + autoSaveLastTime : '{{ __('Otomatik taslak kaydetme koruması aktif') }}'">
                                 <template x-if="autoSaveStatus === 'saving'">
                                     <span class="flex items-center gap-1.5">
                                         <svg class="animate-spin w-3 h-3 text-amber-500" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
-                                        <span class="hidden sm:inline">Taslak Kaydediliyor...</span>
+                                        <span class="hidden sm:inline">{{ __('Taslak Kaydediliyor...') }}</span>
                                     </span>
                                 </template>
                                 <template x-if="autoSaveStatus === 'saved'">
                                     <span class="flex items-center gap-1.5">
                                         <svg class="w-3.5 h-3.5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                                        <span x-text="'Taslak Kaydedildi (' + autoSaveLastTime + ')'"></span>
+                                        <span x-text="'{{ __('Taslak Kaydedildi') }} (' + autoSaveLastTime + ')'"></span>
                                     </span>
                                 </template>
                                 <template x-if="autoSaveStatus === 'error'">
                                     <span class="flex items-center gap-1.5 text-rose-500">
                                         <span>⚠️</span>
-                                        <span class="hidden sm:inline">Kayıt Başarısız</span>
+                                        <span class="hidden sm:inline">{{ __('Kayıt Başarısız') }}</span>
                                     </span>
                                 </template>
                                 <template x-if="autoSaveStatus === 'idle'">
                                     <span class="flex items-center gap-1.5">
                                         <span class="w-1.5 h-1.5 rounded-full" :class="hasUnsavedChanges ? 'bg-amber-400 animate-pulse' : 'bg-slate-400'"></span>
-                                        <span x-text="hasUnsavedChanges ? 'Kaydedilmemiş Değişiklik' : (autoSaveLastTime ? 'Taslak Kaydedildi (' + autoSaveLastTime + ')' : 'Otomatik Taslak Aktif')"></span>
+                                        <span x-text="hasUnsavedChanges ? '{{ __('Kaydedilmemiş Değişiklik') }}' : (autoSaveLastTime ? '{{ __('Taslak Kaydedildi') }} (' + autoSaveLastTime + ')' : '{{ __('Otomatik Taslak Aktif') }}')"></span>
                                     </span>
                                 </template>
                             </div>
@@ -270,11 +278,11 @@
                                 <button type="button" @click="showImportValidationModal = true"
                                     class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-500/15 hover:bg-amber-500/25 text-amber-700 border border-amber-300 transition shadow-xs cursor-pointer select-none"
                                     :class="isFullscreen ? 'bg-amber-900/60 text-amber-200 border-amber-600' : ''"
-                                    title="Yapıştırma veya içe aktarmadaki doğrulama uyarılarını görüntüle">
+                                    title="{{ __('Yapıştırma veya içe aktarmadaki doğrulama uyarılarını görüntüle') }}">
                                     <svg class="w-3.5 h-3.5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
                                     </svg>
-                                    <span>Aktarım Uyarıları (<span x-text="importValidationData.partitionMismatches.length + importValidationData.unmatchedDropdowns.length"></span>)</span>
+                                    <span>{{ __('Aktarım Uyarıları') }} (<span x-text="importValidationData.partitionMismatches.length + importValidationData.unmatchedDropdowns.length"></span>)</span>
                                 </button>
                             </template>
                         </div>
@@ -284,18 +292,18 @@
                             <div class="inline-flex rounded-lg shadow-xs select-none">
                                 <button type="button" @mousedown.prevent @click="addRow(1)"
                                     class="bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-bold py-1.5 px-3 rounded-l-lg text-xs shadow-xs transition flex items-center gap-1 select-none !cursor-pointer"
-                                    title="1 Satır Ekle">
+                                    title="{{ __('1 Satır Ekle') }}">
                                     <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
-                                    <span class="pointer-events-none">+ Satır Ekle</span>
+                                    <span class="pointer-events-none">+ {{ __('Satır Ekle') }}</span>
                                 </button>
                                 <button type="button" @mousedown.prevent @click="addRow(5)"
                                     class="bg-indigo-700 hover:bg-indigo-800 active:bg-indigo-900 text-indigo-100 font-bold py-1.5 px-2 border-l border-indigo-500 text-xs transition select-none !cursor-pointer"
-                                    title="Hızlıca 5 Satır Ekle">
+                                    title="{{ __('Hızlıca 5 Satır Ekle') }}">
                                     +5
                                 </button>
                                 <button type="button" @mousedown.prevent @click="addRow(10)"
                                     class="bg-indigo-700 hover:bg-indigo-800 active:bg-indigo-900 text-indigo-100 font-bold py-1.5 px-2 rounded-r-lg border-l border-indigo-500 text-xs transition select-none !cursor-pointer"
-                                    title="Hızlıca 10 Satır Ekle">
+                                    title="{{ __('Hızlıca 10 Satır Ekle') }}">
                                     +10
                                 </button>
                             </div>
@@ -305,9 +313,9 @@
                                 class="py-1.5 px-2.5 rounded-lg text-xs font-bold transition flex items-center gap-1 border select-none !cursor-pointer"
                                 :class="isFullscreen ? 'bg-slate-800 hover:bg-slate-700 text-orange-400 border-slate-700' : 'bg-white hover:bg-orange-50 text-orange-600 border-orange-200'"
                                 style="display: none;"
-                                :title="'Geri Al (Kayıtlı: ' + history.length + ' işlem, Maksimum 50 işlem saklanır)'">
+                                :title="'{{ __('Geri Al (Kayıtlı:') }} ' + history.length + ' {{ __('işlem, Maksimum 50 işlem saklanır)') }}'">
                                 <svg class="w-3.5 h-3.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg>
-                                <span class="pointer-events-none" x-text="'Geri Al (' + history.length + ')'"></span>
+                                <span class="pointer-events-none" x-text="'{{ __('Geri Al') }} (' + history.length + ')'"></span>
                             </button>
 
                             <div class="h-5 border-l mx-1" :class="isFullscreen ? 'border-slate-700' : 'border-gray-300'"></div>
@@ -319,13 +327,13 @@
                                     :class="hiddenColumns.length > 0 
                                         ? 'bg-amber-100 text-amber-900 border-amber-300 ring-1 ring-amber-400/50' 
                                         : (isFullscreen ? 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700' : 'bg-white hover:bg-gray-100 text-gray-700 border-gray-300')"
-                                    title="Tablodaki sütunları göster veya gizle">
+                                    title="{{ __('Tablodaki sütunları göster veya gizle') }}">
                                     <svg class="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
                                     </svg>
-                                    <span class="hidden sm:inline">Sütunlar</span>
-                                    <span x-show="hiddenColumns.length > 0" class="px-1.5 py-0.2 bg-amber-500 text-white rounded-full text-[10px] font-black" x-text="hiddenColumns.length + ' Gizli'"></span>
+                                    <span class="hidden sm:inline">{{ __('Sütunlar') }}</span>
+                                    <span x-show="hiddenColumns.length > 0" class="px-1.5 py-0.2 bg-amber-500 text-white rounded-full text-[10px] font-black" x-text="hiddenColumns.length + ' ' + '{{ __('Gizli') }}'"></span>
                                 </button>
 
                                 <!-- Dropdown Popover -->
@@ -334,10 +342,10 @@
                                     class="absolute right-0 mt-2 w-72 rounded-xl shadow-2xl bg-white border border-gray-200 z-50 p-3 text-left"
                                     style="display: none; max-height: 420px;">
                                     <div class="flex items-center justify-between pb-2 border-b border-gray-100">
-                                        <span class="text-xs font-black text-gray-800 uppercase tracking-wide">Sütun Görünürlüğü</span>
+                                        <span class="text-xs font-black text-gray-800 uppercase tracking-wide">{{ __('Sütun Görünürlüğü') }}</span>
                                         <button type="button" @click="showAllColumns()" x-show="hiddenColumns.length > 0"
                                             class="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 cursor-pointer">
-                                            Tümünü Göster
+                                            {{ __('Tümünü Göster') }}
                                         </button>
                                     </div>
                                     <div class="max-h-64 overflow-y-auto py-2 space-y-1">
@@ -348,7 +356,7 @@
                                                         class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 h-4 w-4">
                                                     <span class="text-xs font-medium text-gray-700 truncate" x-text="f.label || f.name"></span>
                                                 </div>
-                                                <span x-show="f.is_disabled" class="text-[9px] font-bold text-rose-700 bg-rose-50 border border-rose-200 px-1.5 py-0.2 rounded shrink-0">Pasif</span>
+                                                <span x-show="f.is_disabled" class="text-[9px] font-bold text-rose-700 bg-rose-50 border border-rose-200 px-1.5 py-0.2 rounded shrink-0">{{ __('Pasif') }}</span>
                                             </label>
                                         </template>
                                     </div>
@@ -359,28 +367,28 @@
                             <button type="button" @click="toggleWide()"
                                 class="py-1.5 px-2.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-xs border cursor-pointer select-none"
                                 :class="isWide ? 'bg-indigo-100 text-indigo-800 border-indigo-300 ring-1 ring-indigo-400/40' : (isFullscreen ? 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700' : 'bg-white hover:bg-gray-100 text-gray-700 border-gray-300')"
-                                :title="isWide ? 'Standart Genişliğe Dön' : 'Geniş Ekran Modu (Tam Genişlik)'">
+                                :title="isWide ? '{{ __('Standart Genişliğe Dön') }}' : '{{ __('Geniş Ekran Modu (Tam Genişlik)') }}'">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
                                 </svg>
-                                <span class="hidden sm:inline" x-text="isWide ? 'Standart Ekran' : 'Geniş Ekran'"></span>
+                                <span class="hidden sm:inline" x-text="isWide ? '{{ __('Normal Ekran') }}' : '{{ __('Geniş Ekran') }}'"></span>
                             </button>
 
                             <!-- Tam Ekran Geçiş Butonu -->
                             <button type="button" @click="toggleFullscreen()"
                                 class="py-1.5 px-3 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-xs border cursor-pointer select-none"
                                 :class="isFullscreen ? 'bg-rose-600 hover:bg-rose-700 text-white border-rose-500 ring-2 ring-rose-400/40' : 'bg-white hover:bg-gray-100 text-gray-700 border-gray-300'"
-                                :title="isFullscreen ? 'Tam Ekrandan Çık (ESC tuşuna da basabilirsiniz)' : 'Tam Ekran Veri Giriş Modu'">
+                                :title="isFullscreen ? '{{ __('Tam Ekrandan Çık (ESC tuşuna da basabilirsiniz)') }}' : '{{ __('Tam Ekran Veri Giriş Modu') }}'">
                                 <template x-if="!isFullscreen">
                                     <span class="flex items-center gap-1.5">
                                         <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg>
-                                        <span>Tam Ekran</span>
+                                        <span>{{ __('Tam Ekran') }}</span>
                                     </span>
                                 </template>
                                 <template x-if="isFullscreen">
                                     <span class="flex items-center gap-1.5 text-white">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                                        <span>Tam Ekrandan Çık (ESC)</span>
+                                        <span>{{ __('Tam Ekrandan Çık') }} (ESC)</span>
                                     </span>
                                 </template>
                             </button>
@@ -392,20 +400,20 @@
                                     :disabled="isSubmitting || isAutoSaving"
                                     :class="{'opacity-50 cursor-wait pointer-events-none': isSubmitting || isAutoSaving}"
                                     class="bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white font-bold py-1.5 px-2.5 rounded-lg text-xs shadow-xs transition flex items-center gap-1 cursor-pointer border border-slate-700"
-                                    title="Taslak Olarak Kaydet">
+                                    title="{{ __('Taslak Olarak Kaydet') }}">
                                     <svg x-show="isAutoSaving" class="animate-spin -ml-0.5 mr-1 h-3.5 w-3.5 text-amber-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                                     <svg x-show="!isAutoSaving" class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
-                                    <span class="hidden md:inline" x-text="isAutoSaving ? 'Kaydediliyor...' : 'Taslak Kaydet'"></span>
+                                    <span class="hidden md:inline" x-text="isAutoSaving ? '{{ __('Taslak Kaydediliyor...') }}' : '{{ __('Taslak Kaydet') }}'"></span>
                                 </button>
                                 <button type="button"
                                     @click="if(isSubmitting) return; submitForm('submit')"
                                     :disabled="isSubmitting"
                                     :class="{'opacity-50 cursor-wait pointer-events-none': isSubmitting}"
                                     class="bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold py-1.5 px-3 rounded-lg text-xs shadow-xs transition flex items-center gap-1 cursor-pointer"
-                                    title="Onaya Gönder">
+                                    title="{{ __('Onaya Gönder') }}">
                                     <svg x-show="isSubmitting" class="animate-spin -ml-0.5 mr-1 h-3.5 w-3.5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                                     <svg x-show="!isSubmitting" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                    <span x-text="isSubmitting ? 'Gönderiliyor...' : 'Onaya Gönder'"></span>
+                                    <span x-text="isSubmitting ? '{{ __('Lütfen bekleyin...') }}' : '{{ __('Onaya Gönder') }}'"></span>
                                 </button>
                             </div>
                         </div>
@@ -444,7 +452,7 @@
                                                         </span>
                                                         <span x-show="field.is_disabled"
                                                             class="text-[8px] font-black px-1 py-0.2 rounded bg-rose-900/90 text-rose-200 border border-rose-500/50 shrink-0 tracking-wider"
-                                                            title="Bu alan şablonda pasif (girişe kapalı) olarak tanımlanmıştır">PASİF</span>
+                                                            title="{{ __('Bu alan şablonda pasif (girişe kapalı) olarak tanımlanmıştır') }}">{{ __('PASİF') }}</span>
                                                     </div>
                                                     <div class="flex items-center space-x-1 shrink-0">
                                                         <!-- Sütun İşlemleri Menüsü (Sabitle / Sırala / Gizle) -->
@@ -458,10 +466,10 @@
                                                                         ? 'text-emerald-400 hover:text-emerald-300 bg-gray-700/90 shadow-xs ring-1 ring-emerald-400/50'
                                                                         : 'text-gray-400 hover:text-indigo-200 hover:bg-gray-700/60 opacity-0 group-hover:opacity-100')"
                                                                 :title="isColumnPinnedLeft(field.id) 
-                                                                    ? 'Sola Sabitlendi (Sütun işlemleri için tıklayın)' 
+                                                                    ? '{{ __('Sola Sabitlendi (Sütun işlemleri için tıklayın)') }}' 
                                                                     : (isColumnPinnedRight(field.id) 
-                                                                        ? 'Sağa Sabitlendi (Sütun işlemleri için tıklayın)' 
-                                                                        : 'Sütun Seçenekleri (Sabitle / Sırala / Gizle)')">
+                                                                        ? '{{ __('Sağa Sabitlendi (Sütun işlemleri için tıklayın)') }}' 
+                                                                        : '{{ __('Sütun Seçenekleri (Sabitle / Sırala / Gizle)') }}')">
                                                                 <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
                                                                           d="M16 12l2-2a2.828 2.828 0 10-4-4l-2 2m-4 4l-4 4m6-6l-4-4m10 6l-6 6M5 19l4-4" />
@@ -476,13 +484,13 @@
                                                                 class="absolute z-50 mt-1 right-0 rounded-xl shadow-2xl bg-gray-900 border border-gray-700 py-1.5 text-xs text-left"
                                                                 style="display: none; min-width: 175px;">
                                                                 <!-- Sabitleme Seçenekleri -->
-                                                                <div class="px-2.5 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Sabitleme</div>
+                                                                <div class="px-2.5 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-wider">{{ __('Sabitleme') }}</div>
                                                                 <button type="button"
                                                                     @click="setColumnPin(field.id, 'left'); pinOpen = false"
                                                                     class="w-full flex items-center px-3 py-1.5 transition-colors cursor-pointer"
                                                                     :class="isColumnPinnedLeft(field.id) ? 'bg-amber-500/20 text-amber-300 font-semibold' : 'text-gray-200 hover:bg-gray-800 hover:text-white'">
                                                                     <span class="mr-2 text-sm font-bold">←</span>
-                                                                    <span>Sola Sabitle</span>
+                                                                    <span>{{ __('Sola Sabitle') }}</span>
                                                                     <span x-show="isColumnPinnedLeft(field.id)" class="ml-auto text-amber-400 text-xs">✓</span>
                                                                 </button>
                                                                 <button type="button"
@@ -490,7 +498,7 @@
                                                                     class="w-full flex items-center px-3 py-1.5 transition-colors cursor-pointer"
                                                                     :class="isColumnPinnedRight(field.id) ? 'bg-emerald-500/20 text-emerald-300 font-semibold' : 'text-gray-200 hover:bg-gray-800 hover:text-white'">
                                                                     <span class="mr-2 text-sm font-bold">→</span>
-                                                                    <span>Sağa Sabitle</span>
+                                                                    <span>{{ __('Sağa Sabitle') }}</span>
                                                                     <span x-show="isColumnPinnedRight(field.id)" class="ml-auto text-emerald-400 text-xs">✓</span>
                                                                 </button>
                                                                 <template x-if="isColumnPinned(field.id)">
@@ -498,19 +506,19 @@
                                                                         @click="setColumnPin(field.id, 'none'); pinOpen = false"
                                                                         class="w-full flex items-center px-3 py-1.5 text-red-300 hover:bg-red-500/20 hover:text-red-200 transition-colors cursor-pointer">
                                                                         <span class="mr-2 text-xs font-bold">✕</span>
-                                                                        <span>Sabitlemeyi Kaldır</span>
+                                                                        <span>{{ __('Sabitlemeyi Kaldır') }}</span>
                                                                     </button>
                                                                 </template>
 
                                                                 <div class="border-t border-gray-700/80 my-1"></div>
                                                                 <!-- Sıralama Seçenekleri -->
-                                                                <div class="px-2.5 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Sıralama</div>
+                                                                <div class="px-2.5 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-wider">{{ __('Sıralama') }}</div>
                                                                 <button type="button"
                                                                     @click="setSortDirection(field.id, 'asc'); pinOpen = false"
                                                                     class="w-full flex items-center px-3 py-1.5 text-gray-200 hover:bg-gray-800 hover:text-white transition-colors cursor-pointer"
                                                                     :class="sortFieldId === field.id && sortDirection === 'asc' ? 'bg-indigo-600/30 text-indigo-300 font-semibold' : ''">
                                                                     <span class="mr-2 text-xs font-bold">▲</span>
-                                                                    <span x-text="field.type === 'number' ? 'Küçükten Büyüğe (1 → 9)' : 'A\'dan Z\'ye Sırala'"></span>
+                                                                    <span x-text="field.type === 'number' ? '{{ __('Küçükten Büyüğe (1 → 9)') }}' : '{{ __('A\'dan Z\'ye Sırala') }}'"></span>
                                                                     <span x-show="sortFieldId === field.id && sortDirection === 'asc'" class="ml-auto text-indigo-400 text-xs">✓</span>
                                                                 </button>
                                                                 <button type="button"
@@ -518,7 +526,7 @@
                                                                     class="w-full flex items-center px-3 py-1.5 text-gray-200 hover:bg-gray-800 hover:text-white transition-colors cursor-pointer"
                                                                     :class="sortFieldId === field.id && sortDirection === 'desc' ? 'bg-indigo-600/30 text-indigo-300 font-semibold' : ''">
                                                                     <span class="mr-2 text-xs font-bold">▼</span>
-                                                                    <span x-text="field.type === 'number' ? 'Büyükten Küçüğe (9 → 1)' : 'Z\'den A\'ya Sırala'"></span>
+                                                                    <span x-text="field.type === 'number' ? '{{ __('Büyükten Küçüğe (9 → 1)') }}' : '{{ __('Z\'den A\'ya Sırala') }}'"></span>
                                                                     <span x-show="sortFieldId === field.id && sortDirection === 'desc'" class="ml-auto text-indigo-400 text-xs">✓</span>
                                                                 </button>
                                                                 <template x-if="sortFieldId === field.id && sortDirection">
@@ -526,7 +534,7 @@
                                                                         @click="clearSort(); pinOpen = false"
                                                                         class="w-full flex items-center px-3 py-1.5 text-amber-300 hover:bg-amber-500/20 hover:text-amber-200 transition-colors cursor-pointer">
                                                                         <span class="mr-2 text-xs font-bold">↺</span>
-                                                                        <span>Sıralamayı Sıfırla</span>
+                                                                        <span>{{ __('Sıralamayı Sıfırla') }}</span>
                                                                     </button>
                                                                 </template>
 
@@ -536,7 +544,7 @@
                                                                     @click="hideColumn(field.id); pinOpen = false"
                                                                     class="w-full flex items-center px-3 py-1.5 text-gray-300 hover:bg-gray-800 hover:text-white transition-colors cursor-pointer">
                                                                     <span class="mr-2 text-xs">👁️</span>
-                                                                    <span>Bu Sütunu Gizle</span>
+                                                                    <span>{{ __('Bu Sütunu Gizle') }}</span>
                                                                 </button>
                                                             </div>
                                                         </div>
@@ -567,14 +575,14 @@
                                                                 style="display: none; min-width: 210px;">
                                                                 <!-- Excel Tarzı Hızlı Sıralama -->
                                                                 <div class="p-1.5 bg-gray-50/70 rounded-t-xl text-xs space-y-0.5">
-                                                                    <div class="px-2 py-0.5 text-[10px] font-black text-gray-400 uppercase tracking-wider">Sıralama (Excel)</div>
+                                                                    <div class="px-2 py-0.5 text-[10px] font-black text-gray-400 uppercase tracking-wider">{{ __('Sıralama (Excel)') }}</div>
                                                                     <button type="button"
                                                                         @click="setSortDirection(field.id, 'asc'); open = false;"
                                                                         class="w-full flex items-center justify-between px-2.5 py-1.5 text-xs rounded-lg transition-colors cursor-pointer"
                                                                         :class="sortFieldId === Number(field.id) && sortDirection === 'asc' ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-gray-700 hover:bg-gray-100'">
                                                                         <span class="flex items-center gap-1.5">
                                                                             <span class="text-xs font-bold text-indigo-600">▲</span>
-                                                                            <span x-text="field.type === 'number' ? 'Küçükten Büyüğe (1 → 9)' : 'A\'dan Z\'ye Sırala'"></span>
+                                                                            <span x-text="field.type === 'number' ? '{{ __('Küçükten Büyüğe (1 → 9)') }}' : '{{ __('A\'dan Z\'ye Sırala') }}'"></span>
                                                                         </span>
                                                                         <span x-show="sortFieldId === Number(field.id) && sortDirection === 'asc'" class="text-indigo-600 text-xs font-black">✓</span>
                                                                     </button>
@@ -584,7 +592,7 @@
                                                                         :class="sortFieldId === Number(field.id) && sortDirection === 'desc' ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-gray-700 hover:bg-gray-100'">
                                                                         <span class="flex items-center gap-1.5">
                                                                             <span class="text-xs font-bold text-indigo-600">▼</span>
-                                                                            <span x-text="field.type === 'number' ? 'Büyükten Küçüğe (9 → 1)' : 'Z\'den A\'ya Sırala'"></span>
+                                                                            <span x-text="field.type === 'number' ? '{{ __('Büyükten Küçüğe (9 → 1)') }}' : '{{ __('Z\'den A\'ya Sırala') }}'"></span>
                                                                         </span>
                                                                         <span x-show="sortFieldId === Number(field.id) && sortDirection === 'desc'" class="text-indigo-600 text-xs font-black">✓</span>
                                                                     </button>
@@ -593,20 +601,20 @@
                                                                             @click="clearSort(); open = false;"
                                                                             class="w-full flex items-center gap-1.5 px-2.5 py-1 text-[11px] text-amber-700 hover:bg-amber-50 rounded-lg font-semibold transition-colors cursor-pointer">
                                                                             <span>↺</span>
-                                                                            <span>Sıralamayı Sıfırla</span>
+                                                                            <span>{{ __('Sıralamayı Sıfırla') }}</span>
                                                                         </button>
                                                                     </template>
                                                                 </div>
 
                                                                 <div class="p-2 border-b border-gray-100 flex justify-between gap-2 bg-white">
-                                                                    <span class="text-[10px] font-black text-gray-400 uppercase tracking-wider self-center">Filtre</span>
+                                                                    <span class="text-[10px] font-black text-gray-400 uppercase tracking-wider self-center">{{ __('Filtre') }}</span>
                                                                     <div class="flex items-center gap-2">
                                                                         <button type="button"
                                                                             @click="selectAllFilters(field.id)"
-                                                                            class="text-[10px] font-semibold text-indigo-600 hover:text-indigo-800 cursor-pointer">Tümünü Seç</button>
+                                                                            class="text-[10px] font-semibold text-indigo-600 hover:text-indigo-800 cursor-pointer">{{ __('Tümünü Seç') }}</button>
                                                                         <span class="text-gray-300">|</span>
                                                                         <button type="button" @click="clearFilter(field.id)"
-                                                                            class="text-[10px] font-semibold text-red-600 hover:text-red-800 cursor-pointer">Temizle</button>
+                                                                            class="text-[10px] font-semibold text-red-600 hover:text-red-800 cursor-pointer">{{ __('Temizle') }}</button>
                                                                     </div>
                                                                 </div>
                                                                 <div class="max-h-56 overflow-y-auto p-2 space-y-0.5 bg-white rounded-b-xl">
@@ -620,13 +628,13 @@
                                                                                 @change="calculateTotals()"
                                                                                 class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
                                                                             <span class="text-xs text-gray-700 truncate"
-                                                                                x-text="val === '' ? '(Boş)' : val"
-                                                                                :title="val === '' ? '(Boş)' : val"></span>
+                                                                                x-text="val === '' ? '{{ __('(Boş)') }}' : val"
+                                                                                :title="val === '' ? '{{ __('(Boş)') }}' : val"></span>
                                                                         </label>
                                                                     </template>
                                                                     <div x-show="!(uniqueValues[field.id] && uniqueValues[field.id].length > 0)"
                                                                         class="text-xs text-gray-400 text-center p-2">
-                                                                        Veri yok</div>
+                                                                        {{ __('Veri yok') }}</div>
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -636,7 +644,7 @@
                                                                 <!-- İlk Satırdaki Değeri Tüm Sütuna Yay (Aşağı Doldur) -->
                                                                 <button type="button" @click.stop="promptFillColumnFromFirstRow(field.id)"
                                                                     class="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-indigo-300 hover:bg-gray-700/70 transition-all p-1 rounded"
-                                                                    title="İlk Satırdaki Değeri Tüm Sütuna Yay (Onaylı)">
+                                                                    title="{{ __('İlk Satırdaki Değeri Tüm Sütuna Yay (Onaylı)') }}">
                                                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
                                                                     </svg>
@@ -645,7 +653,7 @@
                                                                 <!-- Bu Sütunu Temizle (Modal Onaylı) -->
                                                                 <button type="button" @click.stop="promptClearColumn(field.id)"
                                                                     class="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-400 hover:bg-gray-700/70 transition-all p-1 rounded cursor-pointer"
-                                                                    title="Bu Sütundaki Verileri Temizle">
+                                                                    title="{{ __('Bu Sütundaki Verileri Temizle') }}">
                                                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor"
                                                                         viewBox="0 0 24 24">
                                                                         <path stroke-linecap="round" stroke-linejoin="round"
@@ -664,7 +672,7 @@
 
                                     <th
                                         class="w-16 px-2 sm:px-4 py-3 text-center text-xs font-medium text-white uppercase tracking-wider bg-gray-800 sticky right-0 z-30 border-l border-gray-700 shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.3)]">
-                                        Sil</th>
+                                        {{ __('SİL') }}</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
@@ -676,7 +684,7 @@
                                                 <button type="button" @click="moveRowUp(row)"
                                                     :disabled="rIndex === 0"
                                                     class="text-gray-400 hover:text-indigo-600 disabled:opacity-10 opacity-0 group-hover:opacity-100 transition-opacity p-0.5"
-                                                    title="Yukarı Taşı">
+                                                    title="{{ __('Yukarı Taşı') }}">
                                                     <svg class="w-3.5 h-3.5 mx-auto" fill="none" stroke="currentColor"
                                                         viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round"
@@ -687,12 +695,12 @@
                                                 <input type="number" min="1" :max="rows.length" :value="rIndex + 1"
                                                     @change="moveRowTo(row, $event.target.value)"
                                                     class="w-8 h-7 text-center text-xs font-black text-indigo-950 bg-white rounded border border-gray-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 p-0 shadow-2xs transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none cursor-pointer hover:bg-gray-50"
-                                                    title="Sıra numarası (Rakamı değiştirin)">
+                                                    title="{{ __('Sıra numarası (Rakamı değiştirin)') }}">
 
                                                 <button type="button" @click="moveRowDown(row)"
                                                     :disabled="rIndex === rows.length - 1"
                                                     class="text-gray-400 hover:text-indigo-600 disabled:opacity-10 opacity-0 group-hover:opacity-100 transition-opacity p-0.5"
-                                                    title="Aşağı Taşı">
+                                                    title="{{ __('Aşağı Taşı') }}">
                                                     <svg class="w-3.5 h-3.5 mx-auto" fill="none" stroke="currentColor"
                                                         viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round"
@@ -717,12 +725,12 @@
 
                                                 @if (isset($partitionField) && $fId == $partitionField->id && !empty($partitionValue))
                                                     <div class="relative w-full flex items-center justify-between gap-1.5 bg-amber-50/90 border border-amber-300 text-amber-900 rounded-md px-3 py-1.5 text-xs font-bold shadow-2xs select-none"
-                                                         title="Bu form için {{ $partitionField->label }} değeri '{{ $partitionValue }}' olarak kilitlenmiştir.">
+                                                         title="{{ __('Bu form için') }} {{ $partitionField->label }} {{ __('değeri') }} '{{ $partitionValue }}' {{ __('olarak kilitlenmiştir.') }}">
                                                         <div class="flex items-center gap-1.5 truncate">
                                                             <svg class="w-3.5 h-3.5 text-amber-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
                                                             <span class="truncate font-mono">{{ $partitionValue }}</span>
                                                         </div>
-                                                        <span class="text-[9px] text-amber-700 bg-amber-200/80 px-1.5 py-0.5 rounded font-black tracking-wider uppercase shrink-0">KİLİTLİ</span>
+                                                        <span class="text-[9px] text-amber-700 bg-amber-200/80 px-1.5 py-0.5 rounded font-black tracking-wider uppercase shrink-0">{{ __('KİLİTLİ') }}</span>
                                                     </div>
                                                 @elseif ($fType === 'text')
                                                     <input type="text"
@@ -843,12 +851,12 @@
                                                                 'bg-white border-gray-300 text-gray-700': !isFieldDisabled(fields[{{ $colIndex }}], row) && !row.values['{{ $fId }}'],
                                                                 'border-l-4 border-l-red-500': isFieldRequired(fields[{{ $colIndex }}], row) && !{{ $fRequired ? 'true' : 'false' }} && !isFieldDisabled(fields[{{ $colIndex }}], row)
                                                             }">
-                                                            <option value="" x-text="isFieldDisabled(fields[{{ $colIndex }}], row) ? '-' : 'Yıl Seçiniz...'"></option>
+                                                            <option value="" x-text="isFieldDisabled(fields[{{ $colIndex }}], row) ? '-' : '{{ __('Yıl Seçiniz...') }}'"></option>
                                                             @foreach ($rawYears as $y)
                                                                 @php
                                                                     $lbl = (string)$y;
-                                                                    if ($y === $currentYear + 1) $lbl .= ' (Hedef Yılı)';
-                                                                    elseif ($y === $currentYear) $lbl .= ' (Bu Yıl)';
+                                                                    if ($y === $currentYear + 1) $lbl .= ' (' . __('Hedef Yılı') . ')';
+                                                                    elseif ($y === $currentYear) $lbl .= ' (' . __('Bu Yıl') . ')';
                                                                 @endphp
                                                                 <option value="{{ $y }}">{{ $lbl }}</option>
                                                             @endforeach
@@ -857,7 +865,7 @@
                                                             x-show="row.values['{{ $fId }}'] && !isFieldDisabled(fields[{{ $colIndex }}], row)"
                                                             @click.stop.prevent="clearSelect(row, '{{ $fId }}', fields[{{ $colIndex }}])"
                                                             tabindex="-1"
-                                                            title="Seçimi Temizle (Delete veya Backspace ile de silebilirsiniz)"
+                                                            title="{{ __('Seçimi Temizle (Delete veya Backspace ile de silebilirsiniz)') }}"
                                                             class="absolute right-6 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-gray-200/90 hover:bg-rose-500 hover:text-white text-gray-500 flex items-center justify-center text-[10px] font-black transition z-10 cursor-pointer shadow-2xs">
                                                             &times;
                                                         </button>
@@ -866,7 +874,7 @@
                                                     @php
                                                         $selectOpts = $field->options ?? [];
                                                         if (is_string($selectOpts)) {
-                                                            $selectOpts = json_decode($selectOpts, true) ?? [];
+                                                             $selectOpts = json_decode($selectOpts, true) ?? [];
                                                         }
                                                     @endphp
                                                     <div class="relative w-full" :title="getCellDisabledReason(fields[{{ $colIndex }}], row)">
@@ -890,7 +898,7 @@
                                                                 'bg-white border-gray-300 text-gray-700 hover:border-indigo-400': !isFieldDisabled(fields[{{ $colIndex }}], row) && !row.values['{{ $fId }}'],
                                                                 'border-l-4 border-l-red-500': isFieldRequired(fields[{{ $colIndex }}], row) && !{{ $fRequired ? 'true' : 'false' }} && !isFieldDisabled(fields[{{ $colIndex }}], row)
                                                             }">
-                                                            <span class="truncate block flex-1" x-text="row.values['{{ $fId }}'] || (isFieldDisabled(fields[{{ $colIndex }}], row) ? '-' : 'Seçiniz...')"></span>
+                                                            <span class="truncate block flex-1" x-text="row.values['{{ $fId }}'] || (isFieldDisabled(fields[{{ $colIndex }}], row) ? '-' : '{{ __('Seçiniz...') }}')"></span>
                                                             <svg class="w-4 h-4 text-gray-400 shrink-0 ml-1 transition-transform" :class="activeDropdown.isOpen && activeDropdown.rowIndex === rIndex && activeDropdown.field && activeDropdown.field.id == '{{ $fId }}' ? 'rotate-180 text-indigo-600' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                                             </svg>
@@ -899,7 +907,7 @@
                                                             x-show="row.values['{{ $fId }}'] && !isFieldDisabled(fields[{{ $colIndex }}], row)"
                                                             @click.stop.prevent="clearSelect(row, '{{ $fId }}', fields[{{ $colIndex }}])"
                                                             tabindex="-1"
-                                                            title="Seçimi Temizle (Delete veya Backspace ile de silebilirsiniz)"
+                                                            title="{{ __('Seçimi Temizle (Delete veya Backspace ile de silebilirsiniz)') }}"
                                                             class="absolute right-6 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-gray-200/90 hover:bg-rose-500 hover:text-white text-gray-500 flex items-center justify-center text-[10px] font-black transition z-10 cursor-pointer shadow-2xs">
                                                             &times;
                                                         </button>
@@ -936,7 +944,7 @@
                                                             x-show="row.values['{{ $fId }}'] && !isMasterDataDisabled(row, fields[{{ $colIndex }}]) && !isFieldDisabled(fields[{{ $colIndex }}], row)"
                                                             @click.stop.prevent="clearSelect(row, '{{ $fId }}', fields[{{ $colIndex }}])"
                                                             tabindex="-1"
-                                                            title="Seçimi Temizle (Delete veya Backspace ile de silebilirsiniz)"
+                                                            title="{{ __('Seçimi Temizle (Delete veya Backspace ile de silebilirsiniz)') }}"
                                                             class="absolute right-6 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-gray-200/90 hover:bg-rose-500 hover:text-white text-gray-500 flex items-center justify-center text-[10px] font-black transition z-10 cursor-pointer shadow-2xs">
                                                             &times;
                                                         </button>
@@ -972,7 +980,7 @@
                                                                 'bg-white border-gray-300 text-gray-700 hover:border-indigo-400': !isFieldDisabled(fields[{{ $colIndex }}], row) && !row.values['{{ $fId }}'], 
                                                                 'border-l-4 border-l-red-500': isFieldRequired(fields[{{ $colIndex }}], row) && !{{ $fRequired ? 'true' : 'false' }} && !isFieldDisabled(fields[{{ $colIndex }}], row) 
                                                             }">
-                                                            <span class="truncate block flex-1" x-text="row.values['{{ $fId }}'] || (isFieldDisabled(fields[{{ $colIndex }}], row) ? '-' : 'Kullanıcı Seçiniz...')"></span>
+                                                            <span class="truncate block flex-1" x-text="row.values['{{ $fId }}'] || (isFieldDisabled(fields[{{ $colIndex }}], row) ? '-' : '{{ __('Kullanıcı Seçiniz...') }}')"></span>
                                                             <svg class="w-4 h-4 text-gray-400 shrink-0 ml-1 transition-transform" :class="activeDropdown.isOpen && activeDropdown.rowIndex === rIndex && activeDropdown.field && activeDropdown.field.id == '{{ $fId }}' ? 'rotate-180 text-indigo-600' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                                             </svg>
@@ -981,7 +989,7 @@
                                                             x-show="row.values['{{ $fId }}'] && !isFieldDisabled(fields[{{ $colIndex }}], row)"
                                                             @click.stop.prevent="clearSelect(row, '{{ $fId }}', fields[{{ $colIndex }}])"
                                                             tabindex="-1"
-                                                            title="Seçimi Temizle (Delete veya Backspace ile de silebilirsiniz)"
+                                                            title="{{ __('Seçimi Temizle (Delete veya Backspace ile de silebilirsiniz)') }}"
                                                             class="absolute right-6 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-gray-200/90 hover:bg-rose-500 hover:text-white text-gray-500 flex items-center justify-center text-[10px] font-black transition z-10 cursor-pointer shadow-2xs">
                                                             &times;
                                                         </button>
@@ -993,7 +1001,7 @@
                                                     <div x-show="!isFieldDisabled(fields[{{ $colIndex }}], row)"
                                                          @dblclick.stop="promptFillDown(row, '{{ $fId }}')"
                                                          class="fill-handle-dot opacity-0 group-hover/cell:opacity-100 transition-opacity"
-                                                         title="Aşağı doğru doldurmak için çift tıklayın (Onaylı)"></div>
+                                                         title="{{ __('Aşağı doğru doldurmak için çift tıklayın (Onaylı)') }}"></div>
                                                 @endif
 
                                             </td>
@@ -1002,7 +1010,7 @@
                                         <td class="w-12 px-2 py-1 whitespace-nowrap text-center sticky right-0 z-10 bg-white group-hover:bg-indigo-50 border-l border-gray-200 shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.06)]">
                                             <button type="button" @click.stop="promptDeleteRow(row)"
                                                 class="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-1.5 rounded-lg transition cursor-pointer"
-                                                title="Satırı Sil (Doluysa Onay İster)" x-show="rows.length > 1">
+                                                title="{{ __('Satırı Sil (Doluysa Onay İster)') }}" x-show="rows.length > 1">
                                                 <svg class="w-3.5 h-3.5 pointer-events-none" fill="none" stroke="currentColor"
                                                     viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round"
@@ -1020,7 +1028,7 @@
                                 <tfoot class="bg-gray-100 font-bold">
                                     <tr class="bg-indigo-50/50">
                                         <td class="sticky left-0 z-10 bg-indigo-50 px-4 py-3 font-bold text-right text-indigo-800 text-[11px] uppercase border-b border-indigo-100 border-r border-indigo-200 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)]"
-                                            colspan="1">Görünen Toplam:</td>
+                                            colspan="1">{{ __('Görünen Toplam:') }}</td>
                                         @foreach ($fieldsToRender as $fieldItem)
                                             @php
                                                 $f = is_array($fieldItem) ? (object) $fieldItem : $fieldItem;
@@ -1038,7 +1046,7 @@
                                     </tr>
                                     <tr>
                                         <td class="sticky left-0 z-10 bg-gray-100 px-4 py-3 font-bold text-right text-gray-500 text-[10px] uppercase border-r border-gray-200 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)]"
-                                            colspan="1">Genel Toplam (Tümü):</td>
+                                            colspan="1">{{ __('Genel Toplam (Tümü):') }}</td>
                                         @foreach ($fieldsToRender as $fieldItem)
                                             @php
                                                 $f = is_array($fieldItem) ? (object) $fieldItem : $fieldItem;
@@ -1072,46 +1080,46 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                                     </svg>
-                                    <span class="pointer-events-none">Satır Ekle</span>
+                                    <span class="pointer-events-none">{{ __('Satır Ekle') }}</span>
                                 </button>
                                 <button type="button" @mousedown.prevent @click="addRow(5)"
                                     class="bg-indigo-700 hover:bg-indigo-800 active:bg-indigo-900 text-indigo-100 font-bold py-1.5 px-2 border-l border-indigo-500 text-xs transition select-none !cursor-pointer"
-                                    title="5 Satır Ekle">
+                                    title="{{ __('5 Satır Ekle') }}">
                                     +5
                                 </button>
                                 <button type="button" @mousedown.prevent @click="addRow(10)"
                                     class="bg-indigo-700 hover:bg-indigo-800 active:bg-indigo-900 text-indigo-100 font-bold py-1.5 px-2 rounded-r-lg border-l border-indigo-500 text-xs transition select-none !cursor-pointer"
-                                    title="10 Satır Ekle">
+                                    title="{{ __('10 Satır Ekle') }}">
                                     +10
                                 </button>
                             </div>
 
                             <button type="button" @click.stop="promptClearAll()"
                                 class="bg-white hover:bg-red-50 text-red-600 font-semibold py-1.5 px-3 border border-red-200 rounded-lg shadow-xs transition flex items-center text-xs cursor-pointer select-none">
-                                Tümünü Temizle
+                                {{ __('Tümünü Temizle') }}
                             </button>
 
                             <button type="button" @mousedown.prevent @click="undo()" x-show="history.length > 0"
                                 class="bg-white hover:bg-orange-50 text-orange-600 font-semibold py-1.5 px-2.5 border border-orange-200 rounded-lg shadow-xs transition flex items-center gap-1 text-xs select-none !cursor-pointer"
                                 style="display: none;"
-                                :title="'Geri Al (Kayıtlı: ' + history.length + ' işlem, Maksimum 50 işlem saklanır)'">
+                                :title="'{{ __('Geri Al') }} ({{ __('Kayıtlı:') }} ' + history.length + ' {{ __('işlem, Maksimum 50 işlem saklanır') }})'">
                                 <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path>
                                 </svg>
-                                <span class="pointer-events-none" x-text="'Geri Al (' + history.length + ')'"></span>
+                                <span class="pointer-events-none" x-text="'{{ __('Geri Al') }} (' + history.length + ')'"></span>
                             </button>
 
                             <div class="h-5 border-l border-gray-300 mx-0.5 hidden xl:block"></div>
 
                             <button type="button" @click="downloadEmptyTemplate()"
                                 class="bg-white hover:bg-green-50 text-green-700 font-semibold py-1.5 px-3 border border-green-200 rounded-lg shadow-xs transition flex items-center gap-1 text-xs cursor-pointer"
-                                :title="partitionValue ? (partitionValue + ' için kilitli şablon indir') : 'Boş form şablonu indir'">
+                                :title="partitionValue ? (partitionValue + ' {{ __('için kilitli şablon indir') }}') : '{{ __('Boş form şablonu indir') }}'">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
                                 </svg>
-                                Şablon İndir
+                                {{ __('Şablon İndir') }}
                             </button>
 
                             <button type="button" @click="$refs.excelInput.click()" :disabled="isUploading"
@@ -1121,7 +1129,7 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
                                 </svg>
-                                Excel'den Yükle
+                                {{ __('Excel\'den Yükle') }}
                             </button>
                             <input type="file" x-ref="excelInput" @change="handleExcelUpload" accept=".xlsx,.xls"
                                 class="hidden">
@@ -1129,17 +1137,17 @@
                             <!-- Tam Ekran Butonu (Alt Bar) -->
                             <button type="button" @click="toggleFullscreen()"
                                 class="bg-white hover:bg-gray-100 text-gray-700 font-semibold py-1.5 px-3 border border-gray-300 rounded-lg shadow-xs transition flex items-center gap-1.5 cursor-pointer text-xs"
-                                :title="isFullscreen ? 'Tam Ekrandan Çık (ESC)' : 'Tam Ekran Modu (ESC)'">
+                                :title="isFullscreen ? '{{ __('Tam Ekrandan Çık (ESC)') }}' : '{{ __('Tam Ekran Modu (ESC)') }}'">
                                 <template x-if="!isFullscreen">
                                     <span class="flex items-center gap-1.5 text-xs font-bold">
                                         <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg>
-                                        Tam Ekran
+                                        {{ __('Tam Ekran') }}
                                     </span>
                                 </template>
                                 <template x-if="isFullscreen">
                                     <span class="flex items-center gap-1.5 text-xs text-rose-600 font-bold">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                                        Tam Ekrandan Çık (ESC)
+                                        {{ __('Tam Ekrandan Çık (ESC)') }}
                                     </span>
                                 </template>
                             </button>
@@ -1151,34 +1159,34 @@
                                 :disabled="isSubmitting || isAutoSaving"
                                 :class="{'opacity-50 cursor-wait pointer-events-none': isSubmitting || isAutoSaving}"
                                 class="bg-white hover:bg-gray-100 active:bg-gray-200 text-gray-700 font-semibold py-1.5 px-3.5 border border-gray-300 rounded-lg shadow-xs transition-colors cursor-pointer select-none inline-flex items-center justify-center text-xs"
-                                title="Formu zorunlu alan kontrolü olmadan taslak olarak kaydeder (Daha sonra devam edebilirsiniz)">
+                                title="{{ __('Formu zorunlu alan kontrolü olmadan taslak olarak kaydeder (Daha sonra devam edebilirsiniz)') }}">
                                 <span x-show="isAutoSaving || (isSubmitting && submittingAction === 'draft')" class="inline-flex items-center">
                                     <svg class="animate-spin -ml-1 mr-1.5 h-3.5 w-3.5 text-gray-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                     </svg>
-                                    <span>Taslak Kaydediliyor...</span>
+                                    <span>{{ __('Taslak Kaydediliyor...') }}</span>
                                 </span>
-                                <span x-show="!isAutoSaving && (!isSubmitting || submittingAction !== 'draft')">Taslak Olarak Kaydet</span>
+                                <span x-show="!isAutoSaving && (!isSubmitting || submittingAction !== 'draft')">{{ __('Taslak Olarak Kaydet') }}</span>
                             </button>
                             <button type="button"
                                 @click="if(isSubmitting) return; submitForm('submit')"
                                 :disabled="isSubmitting"
                                 :class="{'opacity-50 cursor-wait pointer-events-none': isSubmitting}"
                                 class="bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-bold py-1.5 px-4 rounded-lg shadow-xs transition-colors cursor-pointer select-none inline-flex items-center justify-center text-xs"
-                                title="Formu doğrular ve onaya gönderir">
+                                title="{{ __('Formu doğrular ve onaya gönderir') }}">
                                 <span x-show="isSubmitting && submittingAction === 'submit'" class="inline-flex items-center">
                                     <svg class="animate-spin -ml-1 mr-1.5 h-3.5 w-3.5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                     </svg>
-                                    <span>Kaydediliyor...</span>
+                                    <span>{{ __('Kaydediliyor...') }}</span>
                                 </span>
                                 <span x-show="!isSubmitting || submittingAction !== 'submit'">
                                     @if($existingEntry && $existingEntry->status === 'approved')
-                                        Onaylı Formu Güncelle
+                                        {{ __('Onaylı Formu Güncelle') }}
                                     @else
-                                        Onaya Gönder
+                                        {{ __('Onaya Gönder') }}
                                     @endif
                                 </span>
                             </button>
@@ -1212,9 +1220,9 @@
                         </template>
                     </div>
 
-                    <h3 class="text-lg font-bold text-gray-900 mb-1" x-text="uploadModalTitle || 'Excel Dosyası İçe Aktarılıyor'">
+                    <h3 class="text-lg font-bold text-gray-900 mb-1" x-text="uploadModalTitle || '{{ __('Excel Dosyası İçe Aktarılıyor') }}'">
                     </h3>
-                    <p class="text-xs text-gray-500 mb-4" x-text="uploadModalSubtitle || 'Büyük veri setleri optimize edilerek tabloya aktarılmaktadır.'">
+                    <p class="text-xs text-gray-500 mb-4" x-text="uploadModalSubtitle || '{{ __('Büyük veri setleri optimize edilerek tabloya aktarılmaktadır.') }}'">
                     </p>
 
                     <!-- Büyük Veri Seti Bilgilendirme Kartı -->
@@ -1227,18 +1235,18 @@
                             <span class="text-xl shrink-0 mt-0.5">⚠️</span>
                             <div class="text-[12px] text-amber-950 leading-relaxed flex-1">
                                 <p class="font-bold text-amber-900">
-                                    Yüksek Hacimli Veri Seti (<span x-text="totalImportRows"></span> Satır)
+                                    {{ __('Yüksek Hacimli Veri Seti') }} (<span x-text="totalImportRows"></span> {{ __('Satır') }})
                                 </p>
                                 <p class="mt-0.5 text-amber-800 text-[11px]">
-                                    Tarayıcınızın donmaması ve bellek güvenliği için veriler parçalı olarak optimize edilerek aktarılmaktadır.
+                                    {{ __('Tarayıcınızın donmaması ve bellek güvenliği için veriler parçalı olarak optimize edilerek aktarılmaktadır.') }}
                                 </p>
                                 <div class="mt-2 pt-1.5 border-t border-amber-200/80 flex flex-wrap items-center justify-between text-[11px] font-semibold text-amber-900 gap-2">
                                     <div class="flex items-center gap-2">
-                                        <span>⏱️ Geçen Süre: <strong class="text-indigo-800 font-bold" x-text="liveTimerText"></strong></span>
+                                        <span>⏱️ {{ __('Geçen Süre:') }} <strong class="text-indigo-800 font-bold" x-text="liveTimerText"></strong></span>
                                         <span>•</span>
-                                        <span>Tahmini Kalan: <strong class="text-emerald-700 font-bold" x-text="estimatedRemainingText"></strong></span>
+                                        <span>{{ __('Tahmini Kalan:') }} <strong class="text-emerald-700 font-bold" x-text="estimatedRemainingText"></strong></span>
                                     </div>
-                                    <span class="text-red-600 font-medium animate-pulse">Sayfayı kapatmayın</span>
+                                    <span class="text-red-600 font-medium animate-pulse">{{ __('Sayfayı kapatmayın') }}</span>
                                 </div>
                             </div>
                         </div>
@@ -1260,15 +1268,15 @@
                     <div class="grid grid-cols-3 gap-2 pt-3 border-t border-gray-100 text-[11px] font-medium text-gray-400">
                         <div class="flex flex-col items-center gap-1" :class="uploadStep >= 1 ? 'text-indigo-600 font-bold' : ''">
                             <span class="w-2 h-2 rounded-full" :class="uploadStep >= 1 ? 'bg-indigo-600 ring-2 ring-indigo-200' : 'bg-gray-300'"></span>
-                            <span x-text="uploadStepNames[0] || '1. Yükleme'"></span>
+                            <span x-text="uploadStepNames[0] || '{{ __('1. Yükleme') }}'"></span>
                         </div>
                         <div class="flex flex-col items-center gap-1" :class="uploadStep >= 2 ? 'text-indigo-600 font-bold' : ''">
                             <span class="w-2 h-2 rounded-full" :class="uploadStep >= 2 ? 'bg-indigo-600 ring-2 ring-indigo-200' : 'bg-gray-300'"></span>
-                            <span x-text="uploadStepNames[1] || '2. Ayrıştırma'"></span>
+                            <span x-text="uploadStepNames[1] || '{{ __('2. Ayrıştırma') }}'"></span>
                         </div>
                         <div class="flex flex-col items-center gap-1" :class="uploadStep >= 3 ? 'text-emerald-600 font-bold' : ''">
                             <span class="w-2 h-2 rounded-full" :class="uploadStep >= 3 ? 'bg-emerald-600 ring-2 ring-emerald-200' : 'bg-gray-300'"></span>
-                            <span x-text="uploadStepNames[2] || '3. Tablo'"></span>
+                            <span x-text="uploadStepNames[2] || '{{ __('3. Tablo') }}'"></span>
                         </div>
                     </div>
                 </div>
@@ -1295,28 +1303,28 @@
                             </svg>
                         </div>
                         <div class="flex-1">
-                            <h4 class="text-base font-bold text-gray-900 mb-1" x-text="fillConfirmData.type === 'fillDown' ? 'Aşağı Boşlukları Doldurma Onayı' : 'Tüm Sütunu Doldurma Onayı'">
+                            <h4 class="text-base font-bold text-gray-900 mb-1" x-text="fillConfirmData.type === 'fillDown' ? '{{ __('Aşağı Boşlukları Doldurma Onayı') }}' : '{{ __('Tüm Sütunu Doldurma Onayı') }}'">
                             </h4>
                             <p class="text-xs text-gray-600 leading-relaxed mb-3">
-                                <span class="font-semibold text-indigo-700" x-text="'[' + fillConfirmData.fieldLabel + ']'"></span> sütunundaki 
-                                <strong class="font-mono bg-indigo-50 text-indigo-900 px-1.5 py-0.5 rounded border border-indigo-200 text-[11px]" x-text="fillConfirmData.valToCopy || '(Boş Değer)'"></strong> 
-                                değeri yayılacaktır:
+                                <span class="font-semibold text-indigo-700" x-text="'[' + fillConfirmData.fieldLabel + ']'"></span> {{ __('sütunundaki') }} 
+                                <strong class="font-mono bg-indigo-50 text-indigo-900 px-1.5 py-0.5 rounded border border-indigo-200 text-[11px]" x-text="fillConfirmData.valToCopy || '({{ __('Boş Değer') }})'"></strong> 
+                                {{ __('değeri yayılacaktır:') }}
                             </p>
 
                             <!-- Satır Aralığı Seçim Kartı -->
                             <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-gray-700 space-y-2.5 mb-3 shadow-2xs">
                                 <div class="flex items-center justify-between">
-                                    <span class="text-gray-600 font-medium">Başlangıç Satırı:</span>
-                                    <span class="font-bold text-gray-800 bg-white px-2.5 py-1 rounded-md border border-gray-300 text-xs shadow-2xs" x-text="'Satır ' + fillConfirmData.startRowNumber"></span>
+                                    <span class="text-gray-600 font-medium">{{ __('Başlangıç Satırı:') }}</span>
+                                    <span class="font-bold text-gray-800 bg-white px-2.5 py-1 rounded-md border border-gray-300 text-xs shadow-2xs" x-text="'{{ __('Satır') }} ' + fillConfirmData.startRowNumber"></span>
                                 </div>
                                 
                                 <div class="flex items-center justify-between">
                                     <label for="fillEndRowInput" class="text-gray-700 font-semibold flex items-center gap-1 cursor-pointer">
-                                        Bitiş Satırı:
-                                        <span class="text-[10px] text-indigo-600 font-normal">(Değiştirilebilir)</span>
+                                        {{ __('Bitiş Satırı:') }}
+                                        <span class="text-[10px] text-indigo-600 font-normal">({{ __('Değiştirilebilir') }})</span>
                                     </label>
                                     <div class="flex items-center gap-1.5">
-                                        <span class="text-xs text-gray-500 font-medium">Satır</span>
+                                        <span class="text-xs text-gray-500 font-medium">{{ __('Satır') }}</span>
                                         <input id="fillEndRowInput" type="number" 
                                                :min="fillConfirmData.startRowNumber" 
                                                :max="rows.length"
@@ -1330,24 +1338,24 @@
                                 </div>
 
                                 <div class="flex items-center justify-between pt-1.5 border-t border-slate-200">
-                                    <span class="text-gray-600 font-medium">Etkilenecek Satır:</span>
-                                    <span class="font-bold text-indigo-700 text-xs bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-200" x-text="fillConfirmData.targetRowCount + ' Satır'"></span>
+                                    <span class="text-gray-600 font-medium">{{ __('Etkilenecek Satır:') }}</span>
+                                    <span class="font-bold text-indigo-700 text-xs bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-200" x-text="fillConfirmData.targetRowCount + ' {{ __('Satır') }}'"></span>
                                 </div>
 
                                 <!-- Hata / Geçersiz Giriş Uyarısı -->
                                 <template x-if="isFillInvalid()">
                                     <div class="text-[11px] text-red-600 font-semibold bg-red-50 p-2 rounded-lg border border-red-200 space-y-0.5">
-                                        <p x-show="fillConfirmData.endRowNumber < fillConfirmData.startRowNumber">⚠️ Bitiş satırı, başlangıç satırından (Satır <span x-text="fillConfirmData.startRowNumber"></span>) küçük olamaz.</p>
-                                        <p x-show="fillConfirmData.endRowNumber > rows.length">⚠️ Bitiş satırı, tablodaki toplam satır sayısını (<span x-text="rows.length"></span>) aşamaz.</p>
-                                        <p x-show="!fillConfirmData.endRowNumber || fillConfirmData.targetRowCount <= 0">⚠️ Geçerli bir bitiş satırı numarası giriniz.</p>
+                                        <p x-show="fillConfirmData.endRowNumber < fillConfirmData.startRowNumber">⚠️ {{ __('Bitiş satırı, başlangıç satırından') }} ({{ __('Satır') }} <span x-text="fillConfirmData.startRowNumber"></span>) {{ __('küçük olamaz.') }}</p>
+                                        <p x-show="fillConfirmData.endRowNumber > rows.length">⚠️ {{ __('Bitiş satırı, tablodaki toplam satır sayısını') }} (<span x-text="rows.length"></span>) {{ __('aşamaz.') }}</p>
+                                        <p x-show="!fillConfirmData.endRowNumber || fillConfirmData.targetRowCount <= 0">⚠️ {{ __('Geçerli bir bitiş satırı numarası giriniz.') }}</p>
                                     </div>
                                 </template>
 
                                 <p class="text-[10px] text-amber-700 font-medium pt-1 border-t border-slate-200" x-show="fillConfirmData.type === 'fillDown'">
-                                    ℹ️ Not: Varsayılan olarak ilk dolu hücreye kadar olan boşluklar seçilmiştir. İsteğe bağlı olarak bitiş satırını değiştirebilirsiniz.
+                                    ℹ️ {{ __('Not: Varsayılan olarak ilk dolu hücreye kadar olan boşluklar seçilmiştir. İsteğe bağlı olarak bitiş satırını değiştirebilirsiniz.') }}
                                 </p>
                                 <p class="text-[10px] text-slate-500 font-medium pt-1 border-t border-slate-200" x-show="!isFillingColumn">
-                                    💡 İpucu: Bu işlemi onayladıktan sonra gerekirse alttaki "Geri Al" butonu ile önceki durumuna döndürebilirsiniz.
+                                    💡 {{ __('İpucu: Bu işlemi onayladıktan sonra gerekirse alttaki "Geri Al" butonu ile önceki durumuna döndürebilirsiniz.') }}
                                 </p>
                             </div>
 
@@ -1376,7 +1384,7 @@
                             <div class="flex justify-end gap-2.5">
                                 <button type="button" @click="if (!isFillingColumn) showFillConfirmModal = false" :disabled="isFillingColumn"
                                     class="px-4 py-2 text-xs font-semibold text-gray-700 bg-white hover:bg-gray-100 border border-gray-300 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed">
-                                    Vazgeç
+                                    {{ __('Vazgeç') }}
                                 </button>
                                 <button type="button" @click="executeFillConfirm()" :disabled="isFillingColumn || isFillInvalid()"
                                     class="px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer">
@@ -1385,7 +1393,7 @@
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                                             </svg>
-                                            <span>Evet, Sütunu Doldur</span>
+                                            <span>{{ __('Evet, Sütunu Doldur') }}</span>
                                         </span>
                                     </template>
                                     <template x-if="isFillingColumn">
@@ -1394,7 +1402,7 @@
                                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
                                             </svg>
-                                            <span>Dolduruluyor...</span>
+                                            <span>{{ __('Dolduruluyor...') }}</span>
                                         </span>
                                     </template>
                                 </button>
@@ -1438,23 +1446,23 @@
                                 <template x-if="confirmModalData.filledCount !== undefined && confirmModalData.filledCount !== null">
                                     <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200">
                                         <svg class="w-3.5 h-3.5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                        <span x-text="'Dolu Hücre: ' + confirmModalData.filledCount + ' Adet'"></span>
+                                        <span x-text="'{{ __('Dolu Hücre:') }} ' + confirmModalData.filledCount + ' {{ __('Adet') }}'"></span>
                                     </span>
                                 </template>
                                 <template x-if="confirmModalData.rowCount !== undefined && confirmModalData.rowCount !== null">
                                     <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-800 border border-blue-200">
-                                        <span x-text="'Satır Sayısı: ' + confirmModalData.rowCount"></span>
+                                        <span x-text="'{{ __('Satır Sayısı:') }} ' + confirmModalData.rowCount"></span>
                                     </span>
                                 </template>
                                 <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium text-gray-500 bg-gray-100">
-                                    ↩ Geri alınabilir (50 işlem)
+                                    ↩ {{ __('Geri alınabilir (50 işlem)') }}
                                 </span>
                             </div>
 
                             <div class="mt-6 flex justify-end gap-2.5">
                                 <button type="button" @click="showConfirmModal = false"
                                     class="px-4 py-2 text-xs font-semibold text-gray-700 bg-white hover:bg-gray-100 border border-gray-300 rounded-lg transition cursor-pointer">
-                                    Vazgeç
+                                    {{ __('Vazgeç') }}
                                 </button>
                                 <button type="button" @click="executeConfirm()"
                                     class="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 active:bg-rose-800 rounded-lg shadow-sm transition flex items-center gap-1.5 cursor-pointer">
@@ -1492,8 +1500,8 @@
                                 </svg>
                             </div>
                             <div>
-                                <h3 class="text-base font-bold text-gray-900">İçe Aktarma / Yapıştırma Doğrulama Bildirimi</h3>
-                                <p class="text-xs text-gray-500 mt-0.5">Veriler aktarılırken form kuralına uymayan kriterler veya eşleşmeyen seçenekler tespit edildi.</p>
+                                <h3 class="text-base font-bold text-gray-900">{{ __('İçe Aktarma / Yapıştırma Doğrulama Bildirimi') }}</h3>
+                                <p class="text-xs text-gray-500 mt-0.5">{{ __('Veriler aktarılırken form kuralına uymayan kriterler veya eşleşmeyen seçenekler tespit edildi.') }}</p>
                             </div>
                         </div>
                         <button type="button" @click="showImportValidationModal = false" class="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition cursor-pointer">
@@ -1508,10 +1516,10 @@
                              class="p-4 bg-amber-50/90 border border-amber-300 rounded-xl space-y-2.5">
                             <div class="flex items-center gap-2 text-amber-900 font-bold text-xs">
                                 <span>🔒</span>
-                                <span>Kilitli Kriter (<span x-text="partitionFieldId ? (fields.find(f => f.id == partitionFieldId)?.label || 'Kriter') : 'Kriter'"></span>) Uyarısı</span>
+                                <span>{{ __('Kilitli Kriter') }} (<span x-text="partitionFieldId ? (fields.find(f => f.id == partitionFieldId)?.label || '{{ __('Kriter') }}') : '{{ __('Kriter') }}'"></span>) {{ __('Uyarısı') }}</span>
                             </div>
                             <p class="text-xs text-amber-900 leading-relaxed">
-                                Bu form <strong class="text-amber-950 font-bold underline" x-text="partitionValue"></strong> kriteri için açılmıştır. Yapıştırdığınız / aktardığınız verilerde farklı kriter değerleri tespit edilmiş olup, form bütünlüğünü korumak adına bu alanlar otomatik olarak kilitli kriter olan <strong class="text-amber-950 font-bold" x-text="partitionValue"></strong> değerine dönüştürülmüştür.
+                                {{ __('Bu form') }} <strong class="text-amber-950 font-bold underline" x-text="partitionValue"></strong> {{ __('kriteri için açılmıştır. Yapıştırdığınız / aktardığınız verilerde farklı kriter değerleri tespit edilmiş olup, form bütünlüğünü korumak adına bu alanlar otomatik olarak kilitli kriter olan') }} <strong class="text-amber-950 font-bold" x-text="partitionValue"></strong> {{ __('değerine dönüştürülmüştür.') }}
                             </p>
                             
                             <!-- Özet Listesi -->
@@ -1520,9 +1528,9 @@
                                     <div class="flex items-center justify-between text-xs bg-white/80 px-3 py-1.5 rounded-lg border border-amber-200">
                                         <div class="flex items-center gap-2">
                                             <span class="text-amber-600 font-bold">•</span>
-                                            <span class="text-gray-700">Excel / Panoda Tespit Edilen: <strong class="text-amber-900 font-mono font-bold" x-text="item.val"></strong></span>
+                                            <span class="text-gray-700">{{ __('Excel / Panoda Tespit Edilen:') }} <strong class="text-amber-900 font-mono font-bold" x-text="item.val"></strong></span>
                                         </div>
-                                        <span class="text-xs font-semibold text-amber-800" x-text="item.count + ' satırda ➔ ' + partitionValue + ' yapıldı'"></span>
+                                        <span class="text-xs font-semibold text-amber-800" x-text="item.count + ' {{ __('satırda ➔') }} ' + partitionValue + ' {{ __('yapıldı') }}'"></span>
                                     </div>
                                 </template>
                             </div>
@@ -1534,35 +1542,35 @@
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center gap-2 text-rose-800 font-bold text-xs">
                                     <span>⚠️</span>
-                                    <span>Tanımlı Seçeneklerde Bulunamayan Değerler (<span x-text="importValidationData.unmatchedDropdowns.length"></span> Adet)</span>
+                                    <span>{{ __('Tanımlı Seçeneklerde Bulunamayan Değerler') }} (<span x-text="importValidationData.unmatchedDropdowns.length"></span> {{ __('Adet') }})</span>
                                 </div>
-                                <span class="text-[11px] text-gray-500 font-medium">Bu hücreler 'Seçiniz...' olarak ayarlanmıştır</span>
+                                <span class="text-[11px] text-gray-500 font-medium">{{ __('Bu hücreler \'Seçiniz...\' olarak ayarlanmıştır') }}</span>
                             </div>
                             <p class="text-xs text-gray-600">
-                                Aşağıdaki satırlarda kopyalanan / yüklenen veriler form şablonunda tanımlı seçenekler arasında bulunamadığı için boş bırakılmıştır. Lütfen kontrol edip geçerli bir seçenek seçiniz:
+                                {{ __('Aşağıdaki satırlarda kopyalanan / yüklenen veriler form şablonunda tanımlı seçenekler arasında bulunamadığı için boş bırakılmıştır. Lütfen kontrol edip geçerli bir seçenek seçiniz:') }}
                             </p>
 
                             <div class="overflow-hidden rounded-xl border border-gray-200 max-h-56 overflow-y-auto">
                                 <table class="w-full text-left text-xs">
                                     <thead class="bg-gray-50 text-gray-700 font-bold sticky top-0 border-b border-gray-200">
                                         <tr>
-                                            <th class="py-2 px-3 w-16">Satır</th>
-                                            <th class="py-2 px-3">Sütun / Alan</th>
-                                            <th class="py-2 px-3">Excel / Panodan Gelen</th>
-                                            <th class="py-2 px-3 text-right">Durum</th>
+                                            <th class="py-2 px-3 w-16">{{ __('Satır') }}</th>
+                                            <th class="py-2 px-3">{{ __('Sütun / Alan') }}</th>
+                                            <th class="py-2 px-3">{{ __('Excel / Panodan Gelen') }}</th>
+                                            <th class="py-2 px-3 text-right">{{ __('Durum') }}</th>
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-gray-100 bg-white">
                                         <template x-for="(item, idx) in importValidationData.unmatchedDropdowns" :key="idx">
                                             <tr class="hover:bg-amber-50/40 transition">
-                                                <td class="py-2 px-3 font-semibold text-gray-600" x-text="'Satır ' + item.rowNum"></td>
+                                                <td class="py-2 px-3 font-semibold text-gray-600" x-text="'{{ __('Satır') }} ' + item.rowNum"></td>
                                                 <td class="py-2 px-3 font-bold text-gray-900" x-text="item.fieldLabel"></td>
                                                 <td class="py-2 px-3">
                                                     <span class="inline-block px-2 py-0.5 rounded bg-rose-50 text-rose-700 font-mono text-[11px] border border-rose-200 font-semibold" x-text="item.pastedVal"></span>
                                                 </td>
                                                 <td class="py-2 px-3 text-right">
                                                     <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gray-100 text-gray-600 border border-gray-200">
-                                                        Seçiniz... (Boş)
+                                                        {{ __('Seçiniz... (Boş)') }}
                                                     </span>
                                                 </td>
                                             </tr>
@@ -1577,12 +1585,12 @@
                     <div class="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between shrink-0">
                         <button type="button" @click="clearValidationWarnings()"
                             class="px-3 py-1.5 text-xs font-semibold text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition cursor-pointer">
-                            Uyarıları Temizle
+                            {{ __('Uyarıları Temizle') }}
                         </button>
                         <button type="button" @click="showImportValidationModal = false"
                             class="px-5 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 rounded-xl shadow-sm transition flex items-center gap-1.5 cursor-pointer">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                            <span>Anladım, Tabloyu Düzenlemeye Devam Et</span>
+                            <span>{{ __('Anladım, Tabloyu Düzenlemeye Devam Et') }}</span>
                         </button>
                     </div>
                 </div>
@@ -1628,7 +1636,7 @@
                                @keydown.arrow-down.prevent="navigateDropdownHighlight(1)"
                                @keydown.arrow-up.prevent="navigateDropdownHighlight(-1)"
                                @keydown.enter.prevent="selectHighlightedDropdownOption()"
-                               placeholder="🔍 Listede anlık ara..."
+                               placeholder="{{ __('🔍 Listede anlık ara...') }}"
                                class="w-full pl-8 pr-7 py-1.5 text-xs bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow">
                         <button type="button"
                                 x-show="activeDropdown.search"
@@ -1653,7 +1661,7 @@
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                         </svg>
-                        <span>Seçimi Temizle (Boş Bırak)</span>
+                        <span>{{ __('Seçimi Temizle (Boş Bırak)') }}</span>
                     </div>
 
                     <!-- Filtrelenmiş Seçenekler -->
@@ -1678,7 +1686,7 @@
 
                     <!-- Fazla Sonuç Bilgisi -->
                     <div x-show="filteredDropdownOptions.length > 100" class="px-3 py-1.5 text-center text-[11px] text-gray-400 bg-gray-50 border-t border-gray-100">
-                        İlk 100 sonuç gösteriliyor. Arama kutusuna yazarak daraltabilirsiniz.
+                        {{ __('İlk 100 sonuç gösteriliyor. Arama kutusuna yazarak daraltabilirsiniz.') }}
                     </div>
 
                     <!-- Hiç Sonuç Bulunamadı -->
@@ -1686,19 +1694,19 @@
                         <svg class="w-7 h-7 mx-auto text-gray-300 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
-                        <p class="text-xs font-medium text-gray-500">Eşleşen sonuç bulunamadı</p>
-                        <p class="text-[11px] text-gray-400 mt-0.5" x-text="'\"' + activeDropdown.search + '\" arandı'"></p>
+                        <p class="text-xs font-medium text-gray-500">{{ __('Eşleşen sonuç bulunamadı') }}</p>
+                        <p class="text-[11px] text-gray-400 mt-0.5" x-text="'\"' + activeDropdown.search + '\" ' + '{{ __('arandı') }}'"></p>
                     </div>
                 </div>
 
                 <!-- Alt Bilgi / Klavye Kısayolları -->
                 <div class="px-3 py-1.5 bg-slate-50 border-t border-gray-100 flex items-center justify-between text-[10px] text-gray-400">
                     <span class="flex items-center gap-1">
-                        <kbd class="px-1 py-0.5 bg-white border border-gray-200 rounded text-gray-500 font-mono">↑↓</kbd> Gezin
-                        <kbd class="px-1 py-0.5 bg-white border border-gray-200 rounded text-gray-500 font-mono ml-1">↵</kbd> Seç
+                        <kbd class="px-1 py-0.5 bg-white border border-gray-200 rounded text-gray-500 font-mono">↑↓</kbd> {{ __('Gezin') }}
+                        <kbd class="px-1 py-0.5 bg-white border border-gray-200 rounded text-gray-500 font-mono ml-1">↵</kbd> {{ __('Seç') }}
                     </span>
                     <span class="flex items-center gap-1">
-                        <kbd class="px-1 py-0.5 bg-white border border-gray-200 rounded text-gray-500 font-mono">Esc</kbd> Kapat
+                        <kbd class="px-1 py-0.5 bg-white border border-gray-200 rounded text-gray-500 font-mono">Esc</kbd> {{ __('Kapat') }}
                     </span>
                 </div>
             </div>
@@ -1819,7 +1827,7 @@
                     title: '',
                     subtitle: '',
                     message: '',
-                    confirmBtnText: 'Evet, Temizle',
+                    confirmBtnText: '{{ __('Evet, Temizle') }}',
                     fieldId: null,
                     fieldName: '',
                     filledCount: 0,
@@ -1829,17 +1837,17 @@
                 },
                 isUploading: false,
                 showUploadModal: false,
-                uploadModalTitle: 'Excel Dosyası İçe Aktarılıyor',
-                uploadModalSubtitle: 'Büyük veri setleri optimize edilerek tabloya aktarılmaktadır.',
-                uploadStepNames: ['1. Yükleme', '2. Ayrıştırma', '3. Tablo'],
+                uploadModalTitle: '{{ __('Excel Dosyası İçe Aktarılıyor') }}',
+                uploadModalSubtitle: '{{ __('Büyük veri setleri optimize edilerek tabloya aktarılmaktadır.') }}',
+                uploadStepNames: ['{{ __('1. Yükleme') }}', '{{ __('2. Ayrıştırma') }}', '{{ __('3. Tablo') }}'],
                 uploadProgress: '0',
                 uploadStep: 1,
                 uploadStatusText: '',
                 totalImportRows: 0,
                 estimatedTimeText: '',
                 isLargeDataset: false,
-                liveTimerText: '0 sn',
-                estimatedRemainingText: 'Hesaplanıyor...',
+                liveTimerText: '0 {{ __('sn') }}',
+                estimatedRemainingText: '{{ __('Hesaplanıyor...') }}',
                 importStartTime: null,
                 elapsedTimerInterval: null,
                 isSubmitting: false,
@@ -3539,7 +3547,7 @@
                     if (hasParent) {
                         let parentField = this.fields.find(f => f.type === 'master_data' && f.master_data_type_id == typeObj.parent_id);
                         if (parentField) {
-                            parentLabel = parentField.label || 'Üst Kategori';
+                            parentLabel = parentField.label || '{{ __('Üst Kategori') }}';
                             let selectedParentName = row && row.values ? row.values[parentField.id] : '';
                             if (selectedParentName && String(selectedParentName).trim() !== '') {
                                 isParentSelected = true;
@@ -3550,17 +3558,17 @@
                     }
 
                     let isDisabled = false;
-                    let placeholder = 'Seçiniz...';
+                    let placeholder = '{{ __('Seçiniz...') }}';
 
                     if (hasParent && !isParentSelected) {
                         isDisabled = true;
-                        placeholder = '-- Önce ' + parentLabel + ' Seçiniz --';
+                        placeholder = '-- {{ __('Önce') }} ' + parentLabel + ' {{ __('Seçiniz') }} --';
                     } else {
                         let options = this.getMasterDataOptions(rowOrIndex, field);
                         let optionsCount = options ? options.length : 0;
                         if (optionsCount === 0) {
                             isDisabled = true;
-                            placeholder = '-- Tanımlı Veri Yok --';
+                            placeholder = '{{ __('-- Tanımlı Veri Yok --') }}';
                         }
                     }
 

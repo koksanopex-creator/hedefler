@@ -1,4 +1,4 @@
-@section('title', 'Aktif Oturumlar & Giriş Takibi')
+@section('title', __('Aktif Oturumlar & Giriş Takibi'))
 <x-app-layout>
     <x-slot name="header">
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -53,8 +53,8 @@
                     </div>
                     <div>
                         <div class="text-2xl font-black text-gray-900">{{ $onlineCount }}</div>
-                        <div class="text-xs font-bold text-gray-500">Çevrimiçi Kullanıcı</div>
-                        <div class="text-[10px] text-emerald-600 font-semibold mt-0.5">Son 5 dakika içinde aktif</div>
+                        <div class="text-xs font-bold text-gray-500">{{ __('Çevrimiçi Kullanıcı') }}</div>
+                        <div class="text-[10px] text-emerald-600 font-semibold mt-0.5">{{ __('Son 5 dakika içinde aktif') }}</div>
                     </div>
                 </div>
 
@@ -65,8 +65,8 @@
                     </div>
                     <div>
                         <div class="text-2xl font-black text-gray-900">{{ $totalSessions }}</div>
-                        <div class="text-xs font-bold text-gray-500">Açık Oturum Sayısı</div>
-                        <div class="text-[10px] text-indigo-600 font-semibold mt-0.5">Veritabanında kayıtlı</div>
+                        <div class="text-xs font-bold text-gray-500">{{ __('Açık Oturum Sayısı') }}</div>
+                        <div class="text-[10px] text-indigo-600 font-semibold mt-0.5">{{ __('Veritabanında kayıtlı') }}</div>
                     </div>
                 </div>
 
@@ -77,8 +77,8 @@
                     </div>
                     <div>
                         <div class="text-2xl font-black text-gray-900">{{ $todayLoginCount }}</div>
-                        <div class="text-xs font-bold text-gray-500">Bugün Giriş Yapan</div>
-                        <div class="text-[10px] text-purple-600 font-semibold mt-0.5">Farklı personel sayısı</div>
+                        <div class="text-xs font-bold text-gray-500">{{ __('Bugün Giriş Yapan') }}</div>
+                        <div class="text-[10px] text-purple-600 font-semibold mt-0.5">{{ __('Farklı personel sayısı') }}</div>
                     </div>
                 </div>
 
@@ -107,7 +107,7 @@
                             :class="activeTab === 'sessions' ? 'bg-white text-indigo-700 shadow-xs font-bold' : 'text-gray-500 hover:text-gray-900 font-medium'" 
                             class="px-4 py-2 rounded-lg text-xs transition flex items-center gap-2">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
-                        <span>Canlı Aktif Oturumlar</span>
+                        <span>{{ __('Canlı Aktif Oturumlar') }}</span>
                         <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-indigo-50 text-indigo-700 border border-indigo-200">
                             {{ $activeSessions->count() }}
                         </span>
@@ -117,7 +117,7 @@
                             :class="activeTab === 'logs' ? 'bg-white text-indigo-700 shadow-xs font-bold' : 'text-gray-500 hover:text-gray-900 font-medium'" 
                             class="px-4 py-2 rounded-lg text-xs transition flex items-center gap-2">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                        <span>Uygulama Giriş Geçmişi</span>
+                        <span>{{ __('Uygulama Giriş Geçmişi') }}</span>
                         <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-purple-50 text-purple-700 border border-purple-200">
                             {{ $loginLogs->total() }}
                         </span>
@@ -136,7 +136,7 @@
                 <div class="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-indigo-50/50 via-purple-50/20 to-white flex justify-between items-center">
                     <div>
                         <h3 class="text-base font-extrabold text-gray-900 tracking-tight flex items-center gap-2">
-                            <span>💻</span> Canlı Oturum Listesi
+                            <span>💻</span> {{ __('Canlı Oturum Listesi') }}
                         </h3>
                         <p class="text-xs text-gray-500 mt-0.5">Hedefler uygulaması üzerinde oturumu açık olan kullanıcılar ve bağlantı bilgileri.</p>
                     </div>
@@ -146,13 +146,13 @@
                     <table class="w-full min-w-full divide-y divide-gray-100">
                         <thead class="bg-gray-50/70 text-gray-500 text-[11px] font-bold uppercase tracking-wider">
                             <tr>
-                                <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-left whitespace-nowrap">Kullanıcı</th>
+                                <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-left whitespace-nowrap">{{ __('Kullanıcı') }}</th>
                                 <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-left whitespace-nowrap">Rol & Grup</th>
                                 <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-left whitespace-nowrap">IP Adresi</th>
-                                <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-left whitespace-nowrap">Cihaz / Tarayıcı</th>
-                                <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-left whitespace-nowrap">Son Hareket</th>
+                                <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-left whitespace-nowrap">{{ __('Cihaz / Tarayıcı') }}</th>
+                                <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-left whitespace-nowrap">{{ __('Son Hareket') }}</th>
                                 <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-left whitespace-nowrap">Durum</th>
-                                <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-right whitespace-nowrap">İşlem</th>
+                                <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-right whitespace-nowrap">{{ __('İşlem') }}</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100/70 text-sm">
@@ -255,7 +255,7 @@
                     <table class="w-full min-w-full divide-y divide-gray-100">
                         <thead class="bg-gray-50/70 text-gray-500 text-[11px] font-bold uppercase tracking-wider">
                             <tr>
-                                <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-left whitespace-nowrap">Kullanıcı</th>
+                                <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-left whitespace-nowrap">{{ __('Kullanıcı') }}</th>
                                 <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-left whitespace-nowrap">İşlem Türü</th>
                                 <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-left whitespace-nowrap">IP Adresi</th>
                                 <th class="px-3.5 py-3 sm:px-4 sm:py-3.5 text-left whitespace-nowrap">Tarih & Saat</th>
@@ -370,13 +370,13 @@
                             </div>
 
                             <div class="mt-4 p-3 bg-rose-50 rounded-xl border border-rose-100 text-[11px] text-rose-700">
-                                <span>Kullanıcı sistemden anında düşecek ve bir sonraki istekte yeniden oturum açması istenecektir.</span>
+                                <span>{{ __('Kullanıcı sistemden anında düşecek ve bir sonraki istekte yeniden oturum açması istenecektir.') }}</span>
                             </div>
                         </div>
 
                         <div class="bg-slate-50 px-6 py-4 flex flex-col sm:flex-row-reverse gap-2 sm:gap-3 rounded-b-3xl border-t border-slate-100">
                             <button type="submit" class="w-full sm:w-auto inline-flex justify-center items-center px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-sm transition">
-                                Evet, Oturumu Kapat
+                                Evet, {{ __('Oturumu Kapat') }}
                             </button>
                             <button type="button" @click="showTerminateModal = false" class="w-full sm:w-auto inline-flex justify-center items-center px-4 py-2.5 bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold rounded-xl border border-slate-200 transition">
                                 Vazgeç

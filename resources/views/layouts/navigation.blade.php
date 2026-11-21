@@ -64,10 +64,10 @@
                                                 </path>
                                             </svg>
                                         </div>
-                                        <h3 class="text-xs sm:text-sm font-extrabold text-slate-800">Bildirimler</h3>
-                                        <span x-show="count > 0" x-text="count + ' Okunmamış'"
+                                        <h3 class="text-xs sm:text-sm font-extrabold text-slate-800">{{ __('Bildirimler') }}</h3>
+                                        <span x-show="count > 0" x-text="count + ' ' + '{{ __('Okunmamış') }}'"
                                             class="text-[10px] font-extrabold px-1.5 py-0.5 rounded-full bg-rose-50 text-rose-600 border border-rose-100">
-                                            {{ Auth::user()->unreadNotifications->count() }} Okunmamış
+                                            {{ Auth::user()->unreadNotifications->count() }} {{ __('Okunmamış') }}
                                         </span>
                                     </div>
                                     <template x-if="count > 0">
@@ -78,7 +78,7 @@
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                     d="M5 13l4 4L19 7"></path>
                                             </svg>
-                                            <span>Tümünü Okundu İşaretle</span>
+                                            <span>{{ __('Tümünü Okundu İşaretle') }}</span>
                                         </button>
                                     </template>
                                 </div>
@@ -109,7 +109,7 @@
                                                     <div class="flex items-start justify-between gap-1.5">
                                                         <p
                                                             class="text-xs font-bold text-slate-800 line-clamp-1 leading-snug">
-                                                            {{ $notification->data['subject'] ?? 'Sistem Bildirimi' }}
+                                                            {{ $notification->data['subject'] ?? __('Sistem Bildirimi') }}
                                                         </p>
                                                         <span
                                                             class="text-[10px] font-semibold text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100 shrink-0">
@@ -142,7 +142,7 @@
                                                                 @endphp
                                                                 <a href="{{ $safeUrl }}"
                                                                     class="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200/70 px-2.5 py-1 rounded-lg transition-colors">
-                                                                    <span>Git</span>
+                                                                    <span>{{ __('Git') }}</span>
                                                                     <svg class="w-3 h-3" fill="none" stroke="currentColor"
                                                                         viewBox="0 0 24 24">
                                                                         <path stroke-linecap="round" stroke-linejoin="round"
@@ -155,14 +155,14 @@
                                                         <!-- Okundu Olarak İşaretle Butonu -->
                                                         <button type="button"
                                                             @click.stop="markOneAsRead('{{ $notification->id }}', $event)"
-                                                            title="Okundu olarak işaretle ve listeden kaldır"
+                                                            title="{{ __('Okundu olarak işaretle ve listeden kaldır') }}"
                                                             class="inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-700 hover:text-emerald-900 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/80 px-2.5 py-1 rounded-lg transition-all shadow-2xs">
                                                             <svg class="w-3.5 h-3.5 text-emerald-600" fill="none"
                                                                 stroke="currentColor" viewBox="0 0 24 24">
                                                                 <path stroke-linecap="round" stroke-linejoin="round"
                                                                     stroke-width="2.5" d="M5 13l4 4L19 7"></path>
                                                             </svg>
-                                                            <span>Okundu Olarak İşaretle</span>
+                                                            <span>{{ __('Okundu Olarak İşaretle') }}</span>
                                                         </button>
                                                     </div>
                                                 </div>
@@ -182,9 +182,8 @@
                                                     d="M5 13l4 4L19 7"></path>
                                             </svg>
                                         </div>
-                                        <p class="text-xs font-bold text-slate-700">Tüm Bildirimler Okundu</p>
-                                        <p class="text-[10px] text-slate-400 mt-0.5">Şu anda okunmamış yeni bildiriminiz
-                                            bulunmuyor.</p>
+                                        <p class="text-xs font-bold text-slate-700">{{ __('Tüm Bildirimler Okundu') }}</p>
+                                        <p class="text-[10px] text-slate-400 mt-0.5">{{ __('Şu anda okunmamış yeni bildiriminiz bulunmuyor.') }}</p>
                                     </div>
                                 </div>
 
@@ -193,7 +192,7 @@
                                     class="px-3 py-2 text-center border-t border-slate-100 bg-slate-50/90 rounded-b-xl hover:bg-slate-100/80 transition-colors">
                                     <a href="{{ route('notifications.index') }}"
                                         class="text-xs text-slate-700 hover:text-indigo-600 font-bold w-full flex items-center justify-center gap-1">
-                                        <span>Tüm Bildirimleri Gör</span>
+                                        <span>{{ __('Tüm Bildirimleri Gör') }}</span>
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                 d="M9 5l7 7-7 7"></path>
@@ -270,6 +269,57 @@
                             }
                         }
                     </script>
+
+                    <!-- Dil Seçici (Masaüstü) -->
+                    <div class="relative" x-data="{ langOpen: false }" @click.outside="langOpen = false">
+                        <button type="button" @click="langOpen = !langOpen"
+                            class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-xl text-slate-700 bg-gray-50 hover:bg-indigo-50 hover:text-indigo-600 border border-slate-200/80 transition-all focus:outline-none shadow-2xs cursor-pointer">
+                            @if(app()->getLocale() === 'en')
+                                <span class="text-sm">🇬🇧</span>
+                                <span class="font-bold">EN</span>
+                            @else
+                                <span class="text-sm">🇹🇷</span>
+                                <span class="font-bold">TR</span>
+                            @endif
+                            <svg class="w-3 h-3 text-slate-400 transition-transform duration-150" :class="{ 'rotate-180': langOpen }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        <div x-show="langOpen" x-cloak
+                            x-transition:enter="transition ease-out duration-100"
+                            x-transition:enter-start="opacity-0 scale-95 -translate-y-1"
+                            x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                            x-transition:leave="transition ease-in duration-75"
+                            x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+                            x-transition:leave-end="opacity-0 scale-95 -translate-y-1"
+                            class="absolute right-0 mt-1.5 w-36 bg-white rounded-xl shadow-lg border border-slate-100 py-1 z-50 ring-1 ring-black/5"
+                            style="display: none;">
+                            <a href="{{ route('locale.switch', 'tr') }}"
+                                class="flex items-center justify-between px-3 py-2 text-xs font-semibold transition-colors {{ app()->getLocale() === 'tr' ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-slate-700 hover:bg-slate-50 hover:text-indigo-600' }}">
+                                <span class="flex items-center gap-2">
+                                    <span class="text-base">🇹🇷</span>
+                                    <span>Türkçe</span>
+                                </span>
+                                @if(app()->getLocale() === 'tr')
+                                    <svg class="w-3.5 h-3.5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                @endif
+                            </a>
+                            <a href="{{ route('locale.switch', 'en') }}"
+                                class="flex items-center justify-between px-3 py-2 text-xs font-semibold transition-colors {{ app()->getLocale() === 'en' ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-slate-700 hover:bg-slate-50 hover:text-indigo-600' }}">
+                                <span class="flex items-center gap-2">
+                                    <span class="text-base">🇬🇧</span>
+                                    <span>English</span>
+                                </span>
+                                @if(app()->getLocale() === 'en')
+                                    <svg class="w-3.5 h-3.5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                @endif
+                            </a>
+                        </div>
+                    </div>
 
                     <!-- Masaüstü Kullanıcı Profil Menüsü (sm ve üstü) -->
                     <div class="hidden sm:flex sm:items-center">
@@ -530,7 +580,7 @@
                                     style="display: none;" @click="open = false">
 
                                     <div class="px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-400">
-                                        Sistem & Yönetim
+                                        {{ __('Sistem & Yönetim') }}
                                     </div>
 
                                     <div class="py-1 space-y-0.5">
@@ -548,7 +598,7 @@
                                                 <div class="flex-1 min-w-0">
                                                     <div class="leading-tight">{{ __('Kullanıcılar') }}</div>
                                                     <div class="text-[10px] text-slate-400 group-hover:text-slate-500 truncate">
-                                                        Kullanıcı & rol yönetimi</div>
+                                                        {{ __('Kullanıcı & rol yönetimi') }}</div>
                                                 </div>
                                             </a>
                                         @endif
@@ -567,7 +617,7 @@
                                                 <div class="flex-1 min-w-0">
                                                     <div class="leading-tight">{{ __('Gruplar') }}</div>
                                                     <div class="text-[10px] text-slate-400 group-hover:text-slate-500 truncate">
-                                                        Departman ve grup hiyerarşisi</div>
+                                                        {{ __('Departman ve grup hiyerarşisi') }}</div>
                                                 </div>
                                             </a>
                                         @endif
@@ -586,7 +636,7 @@
                                                 <div class="flex-1 min-w-0">
                                                     <div class="leading-tight">{{ __('Master Data') }}</div>
                                                     <div class="text-[10px] text-slate-400 group-hover:text-slate-500 truncate">
-                                                        Şirket, tesis ve lokasyonlar</div>
+                                                        {{ __('Şirket, tesis ve lokasyonlar') }}</div>
                                                 </div>
                                             </a>
                                         @endif
@@ -605,7 +655,7 @@
                                                 <div class="flex-1 min-w-0">
                                                     <div class="leading-tight">{{ __('Yetki Matrisi') }}</div>
                                                     <div class="text-[10px] text-slate-400 group-hover:text-slate-500 truncate">
-                                                        Rol ve modül erişim izinleri</div>
+                                                        {{ __('Rol ve modül erişim izinleri') }}</div>
                                                 </div>
                                             </a>
                                         @endif
@@ -624,7 +674,7 @@
                                                 <div class="flex-1 min-w-0">
                                                     <div class="leading-tight">{{ __('Aktif Oturumlar') }}</div>
                                                     <div class="text-[10px] text-slate-400 group-hover:text-slate-500 truncate">
-                                                        Canlı oturumlar ve IP logları</div>
+                                                        {{ __('Canlı oturumlar ve IP logları') }}</div>
                                                 </div>
                                             </a>
                                         @endif
@@ -643,7 +693,7 @@
                                                 <div class="flex-1 min-w-0">
                                                     <div class="leading-tight">{{ __('Sistem Günlüğü') }}</div>
                                                     <div class="text-[10px] text-slate-400 group-hover:text-slate-500 truncate">
-                                                        Audit logs ve denetim kayıtları</div>
+                                                        {{ __('Audit logs ve denetim kayıtları') }}</div>
                                                 </div>
                                             </a>
                                         @endif
@@ -664,7 +714,7 @@
                                                 <div class="flex-1 min-w-0">
                                                     <div class="leading-tight">{{ __('Ayarlar') }}</div>
                                                     <div class="text-[10px] text-slate-400 group-hover:text-slate-500 truncate">
-                                                        E-posta, bildirim ve ayarlar</div>
+                                                        {{ __('E-posta, bildirim ve ayarlar') }}</div>
                                                 </div>
                                             </a>
                                         @endif
@@ -687,7 +737,7 @@
 
             <!-- Bölüm 1: Ana Menü -->
             <div>
-                <p class="px-2 pb-1.5 text-[10px] font-black uppercase tracking-wider text-slate-400">Ana Menü</p>
+                <p class="px-2 pb-1.5 text-[10px] font-black uppercase tracking-wider text-slate-400">{{ __('Ana Menü') }}</p>
                 <div class="space-y-1">
                     <a href="{{ route('dashboard') }}"
                         class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-colors {{ request()->routeIs('dashboard') ? 'bg-indigo-50 text-indigo-700 font-bold border-l-4 border-indigo-600' : 'text-slate-700 hover:bg-slate-50 hover:text-indigo-600' }}">
@@ -718,7 +768,7 @@
                         @if($navPendingCount > 0)
                             <span
                                 class="px-2 py-0.5 text-[10px] font-black rounded-full bg-rose-600 text-white animate-pulse">
-                                {{ $navPendingCount }} Onay Bekliyor
+                                {{ $navPendingCount }} {{ __('Onay Bekliyor') }}
                             </span>
                         @endif
                     </a>
@@ -788,7 +838,7 @@
             <!-- Bölüm 2: Yönetim & Sistem -->
             @if($canAccessYonetim)
                 <div class="pt-3 border-t border-slate-100">
-                    <p class="px-2 pb-1.5 text-[10px] font-black uppercase tracking-wider text-slate-400">Yönetim & Sistem
+                    <p class="px-2 pb-1.5 text-[10px] font-black uppercase tracking-wider text-slate-400">{{ __('Yönetim & Sistem') }}
                     </p>
                     <div class="space-y-1">
                         @if($canAccessUsers)
@@ -900,6 +950,23 @@
                     </div>
                 </div>
             @endif
+
+            <!-- Mobil Dil Seçici -->
+            <div class="pt-3 border-t border-slate-100">
+                <p class="px-2 pb-1.5 text-[10px] font-black uppercase tracking-wider text-slate-400">{{ __('Dil') }}</p>
+                <div class="grid grid-cols-2 gap-2 px-1">
+                    <a href="{{ route('locale.switch', 'tr') }}"
+                        class="flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold transition-all {{ app()->getLocale() === 'tr' ? 'bg-indigo-600 text-white shadow-xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }}">
+                        <span>🇹🇷</span>
+                        <span>Türkçe</span>
+                    </a>
+                    <a href="{{ route('locale.switch', 'en') }}"
+                        class="flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold transition-all {{ app()->getLocale() === 'en' ? 'bg-indigo-600 text-white shadow-xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }}">
+                        <span>🇬🇧</span>
+                        <span>English</span>
+                    </a>
+                </div>
+            </div>
 
             <!-- Bölüm 3: Kullanıcı Profili & İşlemler -->
             <div class="pt-3 border-t border-slate-100">

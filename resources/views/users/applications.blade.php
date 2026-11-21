@@ -1,4 +1,4 @@
-@section('title', 'Başvuru Yönetimi')
+@section('title', __('Başvuru Yönetimi'))
 <x-app-layout>
     <x-slot name="header">
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -15,12 +15,12 @@
                     @csrf
                     <button type="submit" class="px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-sm {{ $basvurularAcik ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'bg-rose-600 hover:bg-rose-700 text-white' }}">
                         <span class="w-2.5 h-2.5 rounded-full {{ $basvurularAcik ? 'bg-emerald-200 animate-pulse' : 'bg-rose-200' }}"></span>
-                        {{ $basvurularAcik ? 'Başvurular AÇIK (Kapatmak için tıkla)' : 'Başvurular KAPALI (Açmak için tıkla)' }}
+                        {{ $basvurularAcik ? __('Başvurular AÇIK (Kapatmak için tıkla)') : __('Başvurular KAPALI (Açmak için tıkla)') }}
                     </button>
                 </form>
 
                 <a href="{{ route('users.index') }}" class="px-4 py-2 bg-white/80 hover:bg-white text-gray-700 border border-gray-200 rounded-xl text-xs font-semibold shadow-xs">
-                    ← Kullanıcılar
+                    ← {{ __('Kullanıcılar') }}
                 </a>
             </div>
         </div>
@@ -45,7 +45,7 @@
             <div class="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white/70 backdrop-blur-xl border border-white/60 p-4 rounded-2xl shadow-sm">
                 <div class="flex items-center gap-2">
                     <button type="button" @click="activeTab = 'pending'" :class="activeTab === 'pending' ? 'bg-indigo-600 text-white shadow-md' : 'bg-slate-100 text-gray-600 hover:bg-slate-200'" class="px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2">
-                        <span>Bekleyen Başvurular</span>
+                        <span>{{ __('Bekleyen Başvurular') }}</span>
                         <span class="px-2 py-0.5 rounded-full text-[10px] {{ $pendingApplications->count() > 0 ? 'bg-amber-400 text-amber-950 font-extrabold' : 'bg-white/20 text-white' }}">{{ $pendingApplications->count() }}</span>
                     </button>
                     <button type="button" @click="activeTab = 'rejected'" :class="activeTab === 'rejected' ? 'bg-rose-600 text-white shadow-md' : 'bg-slate-100 text-gray-600 hover:bg-slate-200'" class="px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2">
@@ -77,11 +77,11 @@
                     <table class="min-w-full divide-y divide-gray-100 text-left text-xs">
                         <thead class="bg-slate-50/50 text-gray-500 text-[11px] font-bold uppercase tracking-wider">
                             <tr>
-                                <th class="px-4 py-3.5 text-left whitespace-nowrap min-w-[200px]">Başvuran</th>
-                                <th class="px-4 py-3.5 text-left whitespace-nowrap min-w-[150px]">Merkezi Bölüm</th>
+                                <th class="px-4 py-3.5 text-left whitespace-nowrap min-w-[200px]">{{ __('Başvuran') }}</th>
+                                <th class="px-4 py-3.5 text-left whitespace-nowrap min-w-[150px]">{{ __('Merkezi Bölüm') }}</th>
                                 <th class="px-4 py-3.5 text-left min-w-[220px]">Talep Notu</th>
                                 <th class="px-4 py-3.5 text-left whitespace-nowrap min-w-[120px]">Tarih</th>
-                                <th class="px-4 py-3.5 text-right whitespace-nowrap min-w-[220px]">İşlemler</th>
+                                <th class="px-4 py-3.5 text-right whitespace-nowrap min-w-[220px]">{{ __('İşlemler') }}</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100/70 text-sm">
@@ -116,7 +116,7 @@
                             @empty
                                 <tr>
                                     <td colspan="5" class="px-6 py-12 text-center text-gray-400 text-sm">
-                                        Onay bekleyen başvuru bulunmamaktadır.
+                                        {{ __('Onay bekleyen başvuru bulunmamaktadır.') }}
                                     </td>
                                 </tr>
                             @endforelse
@@ -139,9 +139,9 @@
                     <table class="min-w-full divide-y divide-gray-100 text-left text-xs">
                         <thead class="bg-slate-50/50 text-gray-500 text-[11px] font-bold uppercase tracking-wider">
                             <tr>
-                                <th class="px-4 py-3.5 text-left whitespace-nowrap min-w-[200px]">Kullanıcı</th>
-                                <th class="px-4 py-3.5 text-left whitespace-nowrap min-w-[140px]">Red Türü</th>
-                                <th class="px-4 py-3.5 text-left min-w-[240px]">Gerekçeli Karar</th>
+                                <th class="px-4 py-3.5 text-left whitespace-nowrap min-w-[200px]">{{ __('Kullanıcı') }}</th>
+                                <th class="px-4 py-3.5 text-left whitespace-nowrap min-w-[140px]">{{ __('Red Türü') }}</th>
+                                <th class="px-4 py-3.5 text-left min-w-[240px]">{{ __('Gerekçeli Karar') }}</th>
                                 <th class="px-4 py-3.5 text-left whitespace-nowrap min-w-[140px]">Reddeden / Tarih</th>
                                 <th class="px-4 py-3.5 text-right whitespace-nowrap min-w-[150px]">İşlemler</th>
                             </tr>
@@ -186,7 +186,7 @@
                             @empty
                                 <tr>
                                     <td colspan="5" class="px-6 py-12 text-center text-gray-400 text-sm">
-                                        Reddedilen başvuru kaydı bulunmamaktadır.
+                                        {{ __('Reddedilen başvuru kaydı bulunmamaktadır.') }}
                                     </td>
                                 </tr>
                             @endforelse
@@ -209,8 +209,8 @@
                         <thead class="bg-slate-50/50 text-gray-500 text-[11px] font-bold uppercase tracking-wider">
                             <tr>
                                 <th class="px-4 py-3.5 text-left whitespace-nowrap min-w-[220px]">Kullanıcı</th>
-                                <th class="px-4 py-3.5 text-left whitespace-nowrap min-w-[160px]">Bölüm</th>
-                                <th class="px-4 py-3.5 text-left whitespace-nowrap min-w-[160px]">Tanımlanan Rol</th>
+                                <th class="px-4 py-3.5 text-left whitespace-nowrap min-w-[160px]">{{ __('Bölüm') }}</th>
+                                <th class="px-4 py-3.5 text-left whitespace-nowrap min-w-[160px]">{{ __('Tanımlanan Rol') }}</th>
                                 <th class="px-4 py-3.5 text-left whitespace-nowrap min-w-[160px]">Onaylayan / Tarih</th>
                             </tr>
                         </thead>
@@ -252,7 +252,7 @@
         <div x-show="approveModal" x-cloak class="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
             <div @click.away="approveModal = false" class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-white/60 space-y-5">
                 <div class="flex justify-between items-center pb-3 border-b border-gray-100">
-                    <h3 class="text-lg font-bold text-gray-900">Başvuruyu Onayla & Rol Ata</h3>
+                    <h3 class="text-lg font-bold text-gray-900">{{ __('Başvuruyu Onayla & Rol Ata') }}</h3>
                     <button type="button" @click="approveModal = false" class="text-gray-400 hover:text-gray-600">✕</button>
                 </div>
 
@@ -266,9 +266,9 @@
                         </div>
 
                         <div>
-                            <label class="block text-xs font-bold text-gray-700 mb-1">Kullanıcı Rolü (Zorunlu) *</label>
+                            <label class="block text-xs font-bold text-gray-700 mb-1">{{ __('Kullanıcı Rolü (Zorunlu) *') }}</label>
                             <select name="role_id" required class="w-full bg-slate-50 border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-800 focus:ring-2 focus:ring-indigo-500">
-                                <option value="">Rol Seçiniz...</option>
+                                <option value="">{{ __('Rol Seçiniz...') }}</option>
                                 @foreach($roles as $role)
                                     <option value="{{ $role->id }}">{{ $role->name }}</option>
                                 @endforeach
@@ -276,7 +276,7 @@
                         </div>
 
                         <div>
-                            <label class="block text-xs font-bold text-gray-700 mb-1">Ait Olduğu Grup (İsteğe Bağlı)</label>
+                            <label class="block text-xs font-bold text-gray-700 mb-1">{{ __('Ait Olduğu Grup (İsteğe Bağlı)') }}</label>
                             <select name="group_id" class="w-full bg-slate-50 border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-800 focus:ring-2 focus:ring-indigo-500">
                                 <option value="">Bağımsız (Grup Yok)</option>
                                 @foreach($groups as $group)
@@ -298,7 +298,7 @@
         <div x-show="rejectModal" x-cloak class="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
             <div @click.away="rejectModal = false" class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-white/60 space-y-5">
                 <div class="flex justify-between items-center pb-3 border-b border-gray-100">
-                    <h3 class="text-lg font-bold text-gray-900">Başvuruyu Reddet</h3>
+                    <h3 class="text-lg font-bold text-gray-900">{{ __('Başvuruyu Reddet') }}</h3>
                     <button type="button" @click="rejectModal = false" class="text-gray-400 hover:text-gray-600">✕</button>
                 </div>
 
@@ -310,19 +310,19 @@
                         </div>
 
                         <div>
-                            <label class="block text-xs font-bold text-gray-700 mb-2">Red Türü Seçin *</label>
+                            <label class="block text-xs font-bold text-gray-700 mb-2">{{ __('Red Türü Seçin *') }}</label>
                             <div class="space-y-2">
                                 <label class="flex items-start gap-2.5 p-3 rounded-xl border border-amber-200 bg-amber-50/50 cursor-pointer">
                                     <input type="radio" name="rejection_type" value="correctable" x-model="rejectType" class="mt-0.5 text-amber-600">
                                     <div>
-                                        <div class="text-xs font-bold text-amber-900">Düzeltilebilir Red (Gerekçeli)</div>
+                                        <div class="text-xs font-bold text-amber-900">{{ __('Düzeltilebilir Red (Gerekçeli)') }}</div>
                                         <div class="text-[11px] text-amber-700">Kullanıcı Merkezi Portaldan bilgilerini (ad soyad, mail vb.) düzeltip tekrar başvuru yapabilir.</div>
                                     </div>
                                 </label>
                                 <label class="flex items-start gap-2.5 p-3 rounded-xl border border-rose-200 bg-rose-50/50 cursor-pointer">
                                     <input type="radio" name="rejection_type" value="permanent" x-model="rejectType" class="mt-0.5 text-rose-600">
                                     <div>
-                                        <div class="text-xs font-bold text-rose-900">Kesin Red (Kalıcı Engel)</div>
+                                        <div class="text-xs font-bold text-rose-900">{{ __('Kesin Red (Kalıcı Engel)') }}</div>
                                         <div class="text-[11px] text-rose-700">Kullanıcı bir daha başvuru yapamaz. Yönetici ret kararını silene kadar engelli kalır.</div>
                                     </div>
                                 </label>
@@ -330,7 +330,7 @@
                         </div>
 
                         <div>
-                            <label class="block text-xs font-bold text-gray-700 mb-1">Gerekçeli Karar Metni *</label>
+                            <label class="block text-xs font-bold text-gray-700 mb-1">{{ __('Gerekçeli Karar Metni *') }}</label>
                             <textarea name="rejection_reason" required rows="3" class="w-full bg-slate-50 border border-gray-300 rounded-xl p-3 text-xs text-gray-800 focus:ring-2 focus:ring-rose-500" placeholder="Örn: Mail adresinizi şirket uzantılı olarak güncelleyiniz..."></textarea>
                         </div>
 

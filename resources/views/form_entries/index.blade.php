@@ -21,7 +21,7 @@
                     <h2 class="font-extrabold text-2xl text-gray-900 tracking-tight">
                         {{ __('Veri Girişleri') }}
                     </h2>
-                    <p class="text-sm text-gray-500 mt-1">Doldurduğunuz veya yetkiniz dahilindeki tüm form kayıtları</p>
+                    <p class="text-sm text-gray-500 mt-1">{{ __('Doldurduğunuz veya yetkiniz dahilindeki tüm form kayıtları') }}</p>
                 </div>
                 <div class="flex items-center gap-2 flex-wrap">
                     @if(!empty($canConsolidate) && $canConsolidate)
@@ -30,7 +30,7 @@
                         @click="openConsolidateModal = true"
                         class="group relative inline-flex items-center justify-center py-2.5 px-4 border border-indigo-200 text-sm font-bold rounded-xl text-indigo-700 bg-indigo-50 hover:bg-indigo-100 shadow-xs hover:shadow transition-all cursor-pointer">
                         <svg class="w-5 h-5 mr-1.5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
-                        Parçaları Birleştir
+                        {{ __('Parçaları Birleştir') }}
                         @if(isset($eligibleForConsolidation) && $eligibleForConsolidation->count() >= 2)
                             <span class="ml-1.5 px-2 py-0.5 rounded-full text-[10px] font-black bg-indigo-600 text-white">
                                 {{ $eligibleForConsolidation->count() }}
@@ -49,7 +49,7 @@
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
-                        <span x-text="clicking ? 'Yönlendiriliyor...' : 'Yeni Veri Girişi'">Yeni Veri Girişi</span>
+                        <span x-text="clicking ? '{{ __('Lütfen bekleyin...') }}' : '{{ __('Yeni Veri Girişi') }}'">{{ __('Yeni Veri Girişi') }}</span>
                     </a>
                 </div>
             </div>
@@ -77,7 +77,7 @@
                         {{-- Tümü --}}
                         <a href="{{ route('form-entries.index') }}" 
                            class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-xs {{ (empty($curStatus) && empty($curFilterDate)) ? 'bg-white text-indigo-700 shadow-sm border border-indigo-200 ring-2 ring-indigo-500/10' : 'bg-white/80 text-gray-600 hover:bg-white hover:text-gray-900 border border-gray-200/80' }}">
-                            <span>Tümü</span>
+                            <span>{{ __('Tümü') }}</span>
                             <span class="px-2 py-0.5 rounded-full text-[11px] font-extrabold {{ (empty($curStatus) && empty($curFilterDate)) ? 'bg-indigo-50 text-indigo-700' : 'bg-gray-100 text-gray-600' }}">
                                 {{ $statusCounts['all'] ?? $entries->total() }}
                             </span>
@@ -92,7 +92,7 @@
                                     <span class="relative inline-flex rounded-full h-2 w-2 {{ $curStatus === 'submitted' ? 'bg-white' : 'bg-amber-500' }}"></span>
                                 </span>
                             @endif
-                            <span>Onay Bekleyenler</span>
+                            <span>{{ __('Onay Bekleyenler') }}</span>
                             <span class="px-2 py-0.5 rounded-full text-[11px] font-extrabold {{ $curStatus === 'submitted' ? 'bg-white/20 text-white' : 'bg-amber-100 text-amber-800' }}">
                                 {{ $statusCounts['submitted'] ?? 0 }}
                             </span>
@@ -107,7 +107,7 @@
                                     <span class="relative inline-flex rounded-full h-2 w-2 {{ $curStatus === 'revision_pending' ? 'bg-white' : 'bg-amber-500' }}"></span>
                                 </span>
                             @endif
-                            <span>Düzenleme Bekleyenler</span>
+                            <span>{{ __('Düzenleme Bekleyenler') }}</span>
                             <span class="px-2 py-0.5 rounded-full text-[11px] font-extrabold {{ $curStatus === 'revision_pending' ? 'bg-white/20 text-white' : 'bg-amber-100 text-amber-900' }}">
                                 {{ $statusCounts['revision_pending'] ?? 0 }}
                             </span>
@@ -116,7 +116,7 @@
                         {{-- Onaylananlar --}}
                         <a href="{{ route('form-entries.index', ['status' => 'approved']) }}" 
                            class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-xs {{ $curStatus === 'approved' ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/20 ring-2 ring-emerald-400' : 'bg-white text-emerald-700 hover:bg-emerald-50 border border-emerald-200' }}">
-                            <span>Onaylananlar</span>
+                            <span>{{ __('Onaylananlar') }}</span>
                             <span class="px-2 py-0.5 rounded-full text-[11px] font-extrabold {{ $curStatus === 'approved' ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-800' }}">
                                 {{ $statusCounts['approved'] ?? 0 }}
                             </span>
@@ -125,7 +125,7 @@
                         {{-- Taslaklar --}}
                         <a href="{{ route('form-entries.index', ['status' => 'draft']) }}" 
                            class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-xs {{ $curStatus === 'draft' ? 'bg-slate-700 text-white shadow-md ring-2 ring-slate-400' : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200' }}">
-                            <span>Taslaklar</span>
+                            <span>{{ __('Taslaklar') }}</span>
                             <span class="px-2 py-0.5 rounded-full text-[11px] font-extrabold {{ $curStatus === 'draft' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-700' }}">
                                 {{ $statusCounts['draft'] ?? 0 }}
                             </span>
@@ -134,7 +134,7 @@
                         {{-- Reddedilenler --}}
                         <a href="{{ route('form-entries.index', ['status' => 'rejected']) }}" 
                            class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-xs {{ $curStatus === 'rejected' ? 'bg-rose-600 text-white shadow-md shadow-rose-600/20 ring-2 ring-rose-400' : 'bg-white text-rose-700 hover:bg-rose-50 border border-rose-200' }}">
-                            <span>Reddedilenler</span>
+                            <span>{{ __('Reddedilenler') }}</span>
                             <span class="px-2 py-0.5 rounded-full text-[11px] font-extrabold {{ $curStatus === 'rejected' ? 'bg-white/20 text-white' : 'bg-rose-100 text-rose-800' }}">
                                 {{ $statusCounts['rejected'] ?? 0 }}
                             </span>
@@ -150,7 +150,7 @@
                             @endif
                             <a href="{{ route('form-entries.index') }}" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-500 hover:text-slate-800 hover:bg-white transition-colors border border-dashed border-slate-300">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                                <span>Filtreyi Temizle</span>
+                                <span>{{ __('Filtreyi Temizle') }}</span>
                             </a>
                         </div>
                     @endif
@@ -159,7 +159,7 @@
                 <!-- Kapsam / Kayıt Tipi Filtresi -->
                 <div class="px-4 py-2.5 bg-slate-100/70 border-b border-gray-100 flex flex-wrap items-center justify-between gap-2 text-xs">
                     <div class="flex items-center gap-1.5 flex-wrap">
-                        <span class="text-slate-500 font-bold uppercase tracking-wider text-[10px] mr-1">Kayıt Tipi:</span>
+                        <span class="text-slate-500 font-bold uppercase tracking-wider text-[10px] mr-1">{{ __('Kayıt Tipi:') }}</span>
                         <a href="{{ route('form-entries.index', array_merge(request()->except('scope'), ['scope' => 'all'])) }}"
                            class="px-2.5 py-1 rounded-lg font-bold transition {{ ($scope ?? 'all') === 'all' ? 'bg-indigo-600 text-white shadow-2xs' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200' }}">
                             Tümü ({{ $scopeCounts['all'] ?? 0 }})
@@ -229,14 +229,14 @@
                                                title="Sayfadaki Tümünü Seç / Kaldır">
                                     </th>
                                 @endif
-                                <th class="px-3.5 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider w-28 whitespace-nowrap">Tarih</th>
-                                <th class="px-3.5 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider w-44">Kullanıcı</th>
-                                <th class="px-3.5 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Şablon</th>
-                                <th class="px-3.5 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider w-32 whitespace-nowrap">Durum</th>
+                                <th class="px-3.5 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider w-28 whitespace-nowrap">{{ __('TARİH') }}</th>
+                                <th class="px-3.5 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider w-44">{{ __('KULLANICI') }}</th>
+                                <th class="px-3.5 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">{{ __('ŞABLON') }}</th>
+                                <th class="px-3.5 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider w-32 whitespace-nowrap">{{ __('DURUM') }}</th>
                                 @if(isset($canViewApprover) && $canViewApprover)
-                                    <th class="px-3.5 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider w-36 whitespace-nowrap">Onaylayan</th>
+                                    <th class="px-3.5 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider w-36 whitespace-nowrap">{{ __('ONAYLAYAN') }}</th>
                                 @endif
-                                <th class="px-3.5 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider w-36 whitespace-nowrap">İşlemler</th>
+                                <th class="px-3.5 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider w-36 whitespace-nowrap">{{ __('İŞLEMLER') }}</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-100">
@@ -388,27 +388,27 @@
                                         @if($entry->revisionRequests->firstWhere('status', 'pending'))
                                             <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-800 border border-amber-300 shadow-2xs" title="Düzenleme (revizyon) talebi değerlendirme aşamasında">
                                                 <span class="w-1.5 h-1.5 bg-amber-500 rounded-full mr-1 animate-pulse"></span>
-                                                Revizyon Bekliyor
+                                                {{ __('Revizyon Bekliyor') }}
                                             </span>
                                         @elseif($entry->status === 'draft')
                                             <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-gray-100 text-gray-700 border border-gray-200">
                                                 <span class="w-1.5 h-1.5 bg-gray-400 rounded-full mr-1"></span>
-                                                Taslak
+                                                {{ __('Taslak') }}
                                             </span>
                                         @elseif($entry->status === 'submitted')
                                             <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
                                                 <span class="w-1.5 h-1.5 bg-amber-500 rounded-full mr-1 animate-pulse"></span>
-                                                Onay Bekliyor
+                                                {{ __('Onay Bekliyor') }}
                                             </span>
                                         @elseif($entry->status === 'approved')
                                             <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
                                                 <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-1"></span>
-                                                Onaylandı
+                                                {{ __('Onaylandı') }}
                                             </span>
                                         @elseif($entry->status === 'rejected')
                                             <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-red-50 text-red-700 border border-red-200 cursor-help" title="{{ $entry->rejection_reason }}">
                                                 <span class="w-1.5 h-1.5 bg-red-500 rounded-full mr-1"></span>
-                                                Reddedildi
+                                                {{ __('Reddedildi') }}
                                             </span>
                                         @endif
                                     </td>
@@ -437,7 +437,7 @@
                                         <div class="inline-flex items-center justify-end gap-1.5">
                                             <a href="{{ route('form-entries.show', $entry) }}" class="inline-flex items-center px-2.5 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-bold text-indigo-600 hover:text-indigo-900 hover:bg-indigo-50 hover:border-indigo-300 transition-all shadow-2xs">
                                                 <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
-                                                İncele
+                                                {{ __('İncele') }}
                                             </a>
 
                                             @if(!empty($canConsolidate) && $canConsolidate && $entry->is_consolidated && (Auth::id() === $entry->user_id || Auth::user()->id === 1 || (Auth::user()->role && Auth::user()->role->slug === 'sistem_yoneticisi')))

@@ -1,4 +1,4 @@
-@section('title', 'Master Veri Yönetimi')
+@section('title', __('Master Veri Yönetimi'))
 <style>
     body.cursor-wait,
     body.cursor-wait * {
@@ -189,13 +189,13 @@
                         <form action="{{ route('master_data.types.store') }}" method="POST" class="space-y-2">
                             @csrf
                             <div>
-                                <input type="text" name="name" placeholder="Yeni Tip Adı (Örn: Şehirler)" required
+                                <input type="text" name="name" placeholder="{{ __('Yeni Tip Adı (Örn: Şehirler)') }}" required
                                     class="w-full rounded-sm border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-xs p-2">
                             </div>
                             <div>
                                 <select name="parent_id"
                                     class="w-full rounded-sm border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-xs p-2 text-gray-600 bg-gray-50">
-                                    <option value="">-- Bağımsız Kategori (Üst Tip Yok) --</option>
+                                    <option value="">{{ __('-- Bağımsız Kategori (Üst Tip Yok) --') }}</option>
                                     @foreach($types as $t)
                                         <option value="{{ $t->id }}">{{ $t->name }}'e Bağlı Alt Kategori</option>
                                     @endforeach
@@ -234,7 +234,7 @@
                                         @else
                                             <div
                                                 class="text-[10px] text-green-600 uppercase tracking-wider mt-0.5 font-semibold">
-                                                Bağımsız Kategori</div>
+                                                {{ __('Bağımsız Kategori') }}</div>
                                         @endif
                                     </div>
                                 </div>
@@ -263,7 +263,7 @@
                                 </div>
                             </li>
                         @empty
-                            <li class="p-4 text-xs text-gray-400 text-center italic">Henüz kategori bulunmuyor.</li>
+                            <li class="p-4 text-xs text-gray-400 text-center italic">{{ __('Henüz kategori bulunmuyor.') }}</li>
                         @endforelse
                     </ul>
                 </div>
@@ -278,7 +278,7 @@
                                 d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
                             </path>
                         </svg>
-                        <p class="text-sm font-medium">İşlem yapmak için soldan bir Kategori seçiniz.</p>
+                        <p class="text-sm font-medium">{{ __('İşlem yapmak için soldan bir Kategori seçiniz.') }}</p>
                     </div>
 
                     <div x-show="selectedTypeId" style="display: none;" class="flex flex-col h-full">
@@ -290,7 +290,7 @@
                             <div class="flex items-center gap-2">
                                 <div class="relative">
                                     <input type="text" x-model.debounce.150ms="searchQuery" @input="currentPage = 1"
-                                        placeholder="İçinde ara..."
+                                        placeholder="{{ __('İçinde ara...') }}"
                                         class="rounded-lg border-gray-300 shadow-xs focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-xs p-1.5 pl-7 pr-6 w-44 sm:w-56 bg-white transition">
                                     <svg class="w-4 h-4 text-gray-400 absolute left-2 top-2" fill="none"
                                         stroke="currentColor" viewBox="0 0 24 24">
@@ -315,11 +315,11 @@
                                 class="flex flex-col sm:flex-row items-center gap-3">
                                 @csrf
                                 @method('PUT')
-                                <div class="text-xs text-gray-700 w-full sm:w-auto font-semibold">Bu kategoriyi bağla:
+                                <div class="text-xs text-gray-700 w-full sm:w-auto font-semibold">{{ __('Bu kategoriyi bağla:') }}
                                 </div>
                                 <select name="parent_id" x-model="selectedTypeParentId"
                                     class="w-full sm:w-auto rounded-sm border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-xs p-2 flex-grow">
-                                    <option value="">-- Bağımsız Kategori Yap (Bağı Kopart) --</option>
+                                    <option value="">{{ __('-- Bağımsız Kategori Yap (Bağı Kopart) --') }}</option>
                                     <template x-for="t in Object.values(typesList)" :key="t.id">
                                         <option :value="t.id" x-show="t.id != selectedTypeId"
                                             x-text="t.name + ' kategorisine bağla'"></option>
@@ -330,7 +330,7 @@
                                         class="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-semibold py-1.5 px-3 rounded-sm text-xs transition shadow-sm">İptal</button>
                                     <button type="submit"
                                         class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-1.5 px-4 rounded-sm text-xs transition shadow-sm whitespace-nowrap">Bağı
-                                        Güncelle</button>
+                                        {{ __('Güncelle') }}</button>
                                 </div>
                             </form>
                         </div>
@@ -363,7 +363,7 @@
                                         <select name="parent_id" x-model="newParentId"
                                             class="w-full rounded-lg border-gray-300 shadow-xs focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-xs p-2 bg-white"
                                             :required="selectedTypeParentId !== null">
-                                            <option value="">-- Üst Veri Seçin --</option>
+                                            <option value="">{{ __('-- Üst Veri Seçin --') }}</option>
                                             <template x-for="item in parentItems" :key="item.id">
                                                 <option :value="item.id" x-text="item.name"></option>
                                             </template>
@@ -386,7 +386,7 @@
                                         </template>
                                         <span x-show="newItemCount <= 1"
                                             class="text-[11px] text-gray-500 hidden sm:inline">
-                                            💡 Excel veya metin listesinden çoklu kopyalayıp yapıştırabilirsiniz.
+                                            💡 {{ __('Excel veya metin listesinden çoklu kopyalayıp yapıştırabilirsiniz.') }}
                                         </span>
                                     </div>
 
@@ -433,7 +433,7 @@
                             <span class="text-xs font-semibold text-red-700"
                                 x-text="selectedItemIds.length + ' veri seçildi.'"></span>
                             <form action="{{ route('master_data.items.bulk_destroy') }}" method="POST"
-                                onsubmit="return confirm('Seçili verileri silmek istediğinize emin misiniz?');">
+                                onsubmit="return confirm('{{ __('Seçili verileri silmek istediğinize emin misiniz?') }}');">
                                 @csrf
                                 @method('DELETE')
                                 <input type="hidden" name="type_id" :value="selectedTypeId">
@@ -458,12 +458,12 @@
                                         </th>
                                         <th
                                             class="px-4 py-2 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                            Veri Adı</th>
+                                            {{ __('Veri Adı') }}</th>
                                         <th class="px-4 py-2 text-left text-xs font-bold text-gray-500 uppercase tracking-wider"
-                                            x-show="selectedTypeParentId">Bağlı Olduğu Üst Veri</th>
+                                            x-show="selectedTypeParentId">{{ __('Bağlı Olduğu Üst Veri') }}</th>
                                         <th
                                             class="px-4 py-2 text-right text-xs font-bold text-gray-500 uppercase tracking-wider w-32">
-                                            İşlem</th>
+                                            {{ __('İşlem') }}</th>
                                     </tr>
                                 </thead>
                                 <template x-for="(group, gIndex) in pagedGroupedItems()"
@@ -523,7 +523,7 @@
                                                     </button>
                                                     <form :action="'{{ url('master-data/items') }}/' + item.id"
                                                         method="POST"
-                                                        onsubmit="return confirm('Bu veriyi silmek istediğinize emin misiniz?');"
+                                                        onsubmit="return confirm('{{ __('Bu veriyi silmek istediğinize emin misiniz?') }}');"
                                                         class="inline">
                                                         @csrf
                                                         @method('DELETE')
@@ -558,7 +558,7 @@
                                                             <select name="parent_id" x-model="editFormData.parent_id"
                                                                 class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm p-1.5"
                                                                 :required="selectedTypeParentId !== null">
-                                                                <option value="">-- Üst Veri Seçin --</option>
+                                                                <option value="">{{ __('-- Üst Veri Seçin --') }}</option>
                                                                 <template x-for="pItem in parentItems" :key="pItem.id">
                                                                     <option :value="pItem.id" x-text="pItem.name">
                                                                     </option>
@@ -581,7 +581,7 @@
                                 <tbody x-show="filteredItems().length === 0" style="display: none;">
                                     <tr>
                                         <td colspan="4" class="px-4 py-8 text-center text-gray-400 text-xs italic">
-                                            Bu kategoride henüz veri bulunmuyor veya aramaya uygun sonuç yok.
+                                            {{ __('Bu kategoride henüz veri bulunmuyor veya aramaya uygun sonuç yok.') }}
                                         </td>
                                     </tr>
                                 </tbody>
@@ -611,14 +611,14 @@
                             <div class="flex items-center gap-3">
                                 <!-- Sayfa Boyutu Seçici -->
                                 <div class="flex items-center gap-1.5">
-                                    <span class="text-gray-500 text-[11px] whitespace-nowrap">Sayfa Başına:</span>
+                                    <span class="text-gray-500 text-[11px] whitespace-nowrap">{{ __('Sayfa Başına:') }}</span>
                                     <select x-model.number="perPage" @change="currentPage = 1"
                                         class="text-xs py-1 px-2 border-gray-300 rounded bg-white shadow-2xs focus:ring-1 focus:ring-blue-500 cursor-pointer">
                                         <option :value="50">50</option>
                                         <option :value="100">100</option>
                                         <option :value="250">250</option>
                                         <option :value="500">500</option>
-                                        <option :value="999999">Tümü</option>
+                                        <option :value="999999">{{ __('Tümü') }}</option>
                                     </select>
                                 </div>
 
@@ -627,13 +627,13 @@
                                     <div class="inline-flex items-center -space-x-px rounded-md shadow-2xs">
                                         <button type="button" @click="goToPage(1)" :disabled="currentPage === 1"
                                             class="px-2.5 py-1 text-xs font-semibold rounded-l-md border border-gray-300 bg-white hover:bg-gray-100 text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
-                                            title="İlk Sayfa">
+                                            title="{{ __('İlk Sayfa') }}">
                                             «
                                         </button>
                                         <button type="button" @click="goToPage(currentPage - 1)"
                                             :disabled="currentPage === 1"
                                             class="px-2.5 py-1 text-xs font-semibold border border-gray-300 bg-white hover:bg-gray-100 text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
-                                            title="Önceki Sayfa">
+                                            title="{{ __('Önceki Sayfa') }}">
                                             ‹
                                         </button>
 
@@ -645,13 +645,13 @@
                                         <button type="button" @click="goToPage(currentPage + 1)"
                                             :disabled="currentPage === totalPages"
                                             class="px-2.5 py-1 text-xs font-semibold border border-gray-300 bg-white hover:bg-gray-100 text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
-                                            title="Sonraki Sayfa">
+                                            title="{{ __('Sonraki Sayfa') }}">
                                             ›
                                         </button>
                                         <button type="button" @click="goToPage(totalPages)"
                                             :disabled="currentPage === totalPages"
                                             class="px-2.5 py-1 text-xs font-semibold rounded-r-md border border-gray-300 bg-white hover:bg-gray-100 text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
-                                            title="Son Sayfa">
+                                            title="{{ __('Son Sayfa') }}">
                                             »
                                         </button>
                                     </div>

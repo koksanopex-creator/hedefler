@@ -10,8 +10,8 @@
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
                     </div>
                     <div>
-                        <h2 class="text-xl font-extrabold text-gray-900 tracking-tight">Bildirim Merkezi</h2>
-                        <p class="text-xs text-gray-500 font-medium mt-0.5">Sistemdeki tüm güncellemeler ve hareketler.</p>
+                        <h2 class="text-xl font-extrabold text-gray-900 tracking-tight">{{ __('Bildirim Merkezi') }}</h2>
+                        <p class="text-xs text-gray-500 font-medium mt-0.5">{{ __('Sistemdeki tüm güncellemeler ve hareketler.') }}</p>
                     </div>
                 </div>
                 
@@ -20,7 +20,7 @@
                         @csrf
                         <button type="submit" class="inline-flex items-center px-4 py-2 text-sm font-bold rounded-lg text-indigo-700 bg-indigo-50 hover:bg-indigo-600 hover:text-white focus:outline-none transition-all duration-300 shadow-sm">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                            Tümünü Okundu İşaretle
+                            {{ __('Tümünü Okundu İşaretle') }}
                         </button>
                     </form>
                 @endif
@@ -87,7 +87,7 @@
                                             }
                                         @endphp
                                         <a href="{{ $safeUrl }}" class="inline-flex items-center px-4 py-1.5 text-xs font-bold rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none transition-all duration-300 shadow-sm">
-                                            İlgili Kayda Git
+                                            {{ __('İlgili Kayda Git') }}
                                             <svg class="w-3.5 h-3.5 ml-1.5 transform transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
                                         </a>
                                     @endif
@@ -96,7 +96,7 @@
                                         <form action="{{ route('notifications.mark-read', $notification->id) }}" method="POST" class="inline">
                                             @csrf
                                             <button type="submit" class="inline-flex items-center px-4 py-1.5 text-xs font-bold rounded-lg text-gray-500 bg-white hover:bg-gray-50 hover:text-gray-900 border border-gray-200 transition-colors">
-                                                Okundu İşaretle
+                                                {{ __('Okundu Olarak İşaretle') }}
                                             </button>
                                         </form>
                                     @endif
@@ -111,8 +111,8 @@
                         <div class="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-4">
                             <svg class="w-10 h-10 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
                         </div>
-                        <h3 class="text-xl font-extrabold text-gray-900 tracking-tight">Geçmiş Tertemiz!</h3>
-                        <p class="mt-2 text-sm font-medium text-gray-500 max-w-sm">Şu anda gösterilecek herhangi bir bildiriminiz bulunmuyor.</p>
+                        <h3 class="text-xl font-extrabold text-gray-900 tracking-tight">{{ __('Geçmiş Tertemiz!') }}</h3>
+                        <p class="mt-2 text-sm font-medium text-gray-500 max-w-sm">{{ __('Şu anda gösterilecek herhangi bir bildiriminiz bulunmuyor.') }}</p>
                     </div>
                 @endforelse
             </div>

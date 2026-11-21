@@ -1,8 +1,8 @@
-﻿@section('title', 'Grup Düzenle')
+﻿@section('title', __('Grup Düzenle'))
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ isset($group) ? 'Grup Düzenle: ' . $group->name : 'Yeni Grup Oluştur' }}
+            {{ isset($group) ? __('Grup Düzenle: ') . $group->name : __('Yeni Grup Oluştur') }}
         </h2>
     </x-slot>
 
@@ -31,12 +31,12 @@
                     @endif
                     
                     <div class="mb-6">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Grup Adı</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">{{ __('Grup Adı') }}</label>
                         <input type="text" name="name" value="{{ old('name', $group->name ?? '') }}" required class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                     </div>
 
                     <div class="mb-6">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Açıklama (Opsiyonel)</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">{{ __('Açıklama (Opsiyonel)') }}</label>
                         <textarea name="description" rows="3" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">{{ old('description', $group->description ?? '') }}</textarea>
                     </div>
 
@@ -47,7 +47,7 @@
 
                     <div class="flex justify-end pt-4 border-t border-gray-200">
                         <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-8 rounded-lg shadow-md transition">
-                            {{ isset($group) ? 'Güncellemeleri Kaydet' : 'Grubu Oluştur' }}
+                            {{ isset($group) ? __('Güncellemeleri Kaydet') : __('Grubu Oluştur') }}
                         </button>
                     </div>
                 </form>

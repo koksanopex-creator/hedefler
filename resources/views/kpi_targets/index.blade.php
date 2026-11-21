@@ -1,4 +1,4 @@
-@section('title', 'KPI Hedefleri')
+@section('title', __('KPI Hedefleri'))
 <x-app-layout>
     <x-slot name="header">
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -14,8 +14,7 @@
                     </span>
                     {{ __('Dinamik KPI Hedef Yönetimi') }}
                 </h2>
-                <p class="text-sm text-gray-500 mt-1">Form alanlarına bağlı Hoshin Kanri hedef yayılımı ve gerçekleşme
-                    takibi</p>
+                <p class="text-sm text-gray-500 mt-1">{{ __('Form alanlarına bağlı Hoshin Kanri hedef yayılımı ve gerçekleşme takibi') }}</p>
             </div>
 
             <div class="flex items-center gap-2">
@@ -25,7 +24,7 @@
                         <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                         </svg>
-                        + Yeni Hedef Tanımla
+                        + {{ __('Yeni KPI Hedefi') }}
                     </a>
                 @endif
             </div>
@@ -77,14 +76,13 @@
                 <div
                     class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
                     <div class="flex items-center justify-between">
-                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Tanımlı Hedef</span>
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">{{ __('Tanımlı Hedef') }}</span>
                         <span
                             class="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">🎯</span>
                     </div>
                     <div class="mt-3">
                         <p class="text-2xl sm:text-3xl font-black text-slate-900">{{ $totalTargetsCount }}</p>
-                        <span class="text-[11px] text-slate-500 font-medium">{{ $filters['year'] ?? date('Y') }} Yılı
-                            Toplam KPI</span>
+                        <span class="text-[11px] text-slate-500 font-medium">{{ $filters['year'] ?? date('Y') }} {{ __('Yılı') }} {{ __('Toplam KPI') }}</span>
                     </div>
                 </div>
 
@@ -92,13 +90,13 @@
                 <div
                     class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
                     <div class="flex items-center justify-between">
-                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Bireysel Hedefler</span>
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">{{ __('Bireysel Hedefler') }}</span>
                         <span
                             class="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center font-bold">👤</span>
                     </div>
                     <div class="mt-3">
                         <p class="text-2xl sm:text-3xl font-black text-slate-900">{{ $userTargetsCount }}</p>
-                        <span class="text-[11px] text-slate-500 font-medium">Personele Özel Atananlar</span>
+                        <span class="text-[11px] text-slate-500 font-medium">{{ __('Personele Özel Atananlar') }}</span>
                     </div>
                 </div>
 
@@ -106,13 +104,13 @@
                 <div
                     class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
                     <div class="flex items-center justify-between">
-                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Grup & Departman</span>
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">{{ __('Grup & Departman') }}</span>
                         <span
                             class="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">👥</span>
                     </div>
                     <div class="mt-3">
                         <p class="text-2xl sm:text-3xl font-black text-slate-900">{{ $groupTargetsCount }}</p>
-                        <span class="text-[11px] text-slate-500 font-medium">Bölüm & Takım Hedefleri</span>
+                        <span class="text-[11px] text-slate-500 font-medium">{{ __('Bölüm & Takım Hedefleri') }}</span>
                     </div>
                 </div>
 
@@ -120,7 +118,7 @@
                 <div
                     class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
                     <div class="flex items-center justify-between">
-                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Ortalama Başarı</span>
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">{{ __('Ortalama Başarı') }}</span>
                         <span
                             class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">📊</span>
                     </div>
@@ -128,7 +126,7 @@
                         <div class="flex items-baseline gap-1.5">
                             <p class="text-2xl sm:text-3xl font-black text-emerald-600">
                                 %{{ number_format($avgRate, 1, ',', '.') }}</p>
-                            <span class="text-[10px] font-bold text-slate-400 uppercase">Kümülatif</span>
+                            <span class="text-[10px] font-bold text-slate-400 uppercase">{{ __('Kümülatif') }}</span>
                         </div>
                         <div class="w-full bg-slate-100 rounded-full h-1.5 mt-2 overflow-hidden">
                             <div class="bg-emerald-500 h-1.5 rounded-full transition-all duration-500"
@@ -143,27 +141,27 @@
                 class="flex items-center gap-1.5 p-1 bg-slate-100/90 rounded-2xl border border-slate-200/80 overflow-x-auto">
                 <a href="{{ route('kpi-targets.index', array_merge(request()->except('tab'), ['tab' => 'all'])) }}"
                     class="px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 {{ $activeTab === 'all' ? 'bg-white text-indigo-700 shadow-sm font-black' : 'text-slate-600 hover:text-slate-900' }}">
-                    <span>🌐</span> Tüm Hedefler
+                    <span>🌐</span> {{ __('Tüm Hedefler') }}
                     <span
                         class="px-2 py-0.5 rounded-full text-[10px] {{ $activeTab === 'all' ? 'bg-indigo-100 text-indigo-800' : 'bg-slate-200 text-slate-600' }}">{{ $totalTargetsCount }}</span>
                 </a>
                 <a href="{{ route('kpi-targets.index', array_merge(request()->except('tab'), ['tab' => 'user'])) }}"
                     class="px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 {{ $activeTab === 'user' ? 'bg-white text-indigo-700 shadow-sm font-black' : 'text-slate-600 hover:text-slate-900' }}">
-                    <span>👤</span> Bireysel Personel Hedefleri
+                    <span>👤</span> {{ __('Bireysel Personel Hedefleri') }}
                     <span
                         class="px-2 py-0.5 rounded-full text-[10px] {{ $activeTab === 'user' ? 'bg-indigo-100 text-indigo-800' : 'bg-slate-200 text-slate-600' }}">{{ $userTargetsCount }}</span>
                 </a>
                 <a href="{{ route('kpi-targets.index', array_merge(request()->except('tab'), ['tab' => 'group'])) }}"
                     class="px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 {{ $activeTab === 'group' ? 'bg-white text-indigo-700 shadow-sm font-black' : 'text-slate-600 hover:text-slate-900' }}">
-                    <span>👥</span> Departman / Grup Hedefleri
+                    <span>👥</span> {{ __('Departman / Grup Hedefleri') }}
                     <span
                         class="px-2 py-0.5 rounded-full text-[10px] {{ $activeTab === 'group' ? 'bg-indigo-100 text-indigo-800' : 'bg-slate-200 text-slate-600' }}">{{ $groupTargetsCount }}</span>
                 </a>
                 <a href="{{ route('kpi-targets.index', array_merge(request()->except('tab'), ['tab' => 'geo'])) }}"
                     class="px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 {{ $activeTab === 'geo' ? 'bg-indigo-600 text-white shadow-sm font-black' : 'text-slate-600 hover:text-indigo-600' }}">
-                    <span>🌍</span> Coğrafi Dağılım & Radar Analizi
+                    <span>🌍</span> {{ __('Coğrafi Dağılım & Radar Analizi') }}
                     <span
-                        class="px-2 py-0.5 rounded-full text-[10px] bg-amber-400 text-slate-900 font-black">Harita</span>
+                        class="px-2 py-0.5 rounded-full text-[10px] bg-amber-400 text-slate-900 font-black">{{ __('Harita') }}</span>
                 </a>
             </div>
 
@@ -187,10 +185,10 @@
 
                     {{-- Yıl --}}
                     <div>
-                        <label class="block text-xs font-bold text-gray-600 mb-1">Hedef Yılı</label>
+                        <label class="block text-xs font-bold text-gray-600 mb-1">{{ __('Hedef Yılı') }}</label>
                         <select name="year"
                             class="w-full text-xs rounded-xl border-gray-200 focus:border-indigo-500 focus:ring-indigo-500">
-                            <option value="">Tüm Yıllar</option>
+                            <option value="">{{ __('Tüm Yıllar') }}</option>
                             @foreach($years as $y)
                                 <option value="{{ $y }}" {{ ($filters['year'] ?? '') == $y ? 'selected' : '' }}>{{ $y }}
                                 </option>
@@ -200,10 +198,10 @@
 
                     {{-- Form Şablonu --}}
                     <div>
-                        <label class="block text-xs font-bold text-gray-600 mb-1">Form Şablonu</label>
+                        <label class="block text-xs font-bold text-gray-600 mb-1">{{ __('Form Şablonu') }}</label>
                         <select name="template_id"
                             class="w-full text-xs rounded-xl border-gray-200 focus:border-indigo-500 focus:ring-indigo-500">
-                            <option value="">Tüm Şablonlar</option>
+                            <option value="">{{ __('Tüm Şablonlar') }}</option>
                             @foreach($templates as $t)
                                 <option value="{{ $t->id }}" {{ ($filters['template_id'] ?? '') == $t->id ? 'selected' : '' }}>{{ $t->name }}</option>
                             @endforeach
@@ -212,13 +210,13 @@
 
                     {{-- Hedef Sahibi (Personel / Grup) --}}
                     <div>
-                        <label class="block text-xs font-bold text-gray-600 mb-1">Personel / Atanan</label>
+                        <label class="block text-xs font-bold text-gray-600 mb-1">{{ __('Personel / Atanan') }}</label>
                         <select name="assignee_id"
                             class="w-full text-xs rounded-xl border-gray-200 focus:border-indigo-500 focus:ring-indigo-500">
-                            <option value="">-- Tüm Kişiler --</option>
+                            <option value="">{{ __('-- Tüm Kişiler --') }}</option>
                             @foreach($users as $u)
                                 <option value="{{ $u->id }}" {{ ($filters['assignee_id'] ?? '') == $u->id ? 'selected' : '' }}>
-                                    {{ $u->name }} ({{ $u->group->name ?? 'Bağımsız' }})
+                                    {{ $u->name }} ({{ $u->group->name ?? __('Bağımsız') }})
                                 </option>
                             @endforeach
                         </select>
@@ -226,36 +224,36 @@
 
                     {{-- Durum --}}
                     <div>
-                        <label class="block text-xs font-bold text-gray-600 mb-1">Durum</label>
+                        <label class="block text-xs font-bold text-gray-600 mb-1">{{ __('Durum') }}</label>
                         <select name="status"
                             class="w-full text-xs rounded-xl border-gray-200 focus:border-indigo-500 focus:ring-indigo-500">
-                            <option value="">Tüm Durumlar</option>
-                            <option value="active" {{ ($filters['status'] ?? '') == 'active' ? 'selected' : '' }}>Aktif
+                            <option value="">{{ __('Tüm Durumlar') }}</option>
+                            <option value="active" {{ ($filters['status'] ?? '') == 'active' ? 'selected' : '' }}>{{ __('Aktif') }}
                             </option>
                             <option value="paused" {{ ($filters['status'] ?? '') == 'paused' ? 'selected' : '' }}>
-                                Duraklatıldı</option>
+                                {{ __('Duraklatıldı') }}</option>
                             <option value="completed" {{ ($filters['status'] ?? '') == 'completed' ? 'selected' : '' }}>
-                                Tamamlandı</option>
+                                {{ __('Tamamlandı') }}</option>
                             <option value="cancelled" {{ ($filters['status'] ?? '') == 'cancelled' ? 'selected' : '' }}>
-                                İptal</option>
+                                {{ __('İptal') }}</option>
                         </select>
                     </div>
 
                     {{-- Arama --}}
                     <div class="lg:col-span-2">
-                        <label class="block text-xs font-bold text-gray-600 mb-1">Arama</label>
+                        <label class="block text-xs font-bold text-gray-600 mb-1">{{ __('Arama') }}</label>
                         <div class="flex gap-2">
                             <input type="text" name="search" value="{{ $filters['search'] ?? '' }}"
-                                placeholder="Hedef adı, kriter..."
+                                placeholder="{{ __('Hedef adı, kriter...') }}"
                                 class="w-full text-xs rounded-xl border-gray-200 focus:border-indigo-500 focus:ring-indigo-500">
                             <button type="submit"
                                 class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shrink-0 transition">
-                                Filtrele
+                                {{ __('Filtrele') }}
                             </button>
                             @if(!empty(array_filter($filters)))
                                 <a href="{{ route('kpi-targets.index', ['tab' => $activeTab]) }}"
                                     class="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-xl text-xs font-bold shrink-0 transition flex items-center"
-                                    title="Temizle">
+                                    title="{{ __('Temizle') }}">
                                     ✕
                                 </a>
                             @endif
@@ -272,28 +270,28 @@
                             <tr class="bg-gray-50/80">
                                 <th
                                     class="px-5 py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                    Hedef & Kapsam</th>
+                                    {{ __('Hedef & Kapsam') }}</th>
                                 <th
                                     class="px-5 py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                    Şablon / Alan</th>
+                                    {{ __('Şablon / Alan') }}</th>
                                 <th
                                     class="px-5 py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                    Hedef Sahibi</th>
+                                    {{ __('Hedef Sahibi') }}</th>
                                 <th
                                     class="px-5 py-3.5 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                    Hedef</th>
+                                    {{ __('Hedef') }}</th>
                                 <th
                                     class="px-5 py-3.5 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                    Gerçekleşen</th>
+                                    {{ __('Gerçekleşen') }}</th>
                                 <th
                                     class="px-5 py-3.5 text-center text-xs font-bold text-gray-500 uppercase tracking-wider min-w-[160px]">
-                                    Başarı Oranı</th>
+                                    {{ __('Başarı Oranı') }}</th>
                                 <th
                                     class="px-5 py-3.5 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                    Durum</th>
+                                    {{ __('Durum') }}</th>
                                 <th
                                     class="px-5 py-3.5 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                    İşlemler</th>
+                                    {{ __('İşlemler') }}</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100 bg-white">
@@ -342,7 +340,7 @@
                                                             <span
                                                                 class="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200 cursor-pointer"
                                                                 title="{{ app(\App\Services\KpiTargetS::class)->formatCriteriaSummary($target->criteria_json) }}">
-                                                                +{{ count($badges) - 3 }} daha
+                                                                +{{ count($badges) - 3 }} {{ __('daha') }}
                                                             </span>
                                                         @endif
                                                     </div>
@@ -375,7 +373,7 @@
                                                     {{ $u->name }}
                                                 </a>
                                             @else
-                                                <span class="text-xs text-gray-400">Bilinmiyor</span>
+                                                <span class="text-xs text-gray-400">{{ __('Bilinmiyor') }}</span>
                                             @endif
                                         @elseif($target->assignee_type === 'group')
                                             <span
@@ -421,16 +419,16 @@
                                     <td class="px-5 py-4 text-center">
                                         @if($target->status === 'active')
                                             <span
-                                                class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700">Aktif</span>
+                                                class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700">{{ __('Aktif') }}</span>
                                         @elseif($target->status === 'paused')
                                             <span
-                                                class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700">Duraklatıldı</span>
+                                                class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700">{{ __('Duraklatıldı') }}</span>
                                         @elseif($target->status === 'completed')
                                             <span
-                                                class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-indigo-50 text-indigo-700">Tamamlandı</span>
+                                                class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-indigo-50 text-indigo-700">{{ __('Tamamlandı') }}</span>
                                         @else
                                             <span
-                                                class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-gray-100 text-gray-500">İptal</span>
+                                                class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-gray-100 text-gray-500">{{ __('İptal') }}</span>
                                         @endif
                                     </td>
 
@@ -440,7 +438,7 @@
                                             {{-- İlerleme Grafiği --}}
                                             <a href="{{ route('kpi-targets.progress', $target->id) }}"
                                                 class="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-lg transition"
-                                                title="Performans & İlerleme Grafiği">
+                                                title="{{ __('Performans & İlerleme Grafiği') }}">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                         d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
@@ -451,7 +449,7 @@
                                             @if($canDistribute)
                                                 <a href="{{ route('kpi-targets.distribute', $target->id) }}"
                                                     class="p-1.5 text-teal-600 hover:bg-teal-50 rounded-lg transition"
-                                                    title="12 Aylık Dağıtım">
+                                                    title="{{ __('12 Aylık Dağıtım') }}">
                                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                             d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
@@ -466,7 +464,7 @@
                                                     @csrf
                                                     <button type="submit"
                                                         class="p-1.5 text-gray-500 hover:text-indigo-600 hover:bg-gray-100 rounded-lg transition"
-                                                        title="Verileri Yeniden Hesapla">
+                                                        title="{{ __('Verileri Yeniden Hesapla') }}">
                                                         <svg class="w-4 h-4" fill="none" stroke="currentColor"
                                                             viewBox="0 0 24 24">
                                                             <path stroke-linecap="round" stroke-linejoin="round"
@@ -481,7 +479,7 @@
                                             @if($canEdit)
                                                 <a href="{{ route('kpi-targets.edit', $target->id) }}"
                                                     class="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition"
-                                                    title="Düzenle">
+                                                    title="{{ __('Düzenle') }}">
                                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                             d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z">
@@ -493,12 +491,12 @@
                                             @if($canDelete)
                                                 <form action="{{ route('kpi-targets.destroy', $target->id) }}" method="POST"
                                                     class="inline"
-                                                    onsubmit="return confirm('Bu hedefi silmek istediğinize emin misiniz?');">
+                                                    onsubmit="return confirm('{{ __('Bu hedefi silmek istediğinize emin misiniz?') }}');">
                                                     @csrf
                                                     @method('DELETE')
                                                     <button type="submit"
                                                         class="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg transition"
-                                                        title="Sil">
+                                                        title="{{ __('Sil') }}">
                                                         <svg class="w-4 h-4" fill="none" stroke="currentColor"
                                                             viewBox="0 0 24 24">
                                                             <path stroke-linecap="round" stroke-linejoin="round"
@@ -524,9 +522,8 @@
                                                     </path>
                                                 </svg>
                                             </div>
-                                            <p class="font-bold text-gray-600">Henüz tanımlı KPI hedefi bulunamadı.</p>
-                                            <p class="text-xs text-gray-400 mt-1">Filtreleri değiştirebilir veya yeni bir
-                                                hedef ekleyebilirsiniz.</p>
+                                            <p class="font-bold text-gray-600">{{ __('Henüz tanımlı KPI hedefi bulunamadı.') }}</p>
+                                            <p class="text-xs text-gray-400 mt-1">{{ __('Filtreleri değiştirebilir veya yeni bir hedef ekleyebilirsiniz.') }}</p>
                                         </div>
                                     </td>
                                 </tr>

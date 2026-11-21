@@ -1,4 +1,4 @@
-@section('title', 'Kullanıcılar')
+@section('title', __('Kullanıcılar'))
 <x-app-layout>
     <x-slot name="header">
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -98,7 +98,7 @@
                     </div>
                     <input type="text"
                            x-model="searchQuery"
-                           placeholder="Kullanıcı adı, e-posta, grup veya rol ara... (Örn: Mithat, Erhan, Aytaç, Yönetici)"
+                           placeholder="{{ __('Kullanıcı adı, e-posta, grup veya rol ara... (Örn: Mithat, Erhan, Aytaç, Yönetici)') }}"
                            class="w-full pl-11 pr-28 py-2.5 bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 rounded-xl text-sm font-medium text-slate-800 placeholder-slate-400 transition-all shadow-inner"
                     >
                     <div class="absolute inset-y-0 right-0 pr-2 flex items-center gap-1.5">
@@ -106,7 +106,7 @@
                                 x-show="searchQuery.trim().length > 0" 
                                 @click="searchQuery = ''" 
                                 class="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-200/60 transition cursor-pointer"
-                                title="Aramayı Temizle">
+                                title="{{ __('Aramayı Temizle') }}">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                         </button>
                         <span x-show="searchQuery.trim().length > 0" class="text-[11px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-lg" x-text="'Filtreleniyor'"></span>
@@ -138,11 +138,11 @@
                 <div class="inline-flex p-1 bg-slate-100/80 rounded-xl border border-slate-200 shrink-0">
                     <button type="button" @click="view = 'grouped'" :class="view === 'grouped' ? 'bg-white text-indigo-700 shadow-sm font-bold' : 'text-gray-500 hover:text-gray-900 font-medium'" class="px-3 py-1.5 rounded-lg text-xs transition-all flex items-center gap-1.5 cursor-pointer">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
-                        Gruplu Hiyerarşik Görünüm
+                        {{ __('Gruplu Hiyerarşik Görünüm') }}
                     </button>
                     <button type="button" @click="view = 'flat'" :class="view === 'flat' ? 'bg-white text-indigo-700 shadow-sm font-bold' : 'text-gray-500 hover:text-gray-900 font-medium'" class="px-3 py-1.5 rounded-lg text-xs transition-all flex items-center gap-1.5 cursor-pointer">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
-                        Düz Liste (Tümü)
+                        {{ __('Düz Liste (Tümü)') }}
                     </button>
                 </div>
             </div>
@@ -152,13 +152,13 @@
                 <div class="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-500 mx-auto flex items-center justify-center mb-3">
                     <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                 </div>
-                <h3 class="text-base font-extrabold text-slate-800">Eşleşen Kullanıcı Bulunamadı</h3>
+                <h3 class="text-base font-extrabold text-slate-800">{{ __('Eşleşen Kullanıcı Bulunamadı') }}</h3>
                 <p class="text-xs text-slate-500 mt-1 max-w-md mx-auto">
                     "<span x-text="searchQuery" class="font-semibold text-indigo-600"></span>" aramasına uygun herhangi bir kullanıcı, yönetici veya grup kaydı bulunamadı.
                 </p>
                 <button type="button" @click="searchQuery = ''" class="mt-4 inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold rounded-xl transition cursor-pointer">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                    Aramayı Temizle
+                    {{ __('Aramayı Temizle') }}
                 </button>
             </div>
 
@@ -195,14 +195,14 @@
                         <table class="w-full text-left border-collapse table-auto">
                             <thead>
                                 <tr class="bg-gray-50/50 border-b border-gray-100 text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                    <th class="px-4 py-3 text-left">Kullanıcı Adı</th>
+                                    <th class="px-4 py-3 text-left">{{ __('Kullanıcı Adı') }}</th>
                                     <th class="px-4 py-3 text-left">E-Posta</th>
                                     <th class="px-4 py-3 text-left">Gruptaki Konumu / Rol</th>
                                     @if($canManage)
-                                        <th class="px-4 py-3 text-left">Sistem Rolü</th>
-                                        <th class="px-4 py-3 text-left">Yetki Kapsamı</th>
+                                        <th class="px-4 py-3 text-left">{{ __('Sistem Rolü') }}</th>
+                                        <th class="px-4 py-3 text-left">{{ __('Yetki Kapsamı') }}</th>
                                         <th class="px-4 py-3 text-center w-24">Durum</th>
-                                        <th class="px-4 py-3 text-right w-24">İşlemler</th>
+                                        <th class="px-4 py-3 text-right w-24">{{ __('İşlemler') }}</th>
                                     @endif
                                 </tr>
                             </thead>
@@ -229,7 +229,7 @@
                                                             <svg class="w-3.5 h-3.5 text-gray-400 group-hover:text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
                                                         </a>
                                                     @endif
-                                                    <span class="text-[11px] font-medium text-purple-600 block mt-0.5">Üst Düzey Yönetici</span>
+                                                    <span class="text-[11px] font-medium text-purple-600 block mt-0.5">{{ __('Üst Düzey Yönetici') }}</span>
                                                 </div>
                                             </div>
                                         </td>
@@ -268,14 +268,14 @@
                                             </td>
                                             <td class="px-4 py-3.5 text-right text-sm">
                                                 <div class="inline-flex items-center justify-end gap-1">
-                                                    <a href="{{ route('users.edit', $user) }}" class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-purple-50 text-purple-700 hover:bg-purple-600 hover:text-white transition-all shadow-xs border border-purple-100" title="Düzenle">
+                                                    <a href="{{ route('users.edit', $user) }}" class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-purple-50 text-purple-700 hover:bg-purple-600 hover:text-white transition-all shadow-xs border border-purple-100" title="{{ __('Düzenle') }}">
                                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                                                     </a>
                                                     @if($user->id !== 1 && !$user->isSuperAdmin() && !auth()->user()?->isYonetim())
                                                     <button type="button" 
                                                             @click="$dispatch('open-user-delete-modal', { id: {{ $user->id }}, name: '{{ addslashes($user->name) }}', email: '{{ addslashes($user->email) }}' })"
                                                             class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white transition-all shadow-xs border border-rose-100 cursor-pointer" 
-                                                            title="Kullanıcıyı Sil">
+                                                            title="{{ __('Kullanıcıyı Sil') }}">
                                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                                     </button>
                                                     @endif
@@ -389,13 +389,13 @@
                             <table class="w-full text-left border-collapse table-auto">
                                 <thead>
                                     <tr class="bg-gray-50/50 border-b border-gray-100 text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                        <th class="px-4 py-3 text-left">Kullanıcı Adı</th>
+                                        <th class="px-4 py-3 text-left">{{ __('Kullanıcı Adı') }}</th>
                                         <th class="px-4 py-3 text-left">E-Posta</th>
                                         <th class="px-4 py-3 text-left">Gruptaki Konumu / Rol</th>
-                                        <th class="px-4 py-3 text-left">Bağlı Olduğu Grup</th>
+                                        <th class="px-4 py-3 text-left">{{ __('Bağlı Olduğu Grup') }}</th>
                                         @if($canManage)
                                             <th class="px-4 py-3 text-center w-24">Durum</th>
-                                            <th class="px-4 py-3 text-right w-24">İşlemler</th>
+                                            <th class="px-4 py-3 text-right w-24">{{ __('İşlemler') }}</th>
                                         @endif
                                     </tr>
                                 </thead>
@@ -430,10 +430,10 @@
                                                                 </a>
                                                             @endif
                                                             <span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-full border border-amber-200 shrink-0">
-                                                                👑 GRUP YÖNETİCİSİ
+                                                                👑 {{ __('GRUP YÖNETİCİSİ') }}
                                                             </span>
                                                         </div>
-                                                        <span class="text-[11px] font-semibold text-indigo-600 block mt-0.5">Veri Giriş Yöneticisi</span>
+                                                        <span class="text-[11px] font-semibold text-indigo-600 block mt-0.5">{{ __('Veri Giriş Yöneticisi') }}</span>
                                                     </div>
                                                 </div>
                                             </td>
@@ -448,7 +448,7 @@
                                             <td class="px-4 py-3.5 text-xs font-semibold text-indigo-700">
                                                 <div class="flex items-center gap-1.5">
                                                     <svg class="w-4 h-4 text-indigo-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
-                                                    <span class="truncate">{{ $group->name }} (Yönettiği Grup)</span>
+                                                    <span class="truncate">{{ $group->name }} ({{ __('Yönettiği Grup') }})</span>
                                                 </div>
                                             </td>
                                             @if($canManage)
@@ -461,14 +461,14 @@
                                                 </td>
                                                 <td class="px-4 py-3.5 text-right text-sm">
                                                     <div class="inline-flex items-center justify-end gap-1">
-                                                        <a href="{{ route('users.edit', $manager) }}" class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-600 hover:text-white transition-all shadow-xs border border-indigo-100" title="Düzenle">
+                                                        <a href="{{ route('users.edit', $manager) }}" class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-600 hover:text-white transition-all shadow-xs border border-indigo-100" title="{{ __('Düzenle') }}">
                                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                                                         </a>
                                                         @if($manager->id !== 1 && !$manager->isSuperAdmin() && !auth()->user()?->isYonetim())
                                                         <button type="button" 
                                                                 @click="$dispatch('open-user-delete-modal', { id: {{ $manager->id }}, name: '{{ addslashes($manager->name) }}', email: '{{ addslashes($manager->email) }}' })"
                                                                 class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white transition-all shadow-xs border border-rose-100 cursor-pointer" 
-                                                                title="Kullanıcıyı Sil">
+                                                                title="{{ __('Kullanıcıyı Sil') }}">
                                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                                         </button>
                                                         @endif
@@ -508,7 +508,7 @@
                                                                 <svg class="w-3.5 h-3.5 text-gray-400 group-hover:text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
                                                             </a>
                                                         @endif
-                                                        <span class="text-[11px] font-medium text-gray-400 block mt-0.5">Grup Üyesi</span>
+                                                        <span class="text-[11px] font-medium text-gray-400 block mt-0.5">{{ __('Grup Üyesi') }}</span>
                                                     </div>
                                                 </div>
                                             </td>
@@ -536,14 +536,14 @@
                                                 </td>
                                                 <td class="px-4 py-3.5 text-right text-sm">
                                                     <div class="inline-flex items-center justify-end gap-1">
-                                                        <a href="{{ route('users.edit', $member) }}" class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gray-50 text-gray-600 hover:bg-indigo-600 hover:text-white transition-all shadow-xs border border-gray-100" title="Düzenle">
+                                                        <a href="{{ route('users.edit', $member) }}" class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gray-50 text-gray-600 hover:bg-indigo-600 hover:text-white transition-all shadow-xs border border-gray-100" title="{{ __('Düzenle') }}">
                                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                                                         </a>
                                                         @if($member->id !== 1 && !$member->isSuperAdmin() && !auth()->user()?->isYonetim())
                                                         <button type="button" 
                                                                 @click="$dispatch('open-user-delete-modal', { id: {{ $member->id }}, name: '{{ addslashes($member->name) }}', email: '{{ addslashes($member->email) }}' })"
                                                                 class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white transition-all shadow-xs border border-rose-100 cursor-pointer" 
-                                                                title="Kullanıcıyı Sil">
+                                                                title="{{ __('Kullanıcıyı Sil') }}">
                                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                                         </button>
                                                         @endif
@@ -670,7 +670,7 @@
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
                                 </div>
                                 <div>
-                                    <h3 class="text-base font-extrabold text-gray-900">Grubu Olmayan / Atanmamış Kullanıcılar</h3>
+                                    <h3 class="text-base font-extrabold text-gray-900">{{ __('Grubu Olmayan / Atanmamış Kullanıcılar') }}</h3>
                                     <p class="text-xs text-gray-500">Herhangi bir gruba dahil edilmemiş veya yönetici olarak atanmamış kullanıcılar.</p>
                                 </div>
                             </div>
@@ -682,12 +682,12 @@
                             <table class="w-full text-left border-collapse table-auto">
                                 <thead>
                                     <tr class="bg-gray-50/50 border-b border-gray-100 text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                        <th class="px-4 py-3 text-left">Kullanıcı Adı</th>
+                                        <th class="px-4 py-3 text-left">{{ __('Kullanıcı Adı') }}</th>
                                         <th class="px-4 py-3 text-left">E-Posta</th>
                                         <th class="px-4 py-3 text-left">Gruptaki Konumu / Rol</th>
                                         @if($canManage)
                                             <th class="px-4 py-3 text-center w-24">Durum</th>
-                                            <th class="px-4 py-3 text-right w-24">İşlemler</th>
+                                            <th class="px-4 py-3 text-right w-24">{{ __('İşlemler') }}</th>
                                         @endif
                                     </tr>
                                 </thead>
@@ -714,7 +714,7 @@
                                                                 <svg class="w-3.5 h-3.5 text-gray-400 group-hover:text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
                                                             </a>
                                                         @endif
-                                                        <span class="text-[11px] font-medium text-gray-400 block mt-0.5">Bağımsız Kullanıcı</span>
+                                                        <span class="text-[11px] font-medium text-gray-400 block mt-0.5">{{ __('Bağımsız Kullanıcı') }}</span>
                                                     </div>
                                                 </div>
                                             </td>
@@ -736,14 +736,14 @@
                                                 </td>
                                                 <td class="px-4 py-3.5 text-right text-sm">
                                                     <div class="inline-flex items-center justify-end gap-1">
-                                                        <a href="{{ route('users.edit', $user) }}" class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-600 hover:text-white transition-all shadow-xs border border-indigo-100" title="Düzenle">
+                                                        <a href="{{ route('users.edit', $user) }}" class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-600 hover:text-white transition-all shadow-xs border border-indigo-100" title="{{ __('Düzenle') }}">
                                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                                                         </a>
                                                         @if($user->id !== 1 && !$user->isSuperAdmin() && !auth()->user()?->isYonetim())
                                                         <button type="button" 
                                                                 @click="$dispatch('open-user-delete-modal', { id: {{ $user->id }}, name: '{{ addslashes($user->name) }}', email: '{{ addslashes($user->email) }}' })"
                                                                 class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white transition-all shadow-xs border border-rose-100 cursor-pointer" 
-                                                                title="Kullanıcıyı Sil">
+                                                                title="{{ __('Kullanıcıyı Sil') }}">
                                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                                         </button>
                                                         @endif
@@ -769,14 +769,14 @@
                     <table class="w-full text-left border-collapse table-auto">
                         <thead>
                             <tr class="bg-gray-50/50 border-b border-gray-100 text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                <th class="px-4 py-3 text-left">Kullanıcı Adı</th>
+                                <th class="px-4 py-3 text-left">{{ __('Kullanıcı Adı') }}</th>
                                 <th class="px-4 py-3 text-left">Email</th>
                                 <th class="px-4 py-3 text-left">Grup</th>
                                 <th class="px-4 py-3 text-left">Gruptaki Konumu / Rol</th>
                                 @if($canManage)
-                                    <th class="px-4 py-3 text-left">Sistem Rolü</th>
+                                    <th class="px-4 py-3 text-left">{{ __('Sistem Rolü') }}</th>
                                     <th class="px-4 py-3 text-center w-24">Durum</th>
-                                    <th class="px-4 py-3 text-right w-24">İşlemler</th>
+                                    <th class="px-4 py-3 text-right w-24">{{ __('İşlemler') }}</th>
                                 @endif
                             </tr>
                         </thead>
@@ -820,7 +820,7 @@
                                     <td class="px-4 py-3.5">
                                         @if($user->managedGroups->isNotEmpty())
                                             <span class="px-2.5 py-1 inline-flex text-xs font-bold rounded-full bg-amber-100 text-amber-800 border border-amber-200">
-                                                👑 GRUP YÖNETİCİSİ
+                                                👑 {{ __('GRUP YÖNETİCİSİ') }}
                                             </span>
                                         @elseif($user->group_id)
                                             <span class="px-2.5 py-1 inline-flex text-xs font-medium rounded-full bg-slate-100 text-slate-700">
@@ -828,7 +828,7 @@
                                             </span>
                                         @else
                                             <span class="px-2.5 py-1 inline-flex text-xs font-medium rounded-full bg-purple-50 text-purple-700">
-                                                Sistem / Bağımsız
+                                                {{ __('Sistem / Bağımsız') }}
                                             </span>
                                         @endif
                                     </td>
@@ -847,14 +847,14 @@
                                         </td>
                                         <td class="px-4 py-3.5 text-right text-sm font-medium">
                                             <div class="inline-flex items-center justify-end gap-1">
-                                                <a href="{{ route('users.edit', $user) }}" class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gray-50 text-gray-600 hover:bg-indigo-600 hover:text-white transition-all shadow-xs border border-gray-100" title="Düzenle">
+                                                <a href="{{ route('users.edit', $user) }}" class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gray-50 text-gray-600 hover:bg-indigo-600 hover:text-white transition-all shadow-xs border border-gray-100" title="{{ __('Düzenle') }}">
                                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                                                 </a>
                                                 @if($user->id !== 1 && !$user->isSuperAdmin() && !auth()->user()?->isYonetim())
                                                 <button type="button" 
                                                         @click="$dispatch('open-user-delete-modal', { id: {{ $user->id }}, name: '{{ addslashes($user->name) }}', email: '{{ addslashes($user->email) }}' })"
                                                         class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white transition-all shadow-xs border border-rose-100 cursor-pointer" 
-                                                        title="Kullanıcıyı Sil">
+                                                        title="{{ __('Kullanıcıyı Sil') }}">
                                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                                 </button>
                                                 @endif
@@ -959,26 +959,26 @@
                                         Kullanıcıyı Sil
                                     </h3>
                                     <p class="text-xs text-slate-500 mt-1">
-                                        Bu kullanıcıyı sistemden kalıcı olarak silmek istediğinize emin misiniz?
+                                        {{ __('Bu kullanıcıyı sistemden kalıcı olarak silmek istediğinize emin misiniz?') }}
                                     </p>
                                 </div>
                             </div>
 
                             <div class="mt-4 p-3.5 bg-slate-50 rounded-2xl border border-slate-100">
-                                <div class="text-[11px] text-slate-500 font-semibold uppercase tracking-wider mb-1">Silinecek Kullanıcı:</div>
+                                <div class="text-[11px] text-slate-500 font-semibold uppercase tracking-wider mb-1">{{ __('Silinecek Kullanıcı:') }}</div>
                                 <div class="text-sm font-extrabold text-slate-900" x-text="deleteUserName"></div>
                                 <div class="text-xs text-slate-600 font-medium" x-text="deleteUserEmail"></div>
                             </div>
 
                             <div class="mt-4 p-3 bg-rose-50 rounded-xl border border-rose-100 text-[11px] text-rose-700 flex items-start gap-2">
                                 <svg class="w-4 h-4 text-rose-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-                                <span>Bu işlem geri alınamaz. Kullanıcının oturumları, grup ve rol yetkileri temizlenecektir.</span>
+                                <span>{{ __('Bu işlem geri alınamaz. Kullanıcının oturumları, grup ve rol yetkileri temizlenecektir.') }}</span>
                             </div>
                         </div>
 
                         <div class="bg-slate-50 px-6 py-4 flex flex-col sm:flex-row-reverse gap-2 sm:gap-3 rounded-b-3xl border-t border-slate-100">
                             <button type="submit" class="w-full sm:w-auto inline-flex justify-center items-center px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-sm transition cursor-pointer">
-                                Evet, Kullanıcıyı Sil
+                                {{ __('Evet, Kullanıcıyı Sil') }}
                             </button>
                             <button type="button" @click="showDeleteModal = false" class="w-full sm:w-auto inline-flex justify-center items-center px-4 py-2.5 bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold rounded-xl border border-slate-200 shadow-xs transition cursor-pointer">
                                 Vazgeç

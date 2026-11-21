@@ -1,4 +1,4 @@
-@section('title', 'Form Tasarımları')
+@section('title', __('Form Tasarımları'))
 <x-app-layout>
     <x-slot name="header">
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -6,11 +6,11 @@
                 <h2 class="font-extrabold text-2xl text-gray-900 tracking-tight">
                     {{ __('Form Şablonları') }}
                 </h2>
-                <p class="text-sm text-gray-500 mt-1">Sistemdeki tüm form yapılarını yönetin ve yapılandırın</p>
+                <p class="text-sm text-gray-500 mt-1">{{ __('Sistemdeki tüm form yapılarını yönetin ve yapılandırın') }}</p>
             </div>
             <a href="{{ route('form-templates.create') }}" class="group relative flex items-center justify-center py-2.5 px-5 border border-transparent text-sm font-semibold rounded-xl text-white bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 shadow-md hover:shadow-lg transition-all overflow-hidden">
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                Yeni Şablon
+                + {{ __('Yeni Şablon') }}
             </a>
         </div>
     </x-slot>
@@ -50,11 +50,11 @@
                             <div>
                                 @if($template->is_active)
                                     <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-100 shadow-sm">
-                                        <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-1.5"></span> Aktif
+                                        <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-1.5"></span> {{ __('Aktif') }}
                                     </span>
                                 @else
                                     <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold bg-gray-50 text-gray-600 border border-gray-200 shadow-sm">
-                                        <span class="w-1.5 h-1.5 bg-gray-400 rounded-full mr-1.5"></span> Pasif
+                                        <span class="w-1.5 h-1.5 bg-gray-400 rounded-full mr-1.5"></span> {{ __('Pasif') }}
                                     </span>
                                 @endif
                             </div>
@@ -63,13 +63,13 @@
                         <!-- Card Body -->
                         <div class="p-6 flex-grow">
                             <p class="text-sm text-gray-600 line-clamp-2 min-h-[2.5rem]">
-                                {{ $template->description ?: 'Bu şablon için henüz bir açıklama girilmemiş.' }}
+                                {{ $template->description ?: __('Bu şablon için henüz bir açıklama girilmemiş.') }}
                             </p>
                             
                             <div class="mt-4 pt-4 border-t border-dashed border-gray-100 flex justify-between items-center text-xs">
                                 <div class="flex items-center text-gray-500">
                                     <svg class="w-4 h-4 mr-1.5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
-                                    Alt Toplam: <span class="ml-1 font-semibold text-gray-700">{{ $template->show_row_totals ? 'Açık' : 'Kapalı' }}</span>
+                                    {{ __('Alt Toplam') }}: <span class="ml-1 font-semibold text-gray-700">{{ $template->show_row_totals ? __('Açık') : __('Kapalı') }}</span>
                                 </div>
                             </div>
                         </div>
@@ -77,20 +77,20 @@
                         <!-- Card Footer / Actions -->
                         <div class="px-4 py-3 bg-gray-50/50 border-t border-gray-100 flex justify-between items-center flex-wrap gap-2">
                             <div class="flex items-center gap-1">
-                                <a href="{{ route('form_fields.edit', $template) }}" class="p-2 text-indigo-600 hover:text-white hover:bg-indigo-600 rounded-lg transition-colors tooltip" title="Alanları Düzenle">
+                                <a href="{{ route('form_fields.edit', $template) }}" class="p-2 text-indigo-600 hover:text-white hover:bg-indigo-600 rounded-lg transition-colors tooltip" title="{{ __('Alanları Düzenle') }}">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                                 </a>
-                                <a href="{{ route('form-schedules.index', $template) }}" class="p-2 text-amber-600 hover:text-white hover:bg-amber-500 rounded-lg transition-colors tooltip" title="Erişim Takvimi">
+                                <a href="{{ route('form-schedules.index', $template) }}" class="p-2 text-amber-600 hover:text-white hover:bg-amber-500 rounded-lg transition-colors tooltip" title="{{ __('Erişim Takvimi') }}">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                                 </a>
-                                <a href="{{ route('form-templates.show', $template) }}" class="p-2 text-teal-600 hover:text-white hover:bg-teal-500 rounded-lg transition-colors tooltip" title="Önizle / Görüntüle">
+                                <a href="{{ route('form-templates.show', $template) }}" class="p-2 text-teal-600 hover:text-white hover:bg-teal-500 rounded-lg transition-colors tooltip" title="{{ __('Önizle / Görüntüle') }}">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
                                 </a>
                             </div>
 
                             @if(app(\App\Services\PermissionS::class)->hasPermission(Auth::user(), 'form_templates.delete'))
                             <div x-data="{ open: false }">
-                                <button @click="open = true" class="p-2 text-red-500 hover:text-white hover:bg-red-500 rounded-lg transition-colors tooltip" title="Şablonu Sil">
+                                <button @click="open = true" class="p-2 text-red-500 hover:text-white hover:bg-red-500 rounded-lg transition-colors tooltip" title="{{ __('Şablonu Sil') }}">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                 </button>
 
@@ -108,10 +108,10 @@
                                                         </svg>
                                                     </div>
                                                     <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-                                                        <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">Şablon Silinecek</h3>
+                                                        <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">{{ __('Şablon Silinecek') }}</h3>
                                                         <div class="mt-2">
-                                                            <p class="text-sm text-gray-500"><strong>{{ $template->name }}</strong> isimli şablonu silmek istediğinize emin misiniz? Bu işlem geri alınamaz.</p>
-                                                            <p class="text-xs text-red-500 mt-2 font-semibold">Not: Eğer bu şablona ait form verileri varsa silme işlemi gerçekleşmeyecektir.</p>
+                                                            <p class="text-sm text-gray-500"><strong>{{ $template->name }}</strong> {{ __('isimli şablonu silmek istediğinize emin misiniz?') }}</p>
+                                                            <p class="text-xs text-red-500 mt-2 font-semibold">{{ __('Not: Eğer bu şablona ait form verileri varsa silme işlemi engellenecektir.') }}</p>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -121,11 +121,11 @@
                                                     @csrf
                                                     @method('DELETE')
                                                     <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm">
-                                                        Evet, Sil
+                                                        {{ __('Evet, Sil') }}
                                                     </button>
                                                 </form>
                                                 <button type="button" @click="open = false" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
-                                                    İptal
+                                                    {{ __('İptal') }}
                                                 </button>
                                             </div>
                                         </div>
@@ -141,10 +141,10 @@
                             <div class="mx-auto h-24 w-24 bg-gray-50 rounded-full flex items-center justify-center mb-4">
                                 <svg class="w-12 h-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                             </div>
-                            <h3 class="text-lg font-bold text-gray-900 mb-2">Henüz Şablon Yok</h3>
-                            <p class="text-gray-500 mb-6">Sistemde oluşturulmuş herhangi bir form şablonu bulunmuyor.</p>
+                            <h3 class="text-lg font-bold text-gray-900 mb-2">{{ __('Henüz Şablon Yok') }}</h3>
+                            <p class="text-gray-500 mb-6">{{ __('Sistemde oluşturulmuş herhangi bir form şablonu bulunmuyor.') }}</p>
                             <a href="{{ route('form-templates.create') }}" class="inline-flex items-center px-6 py-3 border border-transparent text-sm font-medium rounded-xl shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors">
-                                İlk Şablonu Oluştur
+                                {{ __('İlk Şablonu Oluştur') }}
                             </a>
                         </div>
                     </div>

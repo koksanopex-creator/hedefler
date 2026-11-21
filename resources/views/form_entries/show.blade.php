@@ -14,7 +14,7 @@
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3" x-data>
             <div>
                 <h2 class="font-extrabold text-xl sm:text-2xl text-gray-900 tracking-tight">
-                    {{ $formEntry->template->name }} Detayları
+                    {{ $formEntry->template->name }} {{ __('Detayları') }}
                 </h2>
                 <p class="text-sm text-gray-500 mt-0.5">{{ $formEntry->entry_date->format('d.m.Y') }}</p>
             </div>
@@ -24,28 +24,27 @@
                     @if(!empty($pendingRevision))
                         <span
                             class="inline-flex items-center px-3 py-1 font-semibold rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-xs shadow-xs">
-                            <span class="w-1.5 h-1.5 bg-amber-500 rounded-full mr-1.5 animate-pulse"></span>Düzenleme Talebi
-                            Bekliyor
+                            <span class="w-1.5 h-1.5 bg-amber-500 rounded-full mr-1.5 animate-pulse"></span>{{ __('Düzenleme Talebi Bekliyor') }}
                         </span>
                     @elseif($formEntry->status === 'draft')
                         <span
                             class="inline-flex items-center px-3 py-1 font-semibold rounded-full bg-gray-100 text-gray-800 border border-gray-200 text-xs">
-                            <span class="w-1.5 h-1.5 bg-gray-400 rounded-full mr-1.5"></span>Taslak
+                            <span class="w-1.5 h-1.5 bg-gray-400 rounded-full mr-1.5"></span>{{ __('Taslak') }}
                         </span>
                     @elseif($formEntry->status === 'submitted')
                         <span
                             class="inline-flex items-center px-3 py-1 font-semibold rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-xs">
-                            <span class="w-1.5 h-1.5 bg-amber-500 rounded-full mr-1.5 animate-pulse"></span>Onay Bekliyor
+                            <span class="w-1.5 h-1.5 bg-amber-500 rounded-full mr-1.5 animate-pulse"></span>{{ __('Onay Bekliyor') }}
                         </span>
                     @elseif($formEntry->status === 'approved')
                         <span
                             class="inline-flex items-center px-3 py-1 font-semibold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs">
-                            <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-1.5"></span>Onaylandı
+                            <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-1.5"></span>{{ __('Onaylandı') }}
                         </span>
                     @elseif($formEntry->status === 'rejected')
                         <span
                             class="inline-flex items-center px-3 py-1 font-semibold rounded-full bg-red-50 text-red-700 border border-red-200 text-xs">
-                            <span class="w-1.5 h-1.5 bg-red-500 rounded-full mr-1.5"></span>Reddedildi
+                            <span class="w-1.5 h-1.5 bg-red-500 rounded-full mr-1.5"></span>{{ __('Reddedildi') }}
                         </span>
                     @endif
                 </div>
@@ -56,12 +55,12 @@
                             onclick="if(this.dataset.clicked) return; this.dataset.clicked = 'true'; this.classList.add('btn-loading'); document.body.classList.add('cursor-wait'); window.dispatchEvent(new CustomEvent('open-submit-approval-modal')); setTimeout(() => { delete this.dataset.clicked; this.classList.remove('btn-loading'); document.body.classList.remove('cursor-wait'); }, 800);"
                             @click="$dispatch('open-submit-approval-modal')"
                             class="inline-flex items-center px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold rounded-lg shadow-sm transition gap-1.5 cursor-pointer"
-                            title="Taslağı Onaya Gönder">
+                            title="{{ __('Onaya Gönder') }}">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
                             </svg>
-                            <span>Onaya Gönder</span>
+                            <span>{{ __('Onaya Gönder') }}</span>
                         </button>
                     @endif
 
@@ -70,7 +69,7 @@
                             onclick="if(this.dataset.clicked) return; this.dataset.clicked = 'true'; this.classList.add('btn-loading'); document.body.classList.add('cursor-wait'); window.dispatchEvent(new CustomEvent('open-withdraw-modal')); setTimeout(() => { delete this.dataset.clicked; this.classList.remove('btn-loading'); document.body.classList.remove('cursor-wait'); }, 800);"
                             @click="$dispatch('open-withdraw-modal')"
                             class="inline-flex items-center px-3.5 py-2 {{ $formEntry->status === 'submitted' ? 'bg-amber-600 hover:bg-amber-700' : 'bg-rose-600 hover:bg-rose-700' }} active:scale-95 text-white text-xs font-bold rounded-lg shadow-sm transition gap-1.5 cursor-pointer"
-                            title="{{ $formEntry->status === 'submitted' ? 'Formu Onay Sürecinden Geri Çek (Taslağa Al)' : 'Taslağı Kalıcı Olarak Sil' }}">
+                            title="{{ $formEntry->status === 'submitted' ? __('Geri Çek') : __('Taslağı Sil') }}">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 @if($formEntry->status === 'submitted')
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -80,7 +79,7 @@
                                         d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                                 @endif
                             </svg>
-                            <span>{{ $formEntry->status === 'submitted' ? 'Geri Çek' : 'Taslağı Sil' }}</span>
+                            <span>{{ $formEntry->status === 'submitted' ? __('Geri Çek') : __('Taslağı Sil') }}</span>
                         </button>
                     @endif
                 @endif
@@ -88,7 +87,7 @@
                 @if(!empty($pendingRevision))
                     <button type="button" disabled
                         class="inline-flex items-center px-3.5 py-2 bg-amber-100 text-amber-800 border border-amber-300 text-xs font-bold rounded-lg shadow-sm gap-1.5 cursor-not-allowed opacity-80 select-none"
-                        title="Düzenleme talebiniz yöneticinin incelemesindedir">
+                        title="{{ __('Düzenleme Talebi Bekliyor') }}">
                         <svg class="w-4 h-4 animate-spin text-amber-700" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
                             </circle>
@@ -96,20 +95,20 @@
                                 d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
                             </path>
                         </svg>
-                        <span>Düzenleme Talebi Bekliyor</span>
+                        <span>{{ __('Düzenleme Talebi Bekliyor') }}</span>
                     </button>
                 @elseif(!empty($canRequestRevision) && $canRequestRevision)
                     <button type="button"
                         onclick="if(this.dataset.clicked) return; this.dataset.clicked = 'true'; this.classList.add('btn-loading'); document.body.classList.add('cursor-wait'); window.dispatchEvent(new CustomEvent('open-revision-modal')); setTimeout(() => { delete this.dataset.clicked; this.classList.remove('btn-loading'); document.body.classList.remove('cursor-wait'); }, 800);"
                         @click="$dispatch('open-revision-modal')"
                         class="inline-flex items-center px-3.5 py-2 bg-amber-500 hover:bg-amber-600 active:scale-95 text-white text-xs font-bold rounded-lg shadow-sm transition gap-1.5 cursor-pointer"
-                        title="Form Onaylandıktan Sonra Düzenleme Talep Et">
+                        title="{{ __('Düzenleme Talep Et (Revizyon)') }}">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z">
                             </path>
                         </svg>
-                        <span>Düzenleme Talep Et (Revizyon)</span>
+                        <span>{{ __('Düzenleme Talep Et (Revizyon)') }}</span>
                     </button>
                 @endif
 
@@ -118,12 +117,12 @@
                         onclick="if(this.dataset.clicked) return; this.dataset.clicked = 'true'; this.classList.add('btn-loading'); document.body.classList.add('cursor-wait'); window.dispatchEvent(new CustomEvent('open-revert-modal')); setTimeout(() => { delete this.dataset.clicked; this.classList.remove('btn-loading'); document.body.classList.remove('cursor-wait'); }, 800);"
                         @click="$dispatch('open-revert-modal')"
                         class="inline-flex items-center px-3.5 py-2 bg-slate-700 hover:bg-slate-800 active:scale-95 text-white text-xs font-bold rounded-lg shadow-sm transition gap-1.5 cursor-pointer"
-                        title="Form Onayını Geri Al">
+                        title="{{ __('Onayı Geri Al') }}">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path>
                         </svg>
-                        <span>Onayı Geri Al</span>
+                        <span>{{ __('Onayı Geri Al') }}</span>
                     </button>
                 @endif
 
@@ -508,6 +507,14 @@
                     ? json_decode(json_encode($formEntry->template_snapshot))
                     : $formEntry->template->fields;
 
+                foreach ($fieldsToRender as $fItem) {
+                    if (is_object($fItem) && isset($fItem->label)) {
+                        $fItem->label = __($fItem->label);
+                    } elseif (is_array($fItem) && isset($fItem['label'])) {
+                        $fItem['label'] = __($fItem['label']);
+                    }
+                }
+
                 $user = Auth::user();
                 $canEdit = false;
                 if ($formEntry->status === 'approved') {
@@ -522,7 +529,7 @@
                 <!-- Kart 1: Veriyi Giren -->
                 <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-xs flex items-center justify-between transition-all relative group {{ !empty($canViewHistory) && $canViewHistory ? 'hover:border-indigo-300 hover:shadow-md cursor-pointer' : '' }}"
                     @if(!empty($canViewHistory) && $canViewHistory) @click="$dispatch('open-history-modal')"
-                    title="Form işlem ve onay tarihçesini görüntülemek için tıklayınız" @endif>
+                    title="{{ __('Form işlem ve onay tarihçesini görüntülemek için tıklayınız') }}" @endif>
                     <div class="flex items-center min-w-0">
                         <div
                             class="p-3 rounded-xl bg-indigo-50 text-indigo-600 mr-3.5 border border-indigo-100 flex-shrink-0">
@@ -532,12 +539,12 @@
                             </svg>
                         </div>
                         <div class="truncate">
-                            <p class="text-[11px] text-gray-500 uppercase font-bold tracking-wider">Veriyi Giren</p>
+                            <p class="text-[11px] text-gray-500 uppercase font-bold tracking-wider">{{ __('Veriyi Giren') }}</p>
                             <a href="{{ route('users.profile', $formEntry->user->id) }}" @click.stop
                                 class="font-extrabold text-gray-900 hover:text-indigo-600 hover:underline transition-colors text-sm truncate block">
                                 {{ $formEntry->user->name }}
                             </a>
-                            <p class="text-xs text-gray-500 truncate">{{ $formEntry->user->group->name ?? 'Grup Yok' }}
+                            <p class="text-xs text-gray-500 truncate">{{ $formEntry->user->group->name ?? __('Grup Yok') }}
                             </p>
                         </div>
                     </div>
@@ -548,7 +555,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             </svg>
-                            Tarihçe
+                            {{ __('Tarihçe') }}
                         </span>
                     @endif
                 </div>
@@ -556,7 +563,7 @@
                 <!-- Kart 2: Gönderim Tarihi -->
                 <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-xs flex items-center justify-between transition-all relative group {{ !empty($canViewHistory) && $canViewHistory ? 'hover:border-amber-300 hover:shadow-md cursor-pointer' : '' }}"
                     @if(!empty($canViewHistory) && $canViewHistory) @click="$dispatch('open-history-modal')"
-                    title="Eski gönderim ve revizyon kayıtlarını incelemek için tıklayınız" @endif>
+                    title="{{ __('Eski gönderim ve revizyon kayıtlarını incelemek için tıklayınız') }}" @endif>
                     <div class="flex items-center min-w-0">
                         <div
                             class="p-3 rounded-xl bg-amber-50 text-amber-600 mr-3.5 border border-amber-100 flex-shrink-0">
@@ -567,20 +574,20 @@
                         </div>
                         <div class="truncate">
                             <p class="text-[11px] text-gray-500 uppercase font-bold tracking-wider">
-                                {{ $formEntry->submitted_at ? 'Gönderim Tarihi' : 'Son Kayıt / Taslak Tarihi' }}
+                                {{ $formEntry->submitted_at ? __('Gönderim Tarihi') : __('Son Kayıt / Taslak Tarihi') }}
                             </p>
                             <p class="font-extrabold text-gray-900 text-sm font-mono">
                                 {{ $formEntry->submitted_at ? $formEntry->submitted_at->format('d.m.Y H:i:s') : ($formEntry->updated_at ? $formEntry->updated_at->format('d.m.Y H:i:s') : '-') }}
                             </p>
                             <p class="text-xs text-gray-500 truncate mt-0.5">
                                 @if($formEntry->submitted_at)
-                                    <span class="text-amber-700 font-semibold">Onaya Gönderildi
+                                    <span class="text-amber-700 font-semibold">{{ __('Onaya Gönderildi') }}
                                         (v{{ $formEntry->versions->first()?->version_number ?? 1 }})</span>
                                 @else
-                                    <span class="text-indigo-600 font-semibold">Taslak Sürüm
+                                    <span class="text-indigo-600 font-semibold">{{ __('Taslak Sürüm') }}
                                         v{{ $formEntry->versions->first()?->version_number ?? 1 }}</span>
                                     @if($formEntry->versions->count() > 1)
-                                        <span class="text-gray-400">({{ $formEntry->versions->count() }} kez kaydedildi)</span>
+                                        <span class="text-gray-400">({{ $formEntry->versions->count() }} {{ __('kez kaydedildi') }})</span>
                                     @endif
                                 @endif
                             </p>
@@ -593,7 +600,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             </svg>
-                            Eski Kayıtlar
+                            {{ __('Eski Kayıtlar') }}
                         </span>
                     @endif
                 </div>

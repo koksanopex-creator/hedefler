@@ -1,4 +1,4 @@
-@section('title', 'Veri Girişi İçin Form Seçimi')
+@section('title', __('Veri Girişi İçin Form Seçimi'))
 <x-app-layout>
     <x-slot name="header">
         <div class="flex flex-col md:flex-row md:items-center justify-between">
@@ -19,8 +19,8 @@
                     <div class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
                         <svg class="h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                     </div>
-                    <h3 class="text-lg font-bold text-gray-900">Form Bulunamadı</h3>
-                    <p class="mt-2 text-sm text-gray-500 max-w-md mx-auto">Size atanmış aktif veya oluşturulmuş bir form şablonu bulunmuyor. Yeni bir form oluşturulduğunda burada görünecektir.</p>
+                    <h3 class="text-lg font-bold text-gray-900">{{ __('Form Bulunamadı') }}</h3>
+                    <p class="mt-2 text-sm text-gray-500 max-w-md mx-auto">{{ __('Size atanmış aktif veya oluşturulmuş bir form şablonu bulunamadı.') }}</p>
                 </div>
             @else
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -38,20 +38,20 @@
                                         <div class="ml-4">
                                             <h3 class="text-lg font-bold text-gray-900 group-hover:text-indigo-600 transition-colors line-clamp-1" title="{{ $template->name }}">{{ $template->name }}</h3>
                                             <div class="text-[11px] text-gray-400 font-medium uppercase tracking-wider mt-1">
-                                                Oluşturulma: {{ $template->created_at->format('d.m.Y') }}
+                                                {{ __('Oluşturulma') }}: {{ $template->created_at->format('d.m.Y') }}
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                                 
                                 <p class="text-sm text-gray-500 mb-6 flex-grow line-clamp-3" title="{{ $template->description }}">
-                                    {{ $template->description ?? 'Bu form için bir açıklama girilmemiş.' }}
+                                    {{ $template->description ?? __('Bu form için bir açıklama girilmemiş.') }}
                                 </p>
                                 
                                 <div class="space-y-4 mb-6">
                                     @if(isset($canViewTargets) && $canViewTargets)
                                     <div>
-                                        <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Erişim Yetkisi Olanlar</div>
+                                        <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">{{ __('Erişim Yetkisi Olanlar') }}</div>
                                         @if($template->schedules->count() > 0)
                                             <div class="flex flex-wrap gap-1.5">
                                                 @foreach($template->schedules as $schedule)
@@ -61,13 +61,13 @@
                                                 @endforeach
                                             </div>
                                         @else
-                                            <span class="text-xs text-gray-400 italic">Atama Yok</span>
+                                            <span class="text-xs text-gray-400 italic">{{ __('Atama Yok') }}</span>
                                         @endif
                                     </div>
                                     @endif
                                     
                                     <div>
-                                        <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Geçerlilik Süresi</div>
+                                        <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">{{ __('Geçerlilik Süresi') }}</div>
                                         @if($template->schedules->count() > 0)
                                             <div class="space-y-1.5">
                                                 @foreach($template->schedules as $schedule)
@@ -75,7 +75,7 @@
                                                         @if($schedule->is_indefinite)
                                                             <span class="inline-flex items-center px-2 py-1 rounded-md font-medium bg-emerald-50 text-emerald-700 border border-emerald-100 w-full">
                                                                 <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-2"></span>
-                                                                Süresiz Erişim
+                                                                {{ __('Süresiz Erişim') }}
                                                             </span>
                                                         @else
                                                             <span class="inline-flex items-center px-2 py-1 rounded-md font-medium bg-amber-50 text-amber-700 border border-amber-100 w-full">
@@ -88,7 +88,7 @@
                                             </div>
                                         @else
                                             <span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-red-50 text-red-600 border border-red-100">
-                                                Geçerlilik Kuralı Yok
+                                                {{ __('Geçerlilik Kuralı Yok') }}
                                             </span>
                                         @endif
                                     </div>
@@ -105,7 +105,7 @@
                                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                     </svg>
-                                    <span x-text="clicking ? 'Yönlendiriliyor...' : 'Forma Veri Gir'">Forma Veri Gir</span>
+                                    <span x-text="clicking ? '{{ __('Yönlendiriliyor...') }}' : '{{ __('Forma Veri Gir') }}'">{{ __('Forma Veri Gir') }}</span>
                                     <svg x-show="!clicking" class="ml-2 -mr-1 h-4 w-4 transform group-hover:translate-x-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
                                 </a>
                             </div>

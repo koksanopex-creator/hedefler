@@ -11,17 +11,15 @@
                     </svg>
                 </div>
                 <div>
-                    <h2 class="font-black text-xl sm:text-2xl text-slate-900 tracking-tight">Dinamik BI & Raporlama
-                        Stüdyosu</h2>
-                    <p class="text-xs sm:text-sm text-slate-500 mt-0.5">Çok boyutlu serbest pivot, yıllık kıyaslama
-                        (YoY), coğrafi dünya haritası ve küme benchmark motoru</p>
+                    <h2 class="font-black text-xl sm:text-2xl text-slate-900 tracking-tight">{{ __('Dinamik BI & Raporlama Stüdyosu') }}</h2>
+                    <p class="text-xs sm:text-sm text-slate-500 mt-0.5">{{ __('Çok boyutlu serbest pivot, yıllık kıyaslama (YoY), coğrafi dünya haritası ve küme benchmark motoru') }}</p>
                 </div>
             </div>
             <div class="flex items-center gap-2 self-end md:self-auto">
                 <span
                     class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100">
                     <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                    Canlı BI Motoru
+                    {{ __('Canlı BI Motoru') }}
                 </span>
             </div>
         </div>
@@ -64,7 +62,7 @@
                     <!-- Form Şablonu Seçimi -->
                     <div class="md:col-span-5">
                         <label class="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
-                            📋 Analiz Edilecek Form Şablonu
+                            📋 {{ __('Analiz Edilecek Form Şablonu') }}
                         </label>
                         <select x-model="templateId" @change="onTemplateChange()"
                             class="w-full rounded-xl border-slate-200 text-sm font-semibold focus:border-indigo-500 focus:ring-indigo-500 shadow-2xs">
@@ -77,28 +75,28 @@
                     <!-- Kayıtlı Rapor Varyantı (Şablon) -->
                     <div class="md:col-span-5">
                         <label class="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
-                            ⚡ Kayıtlı Rapor Varyantı / Kuralı
+                            ⚡ {{ __('Kayıtlı Rapor Varyantı / Kuralı') }}
                         </label>
                         <div class="flex gap-2">
                             <select x-model="selectedRuleId" @change="onRuleSelect()"
                                 class="w-full rounded-xl border-slate-200 text-sm font-semibold focus:border-indigo-500 focus:ring-indigo-500 shadow-2xs">
-                                <option value="">-- Özel / Anlık Analiz (Kayıtsız) --</option>
+                                <option value="">-- {{ __('Özel / Anlık Analiz (Kayıtsız)') }} --</option>
                                 <template x-for="r in filteredSavedRules" :key="r.id">
                                     <option :value="r.id" x-text="r.title + (r.is_public ? ' 🌐' : '')"></option>
                                 </template>
                             </select>
 
                             @if(Auth::user()->can('reports.create'))
-                                <button type="button" @click="openSaveRuleModal()" title="Mevcut Rapor Kuralını Kaydet"
+                                <button type="button" @click="openSaveRuleModal()" title="{{ __('Mevcut Rapor Kuralını Kaydet') }}"
                                     class="px-3 py-2 rounded-xl bg-indigo-50 text-indigo-700 hover:bg-indigo-100 font-bold text-xs shrink-0 flex items-center gap-1 transition-colors">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
                                     </svg>
-                                    <span class="hidden sm:inline">Kaydet</span>
+                                    <span class="hidden sm:inline">{{ __('Kaydet') }}</span>
                                 </button>
                                 <template x-if="selectedRuleId">
-                                    <button type="button" @click="deleteSelectedRule()" title="Seçili Varyantı Sil"
+                                    <button type="button" @click="deleteSelectedRule()" title="{{ __('Seçili Varyantı Sil') }}"
                                         class="px-2.5 py-2 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 font-bold text-xs shrink-0 transition-colors">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -119,7 +117,7 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
-                                <span>Zamanlamalar</span>
+                                <span>{{ __('Zamanlamalar') }}</span>
                                 <span
                                     class="px-1.5 py-0.5 rounded-full text-[10px] bg-indigo-100 text-indigo-700 font-extrabold"
                                     x-text="schedulesCount"></span>
@@ -136,28 +134,28 @@
                         :class="analysisMode === 'multi_pivot' ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200' : 'bg-slate-50 text-slate-700 hover:bg-slate-100'"
                         class="px-4 py-3 rounded-xl font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all">
                         <span>📊</span>
-                        <span>Çok Boyutlu Pivot</span>
+                        <span>{{ __('Çok Boyutlu Pivot') }}</span>
                     </button>
 
                     <button type="button" @click="setAnalysisMode('yoy')"
                         :class="analysisMode === 'yoy' ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200' : 'bg-slate-50 text-slate-700 hover:bg-slate-100'"
                         class="px-4 py-3 rounded-xl font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all">
                         <span>📅</span>
-                        <span>Yıllık Kıyaslama (YoY)</span>
+                        <span>{{ __('Yıllık Kıyaslama (YoY)') }}</span>
                     </button>
 
                     <button type="button" @click="setAnalysisMode('segment')"
                         :class="analysisMode === 'segment' ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200' : 'bg-slate-50 text-slate-700 hover:bg-slate-100'"
                         class="px-4 py-3 rounded-xl font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all">
                         <span>⚖️</span>
-                        <span>A vs B Kümeler Kıyası</span>
+                        <span>{{ __('A vs B Kümeler Kıyası') }}</span>
                     </button>
 
                     <button type="button" @click="setAnalysisMode('geo')"
                         :class="analysisMode === 'geo' ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200' : 'bg-slate-50 text-slate-700 hover:bg-slate-100'"
                         class="px-4 py-3 rounded-xl font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all">
                         <span>🌍</span>
-                        <span>Dünya Haritası</span>
+                        <span>{{ __('Dünya Haritası') }}</span>
                     </button>
                 </div>
             </div>
@@ -172,21 +170,20 @@
                             <h3
                                 class="text-sm font-black text-slate-900 uppercase tracking-wide flex items-center gap-2">
                                 <span class="w-2.5 h-2.5 rounded-full bg-indigo-600"></span>
-                                Serbest N-Boyutlu Satır Kırılımları ve Penetrasyon
+                                {{ __('Serbest N-Boyutlu Satır Kırılımları ve Penetrasyon') }}
                             </h3>
-                            <p class="text-xs text-slate-500 mt-0.5">İstediğiniz dinamik alanları satır boyutu olarak
-                                ekleyin (Örn: İşyeri ➔ Renk ➔ Gramaj veya Müşteri ➔ Malzeme)</p>
+                            <p class="text-xs text-slate-500 mt-0.5">{{ __('İstediğiniz dinamik alanları satır boyutu olarak ekleyin (Örn: İşyeri ➔ Renk ➔ Gramaj veya Müşteri ➔ Malzeme)') }}</p>
                         </div>
                         <button type="button" @click="showFilters = !showFilters"
                             class="text-xs font-bold text-indigo-600 hover:underline">
-                            <span x-text="showFilters ? 'Filtreleri Gizle ▲' : 'Gelişmiş Filtreleri Aç ▼'"></span>
+                            <span x-text="showFilters ? '{{ __('Filtreleri Gizle ▲') }}' : '{{ __('Gelişmiş Filtreleri Aç ▼') }}'"></span>
                         </button>
                     </div>
 
                     <!-- Satır Boyutları Seçici (Etiket Hapları) -->
                     <div>
                         <label class="block text-xs font-extrabold text-slate-700 mb-1.5">
-                            📌 Satır Boyutları (Seçilenler Sırasıyla İç İçe Kırılır):
+                            📌 {{ __('Satır Boyutları (Seçilenler Sırasıyla İç İçe Kırılır):') }}
                         </label>
                         <div
                             class="flex flex-wrap gap-1.5 items-center p-2.5 bg-slate-50 rounded-xl border border-slate-200 min-h-[46px]">

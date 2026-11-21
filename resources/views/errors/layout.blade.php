@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -79,10 +79,24 @@
             </div>
         </a>
 
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-3">
+            <!-- Dil Seçici -->
+            <div class="flex items-center gap-1 bg-slate-100 p-0.5 rounded-xl border border-slate-200/80">
+                <a href="{{ route('locale.switch', 'tr') }}"
+                    class="px-2.5 py-1 text-xs font-bold rounded-lg transition-all flex items-center gap-1 {{ app()->getLocale() === 'tr' ? 'bg-white text-indigo-700 shadow-2xs' : 'text-slate-600 hover:text-slate-900' }}">
+                    <span>🇹🇷</span>
+                    <span>TR</span>
+                </a>
+                <a href="{{ route('locale.switch', 'en') }}"
+                    class="px-2.5 py-1 text-xs font-bold rounded-lg transition-all flex items-center gap-1 {{ app()->getLocale() === 'en' ? 'bg-white text-indigo-700 shadow-2xs' : 'text-slate-600 hover:text-slate-900' }}">
+                    <span>🇬🇧</span>
+                    <span>EN</span>
+                </a>
+            </div>
+
             <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200/70 shadow-xs">
                 <span class="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
-                <span>Hata Durumu</span>
+                <span>{{ __('Hata Durumu') }}</span>
             </span>
         </div>
     </header>
@@ -133,15 +147,15 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
                         <span id="countdown-banner-text">
-                            <strong id="countdown-seconds" class="text-indigo-700 font-extrabold text-base">5</strong> saniye içinde anasayfaya yönlendiriliyorsunuz...
+                            <strong id="countdown-seconds" class="text-indigo-700 font-extrabold text-base">5</strong> {{ __('saniye içinde anasayfaya yönlendiriliyorsunuz...') }}
                         </span>
                     </div>
 
                     <!-- Geri Sayımı Duraklat / Başlat Butonu -->
                     <button type="button" id="btn-toggle-timer" onclick="toggleTimer()" 
-                        class="text-xs font-bold text-indigo-700 hover:text-indigo-900 bg-white/90 hover:bg-white border border-indigo-200 px-3 py-1.5 rounded-xl transition-all shadow-2xs flex items-center gap-1.5">
+                        class="text-xs font-bold text-indigo-700 hover:text-indigo-900 bg-white/90 hover:bg-white border border-indigo-200 px-3 py-1.5 rounded-xl transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer">
                         <span id="btn-timer-icon">⏸️</span>
-                        <span id="btn-timer-label">Durdur</span>
+                        <span id="btn-timer-label">{{ __('Durdur') }}</span>
                     </button>
                 </div>
 
@@ -159,7 +173,7 @@
                     <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                     </svg>
-                    <span>Önceki Sayfaya Dön</span>
+                    <span>{{ __('Önceki Sayfaya Dön') }}</span>
                 </button>
 
                 <!-- Hemen Anasayfaya Git Butonu -->
@@ -168,7 +182,7 @@
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
                     </svg>
-                    <span>Hemen Anasayfaya Git</span>
+                    <span>{{ __('Hemen Anasayfaya Git') }}</span>
                 </a>
             </div>
 
@@ -182,9 +196,9 @@
                         </svg>
                     </div>
                     <div class="min-w-0">
-                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">İç Süreç & Onay</p>
-                        <p class="text-xs font-semibold text-slate-700 truncate">Bölüm Yöneticisi</p>
-                        <p class="text-[11px] text-slate-500 truncate">Yetki talebi için yöneticinize danışın</p>
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{{ __('İç Süreç & Onay') }}</p>
+                        <p class="text-xs font-semibold text-slate-700 truncate">{{ __('Bölüm Yöneticisi') }}</p>
+                        <p class="text-[11px] text-slate-500 truncate">{{ __('Yetki talebi için yöneticinize danışın') }}</p>
                     </div>
                 </div>
 
@@ -196,9 +210,9 @@
                         </svg>
                     </div>
                     <div class="min-w-0">
-                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Teknik Destek</p>
-                        <p class="text-xs font-semibold text-slate-700 truncate">Sistem ve IT Yönetimi</p>
-                        <p class="text-[11px] text-slate-500 truncate">Dahili Destek / Sistem Masası</p>
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{{ __('Teknik Destek') }}</p>
+                        <p class="text-xs font-semibold text-slate-700 truncate">{{ __('Sistem ve IT Yönetimi') }}</p>
+                        <p class="text-[11px] text-slate-500 truncate">{{ __('Dahili Destek / Sistem Masası') }}</p>
                     </div>
                 </div>
             </div>

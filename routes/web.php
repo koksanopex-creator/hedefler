@@ -1,7 +1,10 @@
 <?php
 
 use App\Http\Controllers\ProfileC;
+use App\Http\Controllers\LocaleC;
 use Illuminate\Support\Facades\Route;
+
+Route::get('/locale/{locale}', [LocaleC::class, 'switch'])->name('locale.switch');
 
 Route::any('/', function () {
     return redirect('dashboard');

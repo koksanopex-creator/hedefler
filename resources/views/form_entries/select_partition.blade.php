@@ -1,4 +1,4 @@
-@section('title', $formTemplate->name . ' - ' . ($partitionField->label ?? 'Bölüm') . ' Seçimi')
+@section('title', $formTemplate->name . ' - ' . ($partitionField->label ?? __('Bölüm')) . ' ' . __('Seçimi'))
 <x-app-layout>
     <x-slot name="header">
         <div class="flex items-center justify-between">
@@ -13,20 +13,19 @@
                 <div>
                     <div class="flex items-center gap-2">
                         <span
-                            class="text-xs font-black uppercase tracking-wider text-indigo-600 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-md">Parçalı
-                            Hedef Girişi</span>
+                            class="text-xs font-black uppercase tracking-wider text-indigo-600 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-md">{{ __('Parçalı Hedef Girişi') }}</span>
                         <h2 class="font-extrabold text-xl text-slate-900 leading-tight">
                             {{ $formTemplate->name }}
                         </h2>
                     </div>
-                    <p class="text-xs text-slate-500 mt-0.5">Lütfen hedef girişi yapmak istediğiniz
-                        <strong>{{ $partitionField->label }}</strong> değerini seçiniz</p>
+                    <p class="text-xs text-slate-500 mt-0.5">{{ __('Lütfen hedef girişi yapmak istediğiniz') }}
+                        <strong>{{ $partitionField->label }}</strong> {{ __('değerini seçiniz') }}</p>
                 </div>
             </div>
 
             <a href="{{ route('form-entries.index') }}"
                 class="text-xs font-bold text-slate-600 hover:text-indigo-600 bg-white border border-slate-200 px-3.5 py-2 rounded-xl shadow-2xs transition">
-                Tüm Veri Girişleri Listesi &rarr;
+                {{ __('Tüm Veri Girişleri Listesi &rarr;') }}
             </a>
         </div>
     </x-slot>
@@ -68,16 +67,13 @@
                 <div class="max-w-2xl relative z-10 space-y-2">
                     <span
                         class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider bg-white/20 text-white backdrop-blur-md">
-                        <span>⚡ Bölümlenmiş Giriş Kriteri:</span>
+                        <span>⚡ {{ __('Bölümlenmiş Giriş Kriteri:') }}</span>
                         <strong class="text-amber-300">{{ $partitionField->label }}</strong>
                     </span>
-                    <h3 class="text-xl sm:text-2xl font-black">Hangi {{ $partitionField->label }} için hedef girişi
-                        yapacaksınız?</h3>
+                    <h3 class="text-xl sm:text-2xl font-black">{{ __('Hangi') }} {{ $partitionField->label }} {{ __('için hedef girişi yapacaksınız?') }}</h3>
                     <p class="text-xs sm:text-sm text-indigo-100/90 leading-relaxed">
-                        Sistem yöneticiniz bu form için verileri <strong>{{ $partitionField->label }}</strong> bazında
-                        parçalara ayırmıştır.
-                        Aşağıdaki seçeneklerden birini seçerek ilgili kritere kilitli formunuzu doldurabilir veya
-                        kayıtlı taslağınıza devam edebilirsiniz.
+                        {{ __('Sistem yöneticiniz bu form için verileri') }} <strong>{{ $partitionField->label }}</strong> {{ __('bazında parçalara ayırmıştır.') }}
+                        {{ __('Aşağıdaki seçeneklerden birini seçerek ilgili kritere kilitli formunuzu doldurabilir veya kayıtlı taslağınıza devam edebilirsiniz.') }}
                     </p>
                 </div>
             </div>
@@ -97,16 +93,16 @@
 
                         if ($hasDraft) {
                             $cardBg = 'bg-white border-slate-300 shadow-slate-500/5 hover:border-slate-400';
-                            $statusBadge = ['bg' => 'bg-slate-100 text-slate-800 border-slate-300', 'dot' => 'bg-slate-600', 'text' => 'Kayıtlı Taslak'];
+                            $statusBadge = ['bg' => 'bg-slate-100 text-slate-800 border-slate-300', 'dot' => 'bg-slate-600', 'text' => __('Kayıtlı Taslak')];
                         } elseif ($hasSubmitted) {
                             $cardBg = 'bg-white border-amber-300 shadow-amber-500/5 hover:border-amber-400';
-                            $statusBadge = ['bg' => 'bg-amber-100 text-amber-900 border-amber-300', 'dot' => 'bg-amber-500', 'text' => 'Onay Bekliyor'];
+                            $statusBadge = ['bg' => 'bg-amber-100 text-amber-900 border-amber-300', 'dot' => 'bg-amber-500', 'text' => __('Onay Bekliyor')];
                         } elseif ($hasApproved) {
                             $cardBg = 'bg-white border-emerald-300 shadow-emerald-500/5 hover:border-emerald-400';
-                            $statusBadge = ['bg' => 'bg-emerald-100 text-emerald-900 border-emerald-300', 'dot' => 'bg-emerald-500', 'text' => 'Onaylandı'];
+                            $statusBadge = ['bg' => 'bg-emerald-100 text-emerald-900 border-emerald-300', 'dot' => 'bg-emerald-500', 'text' => __('Onaylandı')];
                         } elseif ($hasRejected) {
                             $cardBg = 'bg-white border-rose-300 shadow-rose-500/5 hover:border-rose-400';
-                            $statusBadge = ['bg' => 'bg-rose-100 text-rose-900 border-rose-300', 'dot' => 'bg-rose-500', 'text' => 'Reddedildi / Düzenle'];
+                            $statusBadge = ['bg' => 'bg-rose-100 text-rose-900 border-rose-300', 'dot' => 'bg-rose-500', 'text' => __('Reddedildi / Düzenle')];
                         }
                     @endphp
 
@@ -139,7 +135,7 @@
                                 @else
                                     <span
                                         class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200">
-                                        Giriş Yapılmadı
+                                        {{ __('Giriş Yapılmadı') }}
                                     </span>
                                 @endif
                             </div>
@@ -147,23 +143,22 @@
                             @if($entry)
                                 <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 text-[11px] space-y-1">
                                     <div class="flex justify-between text-slate-500 font-semibold">
-                                        <span>Kayıt No:</span>
+                                        <span>{{ __('Kayıt No:') }}</span>
                                         <strong class="text-slate-800 font-mono">#{{ $entry->id }}</strong>
                                     </div>
                                     <div class="flex justify-between text-slate-500 font-semibold">
-                                        <span>Satır Sayısı:</span>
-                                        <strong class="text-slate-800">{{ $entry->rows()->count() }} Satır</strong>
+                                        <span>{{ __('Satır Sayısı:') }}</span>
+                                        <strong class="text-slate-800">{{ $entry->rows()->count() }} {{ __('Satır') }}</strong>
                                     </div>
                                     <div class="flex justify-between text-slate-500 font-semibold">
-                                        <span>Son Güncelleme:</span>
+                                        <span>{{ __('Son Güncelleme:') }}</span>
                                         <span
                                             class="text-slate-700">{{ $entry->updated_at?->format('d.m.Y H:i') ?? '-' }}</span>
                                     </div>
                                 </div>
                             @else
                                 <p class="text-xs text-slate-500 italic py-1">
-                                    Bu {{ $partitionField->label }} için henüz bir hedef kaydı bulunmuyor. Yeni bir form açarak
-                                    satırlarınızı girebilirsiniz.
+                                    {{ __('Bu') }} {{ $partitionField->label }} {{ __('için henüz bir hedef kaydı bulunmuyor. Yeni bir form açarak satırlarınızı girebilirsiniz.') }}
                                 </p>
                             @endif
                         </div>
@@ -182,8 +177,7 @@
                                             d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                     </svg>
                                     <span
-                                        x-text="clicking ? 'Yönlendiriliyor...' : 'Mevcut Taslağı Düzenle (#{{ $entry->id }})'">Mevcut
-                                        Taslağı Düzenle (#{{ $entry->id }})</span>
+                                        x-text="clicking ? '{{ __('Yönlendiriliyor...') }}' : '{{ __('Mevcut Taslağı Düzenle') }} (#{{ $entry->id }})'">{{ __('Mevcut Taslağı Düzenle') }} (#{{ $entry->id }})</span>
                                 </a>
                             @elseif($hasSubmitted)
                                 <a href="{{ route('form-entries.show', $entry) }}"
@@ -195,7 +189,7 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
-                                    <span x-text="clicking ? 'Yönlendiriliyor...' : 'Onay Bekliyor - İncele (#{{ $entry->id }})'">Onay Bekliyor - İncele (#{{ $entry->id }})</span>
+                                    <span x-text="clicking ? '{{ __('Yönlendiriliyor...') }}' : '{{ __('Onay Bekliyor - İncele') }} (#{{ $entry->id }})'">{{ __('Onay Bekliyor - İncele') }} (#{{ $entry->id }})</span>
                                 </a>
                             @elseif($hasApproved)
                                 <div class="w-full flex items-center gap-2">
@@ -208,8 +202,7 @@
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                 d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                         </svg>
-                                        <span x-text="clicking ? 'Yönlendiriliyor...' : 'Onaylı Kaydı Gör'">Onaylı Kaydı
-                                            Gör</span>
+                                        <span x-text="clicking ? '{{ __('Yönlendiriliyor...') }}' : '{{ __('Onaylı Kaydı Gör') }}'">{{ __('Onaylı Kaydı Gör') }}</span>
                                     </a>
                                 </div>
                             @else
@@ -222,10 +215,10 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M12 4v16m8-8H4" />
                                     </svg>
-                                    <span x-show="clicking">Yönlendiriliyor...</span>
+                                    <span x-show="clicking">{{ __('Yönlendiriliyor...') }}</span>
                                     <span x-show="!clicking" class="inline-flex items-center gap-1.5 flex-wrap justify-center">
                                         <span class="text-amber-300 font-extrabold tracking-wide uppercase">{{ $option['name'] }}</span>
-                                        <span>İçin Hedef Girişini Başlat</span>
+                                        <span>{{ __('İçin Hedef Girişini Başlat') }}</span>
                                     </span>
                                 </a>
                             @endif
@@ -233,7 +226,7 @@
                     </div>
                 @empty
                     <div class="col-span-full bg-white rounded-2xl border border-slate-200 p-12 text-center text-slate-500">
-                        {{ $partitionField->label }} alanına tanımlı herhangi bir seçenek bulunamadı.
+                        {{ $partitionField->label }} {{ __('alanına tanımlı herhangi bir seçenek bulunamadı.') }}
                     </div>
                 @endforelse
             </div>
@@ -242,12 +235,11 @@
             <div class="flex justify-between items-center bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs">
                 <div class="flex items-center gap-3">
                     <span class="w-2.5 h-2.5 rounded-full bg-indigo-600"></span>
-                    <span class="text-xs font-bold text-slate-700">Daha önce girilmiş tüm formlarınızı incelemek veya
-                        birleştirmek mi istiyorsunuz?</span>
+                    <span class="text-xs font-bold text-slate-700">{{ __('Daha önce girilmiş tüm formlarınızı incelemek veya birleştirmek mi istiyorsunuz?') }}</span>
                 </div>
                 <a href="{{ route('form-entries.index') }}"
                     class="text-xs font-black text-indigo-600 hover:text-indigo-800 hover:underline">
-                    Veri Girişleri Listesine Git &rarr;
+                    {{ __('Veri Girişleri Listesine Git &rarr;') }}
                 </a>
             </div>
 

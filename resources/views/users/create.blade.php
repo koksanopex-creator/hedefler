@@ -1,8 +1,8 @@
-@section('title', 'Yeni Kullanıcı')
+@section('title', __('Yeni Kullanıcı'))
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-bold text-2xl text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 leading-tight">
-            {{ isset($user) ? 'Kullanıcı Düzenle: ' . $user->name : 'Yeni Kullanıcı Oluştur' }}
+            {{ isset($user) ? __('Kullanıcı Düzenle: ') . $user->name : __('Yeni Kullanıcı Oluştur') }}
         </h2>
     </x-slot>
 
@@ -23,16 +23,16 @@
                             💡
                         </div>
                         <div class="space-y-2">
-                            <h4 class="text-base font-bold text-indigo-950">Kullanıcılar Merkezi Sistemden Eklenir</h4>
+                            <h4 class="text-base font-bold text-indigo-950">{{ __('Kullanıcılar Merkezi Sistemden Eklenir') }}</h4>
                             <p class="text-xs text-indigo-800 leading-relaxed">
                                 Köksan Hedefler Portalı SSO altyapısına bağlıdır. Kullanıcıların kimlik, şifre ve departman tanımlamaları Merkezi Yönetim Portalı üzerinden yapılmaktadır.
                             </p>
                             <div class="pt-2 flex flex-wrap gap-3">
                                 <a href="{{ route('users.sync') }}" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5">
-                                    🔄 Merkezi Senkronizasyon Ekranına Git
+                                    🔄 {{ __('Merkezi Senkronizasyon Ekranına Git') }}
                                 </a>
                                 <a href="http://localhost:8001/admin/users" target="_blank" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5">
-                                    ↗ Merkezi Kullanıcı Yönetimi (Port 8001)
+                                    ↗ {{ __('Merkezi Kullanıcı Yönetimi (Port 8001)') }}
                                 </a>
                             </div>
                         </div>
@@ -86,7 +86,7 @@
                         <div class="space-y-2">
                             <label class="block text-sm font-semibold text-gray-700">Rol (Sistem Yetkisi)</label>
                             <select name="role_id" required class="w-full bg-white/50 backdrop-blur-sm border border-gray-200 rounded-xl px-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 focus:bg-white transition-all shadow-sm">
-                                <option value="">Seçiniz...</option>
+                                <option value="">{{ __('Seçiniz...') }}</option>
                                 @foreach($roles as $role)
                                     <option value="{{ $role->id }}" {{ old('role_id', $user->role_id ?? '') == $role->id ? 'selected' : '' }}>
                                         {{ $role->name }}
@@ -95,9 +95,9 @@
                             </select>
                         </div>
                         <div class="space-y-2">
-                            <label class="block text-sm font-semibold text-gray-700">Ait Olduğu Grup</label>
+                            <label class="block text-sm font-semibold text-gray-700">{{ __('Ait Olduğu Grup') }}</label>
                             <select name="group_id" class="w-full bg-white/50 backdrop-blur-sm border border-gray-200 rounded-xl px-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 focus:bg-white transition-all shadow-sm">
-                                <option value="">Bağımsız (Grup Yok)</option>
+                                <option value="">{{ __('Bağımsız (Grup Yok)') }}</option>
                                 @foreach($groups as $group)
                                     <option value="{{ $group->id }}" {{ old('group_id', $user->group_id ?? '') == $group->id ? 'selected' : '' }}>
                                         {{ $group->name }}
@@ -110,7 +110,7 @@
                     <!-- Yönettiği Gruplar Glass Card -->
                     <div class="p-6 backdrop-blur-md bg-white/40 border border-white rounded-2xl shadow-sm relative overflow-hidden">
                         <div class="absolute top-0 left-0 w-2 h-full bg-gradient-to-b from-indigo-400 to-purple-500"></div>
-                        <label class="block text-base font-bold text-gray-800 mb-1 pl-4">Yönettiği Gruplar</label>
+                        <label class="block text-base font-bold text-gray-800 mb-1 pl-4">{{ __('Yönettiği Gruplar') }}</label>
                         <p class="text-sm text-gray-500 mb-5 pl-4">"Veri Giriş Yöneticisi" için, hangi grupların verilerini yönetebileceğini seçin.</p>
                         
                         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 pl-4">
@@ -138,7 +138,7 @@
                         <button type="submit" class="relative inline-flex items-center justify-center px-8 py-3 overflow-hidden font-bold text-white transition-all duration-300 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl hover:from-indigo-500 hover:to-purple-500 hover:scale-[1.02] hover:shadow-[0_0_30px_rgba(79,70,229,0.4)]">
                             <span class="relative flex items-center gap-2">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                                {{ isset($user) ? 'Değişiklikleri Kaydet' : 'Kullanıcı Oluştur' }}
+                                {{ isset($user) ? __('Değişiklikleri Kaydet') : __('Kullanıcı Oluştur') }}
                             </span>
                         </button>
                     </div>

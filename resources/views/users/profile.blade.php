@@ -1,4 +1,4 @@
-@section('title', $user->name . ' - Kullanıcı Profili')
+@section('title', $user->name . ' - ' . __('Kullanıcı Profili'))
 <x-app-layout>
     <x-slot name="header">
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -27,7 +27,7 @@
                     <p class="text-xs text-slate-500 mt-1 font-medium flex items-center gap-2">
                         <span>{{ $user->email }}</span>
                         <span>&bull;</span>
-                        <span>Kayıt Tarihi: {{ $user->created_at->format('d.m.Y') }}</span>
+                        <span>{{ __('Kayıt Tarihi:') }} {{ $user->created_at->format('d.m.Y') }}</span>
                     </p>
                 </div>
             </div>
@@ -60,30 +60,30 @@
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
                 <!-- Toplam Giriş -->
                 <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-xs">
-                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Toplam Form Girişi</p>
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">{{ __('Toplam Form Girişi') }}</p>
                     <p class="text-3xl font-black text-slate-900 mt-2">{{ $stats['total_entries'] }}</p>
-                    <span class="text-[11px] text-slate-500 mt-1 block">Tüm şablonlarda</span>
+                    <span class="text-[11px] text-slate-500 mt-1 block">{{ __('Tüm şablonlarda') }}</span>
                 </div>
 
                 <!-- Onaylanan -->
                 <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-xs">
-                    <p class="text-xs font-bold text-emerald-600 uppercase tracking-wider">Onaylanan Kayıtlar</p>
+                    <p class="text-xs font-bold text-emerald-600 uppercase tracking-wider">{{ __('Onaylanan Kayıtlar') }}</p>
                     <p class="text-3xl font-black text-emerald-700 mt-2">{{ $stats['approved_entries'] }}</p>
-                    <span class="text-[11px] text-emerald-600/80 mt-1 block">Nihai onaylı</span>
+                    <span class="text-[11px] text-emerald-600/80 mt-1 block">{{ __('Nihai onaylı') }}</span>
                 </div>
 
                 <!-- Onay Bekleyen -->
                 <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-xs">
                     <p class="text-xs font-bold text-blue-600 uppercase tracking-wider">Onay Bekleyen</p>
                     <p class="text-3xl font-black text-blue-700 mt-2">{{ $stats['pending_entries'] }}</p>
-                    <span class="text-[11px] text-blue-600/80 mt-1 block">İnceleme sürecinde</span>
+                    <span class="text-[11px] text-blue-600/80 mt-1 block">{{ __('İnceleme sürecinde') }}</span>
                 </div>
 
                 <!-- Taslaklar -->
                 <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-xs">
                     <p class="text-xs font-bold text-amber-600 uppercase tracking-wider">Taslaklar</p>
                     <p class="text-3xl font-black text-amber-700 mt-2">{{ $stats['draft_entries'] }}</p>
-                    <span class="text-[11px] text-amber-600/80 mt-1 block">Henüz iletilmemiş</span>
+                    <span class="text-[11px] text-amber-600/80 mt-1 block">{{ __('Henüz iletilmemiş') }}</span>
                 </div>
             </div>
 
@@ -126,7 +126,7 @@
                                 <p class="text-sm sm:text-base font-black text-indigo-950 mt-0.5">{{ $kpiStats['performance_grade'] }}</p>
                             </div>
                             <div>
-                                <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Ortalama KPI Başarısı</span>
+                                <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">{{ __('Ortalama KPI Başarısı') }}</span>
                                 <p class="text-sm sm:text-base font-black text-indigo-600 mt-0.5">%{{ number_format($kpiStats['average_rate'], 1, ',', '.') }}</p>
                             </div>
                             <div>
@@ -134,7 +134,7 @@
                                 <p class="text-sm sm:text-base font-black text-emerald-700 mt-0.5">{{ $kpiStats['achieved_count'] }} / {{ $kpiStats['total_targets'] }}</p>
                             </div>
                             <div>
-                                <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Risk Altındaki Hedefler</span>
+                                <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">{{ __('Risk Altındaki Hedefler') }}</span>
                                 <p class="text-sm sm:text-base font-black text-amber-700 mt-0.5">{{ $kpiStats['at_risk_count'] }} Hedef</p>
                             </div>
                         </div>
@@ -236,8 +236,8 @@
             <div class="bg-white rounded-2xl border border-slate-100 shadow-xs overflow-hidden">
                 <div class="p-5 sm:p-6 border-b border-slate-100 flex justify-between items-center">
                     <div>
-                        <h3 class="text-base font-black text-slate-900 tracking-tight">Kullanıcının Doldurduğu Formlar</h3>
-                        <p class="text-xs text-slate-500 mt-0.5">Son yapılan veri girişleri ve durumları</p>
+                        <h3 class="text-base font-black text-slate-900 tracking-tight">{{ __('Kullanıcının Doldurduğu Formlar') }}</h3>
+                        <p class="text-xs text-slate-500 mt-0.5">{{ __('Son yapılan veri girişleri ve durumları') }}</p>
                     </div>
                     @if($stats['last_entry_date'])
                         <span class="text-xs text-slate-400 font-medium">Son Giriş: {{ \Carbon\Carbon::parse($stats['last_entry_date'])->format('d.m.Y') }}</span>
@@ -249,9 +249,9 @@
                         <thead class="bg-slate-50/60">
                             <tr>
                                 <th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Tarih</th>
-                                <th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Form Şablonu</th>
+                                <th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">{{ __('Form Şablonu') }}</th>
                                 <th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Durum</th>
-                                <th class="px-6 py-3 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">İşlem</th>
+                                <th class="px-6 py-3 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">{{ __('İşlem') }}</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-50">
@@ -261,7 +261,7 @@
                                         {{ $entry->entry_date ? $entry->entry_date->format('d.m.Y') : '-' }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-slate-900">
-                                        {{ $entry->template->name ?? 'Belirtilmemiş' }}
+                                        {{ $entry->template->name ?? __('Belirtilmemiş') }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         @if($entry->status === 'approved')
@@ -283,7 +283,7 @@
                             @empty
                                 <tr>
                                     <td colspan="4" class="px-6 py-10 text-center text-sm text-slate-400">
-                                        Kullanıcıya ait henüz bir veri girişi bulunmuyor.
+                                        {{ __('Kullanıcıya ait henüz bir veri girişi bulunmuyor.') }}
                                     </td>
                                 </tr>
                             @endforelse

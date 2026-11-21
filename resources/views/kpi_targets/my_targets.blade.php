@@ -1,4 +1,4 @@
-@section('title', 'Hedeflerim ve Performans Karnem')
+@section('title', __('Hedeflerim ve Performans Karnem'))
 <x-app-layout>
     <x-slot name="header">
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -13,10 +13,10 @@
                     </div>
                     <div>
                         <h2 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                            Hedeflerim & Performans Karnem
+                            {{ __('Hedeflerim & Performans Karnem') }}
                         </h2>
                         <p class="text-xs text-slate-500 font-medium mt-0.5">
-                            {{ $user->name }} &bull; {{ $user->group->name ?? 'Bağımsız Personel' }} &bull; {{ $selectedYear }} Yılı KPI Göstergeleri
+                            {{ $user->name }} &bull; {{ $user->group->name ?? __('Bağımsız Personel') }} &bull; {{ $selectedYear }} {{ __('Yılı KPI Göstergeleri') }}
                         </p>
                     </div>
                 </div>
@@ -26,14 +26,14 @@
             <div class="flex items-center gap-1.5 bg-slate-100/80 p-1.5 rounded-xl border border-slate-200 shadow-2xs">
                 <span class="text-xs font-bold text-slate-500 px-2 flex items-center gap-1">
                     <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                    Yıl:
+                    {{ __('Yıl') }}:
                 </span>
                 @foreach($availableYears as $year)
                     <a href="{{ route('my-targets.index', ['year' => $year]) }}"
                         class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all {{ $selectedYear == $year ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 hover:text-indigo-600 hover:bg-white' }}">
                         {{ $year }}
                         @if($year == date('Y'))
-                            <span class="text-[9px] font-normal opacity-80">(Mevcut)</span>
+                            <span class="text-[9px] font-normal opacity-80">({{ __('Mevcut') }})</span>
                         @endif
                     </a>
                 @endforeach
@@ -63,32 +63,32 @@
                 {{-- Toplam Hedef --}}
                 <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
                     <div class="flex items-center justify-between">
-                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Tanımlı Hedef</span>
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">{{ __('Tanımlı Hedef') }}</span>
                         <span class="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
                         </span>
                     </div>
                     <div class="mt-3">
                         <p class="text-2xl sm:text-3xl font-black text-slate-900">{{ $performanceScore['total_targets'] }}</p>
-                        <span class="text-[11px] text-slate-500 font-medium">{{ $selectedYear }} Yılı KPI Sayısı</span>
+                        <span class="text-[11px] text-slate-500 font-medium">{{ $selectedYear }} {{ __('Yılı KPI Sayısı') }}</span>
                     </div>
                 </div>
 
                 {{-- Ortalama Başarı Oranı --}}
                 <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
                     <div class="flex items-center justify-between">
-                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Ortalama Başarı</span>
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">{{ __('Ortalama Başarı') }}</span>
                         @php
                             $rate = $performanceScore['average_rate'];
                             if ($rate >= 100) {
                                 $rateBadge = 'bg-emerald-50 text-emerald-700 border-emerald-200';
-                                $rateLabel = 'Hedef Aşıldı';
+                                $rateLabel = __('Hedef Aşıldı');
                             } elseif ($rate >= 70) {
                                 $rateBadge = 'bg-amber-50 text-amber-700 border-amber-200';
-                                $rateLabel = 'İyi Düzeyde';
+                                $rateLabel = __('İyi Düzeyde');
                             } else {
                                 $rateBadge = 'bg-rose-50 text-rose-700 border-rose-200';
-                                $rateLabel = 'Geliştirilmeli';
+                                $rateLabel = __('Geliştirilmeli');
                             }
                         @endphp
                         <span class="text-[10px] font-extrabold px-2 py-0.5 rounded-full border {{ $rateBadge }}">
@@ -97,28 +97,28 @@
                     </div>
                     <div class="mt-3">
                         <p class="text-2xl sm:text-3xl font-black text-slate-900">%{{ number_format($performanceScore['average_rate'], 1, ',', '.') }}</p>
-                        <span class="text-[11px] text-slate-500 font-medium">Kümülatif Gerçekleşme</span>
+                        <span class="text-[11px] text-slate-500 font-medium">{{ __('Kümülatif Gerçekleşme') }}</span>
                     </div>
                 </div>
 
                 {{-- Başarılı Hedefler --}}
                 <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
                     <div class="flex items-center justify-between">
-                        <span class="text-xs font-bold text-emerald-600 uppercase tracking-wider">Hedefe Ulaşan</span>
+                        <span class="text-xs font-bold text-emerald-600 uppercase tracking-wider">{{ __('Hedefe Ulaşan') }}</span>
                         <span class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
                         </span>
                     </div>
                     <div class="mt-3">
                         <p class="text-2xl sm:text-3xl font-black text-emerald-700">{{ $performanceScore['achieved_count'] }}</p>
-                        <span class="text-[11px] text-emerald-600/80 font-medium">%100 ve üzeri gerçekleşme</span>
+                        <span class="text-[11px] text-emerald-600/80 font-medium">{{ __('%100 ve üzeri gerçekleşme') }}</span>
                     </div>
                 </div>
 
                 {{-- Devam Eden / Kritik --}}
                 <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
                     <div class="flex items-center justify-between">
-                        <span class="text-xs font-bold text-amber-600 uppercase tracking-wider">Devam Eden / Kritik</span>
+                        <span class="text-xs font-bold text-amber-600 uppercase tracking-wider">{{ __('Devam Eden / Kritik') }}</span>
                         <span class="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                         </span>
@@ -127,7 +127,7 @@
                         <p class="text-2xl sm:text-3xl font-black text-amber-700">
                             {{ $performanceScore['in_progress_count'] + $performanceScore['at_risk_count'] }}
                         </p>
-                        <span class="text-[11px] text-amber-600/80 font-medium">Hedefe yaklaşan hedefler</span>
+                        <span class="text-[11px] text-amber-600/80 font-medium">{{ __('Hedefe yaklaşan hedefler') }}</span>
                     </div>
                 </div>
             </div>
@@ -150,22 +150,21 @@
                     </div>
 
                     <h3 class="text-lg sm:text-xl font-black text-slate-900 mt-4 tracking-tight">
-                        {{ $selectedYear }} Yılı İçin Hedef Ataması Yapılmadı
+                        {{ $selectedYear }} {{ __('Yılı İçin Hedef Ataması Yapılmadı') }}
                     </h3>
 
                     <p class="text-sm text-slate-500 max-w-lg mx-auto mt-2 leading-relaxed">
-                        {{ $selectedYear }} yılı için adınıza veya bağlı olduğunuz departmana henüz tanımlanmış aktif bir KPI hedefi bulunmamaktadır.
-                        Yöneticiniz veya sistem yöneticisi tarafından adınıza hedef tanımlandığında hedeflerinizi, gerçekleşme yüzdelerini ve 12 aylık periyot dağılımlarını bu sayfadan anlık olarak takip edebilirsiniz.
+                        {{ $selectedYear }} {{ __('yılı için adınıza veya bağlı olduğunuz departmana henüz tanımlanmış aktif bir KPI hedefi bulunmamaktadır.') }} {{ __('Yöneticiniz veya sistem yöneticisi tarafından adınıza hedef tanımlandığında hedeflerinizi, gerçekleşme oranlarınızı ve aylık trendlerinizi bu sayfadan takip edebilirsiniz.') }}
                     </p>
 
                     @if(count($availableYears) > 1)
                         <div class="mt-6 pt-6 border-t border-slate-100 flex flex-wrap items-center justify-center gap-2">
-                            <span class="text-xs text-slate-400 font-medium">Geçmiş hedeflerinizi ve arşivinizi incelemek için:</span>
+                            <span class="text-xs text-slate-400 font-medium">{{ __('Geçmiş hedeflerinizi ve arşivinizi incelemek için:') }}</span>
                             @foreach($availableYears as $year)
                                 @if($year != $selectedYear)
                                     <a href="{{ route('my-targets.index', ['year' => $year]) }}"
                                         class="inline-flex items-center gap-1 text-xs font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-3 py-1 rounded-lg transition">
-                                        <span>{{ $year }} Hedef Arşivi</span>
+                                        <span>{{ $year }} {{ __('Hedef Arşivi') }}</span>
                                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
                                     </a>
                                 @endif
@@ -179,9 +178,9 @@
                     <div class="flex items-center justify-between">
                         <h3 class="text-base font-extrabold text-slate-900 flex items-center gap-2">
                             <span class="w-2.5 h-2.5 rounded-full bg-indigo-600"></span>
-                            {{ $selectedYear }} Yılı Hedef Kartları ve Aylık Gerçekleşmeler
+                            {{ $selectedYear }} {{ __('Yılı Hedef Kartları ve Aylık Gerçekleşmeler') }}
                         </h3>
-                        <span class="text-xs text-slate-400 font-medium">Toplam {{ $targets->count() }} hedef listeleniyor</span>
+                        <span class="text-xs text-slate-400 font-medium">{{ __('Toplam :count hedef listeleniyor', ['count' => $targets->count()]) }}</span>
                     </div>
 
                     <div class="grid grid-cols-1 gap-6">
@@ -194,15 +193,15 @@
                                 if ($achieveRate >= 100) {
                                     $progressBg = 'bg-gradient-to-r from-emerald-500 to-teal-500';
                                     $statusBadge = 'bg-emerald-50 text-emerald-700 border-emerald-200';
-                                    $statusText = 'Hedef Aşıldı';
+                                    $statusText = __('Hedef Aşıldı');
                                 } elseif ($achieveRate >= 70) {
                                     $progressBg = 'bg-gradient-to-r from-amber-500 to-indigo-500';
                                     $statusBadge = 'bg-amber-50 text-amber-700 border-amber-200';
-                                    $statusText = 'Yolunda';
+                                    $statusText = __('Yolunda');
                                 } else {
                                     $progressBg = 'bg-gradient-to-r from-rose-500 to-amber-500';
                                     $statusBadge = 'bg-rose-50 text-rose-700 border-rose-200';
-                                    $statusText = 'Kritik';
+                                    $statusText = __('Kritik');
                                 }
                             @endphp
 
@@ -217,10 +216,10 @@
                                                 {{ $target->template->name }}
                                             </span>
                                             <span class="px-2.5 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wide bg-purple-50 text-purple-700 border border-purple-100">
-                                                Hedef Alanı: {{ $target->targetField->label }}
+                                                {{ __('Hedef Alanı:') }} {{ $target->targetField->label }}
                                             </span>
                                             <span class="px-2.5 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wide bg-slate-100 text-slate-700">
-                                                {{ $target->assignee_type === 'user' ? 'Bireysel Personel Hedefi' : ($target->assignee_type === 'group' ? 'Grup Hedefi' : 'Yönetici Hedefi') }}
+                                                {{ $target->assignee_type === 'user' ? __('Bireysel Personel Hedefi') : ($target->assignee_type === 'group' ? __('Grup Hedefi') : __('Yönetici Hedefi')) }}
                                             </span>
                                         </div>
                                         <h4 class="text-base sm:text-lg font-black text-slate-900 tracking-tight">
@@ -244,9 +243,9 @@
                                     <div class="p-3 bg-slate-50/80 rounded-2xl border border-slate-200/70 space-y-2">
                                         <div class="flex items-center justify-between text-[11px] font-bold text-slate-500">
                                             <span class="flex items-center gap-1.5 text-indigo-700">
-                                                <span>🔍</span> Geçerli Kriter Kırılımları (Master Data)
+                                                <span>🔍</span> {{ __('Geçerli Kriter Kırılımları (Master Data)') }}
                                             </span>
-                                            <span class="text-[10px] text-slate-400 font-mono">{{ count($badges) }} Kriter</span>
+                                            <span class="text-[10px] text-slate-400 font-mono">{{ count($badges) }} {{ __('Kriter') }}</span>
                                         </div>
                                         <div class="flex flex-wrap items-center gap-1.5">
                                             @foreach($badges as $badge)
@@ -264,13 +263,13 @@
                                 <div class="space-y-2">
                                     <div class="flex justify-between items-baseline">
                                         <div class="text-xs text-slate-500 font-medium">
-                                            Gerçekleşen:
+                                            {{ __('Gerçekleşen:') }}
                                             <span class="text-slate-900 text-base sm:text-lg font-black ml-1">
                                                 {{ number_format($actualValue, 2, ',', '.') }} {{ $target->unit }}
                                             </span>
                                         </div>
                                         <div class="text-xs text-slate-500 font-medium">
-                                            Hedef:
+                                            {{ __('Hedef:') }}
                                             <span class="text-slate-900 text-base sm:text-lg font-black ml-1">
                                                 {{ number_format($target->target_value, 2, ',', '.') }} {{ $target->unit }}
                                             </span>
@@ -288,7 +287,7 @@
                                 <div class="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
                                     <button type="button" @click="showMonthlyDetails = !showMonthlyDetails"
                                         class="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-600 hover:text-indigo-800 transition">
-                                        <span x-text="showMonthlyDetails ? 'Aylık Dağılımı Gizle ▲' : '12 Aylık Dağılım ve Karnesi ▼'"></span>
+                                        <span x-text="showMonthlyDetails ? '{{ __('Aylık Dağılımı Gizle ▲') }}' : '{{ __('12 Aylık Dağılım ve Karnesi ▼') }}'"></span>
                                     </button>
 
                                     <div class="flex items-center gap-2">
@@ -296,13 +295,13 @@
                                         <a href="{{ route('form-entries.create', $target->form_template_id) }}"
                                             class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition shadow-2xs">
                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                                            Forma Veri Gir
+                                            {{ __('Forma Veri Gir') }}
                                         </a>
 
                                         {{-- Detaylı İlerleme Sayfası --}}
                                         <a href="{{ route('kpi-targets.progress', $target->id) }}"
                                             class="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 transition">
-                                            <span>Detay</span>
+                                            <span>{{ __('Detay') }}</span>
                                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
                                         </a>
                                     </div>
@@ -311,12 +310,12 @@
                                 {{-- 12 AYLIK PERİYOT TABLOSU (AÇILIR KAPANIR) --}}
                                 <div x-show="showMonthlyDetails" x-transition.duration.250ms class="pt-2">
                                     <div class="overflow-x-auto rounded-2xl border border-slate-100 bg-slate-50/50 p-3">
-                                        <p class="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-2">12 Aylık Gerçekleşme Tablosu ({{ $target->target_year }})</p>
+                                        <p class="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-2">{{ __('12 Aylık Gerçekleşme Tablosu') }} ({{ $target->target_year }})</p>
                                         <table class="min-w-full text-center text-xs">
                                             <thead>
                                                 <tr class="text-[10px] text-slate-400 font-bold uppercase border-b border-slate-200/60">
                                                     @foreach(['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'] as $mName)
-                                                        <th class="py-1 px-2">{{ $mName }}</th>
+                                                        <th class="py-1 px-2">{{ __($mName) }}</th>
                                                     @endforeach
                                                 </tr>
                                             </thead>

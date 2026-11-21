@@ -30,11 +30,17 @@
             <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 to-purple-500"></div>
 
             <!-- Kart Başlığı -->
-            <div class="mb-6">
-                <h2 class="text-2xl font-extrabold text-white tracking-tight">Şifre Sıfırlama</h2>
-                <p class="text-xs text-slate-400 mt-2 leading-relaxed">
-                    Kayıtlı kurumsal e-posta adresinizi giriniz. Şifrenizi yenileyebilmeniz için size bir sıfırlama bağlantısı iletilecektir.
-                </p>
+            <div class="flex items-start justify-between mb-6">
+                <div>
+                    <h2 class="text-2xl font-extrabold text-white tracking-tight">{{ __('Şifre Sıfırlama') }}</h2>
+                    <p class="text-xs text-slate-400 mt-2 leading-relaxed">
+                        {{ __('Kayıtlı kurumsal e-posta adresinizi giriniz. Şifrenizi yenileyebilmeniz için size bir sıfırlama bağlantısı iletilecektir.') }}
+                    </p>
+                </div>
+                <div class="flex items-center gap-1 bg-white/10 p-1 rounded-xl border border-white/10 shrink-0 ml-3">
+                    <a href="{{ route('locale.switch', 'tr') }}" class="px-2 py-1 text-xs font-bold rounded-lg transition-all {{ app()->getLocale() === 'tr' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-400 hover:text-white' }}">TR</a>
+                    <a href="{{ route('locale.switch', 'en') }}" class="px-2 py-1 text-xs font-bold rounded-lg transition-all {{ app()->getLocale() === 'en' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-400 hover:text-white' }}">EN</a>
+                </div>
             </div>
 
             <!-- Oturum Durumu Bildirimi (Başarı) -->
@@ -67,7 +73,7 @@
                 <!-- E-Posta Alanı -->
                 <div>
                     <label for="email" class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
-                        Kurumsal E-Posta Adresi
+                        {{ __('Kurumsal E-Posta Adresi') }}
                     </label>
                     <div class="relative">
                         <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -89,7 +95,7 @@
                     <button type="submit" 
                             class="w-full group relative inline-flex items-center justify-center px-6 py-3.5 overflow-hidden font-bold text-white transition-all duration-300 bg-gradient-to-r from-indigo-600 to-indigo-700 rounded-xl hover:from-indigo-500 hover:to-indigo-600 hover:shadow-[0_0_25px_rgba(99,102,241,0.4)] hover:scale-[1.01] active:scale-[0.99] shadow-lg shadow-indigo-600/30 text-sm">
                         <span class="relative flex items-center gap-2">
-                            <span>Sıfırlama Bağlantısı Gönder</span>
+                            <span>{{ __('Sıfırlama Bağlantısı Gönder') }}</span>
                             <svg class="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
                         </span>
                     </button>
@@ -99,7 +105,7 @@
                 <div class="pt-2 text-center">
                     <a href="{{ route('login') }}" class="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-400 hover:text-indigo-300 transition">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-                        <span>Giriş Ekranına Dön</span>
+                        <span>{{ __('Giriş Ekranına Dön') }}</span>
                     </a>
                 </div>
 
