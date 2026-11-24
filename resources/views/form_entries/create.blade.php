@@ -1802,11 +1802,43 @@
 
                 get filteredDropdownOptions() {
                     const raw = this.getActiveDropdownRawOptions();
-                    const q = (this.activeDropdown.search || '').trim().toLocaleLowerCase('tr');
-                    if (!q) return raw;
+                    const rawQ = (this.activeDropdown.search || '').trim();
+                    if (!rawQ) return raw;
+
+                    const q = rawQ.toLocaleLowerCase('tr');
+                    const qNorm = this.normalizeSearch(rawQ);
+                    const qIsNum = this.isDecimalNumeric(rawQ);
+                    const qNum = qIsNum ? parseFloat(rawQ.replace(',', '.')) : null;
+
                     return raw.filter(opt => {
                         const val = typeof opt === 'object' && opt !== null ? (opt.name ?? opt.value ?? '') : String(opt);
-                        return String(val).toLocaleLowerCase('tr').includes(q);
+                        const valStr = String(val).trim();
+                        const valLower = valStr.toLocaleLowerCase('tr');
+                        const valNorm = this.normalizeSearch(valStr);
+
+                        // 1. Standart metin araması (Türkçe karakter duyarlı & duyarsız)
+                        if (valLower.includes(q) || valNorm.includes(qNorm)) return true;
+
+                        // 2. Nokta / virgül esnekliği (örn: "1.3" arandığında "1,3" veya tersi)
+                        const valDot = valLower.replace(',', '.');
+                        const qDot = q.replace(',', '.');
+                        if (valDot.includes(qDot)) return true;
+
+                        // 3. Sayısal eşleşme (örn: arama "1,3" veya "1.3", listede "1,30" veya "1,300")
+                        if (qIsNum && this.isDecimalNumeric(valStr)) {
+                            const valNum = parseFloat(valStr.replace(',', '.'));
+                            if (!isNaN(valNum)) {
+                                // Sayısal değer eşitliği (1.3 == 1.30)
+                                if (Math.abs(qNum - valNum) < 0.00001) return true;
+
+                                // Ondalık basamak başlangıcı kontrolü (örn: arama 1.3, değer 1.35)
+                                const qClean = String(qNum);
+                                const vClean = String(valNum);
+                                if (vClean.startsWith(qClean) || qClean.startsWith(vClean)) return true;
+                            }
+                        }
+
+                        return false;
                     });
                 },
 
@@ -4266,14 +4298,53 @@
                         .replace(/\s+/g, ' ');
                 },
 
+                isDecimalNumeric(str) {
+                    if (str === null || str === undefined) return false;
+                    let s = String(str).trim();
+                    if (!s) return false;
+                    return /^-?\d+([.,]\d+)?$/.test(s);
+                },
+
+                getNumericKey(str) {
+                    if (!this.isDecimalNumeric(str)) return null;
+                    let clean = String(str).trim().replace(',', '.');
+                    let num = parseFloat(clean);
+                    return isNaN(num) ? null : 'num:' + num;
+                },
+
+                registerNumericVariants(map, rawStr, targetValue) {
+                    if (!map || !this.isDecimalNumeric(rawStr)) return;
+                    let clean = String(rawStr).trim().replace(',', '.');
+                    let num = parseFloat(clean);
+                    if (isNaN(num)) return;
+
+                    // 1. Kanonik sayısal anahtar (Örn: num:1.3)
+                    map.set('num:' + num, targetValue);
+
+                    // 2. Doğrudan float string ve virgüllü varyantı
+                    let numStr = String(num);
+                    map.set(numStr, targetValue);
+                    map.set(numStr.replace('.', ','), targetValue);
+
+                    // 3. 0, 1, 2, 3, 4 basamaklı ondalık varyantlar (Örn: 1.3, 1.30, 1.300 ve 1,3, 1,30, 1,300)
+                    for (let dec = 0; dec <= 4; dec++) {
+                        let fixed = num.toFixed(dec);
+                        map.set(fixed, targetValue);
+                        map.set(fixed.replace('.', ','), targetValue);
+                    }
+                },
+
                 handlePaste(event, startRowIndex, startColIndex) {
                     let clipboardData = event.clipboardData || window.clipboardData;
                     if (!clipboardData) return;
                     let pastedText = clipboardData.getData('text');
                     if (!pastedText) return;
 
-                    if (!pastedText.includes('\t') && !pastedText.includes('\n') && !pastedText.includes('\r')) {
-                        return; // Tek hücreye normal yapıştırma
+                    // Eğer tek bir değer varsa ve kullanıcı normal bir text input içindeyse, tarayıcı varsayılanına izin ver.
+                    // Ancak buton (master_data, select vb.) üzerindeyse handlePaste tek hücreyi de işlesin.
+                    const isFocusInTextInput = event.target && event.target.tagName === 'INPUT' && event.target.type === 'text';
+                    if (!pastedText.includes('\t') && !pastedText.includes('\n') && !pastedText.includes('\r') && isFocusInTextInput) {
+                        return; // Metin kutusunda standart yapıştırmaya izin ver
                     }
 
                     event.preventDefault();
@@ -4344,6 +4415,7 @@
                                                 let oStr = String(o).trim();
                                                 map.set(this.toLocaleLower(oStr), o);
                                                 map.set(this.normalizeSearch(oStr), o);
+                                                this.registerNumericVariants(map, oStr, o);
                                             });
                                         } else {
                                             for (let key in opts) {
@@ -4353,6 +4425,8 @@
                                                 map.set(this.normalizeSearch(valStr), key);
                                                 map.set(this.toLocaleLower(keyStr), key);
                                                 map.set(this.normalizeSearch(keyStr), key);
+                                                this.registerNumericVariants(map, valStr, key);
+                                                this.registerNumericVariants(map, keyStr, key);
                                             }
                                         }
                                     } catch(e) {}
@@ -4375,6 +4449,7 @@
                                                 map.set(this.toLocaleLower(commaName), itemName);
                                                 map.set(this.normalizeSearch(commaName), itemName);
                                             }
+                                            this.registerNumericVariants(map, itemName, itemName);
                                         });
                                     }
                                     masterDataLookupMaps[fIdx] = map;
@@ -4429,11 +4504,14 @@
                                                     let map = selectLookupMaps[currentColIndex];
                                                     let searchVal = this.toLocaleLower(pastedVal);
                                                     let normVal = this.normalizeSearch(pastedVal);
+                                                    let numKey = this.getNumericKey(pastedVal);
                                                     if (pastedVal !== '') {
                                                         if (map && map.has(searchVal)) {
                                                             currentRow.values[targetField.id] = map.get(searchVal);
                                                         } else if (map && map.has(normVal)) {
                                                             currentRow.values[targetField.id] = map.get(normVal);
+                                                        } else if (map && numKey && map.has(numKey)) {
+                                                            currentRow.values[targetField.id] = map.get(numKey);
                                                         } else {
                                                             currentRow.values[targetField.id] = '';
                                                             unmatchedDropdowns.push({
@@ -4450,12 +4528,16 @@
                                                     let map = masterDataLookupMaps[currentColIndex];
                                                     let searchVal = this.toLocaleLower(pastedVal);
                                                     let normVal = this.normalizeSearch(pastedVal);
+                                                    let numKey = this.getNumericKey(pastedVal);
                                                     if (pastedVal !== '') {
                                                         if (map && map.has(searchVal)) {
                                                             currentRow.values[targetField.id] = map.get(searchVal);
                                                             this.handleMasterDataChange(currentRow, targetField.id);
                                                         } else if (map && map.has(normVal)) {
                                                             currentRow.values[targetField.id] = map.get(normVal);
+                                                            this.handleMasterDataChange(currentRow, targetField.id);
+                                                        } else if (map && numKey && map.has(numKey)) {
+                                                            currentRow.values[targetField.id] = map.get(numKey);
                                                             this.handleMasterDataChange(currentRow, targetField.id);
                                                         } else {
                                                             currentRow.values[targetField.id] = '';
@@ -4680,6 +4762,7 @@
                                                                 let oStr = String(o).trim();
                                                                 map.set(this.toLocaleLower(oStr), o);
                                                                 map.set(this.normalizeSearch(oStr), o);
+                                                                this.registerNumericVariants(map, oStr, o);
                                                             });
                                                         } else {
                                                             for (let key in opts) {
@@ -4689,6 +4772,8 @@
                                                                 map.set(this.normalizeSearch(valStr), key);
                                                                 map.set(this.toLocaleLower(keyStr), key);
                                                                 map.set(this.normalizeSearch(keyStr), key);
+                                                                this.registerNumericVariants(map, valStr, key);
+                                                                this.registerNumericVariants(map, keyStr, key);
                                                             }
                                                         }
                                                     } catch(e) {}
@@ -4711,6 +4796,7 @@
                                                                 map.set(this.toLocaleLower(commaName), itemName);
                                                                 map.set(this.normalizeSearch(commaName), itemName);
                                                             }
+                                                            this.registerNumericVariants(map, itemName, itemName);
                                                         });
                                                     }
                                                     masterDataLookupMaps[field.id] = map;
@@ -4784,11 +4870,14 @@
                                                         } else if (f.type === 'master_data' && masterDataLookupMaps[f.id]) {
                                                             let sVal = this.toLocaleLower(val);
                                                             let nVal = this.normalizeSearch(val);
+                                                            let numKey = this.getNumericKey(val);
                                                             let map = masterDataLookupMaps[f.id];
                                                             if (map.has(sVal)) {
                                                                 r.values[f.id] = map.get(sVal);
                                                             } else if (map.has(nVal)) {
                                                                 r.values[f.id] = map.get(nVal);
+                                                            } else if (numKey && map.has(numKey)) {
+                                                                r.values[f.id] = map.get(numKey);
                                                             } else {
                                                                 r.values[f.id] = '';
                                                                 unmatchedDropdowns.push({
@@ -4801,11 +4890,14 @@
                                                         } else if (f.type === 'select' && selectLookupMaps[f.id]) {
                                                             let sVal = this.toLocaleLower(val);
                                                             let nVal = this.normalizeSearch(val);
+                                                            let numKey = this.getNumericKey(val);
                                                             let map = selectLookupMaps[f.id];
                                                             if (map.has(sVal)) {
                                                                 r.values[f.id] = map.get(sVal);
                                                             } else if (map.has(nVal)) {
                                                                 r.values[f.id] = map.get(nVal);
+                                                            } else if (numKey && map.has(numKey)) {
+                                                                r.values[f.id] = map.get(numKey);
                                                             } else {
                                                                 r.values[f.id] = '';
                                                                 unmatchedDropdowns.push({

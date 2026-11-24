@@ -1501,6 +1501,14 @@ class FormEntryC extends Controller
                         }
                     }
 
+                    // Master data veya select alanında Excel formatlı metni varsa (örn. '1,30') koru
+                    if (in_array($field->type, ['master_data', 'select']) && !empty($cellValue) && is_string($cellValue)) {
+                        $trimmedCell = trim($cellValue);
+                        if ($trimmedCell !== '' && $trimmedCell !== '-') {
+                            $val = $trimmedCell;
+                        }
+                    }
+
                     if (trim($val) !== '') {
                         $isEmptyRow = false;
                     }
