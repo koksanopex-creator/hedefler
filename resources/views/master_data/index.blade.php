@@ -201,6 +201,13 @@
                                     @endforeach
                                 </select>
                             </div>
+                            <div>
+                                <select name="sort_mode"
+                                    class="w-full rounded-sm border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-xs p-2 text-gray-700 bg-gray-50">
+                                    <option value="alphabetical">{{ __('Sıralama: Alfabetik (A-Z)') }}</option>
+                                    <option value="custom">{{ __('Sıralama: Özel Sıra (Giriş / Manuel)') }}</option>
+                                </select>
+                            </div>
                             <button type="submit"
                                 class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-1.5 px-3 rounded-sm text-xs transition shadow-sm">
                                 + Yeni Tip Ekle
@@ -213,7 +220,7 @@
                         @forelse($types as $t)
                             <li class="group cursor-pointer transition flex justify-between items-stretch hover:bg-blue-50"
                                 :class="{'bg-blue-100 border-l-4 border-blue-600': selectedTypeId == {{ $t->id }}, 'border-l-4 border-transparent': selectedTypeId != {{ $t->id }}}"
-                                @click="selectType({{ $t->id }}, '{{ $t->name }}', {{ $t->parent_id ?? 'null' }})">
+                                @click="selectType({{ $t->id }}, {{ Js::from($t->name) }}, {{ $t->parent_id ?? 'null' }})">
 
                                 <div class="p-3 flex-grow flex items-center">
                                     @if($t->depth > 0)
@@ -226,8 +233,15 @@
                                         </div>
                                     @endif
                                     <div>
-                                        <div class="font-bold text-gray-800 text-sm"
-                                            :class="{'text-blue-800': selectedTypeId == {{ $t->id }}}">{{ $t->name }}</div>
+                                        <div class="font-bold text-gray-800 text-sm flex items-center gap-1.5"
+                                            :class="{'text-blue-800': selectedTypeId == {{ $t->id }}}">
+                                            <span>{{ $t->name }}</span>
+                                            <span x-show="typesList[{{ $t->id }}] && typesList[{{ $t->id }}].sort_mode === 'custom'"
+                                                style="display: none;"
+                                                class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-indigo-100 text-indigo-700 border border-indigo-200">
+                                                {{ __('Özel Sıra') }}
+                                            </span>
+                                        </div>
                                         @if($t->parent)
                                             <div class="text-[10px] text-gray-500 uppercase tracking-wider mt-0.5">Alt Kategori
                                             </div>
@@ -282,16 +296,16 @@
                     </div>
 
                     <div x-show="selectedTypeId" style="display: none;" class="flex flex-col h-full">
-                        <div class="px-4 py-3 border-b border-gray-300 bg-gray-100 flex justify-between items-center">
+                        <div class="px-4 py-3 border-b border-gray-300 bg-gray-100 flex flex-wrap justify-between items-center gap-2">
                             <h3 class="text-sm font-bold text-blue-900 uppercase tracking-wide">
                                 <span x-text="selectedTypeName"></span> <span
                                     class="text-gray-500 font-normal normal-case">Veri Listesi</span>
                             </h3>
-                            <div class="flex items-center gap-2">
+                            <div class="flex flex-wrap items-center gap-2">
                                 <div class="relative">
                                     <input type="text" x-model.debounce.150ms="searchQuery" @input="currentPage = 1"
                                         placeholder="{{ __('İçinde ara...') }}"
-                                        class="rounded-lg border-gray-300 shadow-xs focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-xs p-1.5 pl-7 pr-6 w-44 sm:w-56 bg-white transition">
+                                        class="rounded-lg border-gray-300 shadow-xs focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-xs p-1.5 pl-7 pr-6 w-40 sm:w-52 bg-white transition">
                                     <svg class="w-4 h-4 text-gray-400 absolute left-2 top-2" fill="none"
                                         stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -302,11 +316,40 @@
                                         class="absolute right-2 top-1.5 text-gray-400 hover:text-gray-700 text-xs font-bold transition cursor-pointer"
                                         style="display: none;">✕</button>
                                 </div>
+
+                                <!-- Sıralama Modu Seçici -->
+                                <div class="inline-flex rounded-lg border border-gray-300 bg-white p-0.5 shadow-2xs shrink-0"
+                                    title="{{ __('Kategorideki verilerin sıralanma yöntemi') }}">
+                                    <button type="button" @click="changeSortMode('alphabetical')"
+                                        :disabled="isSavingSortMode"
+                                        :class="selectedTypeSortMode === 'alphabetical' ? 'bg-blue-600 text-white shadow-xs font-bold' : 'text-gray-600 hover:bg-gray-100 font-medium'"
+                                        class="px-2.5 py-1 text-[11px] rounded-md transition cursor-pointer whitespace-nowrap">
+                                        A-Z
+                                    </button>
+                                    <button type="button" @click="changeSortMode('custom')"
+                                        :disabled="isSavingSortMode"
+                                        :class="selectedTypeSortMode === 'custom' ? 'bg-indigo-600 text-white shadow-xs font-bold' : 'text-gray-600 hover:bg-gray-100 font-medium'"
+                                        class="px-2.5 py-1 text-[11px] rounded-md transition cursor-pointer whitespace-nowrap">
+                                        ⇅ {{ __('Özel Sıra') }}
+                                    </button>
+                                </div>
+
                                 <button type="button" @click="isEditingType = !isEditingType"
                                     class="text-xs text-blue-600 hover:text-blue-800 font-semibold px-2 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 transition whitespace-nowrap border border-blue-200 shadow-xs cursor-pointer">
                                     Bağ Ayarları
                                 </button>
                             </div>
+                        </div>
+
+                        <!-- Özel Sıra Modu Bilgi Şeridi -->
+                        <div x-show="selectedTypeSortMode === 'custom'" x-transition style="display: none;"
+                            class="px-4 py-2 bg-indigo-50 border-b border-indigo-200 flex flex-wrap items-center justify-between gap-2 text-[11px] text-indigo-900">
+                            <div class="flex items-center gap-2">
+                                <span class="px-1.5 py-0.5 rounded bg-indigo-600 text-white font-black text-[10px] tracking-wide">{{ __('ÖZEL SIRA AKTİF') }}</span>
+                                <span>{{ __('Satırları sürükleyebilir, ↑/↓ butonlarıyla taşıyabilir veya sıra numarasını doğrudan değiştirebilirsiniz. Formlar ve Excel şablonları bu sırayı kullanır.') }}</span>
+                            </div>
+                            <span x-show="sortStatusMsg" x-text="sortStatusMsg"
+                                class="font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full shrink-0"></span>
                         </div>
 
                         <!-- Kategori Bağ Ayarları Düzenleme (Gizli form) -->
@@ -456,6 +499,10 @@
                                             <input type="checkbox" x-model="selectAll" @change="toggleSelectAll()"
                                                 class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
                                         </th>
+                                        <th x-show="selectedTypeSortMode === 'custom'" style="display: none;"
+                                            class="px-3 py-2 text-left text-xs font-bold text-indigo-600 uppercase tracking-wider w-36">
+                                            {{ __('Sıra') }}
+                                        </th>
                                         <th
                                             class="px-4 py-2 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
                                             {{ __('Veri Adı') }}</th>
@@ -472,7 +519,7 @@
                                         <!-- Group Header (Only shown if there is a parent) -->
                                         <template x-if="group.parent_name">
                                             <tr class="bg-gray-50 border-y border-gray-200">
-                                                <td colspan="4" class="px-4 py-2">
+                                                <td :colspan="(selectedTypeParentId ? 4 : 3) + (selectedTypeSortMode === 'custom' ? 1 : 0)" class="px-4 py-2">
                                                     <div
                                                         class="flex items-center text-xs font-bold text-gray-500 uppercase tracking-wider">
                                                         <svg class="w-4 h-4 mr-1 text-gray-400" fill="none"
@@ -491,13 +538,51 @@
                                         </template>
 
                                         <template x-for="(item, iIndex) in group.items" :key="item.id">
-                                            <tr class="fast-row hover:bg-blue-50/50 transition">
+                                            <tr class="fast-row hover:bg-blue-50/50 transition"
+                                                :draggable="selectedTypeSortMode === 'custom' && (!searchQuery || searchQuery.trim() === '') && editingItemId !== item.id"
+                                                @dragstart="onDragStart($event, item.id)"
+                                                @dragover.prevent="onDragOver($event, item.id)"
+                                                @drop.prevent="onDrop($event, item.id)"
+                                                @dragend="onDragEnd()"
+                                                :class="{
+                                                    'bg-indigo-50/80 ring-2 ring-inset ring-indigo-400': dragOverItemId === item.id,
+                                                    'opacity-40': draggingItemId === item.id
+                                                }">
 
                                                 <!-- Checkbox Column -->
                                                 <td
                                                     class="px-4 py-2 text-center whitespace-nowrap border-r border-gray-100">
                                                     <input type="checkbox" x-model="selectedItemIds" :value="item.id"
                                                         class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
+                                                </td>
+
+                                                <!-- Sıra Kontrol Sütunu (Yalnızca Özel Sıra Modunda) -->
+                                                <td x-show="selectedTypeSortMode === 'custom' && editingItemId !== item.id" style="display: none;"
+                                                    class="px-3 py-2 whitespace-nowrap border-r border-gray-100">
+                                                    <div class="flex items-center gap-1">
+                                                        <span x-show="!searchQuery || searchQuery.trim() === ''"
+                                                            class="cursor-grab active:cursor-grabbing text-gray-400 hover:text-indigo-600 px-0.5 select-none"
+                                                            title="{{ __('Sürükleyerek taşıyın') }}">
+                                                            ⋮⋮
+                                                        </span>
+                                                        <input type="number" min="1"
+                                                            :max="allTypesData[selectedTypeId]?.items?.length || 1"
+                                                            :value="getItemOrderNumber(item)"
+                                                            @change="moveItemToOrder(item.id, $event.target.value)"
+                                                            @keydown.enter.prevent="moveItemToOrder(item.id, $event.target.value); $event.target.blur();"
+                                                            title="{{ __('Sıra numarasını yazıp Enter\'a basın') }}"
+                                                            class="w-12 text-center text-xs font-bold text-indigo-900 bg-indigo-50/60 border border-indigo-200 rounded py-0.5 px-1 focus:ring-1 focus:ring-indigo-500 focus:bg-white">
+                                                        <div class="flex items-center gap-0.5">
+                                                            <button type="button" @click="moveItemStep(item.id, -1)"
+                                                                :disabled="getItemOrderNumber(item) <= 1"
+                                                                class="w-5 h-5 flex items-center justify-center rounded border border-gray-200 bg-white hover:bg-indigo-600 hover:text-white hover:border-indigo-600 text-gray-600 text-[11px] font-bold disabled:opacity-30 disabled:cursor-not-allowed transition cursor-pointer"
+                                                                title="{{ __('Yukarı Taşı') }}">↑</button>
+                                                            <button type="button" @click="moveItemStep(item.id, 1)"
+                                                                :disabled="getItemOrderNumber(item) >= (allTypesData[selectedTypeId]?.items?.length || 0)"
+                                                                class="w-5 h-5 flex items-center justify-center rounded border border-gray-200 bg-white hover:bg-indigo-600 hover:text-white hover:border-indigo-600 text-gray-600 text-[11px] font-bold disabled:opacity-30 disabled:cursor-not-allowed transition cursor-pointer"
+                                                                title="{{ __('Aşağı Taşı') }}">↓</button>
+                                                        </div>
+                                                    </div>
                                                 </td>
 
                                                 <!-- Normal Mode (x-show ile DOM yok etmeden anında gösterim) -->
@@ -543,7 +628,7 @@
 
                                                 <!-- Editing Mode -->
                                                 <td x-show="editingItemId === item.id"
-                                                    :colspan="selectedTypeParentId ? 3 : 2"
+                                                    :colspan="(selectedTypeParentId ? 3 : 2) + (selectedTypeSortMode === 'custom' ? 1 : 0)"
                                                     class="px-4 py-2 bg-yellow-50/50 border-y border-yellow-200"
                                                     style="display: none;">
                                                     <form :action="'{{ url('master-data/items') }}/' + item.id"
@@ -692,6 +777,18 @@
                 newParentId: '',
                 isSubmittingItem: false,
 
+                // Custom sorting state
+                isSavingSortMode: false,
+                sortStatusMsg: '',
+                sortStatusTimer: null,
+                draggingItemId: null,
+                dragOverItemId: null,
+
+                get selectedTypeSortMode() {
+                    if (!this.selectedTypeId || !this.typesList[this.selectedTypeId]) return 'alphabetical';
+                    return this.typesList[this.selectedTypeId].sort_mode || 'alphabetical';
+                },
+
                 get newItemCount() {
                     if (!this.newItemText || !this.newItemText.trim()) return 0;
                     return this.newItemText.split(/[\n\r;]+/).filter(s => s.trim().length > 0).length;
@@ -729,6 +826,17 @@
                     this.checkEmptyState();
                 },
 
+                sortTypeItems(id) {
+                    if (!this.allTypesData[id] || !this.allTypesData[id].items) return;
+                    let mode = (this.typesList[id] && this.typesList[id].sort_mode) || this.allTypesData[id].sort_mode || 'alphabetical';
+                    if (mode === 'custom') {
+                        this.allTypesData[id].items.sort((a, b) => ((a.sort_order || 0) - (b.sort_order || 0)) || ((a.id || 0) - (b.id || 0)));
+                    } else {
+                        this.allTypesData[id].items.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'tr', { sensitivity: 'base' }));
+                    }
+                    this.allTypesData[id]._sorted = true;
+                },
+
                 selectType(id, name, parentId) {
                     this.selectedTypeId = id;
                     this.selectedTypeName = name;
@@ -740,6 +848,9 @@
                     this.newItemText = '';
                     this.newParentId = '';
                     this.isSubmittingItem = false;
+                    this.sortStatusMsg = '';
+                    this.draggingItemId = null;
+                    this.dragOverItemId = null;
                     this.currentPage = 1;
                     this.searchQuery = '';
                     this.$nextTick(() => {
@@ -750,15 +861,13 @@
                     });
 
                     if (this.allTypesData[id] && this.allTypesData[id].items && !this.allTypesData[id]._sorted) {
-                        this.allTypesData[id].items.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'tr', { sensitivity: 'base' }));
-                        this.allTypesData[id]._sorted = true;
+                        this.sortTypeItems(id);
                     }
 
                     if (parentId) {
                         let parentTypeData = this.allTypesData[parentId];
                         if (parentTypeData && parentTypeData.items && !parentTypeData._sorted) {
-                            parentTypeData.items.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'tr', { sensitivity: 'base' }));
-                            parentTypeData._sorted = true;
+                            this.sortTypeItems(parentId);
                         }
                         this.parentItems = parentTypeData ? parentTypeData.items : [];
                     } else {
@@ -766,6 +875,144 @@
                     }
 
                     this.checkEmptyState();
+                },
+
+                showSortStatus(msg) {
+                    this.sortStatusMsg = msg;
+                    if (this.sortStatusTimer) clearTimeout(this.sortStatusTimer);
+                    this.sortStatusTimer = setTimeout(() => {
+                        this.sortStatusMsg = '';
+                    }, 3000);
+                },
+
+                async changeSortMode(newMode) {
+                    if (!this.selectedTypeId || this.isSavingSortMode || this.selectedTypeSortMode === newMode) return;
+                    this.isSavingSortMode = true;
+                    try {
+                        const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                        const res = await fetch(`{{ url('master-data/types') }}/${this.selectedTypeId}/sort-mode`, {
+                            method: 'PATCH',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': csrf
+                            },
+                            body: JSON.stringify({ sort_mode: newMode })
+                        });
+                        const data = await res.json();
+                        if (res.ok && data.success) {
+                            if (this.typesList[this.selectedTypeId]) {
+                                this.typesList[this.selectedTypeId].sort_mode = data.sort_mode;
+                            }
+                            if (this.allTypesData[this.selectedTypeId]) {
+                                this.allTypesData[this.selectedTypeId].sort_mode = data.sort_mode;
+                                this.allTypesData[this.selectedTypeId].items = data.items || [];
+                                this.allTypesData[this.selectedTypeId]._sorted = true;
+                            }
+                            this.showSortStatus('✓ ' + (data.message || '{{ __('Sıralama modu güncellendi.') }}'));
+                        }
+                    } catch (e) {
+                        console.error(e);
+                    } finally {
+                        this.isSavingSortMode = false;
+                    }
+                },
+
+                getItemOrderNumber(item) {
+                    if (!this.selectedTypeId || !this.allTypesData[this.selectedTypeId]) return 1;
+                    let items = this.allTypesData[this.selectedTypeId].items;
+                    let idx = items.findIndex(i => i.id === item.id);
+                    return idx >= 0 ? idx + 1 : 1;
+                },
+
+                moveItemStep(itemId, delta) {
+                    if (!this.selectedTypeId || !this.allTypesData[this.selectedTypeId]) return;
+                    let items = this.allTypesData[this.selectedTypeId].items;
+                    let currentIdx = items.findIndex(i => i.id === itemId);
+                    if (currentIdx === -1) return;
+
+                    let targetIdx = currentIdx + delta;
+                    if (targetIdx < 0 || targetIdx >= items.length) return;
+
+                    let [moved] = items.splice(currentIdx, 1);
+                    items.splice(targetIdx, 0, moved);
+                    this.reindexAndPersist(items);
+                },
+
+                moveItemToOrder(itemId, rawTarget) {
+                    if (!this.selectedTypeId || !this.allTypesData[this.selectedTypeId]) return;
+                    let items = this.allTypesData[this.selectedTypeId].items;
+                    let currentIdx = items.findIndex(i => i.id === itemId);
+                    if (currentIdx === -1) return;
+
+                    let targetNum = parseInt(rawTarget, 10);
+                    if (isNaN(targetNum)) return;
+                    let targetIdx = Math.max(0, Math.min(items.length - 1, targetNum - 1));
+                    if (targetIdx === currentIdx) return;
+
+                    let [moved] = items.splice(currentIdx, 1);
+                    items.splice(targetIdx, 0, moved);
+                    this.reindexAndPersist(items);
+                },
+
+                onDragStart(event, itemId) {
+                    if (this.selectedTypeSortMode !== 'custom') return;
+                    this.draggingItemId = itemId;
+                    if (event.dataTransfer) {
+                        event.dataTransfer.effectAllowed = 'move';
+                        event.dataTransfer.setData('text/plain', String(itemId));
+                    }
+                },
+
+                onDragOver(event, targetItemId) {
+                    if (!this.draggingItemId || this.draggingItemId === targetItemId) return;
+                    this.dragOverItemId = targetItemId;
+                },
+
+                onDrop(event, targetItemId) {
+                    const sourceId = this.draggingItemId;
+                    this.draggingItemId = null;
+                    this.dragOverItemId = null;
+                    if (!sourceId || sourceId === targetItemId || !this.allTypesData[this.selectedTypeId]) return;
+
+                    let items = this.allTypesData[this.selectedTypeId].items;
+                    let fromIdx = items.findIndex(i => i.id === sourceId);
+                    let toIdx = items.findIndex(i => i.id === targetItemId);
+                    if (fromIdx === -1 || toIdx === -1) return;
+
+                    let [moved] = items.splice(fromIdx, 1);
+                    items.splice(toIdx, 0, moved);
+                    this.reindexAndPersist(items);
+                },
+
+                onDragEnd() {
+                    this.draggingItemId = null;
+                    this.dragOverItemId = null;
+                },
+
+                async reindexAndPersist(items) {
+                    items.forEach((it, idx) => {
+                        it.sort_order = idx + 1;
+                    });
+                    const itemIds = items.map(i => i.id);
+                    try {
+                        const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                        const res = await fetch(`{{ url('master-data/types') }}/${this.selectedTypeId}/reorder`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': csrf
+                            },
+                            body: JSON.stringify({ item_ids: itemIds })
+                        });
+                        const data = await res.json();
+                        if (res.ok && data.success) {
+                            this.showSortStatus('✓ ' + (data.message || '{{ __('Sıralama kaydedildi.') }}'));
+                        }
+                    } catch (e) {
+                        console.error(e);
+                    }
                 },
 
                 toggleSelectAll() {

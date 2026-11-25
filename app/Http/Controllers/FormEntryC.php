@@ -145,7 +145,7 @@ class FormEntryC extends Controller
         $partitionField = null;
         $partitionValue = null;
 
-        if ($formTemplate->isPartitioned() && $formTemplate->partitionField) {
+        if ($formTemplate->isPartitioned() && $formTemplate->partitionField && !$request->boolean('full_entry')) {
             $partitionField = $formTemplate->partitionField;
 
             // Eğer query'de partition_value yoksa, seçim ekranına yönlendir
@@ -175,7 +175,15 @@ class FormEntryC extends Controller
                     ->get()
                     ->keyBy('partition_value');
 
-                return view('form_entries.select_partition', compact('formTemplate', 'partitionField', 'partitionOptions', 'userEntries'));
+                // Parçalanmamış (tek parça) devam eden son taslak varsa kartta kısayol göstermek için
+                $latestFullDraft = FormEntryM::where('form_template_id', $formTemplate->id)
+                    ->where('user_id', $user->id)
+                    ->whereNull('partition_value')
+                    ->where('status', 'draft')
+                    ->orderBy('id', 'desc')
+                    ->first();
+
+                return view('form_entries.select_partition', compact('formTemplate', 'partitionField', 'partitionOptions', 'userEntries', 'latestFullDraft'));
             }
 
             // partition_value belirtilmiş: akıllı yönlendirme ve kontrol
@@ -471,8 +479,10 @@ class FormEntryC extends Controller
         $formTemplate = $formEntry->template;
         $date = $formEntry->entry_date->format('Y-m-d');
         $existingEntry = $formEntry;
-        $partitionField = $formEntry->partitionField ?? $formTemplate->partitionField;
         $partitionValue = $formEntry->partition_value;
+        $partitionField = !empty($partitionValue)
+            ? ($formEntry->partitionField ?? $formTemplate->partitionField)
+            : null;
 
         $masterDataTree = \App\Models\MasterDataTypeM::with('items')->get()->keyBy('id')->toArray();
         $currentUserScope = $this->getUserScope($user);
@@ -1432,10 +1442,18 @@ class FormEntryC extends Controller
             $templatePath = storage_path("app/templates/template_{$templateId}.xlsx");
 
             // Eğer özel tasarım varsa, 6. satırdan başlar; yoksa 2. satırdan
+            $headerRow = file_exists($templatePath) ? 5 : 1;
             $startRow = file_exists($templatePath) ? 6 : 2;
             $highestRow = $sheet->getHighestDataRow();
 
             $fields = $formTemplate->fields;
+            // İlk sütun Sıra No mu yoksa doğrudan ilk form alanı mı kontrol et (Geriye dönük uyumluluk)
+            $firstFieldLabel = $fields->first() ? mb_strtolower(trim((string) $fields->first()->label), 'UTF-8') : '';
+            $firstHeaderVal = mb_strtolower(trim((string) $sheet->getCell('A' . $headerRow)->getValue()), 'UTF-8');
+            $hasRowNumberCol = ($firstHeaderVal !== $firstFieldLabel)
+                && in_array($firstHeaderVal, ['sıra no', 'sira no', 'row no', '#'], true);
+            $startColIndex = $hasRowNumberCol ? 2 : 1;
+
             $rowsData = [];
 
             for ($row = $startRow; $row <= $highestRow; $row++) {
@@ -1446,8 +1464,7 @@ class FormEntryC extends Controller
                 }
 
                 $rowData = [];
-                // B sütunundan başla (Sıra No = A, İlk Alan = B)
-                $colIndex = 2;
+                $colIndex = $startColIndex;
                 $isEmptyRow = true;
 
                 foreach ($fields as $field) {
@@ -1458,7 +1475,7 @@ class FormEntryC extends Controller
                         ? $partitionValue
                         : ($rowData[$field->condition_field_id] ?? null);
 
-                    $isFieldPassive = !empty($field->is_disabled) 
+                    $isFieldPassive = !empty($field->is_disabled)
                         || (!empty($condVal) && $this->formExportService->isFieldPassiveForValue($field, $condVal));
 
                     if ($isFieldPassive) {
@@ -1509,7 +1526,8 @@ class FormEntryC extends Controller
                         }
                     }
 
-                    if (trim($val) !== '') {
+                    $isLockedPartitionField = ($partitionField && !empty($partitionValue) && $field->id == $partitionField->id);
+                    if (trim($val) !== '' && !$isLockedPartitionField) {
                         $isEmptyRow = false;
                     }
 

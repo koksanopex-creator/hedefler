@@ -46,5 +46,19 @@ class FormEntryLocaleTest extends TestCase
         $this->assertEquals('Grand Total (All):', __('Genel Toplam (Tümü):'));
         $this->assertEquals('VISIBLE TOTAL:', __('GÖRÜNEN TOPLAM:'));
         $this->assertEquals('GRAND TOTAL (ALL):', __('GENEL TOPLAM (TÜMÜ):'));
+
+        // Full entry card on select_partition
+        $this->assertEquals('Single Piece / Full Table', __('Tek Parça / Tam Tablo'));
+        $this->assertEquals('All', __('Tüm'));
+        $this->assertEquals('Values — Full Single-Table Entry', __('Değerleri İçin Tek Parça Giriş'));
+        $this->assertEquals('Latest Full Draft', __('Son Tam Taslak'));
+        $this->assertEquals('— Start Full Entry', __('İçin Tek Parça Giriş Başlat'));
+
+        // Master Data custom sort mode
+        $this->assertEquals('Custom Order', __('Özel Sıra'));
+        $this->assertEquals('CUSTOM ORDER ACTIVE', __('ÖZEL SIRA AKTİF'));
+        $this->assertEquals('Order', __('Sıra'));
+        $this->assertEquals('Sort mode updated.', __('Sıralama modu güncellendi.'));
+        $this->assertEquals('Order saved.', __('Sıralama kaydedildi.'));
     }
 }

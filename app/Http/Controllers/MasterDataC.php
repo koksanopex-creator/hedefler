@@ -14,10 +14,13 @@ class MasterDataC extends Controller
 {
     public function index()
     {
-        // Türkçe alfabetik sıralı olarak tipleri ve altındaki öğeleri getir
-        $allTypes = MasterDataTypeM::with(['parent', 'items' => function($query) {
-            $query->orderByRaw('name COLLATE utf8mb4_turkish_ci ASC');
-        }])->orderByRaw('name COLLATE utf8mb4_turkish_ci ASC')->get();
+        // Türkçe alfabetik sıralı tipleri getir; öğeler kendi kategorisinin sort_mode ayarına göre sıralanır
+        $driver = DB::connection()->getDriverName();
+        $nameOrder = $driver === 'mysql' ? 'name COLLATE utf8mb4_turkish_ci ASC' : 'name ASC';
+
+        $allTypes = MasterDataTypeM::with(['parent', 'items'])
+            ->orderByRaw($nameOrder)
+            ->get();
 
         // Hiyerarşik ağaç (DFS) düzleştirme ve derinlik (depth) hesaplama
         $tree = [];
@@ -31,19 +34,26 @@ class MasterDataC extends Controller
         $buildTree(null, 0);
         $types = collect($tree);
 
-        $typesList = $types->map(fn($t) => ['id'=>$t->id, 'name'=>$t->name, 'parent_id'=>$t->parent_id])->keyBy('id');
+        $typesList = $types->map(fn($t) => [
+            'id' => $t->id,
+            'name' => $t->name,
+            'parent_id' => $t->parent_id,
+            'sort_mode' => $t->sort_mode ?? 'alphabetical',
+        ])->keyBy('id');
         
         $allTypesData = $types->map(function($type) {
             return [
                 'id' => $type->id,
+                'sort_mode' => $type->sort_mode ?? 'alphabetical',
                 'items' => $type->items->map(function($i) { 
                     return [
                         'id' => $i->id, 
                         'name' => $i->name, 
                         'parent_id' => $i->parent_id,
+                        'sort_order' => (int) ($i->sort_order ?? 0),
                         'user_id' => $i->user_id
                     ]; 
-                })->toArray()
+                })->values()->toArray()
             ];
         })->keyBy('id');
 
@@ -61,13 +71,15 @@ class MasterDataC extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'parent_id' => 'nullable|exists:master_data_types,id'
+            'parent_id' => 'nullable|exists:master_data_types,id',
+            'sort_mode' => 'nullable|in:alphabetical,custom',
         ]);
 
         MasterDataTypeM::create([
             'name' => $request->name,
             'slug' => Str::slug($request->name, '_') . '_' . time(),
-            'parent_id' => $request->parent_id
+            'parent_id' => $request->parent_id,
+            'sort_mode' => $request->input('sort_mode', 'alphabetical'),
         ]);
 
         return back()->with('success', 'Master Data Tipi başarıyla eklendi.');
@@ -97,6 +109,84 @@ class MasterDataC extends Controller
         return back()->with('success', 'Kategori bağı başarıyla güncellendi.')->with('selectedTypeId', $type->id);
     }
 
+    /**
+     * Kategorinin sıralama modunu (alphabetical / custom) günceller.
+     */
+    public function updateSortMode(Request $request, MasterDataTypeM $type)
+    {
+        $request->validate([
+            'sort_mode' => 'required|in:alphabetical,custom',
+        ]);
+
+        DB::transaction(function () use ($request, $type) {
+            $type->update(['sort_mode' => $request->sort_mode]);
+
+            // İlk kez özel sıralamaya geçiliyorsa henüz numarası olmayan öğelere başlangıç sırası ver
+            if ($request->sort_mode === 'custom') {
+                $hasAnyOrder = MasterDataItemM::where('type_id', $type->id)
+                    ->where('sort_order', '>', 0)
+                    ->exists();
+
+                if (!$hasAnyOrder) {
+                    $existingItems = MasterDataItemM::where('type_id', $type->id)
+                        ->orderBy('id', 'asc')
+                        ->get(['id']);
+
+                    foreach ($existingItems as $index => $existingItem) {
+                        MasterDataItemM::where('id', $existingItem->id)
+                            ->update(['sort_order' => $index + 1]);
+                    }
+                }
+            }
+        });
+
+        $type->load('items');
+        $freshItems = $type->items->map(fn($i) => [
+            'id' => $i->id,
+            'name' => $i->name,
+            'parent_id' => $i->parent_id,
+            'sort_order' => (int) ($i->sort_order ?? 0),
+            'user_id' => $i->user_id,
+        ])->values()->toArray();
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'sort_mode' => $type->sort_mode,
+                'items' => $freshItems,
+                'message' => __('Sıralama modu güncellendi.'),
+            ]);
+        }
+
+        return back()->with('success', __('Sıralama modu güncellendi.'))->with('selectedTypeId', $type->id);
+    }
+
+    /**
+     * Özel sıralı kategoride öğelerin sort_order sırasını topluca kaydeder.
+     */
+    public function reorderItems(Request $request, MasterDataTypeM $type)
+    {
+        $request->validate([
+            'item_ids' => 'required|array|min:1',
+            'item_ids.*' => 'integer',
+        ]);
+
+        $orderedIds = array_values(array_unique(array_map('intval', $request->item_ids)));
+
+        DB::transaction(function () use ($type, $orderedIds) {
+            foreach ($orderedIds as $index => $itemId) {
+                MasterDataItemM::where('type_id', $type->id)
+                    ->where('id', $itemId)
+                    ->update(['sort_order' => $index + 1]);
+            }
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => __('Sıralama kaydedildi.'),
+        ]);
+    }
+
     public function storeItem(Request $request)
     {
         $request->validate([
@@ -122,6 +212,8 @@ class MasterDataC extends Controller
         });
 
         // 2. Binlerce satır eklense dahi veri bütünlüğünü ve hızı garantiye almak için DB Transaction
+        $maxSortOrder = (int) MasterDataItemM::where('type_id', $request->type_id)->max('sort_order');
+
         DB::beginTransaction();
         try {
             foreach ($names as $name) {
@@ -134,6 +226,7 @@ class MasterDataC extends Controller
                         'type_id' => $request->type_id,
                         'name' => $name,
                         'parent_id' => $request->parent_id,
+                        'sort_order' => ++$maxSortOrder,
                         'user_id' => $matchedUser ? $matchedUser->id : null
                     ]);
                     $createdIds[] = $item->id;
@@ -234,7 +327,7 @@ class MasterDataC extends Controller
             $query->where('parent_id', $request->parent_id);
         }
 
-        $items = $query->orderByRaw('name COLLATE utf8mb4_turkish_ci ASC')->get(['id', 'name']);
+        $items = $query->orderedForType($type)->get(['id', 'name', 'sort_order']);
         
         return response()->json($items);
     }

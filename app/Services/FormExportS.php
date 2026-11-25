@@ -201,28 +201,23 @@ class FormExportS
             // Var olan tasarım şablonunu doğrudan indir
             $spreadsheet = IOFactory::load($templatePath);
             $sheet = $spreadsheet->getActiveSheet();
-            $sheet->freezePane('B6');
+            $sheet->freezePane('A6');
         } else {
-            // Şablon yoksa sıfırdan başlıkları oluştur
+            // Şablon yoksa sıfırdan başlıkları oluştur (Sıra No sütunu olmadan A sütunundan başlar)
             $spreadsheet = new Spreadsheet();
             $sheet = $spreadsheet->getActiveSheet();
             $sheet->setTitle(substr($formTemplate->name, 0, 30));
 
             // Sütun Başlıkları 1. satır
             $colIndex = 1;
-            $sheet->setCellValue([$colIndex++, 1], 'Sıra No');
-            
-            $columnMeta = []; // colIndex => ['is_partition' => bool, 'is_passive' => bool, 'field' => field]
+            $columnMeta = []; // colIndex => ['is_partition' => bool, 'field' => field]
 
             foreach ($fieldsToExport as $field) {
                 $isPartitionCol = ($partitionField && $field->id == $partitionField->id && !empty($partitionValue));
-                $isPassive = !empty($field->is_disabled) 
-                    || (!empty($partitionValue) && $partitionField && $field->condition_field_id == $partitionField->id && $this->isFieldPassiveForValue($field, $partitionValue));
 
                 $sheet->setCellValue([$colIndex, 1], $field->label);
                 $columnMeta[$colIndex] = [
                     'is_partition' => $isPartitionCol,
-                    'is_passive' => $isPassive,
                     'field' => $field,
                 ];
 
@@ -236,44 +231,30 @@ class FormExportS
             $sheet->getStyle($headerRange)->getFill()->setFillType(Fill::FILL_SOLID)
                 ->getStartColor()->setARGB('FF1E3A8A');
 
-            // Eğer özel parçalama ve pasif sütunlar varsa başlıklarını özelleştir
+            // Parçalı form ise sadece parçalama kriteri sütununun başlığını vurgula; pasif alanlar normal açık iner
             foreach ($columnMeta as $cIdx => $meta) {
                 $colLetter = Coordinate::stringFromColumnIndex($cIdx);
                 if ($meta['is_partition']) {
                     // Parçalama başlığı (Amber/Sarı Vurgulu)
                     $sheet->getStyle($colLetter . '1')->getFill()->setFillType(Fill::FILL_SOLID)
                         ->getStartColor()->setARGB('FFD97706'); // amber-600
-                } elseif ($meta['is_passive']) {
-                    // Pasif sütun başlığı (Gri)
-                    $sheet->getStyle($colLetter . '1')->getFill()->setFillType(Fill::FILL_SOLID)
-                        ->getStartColor()->setARGB('FF64748B'); // slate-500
-                    $sheet->setCellValue([$cIdx, 1], $meta['field']->label . ' (KİLİTLİ)');
                 }
             }
 
-            // Satırları Doldur (2 ile 50 arası başlangıç satırları)
-            for ($r = 2; $r <= 50; $r++) {
-                $sheet->setCellValue([1, $r], $r - 1);
-                $sheet->getStyle('A' . $r)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-
-                foreach ($columnMeta as $cIdx => $meta) {
-                    $cellCoordinate = [$cIdx, $r];
-                    $cellLetter = Coordinate::stringFromColumnIndex($cIdx);
-                    
-                    if ($meta['is_partition']) {
-                        // Kilitli değer
-                        $sheet->setCellValue($cellCoordinate, $partitionValue);
-                        $sheet->getStyle($cellLetter . $r)->getFill()->setFillType(Fill::FILL_SOLID)
-                            ->getStartColor()->setARGB('FFFEF3C7'); // amber-100
-                        $sheet->getStyle($cellLetter . $r)->getFont()->getColor()->setARGB('FF92400E'); // amber-800
-                        $sheet->getStyle($cellLetter . $r)->getFont()->setBold(true);
-                    } elseif ($meta['is_passive']) {
-                        // Pasif hücre
-                        $sheet->setCellValue($cellCoordinate, '-');
-                        $sheet->getStyle($cellLetter . $r)->getFill()->setFillType(Fill::FILL_SOLID)
-                            ->getStartColor()->setARGB('FFF1F5F9'); // slate-100
-                        $sheet->getStyle($cellLetter . $r)->getFont()->getColor()->setARGB('FF94A3B8'); // slate-400
-                        $sheet->getStyle($cellLetter . $r)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            // Parçalı form ise kilitli kriter sütununa (2..50 arası) varsayılan değeri yaz
+            $hasPartitionCol = collect($columnMeta)->contains(fn($m) => $m['is_partition']);
+            if ($hasPartitionCol) {
+                for ($r = 2; $r <= 50; $r++) {
+                    foreach ($columnMeta as $cIdx => $meta) {
+                        if ($meta['is_partition']) {
+                            $cellCoordinate = [$cIdx, $r];
+                            $cellLetter = Coordinate::stringFromColumnIndex($cIdx);
+                            $sheet->setCellValue($cellCoordinate, $partitionValue);
+                            $sheet->getStyle($cellLetter . $r)->getFill()->setFillType(Fill::FILL_SOLID)
+                                ->getStartColor()->setARGB('FFFEF3C7'); // amber-100
+                            $sheet->getStyle($cellLetter . $r)->getFont()->getColor()->setARGB('FF92400E'); // amber-800
+                            $sheet->getStyle($cellLetter . $r)->getFont()->setBold(true);
+                        }
                     }
                 }
             }
@@ -322,29 +303,6 @@ class FormExportS
                     continue;
                 }
 
-                if ($meta['is_passive']) {
-                    // Pasif sütunu tüm satırlar boyunca (2..10000) veri girişine kapat
-                    $validation = new DataValidation();
-                    $validation->setType(DataValidation::TYPE_CUSTOM);
-                    $validation->setErrorStyle(DataValidation::STYLE_STOP);
-                    $validation->setAllowBlank(true);
-                    $validation->setShowInputMessage(true);
-                    $validation->setShowErrorMessage(true);
-                    $validation->setErrorTitle('Kilitli / Pasif Alan');
-                    $errMsg = !empty($field->is_disabled) 
-                        ? 'Bu sütun form tanımında pasif (girişe kapalı) olarak belirlenmiştir. Veri girilemez.' 
-                        : "Bu sütun '{$partitionValue}' için girişe kapalıdır. Veri girilemez.";
-                    $validation->setError($errMsg);
-                    $validation->setPromptTitle('Pasif Alan');
-                    $promptMsg = !empty($field->is_disabled) 
-                        ? 'Bu alan form tanımında girişe kapalıdır.' 
-                        : 'Bu alan bu işyeri için pasiftir.';
-                    $validation->setPrompt($promptMsg);
-                    $validation->setFormula1('="-"');
-                    $sheet->setDataValidation("{$colLetter}2:{$colLetter}{$maxValidationRow}", $validation);
-                    continue;
-                }
-
                 // 1. Kademeli Master Data Bağımlılığı Kontrolü (Örn: Şehir alanı Ülke alanına bağlıysa)
                 if ($field->type === 'master_data' && $field->master_data_type_id) {
                     $mType = $masterDataTree[$field->master_data_type_id] ?? null;
@@ -369,7 +327,9 @@ class FormExportS
 
                                 $pairRows = [];
                                 foreach ($grouped as $pName => $children) {
-                                    sort($children);
+                                    if ($mType->sort_mode !== 'custom') {
+                                        sort($children);
+                                    }
                                     foreach ($children as $cName) {
                                         $pairRows[] = [$pName, $cName];
                                     }
@@ -443,21 +403,15 @@ class FormExportS
                 }
             }
 
-            // Autofit Tüm Sütunlar ve Pasif Sütunları Gizleme
-            $sheet->getColumnDimension('A')->setAutoSize(true);
+            // Autofit Tüm Sütunlar (Tüm sütunlar görünür ve açık halde iner)
             foreach ($columnMeta as $cIdx => $meta) {
                 $colLetter = Coordinate::stringFromColumnIndex($cIdx);
-                if ($meta['is_passive']) {
-                    // Pasif sütun Excel çıktısında gizli olarak indirilir (silinmez, gizlenir)
-                    $sheet->getColumnDimension($colLetter)->setVisible(false);
-                } else {
-                    $sheet->getColumnDimension($colLetter)->setAutoSize(true);
-                }
+                $sheet->getColumnDimension($colLetter)->setVisible(true);
+                $sheet->getColumnDimension($colLetter)->setAutoSize(true);
             }
 
-            // Sıra No (Kolon A) ve Başlık Satırını sabitle (Freeze Panes)
-            // Sağa/sola kaydırırken Sıra No her zaman solda sabit kalır, aşağı kaydırırken başlık satırı sabit kalır
-            $sheet->freezePane('B2');
+            // Yalnızca Başlık Satırını (Satır 1) üstte sabitle (Freeze Panes)
+            $sheet->freezePane('A2');
 
             // Helper sheet'i gizle ve aktif sekmeyi ana sayfa yap
             if ($helperSheet) {

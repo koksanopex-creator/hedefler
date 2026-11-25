@@ -682,8 +682,9 @@ class KpiTargetC extends Controller
         $options = [];
 
         if ($field->type === 'master_data' && $field->master_data_type_id) {
+            $mType = \App\Models\MasterDataTypeM::find($field->master_data_type_id);
             $options = MasterDataItemM::where('type_id', $field->master_data_type_id)
-                ->orderBy('name')
+                ->orderedForType($mType)
                 ->get(['id', 'name', 'parent_id']);
         } elseif ($field->type === 'select' && !empty($field->options)) {
             $rawOptions = is_array($field->options) ? $field->options : json_decode($field->options, true);

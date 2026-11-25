@@ -2750,14 +2750,21 @@
                     this.showToast(`✓ "${this.confirmModalData.fieldName}" sütunu temizlendi.`);
                 },
 
+                sortMasterDataTypeItems(typeObj) {
+                    if (!typeObj || !Array.isArray(typeObj.items) || typeObj._sorted) return;
+                    if (typeObj.sort_mode === 'custom') {
+                        typeObj.items.sort((a, b) => ((a.sort_order || 0) - (b.sort_order || 0)) || ((a.id || 0) - (b.id || 0)));
+                    } else {
+                        typeObj.items.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'tr', { sensitivity: 'base' }));
+                    }
+                    typeObj._sorted = true;
+                },
+
                 init() {
-                    // Master Data ağacındaki tüm listeleri Türkçe alfabe (A-Z) sırasına göre bir kez önbellekte sırala
+                    // Master Data ağacındaki tüm listeleri kendi sıralama moduna göre (özel veya Türkçe A-Z) hazırla
                     if (this.masterDataTree) {
                         Object.values(this.masterDataTree).forEach(typeObj => {
-                            if (typeObj && Array.isArray(typeObj.items) && !typeObj._sorted) {
-                                typeObj.items.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'tr', { sensitivity: 'base' }));
-                                typeObj._sorted = true;
-                            }
+                            this.sortMasterDataTypeItems(typeObj);
                         });
                     }
 
@@ -3133,7 +3140,7 @@
                         if (!r.values) continue;
                         for (let f of this.fields) {
                             if (f.type === 'auto_user') continue;
-                            if (this.partitionFieldId && f.id == this.partitionFieldId) continue;
+                            if (this.partitionFieldId && this.partitionValue && f.id == this.partitionFieldId) continue;
                             if (f.type === 'year') continue;
                             const v = r.values[f.id];
                             if (v !== null && v !== undefined && String(v).trim() !== '') {
@@ -3521,11 +3528,8 @@
                     let cacheKey = field.id + '_' + parentKey;
                     if (this.cachedMasterData[cacheKey]) return this.cachedMasterData[cacheKey];
 
-                    // Listenin Türkçe A-Z sıralı olduğundan emin ol
-                    if (!typeObj._sorted && Array.isArray(typeObj.items)) {
-                        typeObj.items.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'tr', { sensitivity: 'base' }));
-                        typeObj._sorted = true;
-                    }
+                    // Listenin kategori moduna göre sıralı olduğundan emin ol
+                    this.sortMasterDataTypeItems(typeObj);
 
                     let items = typeObj.items || [];
 

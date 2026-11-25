@@ -77,6 +77,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('master-data', [\App\Http\Controllers\MasterDataC::class, 'index'])->name('master_data.index');
         Route::post('master-data/types', [\App\Http\Controllers\MasterDataC::class, 'storeType'])->name('master_data.types.store');
         Route::put('master-data/types/{type}', [\App\Http\Controllers\MasterDataC::class, 'updateType'])->name('master_data.types.update');
+        Route::patch('master-data/types/{type}/sort-mode', [\App\Http\Controllers\MasterDataC::class, 'updateSortMode'])->name('master_data.types.sort_mode');
+        Route::post('master-data/types/{type}/reorder', [\App\Http\Controllers\MasterDataC::class, 'reorderItems'])->name('master_data.types.reorder');
         Route::delete('master-data/types/{type}', [\App\Http\Controllers\MasterDataC::class, 'destroyType'])->name('master_data.types.destroy');
         Route::post('master-data/items', [\App\Http\Controllers\MasterDataC::class, 'storeItem'])->name('master_data.items.store');
         Route::put('master-data/items/{item}', [\App\Http\Controllers\MasterDataC::class, 'updateItem'])->name('master_data.items.update');

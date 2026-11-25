@@ -78,6 +78,65 @@
                 </div>
             </div>
 
+            <!-- TÜMÜ / TEK PARÇA GİRİŞ SEÇENEĞİ -->
+            <div
+                class="bg-white rounded-2xl border-2 border-indigo-200 hover:border-indigo-400 shadow-sm hover:shadow-md transition-all p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div class="flex items-start gap-4">
+                    <div
+                        class="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-indigo-500/20">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                        </svg>
+                    </div>
+                    <div class="space-y-1">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span
+                                class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-indigo-50 text-indigo-700 border border-indigo-200">
+                                {{ __('Tek Parça / Tam Tablo') }}
+                            </span>
+                            <h4 class="text-base font-black text-slate-900">
+                                {{ __('Tüm') }} {{ $partitionField->label }} {{ __('Değerleri İçin Tek Parça Giriş') }}
+                            </h4>
+                        </div>
+                        <p class="text-xs text-slate-500 leading-relaxed max-w-2xl">
+                            {{ __('Bölüm bazında parçalamadan, tüm') }} <strong>{{ $partitionField->label }}</strong>
+                            {{ __('seçeneklerini aynı anda tek bir tam tabloda kısıtlama olmadan doldurmak veya Excel ile toplu aktarmak için bu seçeneği kullanabilirsiniz.') }}
+                        </p>
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2.5 w-full md:w-auto shrink-0" x-data="{ clicking: false }">
+                    @if(isset($latestFullDraft) && $latestFullDraft)
+                        <a href="{{ route('form-entries.edit', $latestFullDraft) }}"
+                            @click="if(clicking) { $event.preventDefault(); return false; } clicking = true;"
+                            onclick="if(this.dataset.clicked === 'true'){ return false; } this.dataset.clicked = 'true'; this.classList.add('pointer-events-none', 'opacity-70', 'cursor-not-allowed');"
+                            :class="clicking ? 'pointer-events-none opacity-70 cursor-not-allowed' : ''"
+                            class="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 transition active:scale-98 select-none">
+                            <svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                            <span>{{ __('Son Tam Taslak') }} (#{{ $latestFullDraft->id }})</span>
+                        </a>
+                    @endif
+
+                    <a href="{{ route('form-entries.create', ['formTemplate' => $formTemplate, 'full_entry' => 1]) }}"
+                        @click="if(clicking) { $event.preventDefault(); return false; } clicking = true;"
+                        onclick="if(this.dataset.clicked === 'true'){ return false; } this.dataset.clicked = 'true'; this.classList.add('pointer-events-none', 'opacity-70', 'cursor-not-allowed');"
+                        :class="clicking ? 'pointer-events-none opacity-70 cursor-not-allowed' : ''"
+                        class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white shadow-sm shadow-indigo-500/25 transition active:scale-98 select-none">
+                        <svg class="w-4 h-4 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                        </svg>
+                        <span x-show="clicking">{{ __('Yönlendiriliyor...') }}</span>
+                        <span x-show="!clicking">
+                            {{ __('Tüm') }} {{ $partitionField->label }} {{ __('İçin Tek Parça Giriş Başlat') }}
+                        </span>
+                    </a>
+                </div>
+            </div>
+
             <!-- KRİTER SEÇENEKLERİ IZGARASI -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                 @forelse($partitionOptions as $option)

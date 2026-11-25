@@ -98,7 +98,7 @@ class FormEntryS
 
             // Otomatik veya varsayılan doldurulan alanlar (kullanıcının girdiği asıl veri sayılmayanlar)
             $nonUserDataFieldIds = $template->fields
-                ->filter(fn($f) => in_array($f->type, ['auto_user', 'year']) || ($partitionFieldId && $f->id == $partitionFieldId))
+                ->filter(fn($f) => in_array($f->type, ['auto_user', 'year']) || (!empty($partitionValue) && $partitionFieldId && $f->id == $partitionFieldId))
                 ->pluck('id')
                 ->map(fn($id) => (int)$id)
                 ->toArray();

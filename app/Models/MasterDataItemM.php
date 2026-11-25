@@ -15,8 +15,28 @@ class MasterDataItemM extends Model
         'type_id',
         'name',
         'parent_id',
+        'sort_order',
         'user_id'
     ];
+
+    protected $casts = [
+        'sort_order' => 'integer',
+    ];
+
+    /**
+     * Kategorinin sıralama moduna göre (custom / alphabetical) öğeleri sıralar.
+     */
+    public function scopeOrderedForType($query, ?MasterDataTypeM $type = null)
+    {
+        if ($type && $type->sort_mode === 'custom') {
+            return $query->orderBy('sort_order', 'asc')->orderBy('id', 'asc');
+        }
+
+        $driver = $this->getConnection()->getDriverName();
+        $nameOrder = $driver === 'mysql' ? 'name COLLATE utf8mb4_turkish_ci ASC' : 'name ASC';
+
+        return $query->orderByRaw($nameOrder);
+    }
 
     public function user()
     {
