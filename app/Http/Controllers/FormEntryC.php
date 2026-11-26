@@ -219,11 +219,95 @@ class FormEntryC extends Controller
         $partitionField = null;
         $partitionValue = null;
 
-        if ($formTemplate->isPartitioned() && $formTemplate->partitionField && !$request->boolean('full_entry')) {
+        if ($formTemplate->isPartitioned() && $formTemplate->partitionField) {
             $partitionField = $formTemplate->partitionField;
 
-            // Eğer query'de partition_value yoksa, seçim ekranına yönlendir
-            if (!$request->filled('partition_value')) {
+            // Kullanıcının bu şablon için aktif olan Tek Parça ve Parçalı kayıtlarını tespit et
+            $activeFullEntry = FormEntryM::where('form_template_id', $formTemplate->id)
+                ->where('user_id', $user->id)
+                ->whereNull('partition_value')
+                ->where('is_consolidated', false)
+                ->whereIn('status', ['draft', 'submitted', 'approved', 'rejected'])
+                ->latest()
+                ->first();
+
+            $activePartialEntries = FormEntryM::where('form_template_id', $formTemplate->id)
+                ->where('user_id', $user->id)
+                ->where(function ($q) {
+                    $q->whereNotNull('partition_value')
+                      ->orWhere('is_consolidated', true);
+                })
+                ->whereIn('status', ['draft', 'submitted', 'approved', 'rejected'])
+                ->get();
+
+            $hasActiveFullEntry = (bool) $activeFullEntry;
+            $hasActivePartialEntries = $activePartialEntries->isNotEmpty();
+
+            // 1. Durum: Kullanıcı Tek Parça Giriş Başlatmak İstiyor (?full_entry=1)
+            if ($request->boolean('full_entry')) {
+                // Parçalı girişleri varsa tek parça başlatamaz!
+                if ($hasActivePartialEntries) {
+                    return redirect()->route('form-entries.create', $formTemplate)
+                        ->with('warning', 'Bu şablon için parçalı veri girişleriniz bulunmaktadır. Çift veri girişi ve onay çakışmasını engellemek amacıyla tek parça giriş başlatamazsınız.');
+                }
+
+                // Zaten mevcut bir tek parça kaydı varsa yenisini açmak yerine mevcut kayda yönlendir
+                if ($activeFullEntry) {
+                    if ($activeFullEntry->status === 'draft' || $activeFullEntry->status === 'rejected') {
+                        return redirect()->route('form-entries.edit', $activeFullEntry)
+                            ->with('info', "Mevcut tek parça formunuza yönlendirildiniz (#{$activeFullEntry->id}).");
+                    } elseif ($activeFullEntry->status === 'submitted') {
+                        return redirect()->route('form-entries.show', $activeFullEntry)
+                            ->with('warning', "Tüm işyerleri için daha önce onaya gönderilmiş tek parça kaydınız bulunmaktadır (#{$activeFullEntry->id}).");
+                    } elseif ($activeFullEntry->status === 'approved') {
+                        return redirect()->route('form-entries.show', $activeFullEntry)
+                            ->with('warning', "Tüm işyerleri için onaylanmış tek parça kaydınız bulunmaktadır (#{$activeFullEntry->id}).");
+                    }
+                }
+
+                $partitionValue = null;
+            }
+            // 2. Durum: Kullanıcı Belirli Bir Kriter / Parça İçin Giriş Yapmak İstiyor (?partition_value=...)
+            elseif ($request->filled('partition_value')) {
+                // Tek parça kaydı varsa parçalı giriş yapamaz!
+                if ($hasActiveFullEntry) {
+                    $statusLabel = match ($activeFullEntry->status) {
+                        'draft' => 'taslak',
+                        'submitted' => 'onay bekleyen',
+                        'approved' => 'onaylanmış',
+                        'rejected' => 'reddedilmiş',
+                        default => $activeFullEntry->status
+                    };
+                    return redirect()->route('form-entries.create', $formTemplate)
+                        ->with('warning', "Tüm işyerleri için {$statusLabel} tek parça hedef girişiniz bulunmaktadır (#{$activeFullEntry->id}). Çift giriş yapılmaması için parçalı giriş yapamazsınız.");
+                }
+
+                $partitionValue = trim($request->query('partition_value'));
+
+                $existingEntryForPart = FormEntryM::where('form_template_id', $formTemplate->id)
+                    ->where('user_id', $user->id)
+                    ->where('partition_value', $partitionValue)
+                    ->latest()
+                    ->first();
+
+                if ($existingEntryForPart) {
+                    if ($existingEntryForPart->status === 'draft') {
+                        return redirect()->route('form-entries.edit', $existingEntryForPart)
+                            ->with('info', "'{$partitionValue}' bölümü için mevcut bir taslağınız bulundu (#{$existingEntryForPart->id}). Taslağınıza yönlendirildiniz.");
+                    } elseif ($existingEntryForPart->status === 'submitted') {
+                        return redirect()->route('form-entries.show', $existingEntryForPart)
+                            ->with('warning', "'{$partitionValue}' bölümü için daha önce onaya gönderilmiş bir kaydınız bulunmaktadır (#{$existingEntryForPart->id}).");
+                    } elseif ($existingEntryForPart->status === 'approved') {
+                        return redirect()->route('form-entries.show', $existingEntryForPart)
+                            ->with('warning', "'{$partitionValue}' bölümü için onaylanmış bir kaydınız bulunmaktadır (#{$existingEntryForPart->id}). Değişiklik yapmak istiyorsanız lütfen 'Düzenleme Talep Et (Revizyon)' butonunu kullanınız.");
+                    } elseif ($existingEntryForPart->status === 'rejected') {
+                        return redirect()->route('form-entries.edit', $existingEntryForPart)
+                            ->with('warning', "'{$partitionValue}' bölümü için reddedilmiş bir kaydınız bulunmaktadır (#{$existingEntryForPart->id}). Taslağınıza yönlendirildiniz.");
+                    }
+                }
+            }
+            // 3. Durum: Henüz seçim yapılmadı -> Bölüm ve Yöntem Seçim Ekranı (select_partition)
+            else {
                 $partitionOptions = [];
                 if ($partitionField->master_data_type_id) {
                     $mType = \App\Models\MasterDataTypeM::with('items')->find($partitionField->master_data_type_id);
@@ -249,37 +333,19 @@ class FormEntryC extends Controller
                     ->get()
                     ->keyBy('partition_value');
 
-                // Parçalanmamış (tek parça) devam eden son taslak varsa kartta kısayol göstermek için
-                $latestFullDraft = FormEntryM::where('form_template_id', $formTemplate->id)
-                    ->where('user_id', $user->id)
-                    ->whereNull('partition_value')
-                    ->where('status', 'draft')
-                    ->orderBy('id', 'desc')
-                    ->first();
+                $latestFullDraft = $activeFullEntry && $activeFullEntry->status === 'draft' ? $activeFullEntry : null;
 
-                return view('form_entries.select_partition', compact('formTemplate', 'partitionField', 'partitionOptions', 'userEntries', 'latestFullDraft'));
-            }
-
-            // partition_value belirtilmiş: akıllı yönlendirme ve kontrol
-            $partitionValue = trim($request->query('partition_value'));
-
-            $existingEntryForPart = FormEntryM::where('form_template_id', $formTemplate->id)
-                ->where('user_id', $user->id)
-                ->where('partition_value', $partitionValue)
-                ->latest()
-                ->first();
-
-            if ($existingEntryForPart) {
-                if ($existingEntryForPart->status === 'draft') {
-                    return redirect()->route('form-entries.edit', $existingEntryForPart)
-                        ->with('info', "'{$partitionValue}' bölümü için mevcut bir taslağınız bulundu (#{$existingEntryForPart->id}). Taslağınıza yönlendirildiniz.");
-                } elseif ($existingEntryForPart->status === 'submitted') {
-                    return redirect()->route('form-entries.show', $existingEntryForPart)
-                        ->with('warning', "'{$partitionValue}' bölümü için daha önce onaya gönderilmiş bir kaydınız bulunmaktadır (#{$existingEntryForPart->id}).");
-                } elseif ($existingEntryForPart->status === 'approved') {
-                    return redirect()->route('form-entries.show', $existingEntryForPart)
-                        ->with('warning', "'{$partitionValue}' bölümü için onaylanmış bir kaydınız bulunmaktadır (#{$existingEntryForPart->id}). Değişiklik yapmak istiyorsanız lütfen 'Düzenleme Talep Et (Revizyon)' butonunu kullanınız.");
-                }
+                return view('form_entries.select_partition', compact(
+                    'formTemplate',
+                    'partitionField',
+                    'partitionOptions',
+                    'userEntries',
+                    'latestFullDraft',
+                    'activeFullEntry',
+                    'hasActiveFullEntry',
+                    'activePartialEntries',
+                    'hasActivePartialEntries'
+                ));
             }
         }
 
@@ -369,6 +435,58 @@ class FormEntryC extends Controller
         }
 
         $partitionValue = $request->filled('partition_value') ? trim($request->input('partition_value')) : null;
+
+        // Bölümlenmiş (Partitioned) şablonlarda Tek Parça vs Parçalı karşılıklı kilit kontrolü
+        $formTemplate->loadMissing('partitionField');
+        if ($formTemplate->isPartitioned() && $formTemplate->partitionField) {
+            $activeFullEntry = FormEntryM::where('form_template_id', $formTemplate->id)
+                ->where('user_id', $request->user()->id)
+                ->whereNull('partition_value')
+                ->where('is_consolidated', false)
+                ->whereIn('status', ['draft', 'submitted', 'approved', 'rejected'])
+                ->when($request->filled('entry_id'), function ($q) use ($request) {
+                    $q->where('id', '!=', $request->entry_id);
+                })
+                ->latest()
+                ->first();
+
+            $activePartialEntries = FormEntryM::where('form_template_id', $formTemplate->id)
+                ->where('user_id', $request->user()->id)
+                ->where(function ($q) {
+                    $q->whereNotNull('partition_value')
+                      ->orWhere('is_consolidated', true);
+                })
+                ->whereIn('status', ['draft', 'submitted', 'approved', 'rejected'])
+                ->when($request->filled('entry_id'), function ($q) use ($request) {
+                    $q->where('id', '!=', $request->entry_id);
+                })
+                ->get();
+
+            // Parçalı kayıt kaydedilmek isteniyorsa ama Tek Parça aktif kayıt varsa engelle
+            if (!empty($partitionValue) && $activeFullEntry) {
+                $statusLabel = match ($activeFullEntry->status) {
+                    'draft' => 'taslak',
+                    'submitted' => 'onay bekleyen',
+                    'approved' => 'onaylanmış',
+                    'rejected' => 'reddedilmiş',
+                    default => $activeFullEntry->status
+                };
+                $msg = "Tüm işyerleri için {$statusLabel} tek parça hedef girişiniz bulunmaktadır (#{$activeFullEntry->id}). Parçalı veri girişi kaydedilemez.";
+                if ($request->wantsJson() || $request->ajax()) {
+                    return response()->json(['success' => false, 'message' => $msg], 422);
+                }
+                return back()->withInput()->withErrors(['partition_value' => $msg]);
+            }
+
+            // Tek Parça kayıt kaydedilmek isteniyorsa ama Parçalı aktif kayıtlar varsa engelle
+            if (empty($partitionValue) && $activePartialEntries->isNotEmpty()) {
+                $msg = 'Bu form için parçalı veri girişleriniz bulunmaktadır. Tek parça hedef girişi kaydedilemez.';
+                if ($request->wantsJson() || $request->ajax()) {
+                    return response()->json(['success' => false, 'message' => $msg], 422);
+                }
+                return back()->withInput()->withErrors(['partition_value' => $msg]);
+            }
+        }
 
         try {
             $entry = $this->formEntryService->saveEntry(
@@ -1581,7 +1699,10 @@ class FormEntryC extends Controller
     public function destroy(Request $request, FormEntryM $formEntry)
     {
         $user = $request->user();
-        if (!$this->permissionService->hasPermission($user, 'form_entries.delete')) {
+        $canDelete = $this->permissionService->hasPermission($user, 'form_entries.delete')
+            || ($formEntry->user_id === $user->id && $formEntry->status === 'draft');
+
+        if (!$canDelete) {
             abort(403, 'Form kaydını silme yetkiniz yok.');
         }
 

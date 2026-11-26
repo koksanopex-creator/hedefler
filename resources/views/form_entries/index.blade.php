@@ -131,7 +131,7 @@
         openBulkDeleteModal: false, 
         isDeletingBulk: false,
         expandedConsolidatedIds: [],
-        collapsedUserIds: [],
+        collapsedUserIds: @js($allUserGroupIds),
         allUserGroupIds: @js($allUserGroupIds),
         toggleExpanded(id) {
             if (this.expandedConsolidatedIds.includes(id)) {
@@ -1004,7 +1004,7 @@
                                                         </div>
                                                     @endif
 
-                                                    @if(app(\App\Services\PermissionS::class)->hasPermission(Auth::user(), 'form_entries.delete'))
+                                                    @if(app(\App\Services\PermissionS::class)->hasPermission(Auth::user(), 'form_entries.delete') || ($entry->user_id === Auth::id() && $entry->status === 'draft'))
                                                         <div x-data="{ open: false }" class="inline-block">
                                                             <button @click="open = true"
                                                                 class="inline-flex items-center px-2 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-bold text-red-600 hover:text-red-900 hover:bg-red-50 hover:border-red-300 transition-all shadow-2xs cursor-pointer">

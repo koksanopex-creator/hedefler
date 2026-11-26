@@ -80,10 +80,10 @@
 
             <!-- TÜMÜ / TEK PARÇA GİRİŞ SEÇENEĞİ -->
             <div
-                class="bg-white rounded-2xl border-2 border-indigo-200 hover:border-indigo-400 shadow-sm hover:shadow-md transition-all p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                class="rounded-2xl border-2 transition-all p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 {{ $hasActivePartialEntries ? 'bg-slate-50/80 border-slate-200 shadow-none' : ($hasActiveFullEntry ? 'bg-white border-indigo-400 shadow-md ring-2 ring-indigo-100' : 'bg-white border-indigo-200 hover:border-indigo-400 shadow-sm hover:shadow-md') }}">
                 <div class="flex items-start gap-4">
                     <div
-                        class="w-12 h-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-indigo-500/20">
+                        class="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-md {{ $hasActivePartialEntries ? 'bg-slate-400 text-white shadow-slate-300' : 'bg-indigo-600 text-white shadow-indigo-500/20' }}">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
@@ -91,18 +91,58 @@
                     </div>
                     <div class="space-y-1">
                         <div class="flex flex-wrap items-center gap-2">
-                            <span
-                                class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-indigo-50 text-indigo-700 border border-indigo-200">
-                                {{ __('Tek Parça / Tam Tablo') }}
-                            </span>
+                            @if($hasActivePartialEntries)
+                                <span
+                                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-slate-200 text-slate-700 border border-slate-300">
+                                    <svg class="w-3 h-3 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                                    {{ __('Parçalı Giriş Aktif - Kilitli') }}
+                                </span>
+                            @elseif($hasActiveFullEntry)
+                                @if($activeFullEntry->status === 'draft')
+                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-slate-100 text-slate-800 border border-slate-300">
+                                        ⚡ {{ __('Kayıtlı Tek Parça Taslağınız Var') }}
+                                    </span>
+                                @elseif($activeFullEntry->status === 'submitted')
+                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-900 border border-amber-300">
+                                        ⏳ {{ __('Onay Bekleyen Tek Parça Kayıt') }}
+                                    </span>
+                                @elseif($activeFullEntry->status === 'approved')
+                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-900 border border-emerald-300">
+                                        ✅ {{ __('Onaylanmış Tek Parça Kayıt') }}
+                                    </span>
+                                @elseif($activeFullEntry->status === 'rejected')
+                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-rose-100 text-rose-900 border border-rose-300">
+                                        ⚠️ {{ __('Düzenleme Bekleyen Tek Parça Kayıt') }}
+                                    </span>
+                                @endif
+                            @else
+                                <span
+                                    class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-indigo-50 text-indigo-700 border border-indigo-200">
+                                    {{ __('Tek Parça / Tam Tablo') }}
+                                </span>
+                            @endif
+
                             <h4 class="text-base font-black text-slate-900">
                                 {{ __('Tüm') }} {{ $partitionField->label }} {{ __('Değerleri İçin Tek Parça Giriş') }}
                             </h4>
                         </div>
-                        <p class="text-xs text-slate-500 leading-relaxed max-w-2xl">
-                            {{ __('Bölüm bazında parçalamadan, tüm') }} <strong>{{ $partitionField->label }}</strong>
-                            {{ __('seçeneklerini aynı anda tek bir tam tabloda kısıtlama olmadan doldurmak veya Excel ile toplu aktarmak için bu seçeneği kullanabilirsiniz.') }}
-                        </p>
+
+                        @if($hasActivePartialEntries)
+                            <p class="text-xs text-amber-800 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-xl font-medium mt-1">
+                                {{ __('Bu form için kriter bazında parçalı veri girişleriniz bulunmaktadır (:count kayıt). Çift onay ve mükerrer veri oluşmasını engellemek amacıyla tek parça giriş başlatılamaz.', ['count' => $activePartialEntries->count()]) }}
+                            </p>
+                        @elseif($hasActiveFullEntry)
+                            <div class="text-xs text-slate-600 mt-1 flex flex-wrap items-center gap-3">
+                                <span><strong>{{ __('Kayıt No:') }}</strong> <span class="font-mono text-indigo-600 font-bold">#{{ $activeFullEntry->id }}</span></span>
+                                <span><strong>{{ __('Satır Sayısı:') }}</strong> {{ $activeFullEntry->rows()->count() }} {{ __('Satır') }}</span>
+                                <span><strong>{{ __('Son Güncelleme:') }}</strong> {{ $activeFullEntry->updated_at?->format('d.m.Y H:i') ?? '-' }}</span>
+                            </div>
+                        @else
+                            <p class="text-xs text-slate-500 leading-relaxed max-w-2xl">
+                                {{ __('Bölüm bazında parçalamadan, tüm') }} <strong>{{ $partitionField->label }}</strong>
+                                {{ __('seçeneklerini aynı anda tek bir tam tabloda kısıtlama olmadan doldurmak veya Excel ile toplu aktarmak için bu seçeneği kullanabilirsiniz.') }}
+                            </p>
+                        @endif
                     </div>
                 </div>
 
@@ -110,33 +150,103 @@
                      x-data="{ clicking: false }"
                      @pageshow.window="clicking = false"
                      @page-restored.window="clicking = false">
-                    @if(isset($latestFullDraft) && $latestFullDraft)
-                        <a href="{{ route('form-entries.edit', $latestFullDraft) }}"
+                    @if($hasActivePartialEntries)
+                        <button type="button" disabled
+                            class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black bg-slate-200 text-slate-400 border border-slate-300 cursor-not-allowed select-none shadow-none">
+                            <svg class="w-4 h-4 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                            </svg>
+                            <span>{{ __('Tek Parça Giriş Kilitli') }}</span>
+                        </button>
+                    @elseif($hasActiveFullEntry)
+                        @if($activeFullEntry->status === 'draft' || $activeFullEntry->status === 'rejected')
+                            <div class="flex items-center gap-2 w-full sm:w-auto">
+                                <a href="{{ route('form-entries.edit', $activeFullEntry) }}"
+                                    @click="if(clicking) { $event.preventDefault(); return false; } clicking = true; setTimeout(() => { clicking = false; }, 8000);"
+                                    :class="clicking ? 'pointer-events-none opacity-70 cursor-not-allowed' : ''"
+                                    class="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm shadow-indigo-500/20 transition active:scale-98 select-none">
+                                    <svg class="w-4 h-4 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                    </svg>
+                                    <span x-show="clicking">{{ __('Yönlendiriliyor...') }}</span>
+                                    <span x-show="!clicking">{{ __('Mevcut Tek Parça Formunu Düzenle') }} (#{{ $activeFullEntry->id }}) &rarr;</span>
+                                </a>
+
+                                @if($activeFullEntry->status === 'draft')
+                                    <form action="{{ route('form-entries.destroy', $activeFullEntry) }}" method="POST"
+                                        onsubmit="return confirm('{{ __('Bu tek parça taslağı silmek istediğinize emin misiniz? Bu işlem geri alınamaz.') }}');"
+                                        class="inline-block shrink-0">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit"
+                                            class="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold bg-white text-rose-600 border border-rose-200 hover:bg-rose-50 hover:border-rose-300 transition shadow-2xs select-none cursor-pointer"
+                                            title="{{ __('Taslağı Sil') }}">
+                                            <svg class="w-4 h-4 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                            </svg>
+                                            <span>{{ __('Sil') }}</span>
+                                        </button>
+                                    </form>
+                                @endif
+                            </div>
+                        @else
+                            <a href="{{ route('form-entries.show', $activeFullEntry) }}"
+                                @click="if(clicking) { $event.preventDefault(); return false; } clicking = true; setTimeout(() => { clicking = false; }, 8000);"
+                                :class="clicking ? 'pointer-events-none opacity-70 cursor-not-allowed' : ''"
+                                class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black bg-slate-800 hover:bg-slate-900 text-white shadow-sm shadow-slate-800/20 transition active:scale-98 select-none">
+                                <svg class="w-4 h-4 text-slate-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                                <span x-show="clicking">{{ __('Yönlendiriliyor...') }}</span>
+                                <span x-show="!clicking">{{ __('Tek Parça Formunu İncele') }} (#{{ $activeFullEntry->id }}) &rarr;</span>
+                            </a>
+                        @endif
+                    @else
+                        <a href="{{ route('form-entries.create', ['formTemplate' => $formTemplate, 'full_entry' => 1]) }}"
                             @click="if(clicking) { $event.preventDefault(); return false; } clicking = true; setTimeout(() => { clicking = false; }, 8000);"
                             :class="clicking ? 'pointer-events-none opacity-70 cursor-not-allowed' : ''"
-                            class="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 transition active:scale-98 select-none">
-                            <svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm shadow-indigo-500/20 transition active:scale-98 select-none">
+                            <svg class="w-4 h-4 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                             </svg>
-                            <span>{{ __('Son Tam Taslak') }} (#{{ $latestFullDraft->id }})</span>
+                            <span x-show="clicking">{{ __('Yönlendiriliyor...') }}</span>
+                            <span x-show="!clicking">
+                                {{ __('Tüm') }} {{ $partitionField->label }} {{ __('İçin Tek Parça Giriş Başlat') }}
+                            </span>
                         </a>
                     @endif
-
-                    <a href="{{ route('form-entries.create', ['formTemplate' => $formTemplate, 'full_entry' => 1]) }}"
-                        @click="if(clicking) { $event.preventDefault(); return false; } clicking = true; setTimeout(() => { clicking = false; }, 8000);"
-                        :class="clicking ? 'pointer-events-none opacity-70 cursor-not-allowed' : ''"
-                        class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm shadow-indigo-500/20 transition active:scale-98 select-none">
-                        <svg class="w-4 h-4 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                        </svg>
-                        <span x-show="clicking">{{ __('Yönlendiriliyor...') }}</span>
-                        <span x-show="!clicking">
-                            {{ __('Tüm') }} {{ $partitionField->label }} {{ __('İçin Tek Parça Giriş Başlat') }}
-                        </span>
-                    </a>
                 </div>
             </div>
+
+            @if($hasActiveFullEntry)
+                <!-- TEK PARÇA GİRİŞ AKTİF UYARI KUTUSU -->
+                <div class="p-4 rounded-2xl bg-amber-50 border-2 border-amber-300 text-amber-900 flex items-start gap-3 shadow-xs">
+                    <svg class="w-6 h-6 text-amber-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <div class="space-y-1">
+                        <h5 class="text-xs font-black uppercase tracking-wider text-amber-900">
+                            {{ __('Tek Parça Giriş Tercih Edildi — Parçalı Giriş Kilitlendi') }}
+                        </h5>
+                        <p class="text-xs font-medium text-amber-800 leading-relaxed">
+                            {{ __('Bu form şablonu için tüm işyerlerini kapsayan tek parça hedef girişiniz bulunmaktadır') }}
+                            (<strong>#{{ $activeFullEntry->id }}</strong> - <strong>{{ $activeFullEntry->status === 'draft' ? __('Taslak') : ($activeFullEntry->status === 'submitted' ? __('Onay Bekliyor') : ($activeFullEntry->status === 'approved' ? __('Onaylandı') : __('Reddedildi'))) }}</strong>).
+                            {{ __('Çift veri girişi ve onay süreçlerinde mükerrer kayıt oluşmasını engellemek için parçalı giriş yapamazsınız.') }}
+                            @if($activeFullEntry->status === 'draft')
+                                <span class="block mt-1 text-[11px] text-amber-700 italic">
+                                    * {{ __('Parçalı giriş yöntemine geçmek istiyorsanız, Veri Girişleri listesinden mevcut tek parça taslağınızı silebilirsiniz.') }}
+                                </span>
+                            @endif
+                        </p>
+                    </div>
+                </div>
+            @endif
 
             <!-- KRİTER SEÇENEKLERİ IZGARASI -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -151,7 +261,9 @@
                         $cardBg = 'bg-white border-slate-200 hover:border-indigo-400';
                         $statusBadge = null;
 
-                        if ($hasDraft) {
+                        if ($hasActiveFullEntry && !$entry) {
+                            $cardBg = 'bg-slate-50/70 border-slate-200 opacity-80';
+                        } elseif ($hasDraft) {
                             $cardBg = 'bg-white border-slate-300 shadow-slate-500/5 hover:border-slate-400';
                             $statusBadge = ['bg' => 'bg-slate-100 text-slate-800 border-slate-300', 'dot' => 'bg-slate-600', 'text' => __('Kayıtlı Taslak')];
                         } elseif ($hasSubmitted) {
@@ -193,10 +305,17 @@
                                         <span>{{ $statusBadge['text'] }}</span>
                                     </span>
                                 @else
-                                    <span
-                                        class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200">
-                                        {{ __('Giriş Yapılmadı') }}
-                                    </span>
+                                    @if($hasActiveFullEntry && !$entry)
+                                        <span
+                                            class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-200/70 text-slate-500 border border-slate-300">
+                                            🔒 {{ __('Giriş Kilitli') }}
+                                        </span>
+                                    @else
+                                        <span
+                                            class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200">
+                                            {{ __('Giriş Yapılmadı') }}
+                                        </span>
+                                    @endif
                                 @endif
                             </div>
 
@@ -229,17 +348,35 @@
                             @pageshow.window="clicking = false"
                             @page-restored.window="clicking = false">
                             @if($hasDraft)
-                                <a href="{{ route('form-entries.edit', $entry) }}"
-                                    @click="if(clicking) { $event.preventDefault(); return false; } clicking = true; setTimeout(() => { clicking = false; }, 8000);"
-                                    :class="clicking ? 'pointer-events-none opacity-70 cursor-not-allowed' : ''"
-                                    class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black bg-slate-800 hover:bg-slate-900 text-white shadow-sm shadow-slate-800/20 transition active:scale-98 select-none">
-                                    <svg class="w-4 h-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                    </svg>
-                                    <span
-                                        x-text="clicking ? '{{ __('Yönlendiriliyor...') }}' : '{{ __('Mevcut Taslağı Düzenle') }} (#{{ $entry->id }})'">{{ __('Mevcut Taslağı Düzenle') }} (#{{ $entry->id }})</span>
-                                </a>
+                                <div class="w-full flex items-center gap-2">
+                                    <a href="{{ route('form-entries.edit', $entry) }}"
+                                        @click="if(clicking) { $event.preventDefault(); return false; } clicking = true; setTimeout(() => { clicking = false; }, 8000);"
+                                        :class="clicking ? 'pointer-events-none opacity-70 cursor-not-allowed' : ''"
+                                        class="flex-1 inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-black bg-slate-800 hover:bg-slate-900 text-white shadow-sm shadow-slate-800/20 transition active:scale-98 select-none">
+                                        <svg class="w-4 h-4 text-slate-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                        </svg>
+                                        <span
+                                            x-text="clicking ? '{{ __('Yönlendiriliyor...') }}' : '{{ __('Taslağı Düzenle') }} (#{{ $entry->id }})'">{{ __('Taslağı Düzenle') }} (#{{ $entry->id }})</span>
+                                    </a>
+
+                                    <form action="{{ route('form-entries.destroy', $entry) }}" method="POST"
+                                        onsubmit="return confirm('{{ __('Bu taslak kaydını silmek istediğinize emin misiniz? Bu işlem geri alınamaz.') }}');"
+                                        class="inline-block shrink-0">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit"
+                                            class="inline-flex items-center justify-center gap-1 px-3 py-2.5 rounded-xl text-xs font-bold bg-white text-rose-600 border border-rose-200 hover:bg-rose-50 hover:border-rose-300 transition shadow-2xs select-none cursor-pointer"
+                                            title="{{ __('Taslağı Sil') }}">
+                                            <svg class="w-4 h-4 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                            </svg>
+                                            <span>{{ __('Sil') }}</span>
+                                        </button>
+                                    </form>
+                                </div>
                             @elseif($hasSubmitted)
                                 <a href="{{ route('form-entries.show', $entry) }}"
                                     @click="if(clicking) { $event.preventDefault(); return false; } clicking = true; setTimeout(() => { clicking = false; }, 8000);"
@@ -265,20 +402,30 @@
                                     </a>
                                 </div>
                             @else
-                                <a href="{{ route('form-entries.create', ['formTemplate' => $formTemplate, 'partition_value' => $option['name']]) }}"
-                                    @click="if(clicking) { $event.preventDefault(); return false; } clicking = true; setTimeout(() => { clicking = false; }, 8000);"
-                                    :class="clicking ? 'pointer-events-none opacity-70 cursor-not-allowed' : ''"
-                                    class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm shadow-indigo-500/20 transition active:scale-98 select-none">
-                                    <svg class="w-4 h-4 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M12 4v16m8-8H4" />
-                                    </svg>
-                                    <span x-show="clicking">{{ __('Yönlendiriliyor...') }}</span>
-                                    <span x-show="!clicking" class="inline-flex items-center gap-1.5 flex-wrap justify-center">
-                                        <span class="text-amber-300 font-extrabold tracking-wide uppercase">{{ $option['name'] }}</span>
-                                        <span>{{ __('İçin Hedef Girişini Başlat') }}</span>
-                                    </span>
-                                </a>
+                                @if($hasActiveFullEntry)
+                                    <button type="button" disabled
+                                        class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed select-none shadow-none">
+                                        <svg class="w-4 h-4 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                        </svg>
+                                        <span>{{ __('Tek Parça Giriş Nedeniyle Kilitli') }}</span>
+                                    </button>
+                                @else
+                                    <a href="{{ route('form-entries.create', ['formTemplate' => $formTemplate, 'partition_value' => $option['name']]) }}"
+                                        @click="if(clicking) { $event.preventDefault(); return false; } clicking = true; setTimeout(() => { clicking = false; }, 8000);"
+                                        :class="clicking ? 'pointer-events-none opacity-70 cursor-not-allowed' : ''"
+                                        class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm shadow-indigo-500/20 transition active:scale-98 select-none">
+                                        <svg class="w-4 h-4 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M12 4v16m8-8H4" />
+                                        </svg>
+                                        <span x-show="clicking">{{ __('Yönlendiriliyor...') }}</span>
+                                        <span x-show="!clicking" class="inline-flex items-center gap-1.5 flex-wrap justify-center">
+                                            <span class="text-amber-300 font-extrabold tracking-wide uppercase">{{ $option['name'] }}</span>
+                                            <span>{{ __('İçin Hedef Girişini Başlat') }}</span>
+                                        </span>
+                                    </a>
+                                @endif
                             @endif
                         </div>
                     </div>

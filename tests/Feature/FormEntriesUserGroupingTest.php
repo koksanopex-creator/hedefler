@@ -122,6 +122,10 @@ class FormEntriesUserGroupingTest extends TestCase
             $userIds = $entries->pluck('user_id')->values()->toArray();
             return $userIds === [$this->userBeta->id, $this->userBeta->id, $this->userAlpha->id];
         });
+
+        // Yöneticiler için gruplandırılmış kullanıcı satırları varsayılan olarak kapalı gelmeli
+        $expectedJs = \Illuminate\Support\Js::from([$this->userBeta->id, $this->userAlpha->id])->toHtml();
+        $response->assertSee('collapsedUserIds: ' . $expectedJs, false);
     }
 
     public function test_regular_user_does_not_get_multi_user_group_headers(): void
