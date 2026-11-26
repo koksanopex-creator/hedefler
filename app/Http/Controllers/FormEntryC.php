@@ -1485,7 +1485,7 @@ class FormEntryC extends Controller
     public function downloadEmptyTemplate(Request $request, FormTemplateM $formTemplate)
     {
         $partitionValue = $request->query('partition_value');
-        return $this->formExportService->exportEmptyTemplate($formTemplate, $partitionValue);
+        return $this->formExportService->exportEmptyTemplate($formTemplate, $partitionValue, $request->user());
     }
 
     public function importExcel(Request $request, FormTemplateM $formTemplate)

@@ -720,12 +720,16 @@
                                             @endphp
                                             <td :style="getColumnStickyStyle('{{ $fId }}')"
                                                 :class="getColumnStickyClass('{{ $fId }}', 'td')"
-                                                class="px-2 sm:px-4 py-2 whitespace-nowrap min-w-[160px] align-middle relative group/cell"
+                                                tabindex="0"
+                                                @paste="handlePaste($event, rIndex, {{ $colIndex }})"
+                                                class="px-2 sm:px-4 py-2 whitespace-nowrap min-w-[160px] align-middle relative group/cell focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-400"
                                                 :title="getCellDisabledReason(fields[{{ $colIndex }}], row)">
 
                                                 @if (isset($partitionField) && $fId == $partitionField->id && !empty($partitionValue))
-                                                    <div class="relative w-full flex items-center justify-between gap-1.5 bg-amber-50/90 border border-amber-300 text-amber-900 rounded-md px-3 py-1.5 text-xs font-bold shadow-2xs select-none"
-                                                         title="{{ __('Bu form için') }} {{ $partitionField->label }} {{ __('değeri') }} '{{ $partitionValue }}' {{ __('olarak kilitlenmiştir.') }}">
+                                                    <div tabindex="0"
+                                                         @paste.stop="handlePaste($event, rIndex, {{ $colIndex }})"
+                                                         class="relative w-full flex items-center justify-between gap-1.5 bg-amber-50/90 border border-amber-300 text-amber-900 rounded-md px-3 py-1.5 text-xs font-bold shadow-2xs select-none cursor-cell focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                                         title="{{ __('Bu form için') }} {{ $partitionField->label }} {{ __('değeri') }} '{{ $partitionValue }}' {{ __('olarak kilitlenmiştir. Sıralı yapıştırmak için buradan Ctrl+V yapabilirsiniz.') }}">
                                                         <div class="flex items-center gap-1.5 truncate">
                                                             <svg class="w-3.5 h-3.5 text-amber-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
                                                             <span class="truncate font-mono">{{ $partitionValue }}</span>
@@ -737,15 +741,15 @@
                                                         :id="'cell_' + rIndex + '_{{ $fId }}'"
                                                         :data-field-id="'{{ $fId }}'"
                                                         :data-row-index="rIndex"
-                                                        :disabled="isFieldDisabled(fields[{{ $colIndex }}], row)"
+                                                        :readonly="isFieldDisabled(fields[{{ $colIndex }}], row)"
                                                         :required="isFieldRequired(fields[{{ $colIndex }}], row)"
                                                         :value="isFieldDisabled(fields[{{ $colIndex }}], row) ? '-' : (row.values['{{ $fId }}'] ?? '')"
                                                         @input="if (!isFieldDisabled(fields[{{ $colIndex }}], row)) { row.values['{{ $fId }}'] = $event.target.value; calculateTotals(); }"
-                                                        @paste="if (!isFieldDisabled(fields[{{ $colIndex }}], row)) handlePaste($event, rIndex, {{ $colIndex }})"
+                                                        @paste.stop="handlePaste($event, rIndex, {{ $colIndex }})"
                                                         @dblclick="if (!isFieldDisabled(fields[{{ $colIndex }}], row)) promptFillDown(row, '{{ $fId }}')"
                                                         :title="getCellDisabledReason(fields[{{ $colIndex }}], row)"
                                                         :class="{
-                                                            'bg-slate-100 text-slate-400 border-dashed cursor-not-allowed select-none opacity-80': isFieldDisabled(fields[{{ $colIndex }}], row),
+                                                            'bg-slate-100 text-slate-400 border-dashed cursor-cell select-none opacity-80': isFieldDisabled(fields[{{ $colIndex }}], row),
                                                             'border-l-4 border-l-red-500 border-gray-300': isFieldRequired(fields[{{ $colIndex }}], row) && !{{ $fRequired ? 'true' : 'false' }},
                                                             'border-gray-300': !(isFieldRequired(fields[{{ $colIndex }}], row) && !{{ $fRequired ? 'true' : 'false' }}) && !isFieldDisabled(fields[{{ $colIndex }}], row)
                                                         }"
@@ -757,18 +761,17 @@
                                                             :id="'cell_' + rIndex + '_{{ $fId }}'"
                                                             :data-field-id="'{{ $fId }}'"
                                                             :data-row-index="rIndex"
-                                                            :disabled="isFieldDisabled(fields[{{ $colIndex }}], row)"
+                                                            :readonly="isFieldDisabled(fields[{{ $colIndex }}], row) || isFieldCalculated(fields[{{ $colIndex }}], row)"
                                                             :required="isFieldRequired(fields[{{ $colIndex }}], row) && !isFieldCalculated(fields[{{ $colIndex }}], row)"
                                                             :value="isFieldDisabled(fields[{{ $colIndex }}], row) ? '-' : formatInputDisplay(row.values['{{ $fId }}'])"
                                                             @input="if (!isFieldDisabled(fields[{{ $colIndex }}], row)) handleNumberInput($event, rIndex, '{{ $fId }}')"
                                                             @blur="if (!isFieldDisabled(fields[{{ $colIndex }}], row)) handleNumberBlur($event, rIndex, '{{ $fId }}')"
-                                                            @paste="if (!isFieldDisabled(fields[{{ $colIndex }}], row)) handlePaste($event, rIndex, {{ $colIndex }})"
+                                                            @paste.stop="handlePaste($event, rIndex, {{ $colIndex }})"
                                                             @dblclick="if (!isFieldCalculated(fields[{{ $colIndex }}], row) && !isFieldDisabled(fields[{{ $colIndex }}], row)) promptFillDown(row, '{{ $fId }}')"
                                                             :title="getCellDisabledReason(fields[{{ $colIndex }}], row)"
-                                                            :readonly="isFieldCalculated(fields[{{ $colIndex }}], row)"
                                                             :class="{
-                                                                'bg-slate-100 text-slate-400 border-dashed cursor-not-allowed select-none opacity-80': isFieldDisabled(fields[{{ $colIndex }}], row),
-                                                                'bg-gray-100 cursor-not-allowed text-gray-700 font-semibold': isFieldCalculated(fields[{{ $colIndex }}], row) && !isFieldDisabled(fields[{{ $colIndex }}], row),
+                                                                'bg-slate-100 text-slate-400 border-dashed cursor-cell select-none opacity-80': isFieldDisabled(fields[{{ $colIndex }}], row),
+                                                                'bg-gray-100 cursor-cell text-gray-700 font-semibold': isFieldCalculated(fields[{{ $colIndex }}], row) && !isFieldDisabled(fields[{{ $colIndex }}], row),
                                                                 'border-l-4 border-l-red-500 border-gray-300': isFieldRequired(fields[{{ $colIndex }}], row) && !{{ $fRequired ? 'true' : 'false' }} && !isFieldCalculated(fields[{{ $colIndex }}], row) && !isFieldDisabled(fields[{{ $colIndex }}], row),
                                                                 'border-gray-300': !(isFieldRequired(fields[{{ $colIndex }}], row) && !{{ $fRequired ? 'true' : 'false' }} && !isFieldCalculated(fields[{{ $colIndex }}], row)) && !isFieldDisabled(fields[{{ $colIndex }}], row)
                                                             }"
@@ -779,16 +782,16 @@
                                                         :id="'cell_' + rIndex + '_{{ $fId }}'"
                                                         :data-field-id="'{{ $fId }}'"
                                                         :data-row-index="rIndex"
-                                                        :disabled="isFieldDisabled(fields[{{ $colIndex }}], row)"
+                                                        :readonly="isFieldDisabled(fields[{{ $colIndex }}], row)"
                                                         :required="isFieldRequired(fields[{{ $colIndex }}], row)"
                                                         :value="isFieldDisabled(fields[{{ $colIndex }}], row) ? '-' : (row.values['{{ $fId }}'] ?? '')"
                                                         @input="if (!isFieldDisabled(fields[{{ $colIndex }}], row)) { row.values['{{ $fId }}'] = $event.target.value; calculateTotals(); }"
-                                                        @paste="if (!isFieldDisabled(fields[{{ $colIndex }}], row)) handlePaste($event, rIndex, {{ $colIndex }})"
+                                                        @paste.stop="handlePaste($event, rIndex, {{ $colIndex }})"
                                                         @dblclick="if (!isFieldDisabled(fields[{{ $colIndex }}], row)) promptFillDown(row, '{{ $fId }}')"
                                                         :title="getCellDisabledReason(fields[{{ $colIndex }}], row)"
                                                         rows="1"
                                                         :class="{
-                                                            'bg-slate-100 text-slate-400 border-dashed cursor-not-allowed select-none opacity-80': isFieldDisabled(fields[{{ $colIndex }}], row),
+                                                            'bg-slate-100 text-slate-400 border-dashed cursor-cell select-none opacity-80': isFieldDisabled(fields[{{ $colIndex }}], row),
                                                             'border-l-4 border-l-red-500 border-gray-300': isFieldRequired(fields[{{ $colIndex }}], row) && !{{ $fRequired ? 'true' : 'false' }},
                                                             'border-gray-300': !(isFieldRequired(fields[{{ $colIndex }}], row) && !{{ $fRequired ? 'true' : 'false' }}) && !isFieldDisabled(fields[{{ $colIndex }}], row)
                                                         }"
@@ -801,12 +804,12 @@
                                                         :disabled="isFieldDisabled(fields[{{ $colIndex }}], row)"
                                                         :required="isFieldRequired(fields[{{ $colIndex }}], row)"
                                                         x-model="row.values['{{ $fId }}']"
-                                                        @paste="if (!isFieldDisabled(fields[{{ $colIndex }}], row)) handlePaste($event, rIndex, {{ $colIndex }})"
+                                                        @paste.stop="handlePaste($event, rIndex, {{ $colIndex }})"
                                                         @dblclick="if (!isFieldDisabled(fields[{{ $colIndex }}], row)) promptFillDown(row, '{{ $fId }}')"
                                                         @change="calculateTotals()"
                                                         :title="getCellDisabledReason(fields[{{ $colIndex }}], row)"
                                                         :class="{
-                                                            'bg-slate-100 text-slate-400 border-dashed cursor-not-allowed select-none opacity-80': isFieldDisabled(fields[{{ $colIndex }}], row),
+                                                            'bg-slate-100 text-slate-400 border-dashed pointer-events-none select-none opacity-80': isFieldDisabled(fields[{{ $colIndex }}], row),
                                                             'border-l-4 border-l-red-500 border-gray-300': isFieldRequired(fields[{{ $colIndex }}], row) && !{{ $fRequired ? 'true' : 'false' }},
                                                             'border-gray-300': !(isFieldRequired(fields[{{ $colIndex }}], row) && !{{ $fRequired ? 'true' : 'false' }}) && !isFieldDisabled(fields[{{ $colIndex }}], row)
                                                         }"
@@ -839,14 +842,14 @@
                                                             :disabled="isFieldDisabled(fields[{{ $colIndex }}], row)"
                                                             :required="isFieldRequired(fields[{{ $colIndex }}], row)"
                                                             x-model="row.values['{{ $fId }}']"
-                                                            @paste="if (!isFieldDisabled(fields[{{ $colIndex }}], row)) handlePaste($event, rIndex, {{ $colIndex }})"
+                                                            @paste.stop="handlePaste($event, rIndex, {{ $colIndex }})"
                                                             @keydown.delete.prevent="if (!isFieldDisabled(fields[{{ $colIndex }}], row)) clearSelect(row, '{{ $fId }}', fields[{{ $colIndex }}])"
                                                             @keydown.backspace.prevent="if (!isFieldDisabled(fields[{{ $colIndex }}], row)) clearSelect(row, '{{ $fId }}', fields[{{ $colIndex }}])"
                                                             @change="calculateTotals()"
                                                             :title="getCellDisabledReason(fields[{{ $colIndex }}], row)"
                                                             class="w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm transition-colors pr-7"
                                                             :class="{
-                                                                'bg-slate-100 text-slate-400 border-dashed cursor-not-allowed select-none opacity-80': isFieldDisabled(fields[{{ $colIndex }}], row),
+                                                                'bg-slate-100 text-slate-400 border-dashed pointer-events-none select-none opacity-80': isFieldDisabled(fields[{{ $colIndex }}], row),
                                                                 'bg-indigo-50 border-indigo-300 text-indigo-700 font-bold': !isFieldDisabled(fields[{{ $colIndex }}], row) && row.values['{{ $fId }}'],
                                                                 'bg-white border-gray-300 text-gray-700': !isFieldDisabled(fields[{{ $colIndex }}], row) && !row.values['{{ $fId }}'],
                                                                 'border-l-4 border-l-red-500': isFieldRequired(fields[{{ $colIndex }}], row) && !{{ $fRequired ? 'true' : 'false' }} && !isFieldDisabled(fields[{{ $colIndex }}], row)
@@ -882,20 +885,20 @@
                                                             :id="'cell_' + rIndex + '_{{ $fId }}'"
                                                             :data-field-id="'{{ $fId }}'"
                                                             :data-row-index="rIndex"
-                                                            :disabled="isFieldDisabled(fields[{{ $colIndex }}], row)"
-                                                            @click="openSearchableDropdown($event, row, fields[{{ $colIndex }}], rIndex)"
-                                                            @keydown.enter.prevent="openSearchableDropdown($event, row, fields[{{ $colIndex }}], rIndex)"
-                                                            @keydown.space.prevent="openSearchableDropdown($event, row, fields[{{ $colIndex }}], rIndex)"
-                                                            @keydown.arrow-down.prevent="openSearchableDropdown($event, row, fields[{{ $colIndex }}], rIndex)"
-                                                            @paste="if (!isFieldDisabled(fields[{{ $colIndex }}], row)) handlePaste($event, rIndex, {{ $colIndex }})"
+                                                            :aria-disabled="isFieldDisabled(fields[{{ $colIndex }}], row)"
+                                                            @click="if (!isFieldDisabled(fields[{{ $colIndex }}], row)) openSearchableDropdown($event, row, fields[{{ $colIndex }}], rIndex)"
+                                                            @keydown.enter.prevent="if (!isFieldDisabled(fields[{{ $colIndex }}], row)) openSearchableDropdown($event, row, fields[{{ $colIndex }}], rIndex)"
+                                                            @keydown.space.prevent="if (!isFieldDisabled(fields[{{ $colIndex }}], row)) openSearchableDropdown($event, row, fields[{{ $colIndex }}], rIndex)"
+                                                            @keydown.arrow-down.prevent="if (!isFieldDisabled(fields[{{ $colIndex }}], row)) openSearchableDropdown($event, row, fields[{{ $colIndex }}], rIndex)"
+                                                            @paste.stop="handlePaste($event, rIndex, {{ $colIndex }})"
                                                             @keydown.delete.prevent="if (!isFieldDisabled(fields[{{ $colIndex }}], row)) clearSelect(row, '{{ $fId }}', fields[{{ $colIndex }}])"
                                                             @keydown.backspace.prevent="if (!isFieldDisabled(fields[{{ $colIndex }}], row)) clearSelect(row, '{{ $fId }}', fields[{{ $colIndex }}])"
                                                             :title="getCellDisabledReason(fields[{{ $colIndex }}], row)"
-                                                            class="w-full text-left rounded-md shadow-sm text-sm transition-colors pr-7 pl-3 py-1.5 flex items-center justify-between border cursor-pointer select-none"
+                                                            class="w-full text-left rounded-md shadow-sm text-sm transition-colors pr-7 pl-3 py-1.5 flex items-center justify-between border select-none focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                                             :class="{
-                                                                'bg-slate-100 text-slate-400 border-dashed cursor-not-allowed select-none opacity-80': isFieldDisabled(fields[{{ $colIndex }}], row),
-                                                                'bg-indigo-50 border-indigo-300 text-indigo-700 font-bold': !isFieldDisabled(fields[{{ $colIndex }}], row) && row.values['{{ $fId }}'],
-                                                                'bg-white border-gray-300 text-gray-700 hover:border-indigo-400': !isFieldDisabled(fields[{{ $colIndex }}], row) && !row.values['{{ $fId }}'],
+                                                                'bg-slate-100 text-slate-400 border-dashed cursor-cell select-none opacity-80': isFieldDisabled(fields[{{ $colIndex }}], row),
+                                                                'bg-indigo-50 border-indigo-300 text-indigo-700 font-bold cursor-pointer': !isFieldDisabled(fields[{{ $colIndex }}], row) && row.values['{{ $fId }}'],
+                                                                'bg-white border-gray-300 text-gray-700 hover:border-indigo-400 cursor-pointer': !isFieldDisabled(fields[{{ $colIndex }}], row) && !row.values['{{ $fId }}'],
                                                                 'border-l-4 border-l-red-500': isFieldRequired(fields[{{ $colIndex }}], row) && !{{ $fRequired ? 'true' : 'false' }} && !isFieldDisabled(fields[{{ $colIndex }}], row)
                                                             }">
                                                             <span class="truncate block flex-1" x-text="row.values['{{ $fId }}'] || (isFieldDisabled(fields[{{ $colIndex }}], row) ? '-' : '{{ __('Seçiniz...') }}')"></span>
@@ -918,21 +921,21 @@
                                                             :id="'cell_' + rIndex + '_{{ $fId }}'"
                                                             :data-field-id="'{{ $fId }}'"
                                                             :data-row-index="rIndex"
-                                                            :disabled="isFieldDisabled(fields[{{ $colIndex }}], row) || isMasterDataDisabled(row, fields[{{ $colIndex }}])"
-                                                            @click="openSearchableDropdown($event, row, fields[{{ $colIndex }}], rIndex)"
-                                                            @keydown.enter.prevent="openSearchableDropdown($event, row, fields[{{ $colIndex }}], rIndex)"
-                                                            @keydown.space.prevent="openSearchableDropdown($event, row, fields[{{ $colIndex }}], rIndex)"
-                                                            @keydown.arrow-down.prevent="openSearchableDropdown($event, row, fields[{{ $colIndex }}], rIndex)"
-                                                            @paste="if (!isFieldDisabled(fields[{{ $colIndex }}], row)) handlePaste($event, rIndex, {{ $colIndex }})"
+                                                            :aria-disabled="isFieldDisabled(fields[{{ $colIndex }}], row) || isMasterDataDisabled(row, fields[{{ $colIndex }}])"
+                                                            @click="if (!isFieldDisabled(fields[{{ $colIndex }}], row) && !isMasterDataDisabled(row, fields[{{ $colIndex }}])) openSearchableDropdown($event, row, fields[{{ $colIndex }}], rIndex)"
+                                                            @keydown.enter.prevent="if (!isFieldDisabled(fields[{{ $colIndex }}], row) && !isMasterDataDisabled(row, fields[{{ $colIndex }}])) openSearchableDropdown($event, row, fields[{{ $colIndex }}], rIndex)"
+                                                            @keydown.space.prevent="if (!isFieldDisabled(fields[{{ $colIndex }}], row) && !isMasterDataDisabled(row, fields[{{ $colIndex }}])) openSearchableDropdown($event, row, fields[{{ $colIndex }}], rIndex)"
+                                                            @keydown.arrow-down.prevent="if (!isFieldDisabled(fields[{{ $colIndex }}], row) && !isMasterDataDisabled(row, fields[{{ $colIndex }}])) openSearchableDropdown($event, row, fields[{{ $colIndex }}], rIndex)"
+                                                            @paste.stop="handlePaste($event, rIndex, {{ $colIndex }})"
                                                             @keydown.delete.prevent="if (!isFieldDisabled(fields[{{ $colIndex }}], row)) clearSelect(row, '{{ $fId }}', fields[{{ $colIndex }}])"
                                                             @keydown.backspace.prevent="if (!isFieldDisabled(fields[{{ $colIndex }}], row)) clearSelect(row, '{{ $fId }}', fields[{{ $colIndex }}])"
                                                             :title="getCellDisabledReason(fields[{{ $colIndex }}], row)"
-                                                            class="w-full text-left rounded-md shadow-sm text-sm transition-colors pr-7 pl-3 py-1.5 flex items-center justify-between border cursor-pointer select-none"
+                                                            class="w-full text-left rounded-md shadow-sm text-sm transition-colors pr-7 pl-3 py-1.5 flex items-center justify-between border select-none focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                                             :class="{ 
-                                                                'bg-slate-100 text-slate-400 border-dashed cursor-not-allowed select-none opacity-80': isFieldDisabled(fields[{{ $colIndex }}], row),
-                                                                'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed': !isFieldDisabled(fields[{{ $colIndex }}], row) && isMasterDataDisabled(row, fields[{{ $colIndex }}]),
-                                                                'bg-indigo-50 border-indigo-300 text-indigo-700 font-bold': !isFieldDisabled(fields[{{ $colIndex }}], row) && !isMasterDataDisabled(row, fields[{{ $colIndex }}]) && row.values['{{ $fId }}'], 
-                                                                'bg-white border-gray-300 text-gray-700 hover:border-indigo-400': !isFieldDisabled(fields[{{ $colIndex }}], row) && !isMasterDataDisabled(row, fields[{{ $colIndex }}]) && !row.values['{{ $fId }}'], 
+                                                                'bg-slate-100 text-slate-400 border-dashed cursor-cell select-none opacity-80': isFieldDisabled(fields[{{ $colIndex }}], row),
+                                                                'bg-gray-100 text-gray-400 border-gray-200 cursor-cell': !isFieldDisabled(fields[{{ $colIndex }}], row) && isMasterDataDisabled(row, fields[{{ $colIndex }}]),
+                                                                'bg-indigo-50 border-indigo-300 text-indigo-700 font-bold cursor-pointer': !isFieldDisabled(fields[{{ $colIndex }}], row) && !isMasterDataDisabled(row, fields[{{ $colIndex }}]) && row.values['{{ $fId }}'], 
+                                                                'bg-white border-gray-300 text-gray-700 hover:border-indigo-400 cursor-pointer': !isFieldDisabled(fields[{{ $colIndex }}], row) && !isMasterDataDisabled(row, fields[{{ $colIndex }}]) && !row.values['{{ $fId }}'], 
                                                                 'border-l-4 border-l-red-500': isFieldRequired(fields[{{ $colIndex }}], row) && !{{ $fRequired ? 'true' : 'false' }} && !isFieldDisabled(fields[{{ $colIndex }}], row) 
                                                             }">
                                                             <span class="truncate block flex-1" x-text="row.values['{{ $fId }}'] || (isFieldDisabled(fields[{{ $colIndex }}], row) ? '-' : getMasterDataPlaceholder(row, fields[{{ $colIndex }}]))"></span>
@@ -955,8 +958,9 @@
                                                             :id="'cell_' + rIndex + '_{{ $fId }}'"
                                                             :data-field-id="'{{ $fId }}'"
                                                             :data-row-index="rIndex"
+                                                            @paste.stop="handlePaste($event, rIndex, {{ $colIndex }})"
                                                             :title="getCellDisabledReason(fields[{{ $colIndex }}], row)"
-                                                            class="w-full rounded-md border-gray-200 bg-gray-100 text-gray-500 shadow-sm text-sm cursor-not-allowed">
+                                                            class="w-full rounded-md border-gray-200 bg-gray-100 text-gray-500 shadow-sm text-sm cursor-cell focus:outline-none focus:ring-2 focus:ring-indigo-500">
                                                     </div>
                                                 @elseif ($fType === 'user_list')
                                                     <div class="relative w-full" :title="getCellDisabledReason(fields[{{ $colIndex }}], row)">
@@ -964,20 +968,20 @@
                                                             :id="'cell_' + rIndex + '_{{ $fId }}'"
                                                             :data-field-id="'{{ $fId }}'"
                                                             :data-row-index="rIndex"
-                                                            :disabled="isFieldDisabled(fields[{{ $colIndex }}], row)"
-                                                            @click="openSearchableDropdown($event, row, fields[{{ $colIndex }}], rIndex)"
-                                                            @keydown.enter.prevent="openSearchableDropdown($event, row, fields[{{ $colIndex }}], rIndex)"
-                                                            @keydown.space.prevent="openSearchableDropdown($event, row, fields[{{ $colIndex }}], rIndex)"
-                                                            @keydown.arrow-down.prevent="openSearchableDropdown($event, row, fields[{{ $colIndex }}], rIndex)"
-                                                            @paste="if (!isFieldDisabled(fields[{{ $colIndex }}], row)) handlePaste($event, rIndex, {{ $colIndex }})"
+                                                            :aria-disabled="isFieldDisabled(fields[{{ $colIndex }}], row)"
+                                                            @click="if (!isFieldDisabled(fields[{{ $colIndex }}], row)) openSearchableDropdown($event, row, fields[{{ $colIndex }}], rIndex)"
+                                                            @keydown.enter.prevent="if (!isFieldDisabled(fields[{{ $colIndex }}], row)) openSearchableDropdown($event, row, fields[{{ $colIndex }}], rIndex)"
+                                                            @keydown.space.prevent="if (!isFieldDisabled(fields[{{ $colIndex }}], row)) openSearchableDropdown($event, row, fields[{{ $colIndex }}], rIndex)"
+                                                            @keydown.arrow-down.prevent="if (!isFieldDisabled(fields[{{ $colIndex }}], row)) openSearchableDropdown($event, row, fields[{{ $colIndex }}], rIndex)"
+                                                            @paste.stop="handlePaste($event, rIndex, {{ $colIndex }})"
                                                             @keydown.delete.prevent="if (!isFieldDisabled(fields[{{ $colIndex }}], row)) clearSelect(row, '{{ $fId }}', fields[{{ $colIndex }}])"
                                                             @keydown.backspace.prevent="if (!isFieldDisabled(fields[{{ $colIndex }}], row)) clearSelect(row, '{{ $fId }}', fields[{{ $colIndex }}])"
                                                             :title="getCellDisabledReason(fields[{{ $colIndex }}], row)"
-                                                            class="w-full text-left rounded-md shadow-sm text-sm transition-colors pr-7 pl-3 py-1.5 flex items-center justify-between border cursor-pointer select-none"
+                                                            class="w-full text-left rounded-md shadow-sm text-sm transition-colors pr-7 pl-3 py-1.5 flex items-center justify-between border select-none focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                                             :class="{ 
-                                                                'bg-slate-100 text-slate-400 border-dashed cursor-not-allowed select-none opacity-80': isFieldDisabled(fields[{{ $colIndex }}], row),
-                                                                'bg-indigo-50 border-indigo-300 text-indigo-700 font-bold': !isFieldDisabled(fields[{{ $colIndex }}], row) && row.values['{{ $fId }}'], 
-                                                                'bg-white border-gray-300 text-gray-700 hover:border-indigo-400': !isFieldDisabled(fields[{{ $colIndex }}], row) && !row.values['{{ $fId }}'], 
+                                                                'bg-slate-100 text-slate-400 border-dashed cursor-cell select-none opacity-80': isFieldDisabled(fields[{{ $colIndex }}], row),
+                                                                'bg-indigo-50 border-indigo-300 text-indigo-700 font-bold cursor-pointer': !isFieldDisabled(fields[{{ $colIndex }}], row) && row.values['{{ $fId }}'], 
+                                                                'bg-white border-gray-300 text-gray-700 hover:border-indigo-400 cursor-pointer': !isFieldDisabled(fields[{{ $colIndex }}], row) && !row.values['{{ $fId }}'], 
                                                                 'border-l-4 border-l-red-500': isFieldRequired(fields[{{ $colIndex }}], row) && !{{ $fRequired ? 'true' : 'false' }} && !isFieldDisabled(fields[{{ $colIndex }}], row) 
                                                             }">
                                                             <span class="truncate block flex-1" x-text="row.values['{{ $fId }}'] || (isFieldDisabled(fields[{{ $colIndex }}], row) ? '-' : '{{ __('Kullanıcı Seçiniz...') }}')"></span>
@@ -4385,9 +4389,9 @@
 
                     // Eğer tek bir değer varsa ve kullanıcı normal bir text input içindeyse, tarayıcı varsayılanına izin ver.
                     // Ancak buton (master_data, select vb.) üzerindeyse handlePaste tek hücreyi de işlesin.
-                    const isFocusInTextInput = event.target && event.target.tagName === 'INPUT' && event.target.type === 'text';
+                    const isFocusInTextInput = event.target && event.target.tagName === 'INPUT' && event.target.type === 'text' && !event.target.readOnly;
                     if (!pastedText.includes('\t') && !pastedText.includes('\n') && !pastedText.includes('\r') && isFocusInTextInput) {
-                        return; // Metin kutusunda standart yapıştırmaya izin ver
+                        return; // Aktif metin kutusunda standart yapıştırmaya izin ver
                     }
 
                     event.preventDefault();

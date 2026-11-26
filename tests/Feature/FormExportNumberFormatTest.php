@@ -123,12 +123,180 @@ class FormExportNumberFormatTest extends TestCase
         @unlink($filePath);
     }
 
+    public function test_empty_template_filters_sales_group_dropdown_to_self_for_regular_user(): void
+    {
+        $regularRole = RoleM::create([
+            'name' => 'Veri Girişi',
+            'slug' => 'veri_girisi',
+        ]);
+
+        $regularUser = UserM::create([
+            'name' => 'CELAL KARAMAN',
+            'email' => 'celal@koksan.com',
+            'password' => bcrypt('password'),
+            'role_id' => $regularRole->id,
+            'is_active' => true,
+            'approval_status' => 'approved',
+        ]);
+
+        UserM::create([
+            'name' => 'SERHAT TÜMER',
+            'email' => 'serhat@koksan.com',
+            'password' => bcrypt('password'),
+            'role_id' => $regularRole->id,
+            'is_active' => true,
+            'approval_status' => 'approved',
+        ]);
+
+        $template = FormTemplateM::create([
+            'name' => 'HEDEFLER ŞABLONU',
+            'slug' => 'hedefler-template-self-only',
+            'created_by' => $this->owner->id,
+            'is_active' => true,
+        ]);
+
+        FormFieldM::create([
+            'form_template_id' => $template->id,
+            'label' => 'SATIŞ GRUBU TANIMI',
+            'field_key' => 'satis_grubu_tanimi',
+            'type' => 'user_list',
+            'filter_by_user_group' => true,
+            'sort_order' => 1,
+        ]);
+
+        $response = app(FormExportS::class)->exportEmptyTemplate($template, null, $regularUser);
+        $this->assertInstanceOf(BinaryFileResponse::class, $response);
+
+        $filePath = $response->getFile()->getPathname();
+        $spreadsheet = IOFactory::load($filePath);
+        $listSheet = $spreadsheet->getSheetByName('_LISTELER');
+
+        $this->assertNotNull($listSheet);
+        $this->assertSame('SATIŞ GRUBU TANIMI', $listSheet->getCell('A1')->getValue());
+        $this->assertSame('CELAL KARAMAN', $listSheet->getCell('A2')->getValue());
+        $this->assertNull($listSheet->getCell('A3')->getValue());
+
+        @unlink($filePath);
+    }
+
+    public function test_empty_template_keeps_full_sales_group_dropdown_for_approver_user(): void
+    {
+        $approverRole = RoleM::create([
+            'name' => 'Onaylayıcı',
+            'slug' => 'onaylayici',
+        ]);
+
+        $permId = \Illuminate\Support\Facades\DB::table('permissions')->insertGetId([
+            'name' => 'Form Onaylama',
+            'slug' => 'form_entries.approve',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        \Illuminate\Support\Facades\DB::table('role_permission')->insert([
+            'role_id' => $approverRole->id,
+            'permission_id' => $permId,
+        ]);
+
+        $approver = UserM::create([
+            'name' => 'ONAYLAYAN MÜDÜR',
+            'email' => 'approver@koksan.com',
+            'password' => bcrypt('password'),
+            'role_id' => $approverRole->id,
+            'is_active' => true,
+            'approval_status' => 'approved',
+        ]);
+
+        UserM::create([
+            'name' => 'SERHAT TÜMER',
+            'email' => 'serhat2@koksan.com',
+            'password' => bcrypt('password'),
+            'role_id' => $approverRole->id,
+            'is_active' => true,
+            'approval_status' => 'approved',
+        ]);
+
+        $template = FormTemplateM::create([
+            'name' => 'HEDEFLER ŞABLONU',
+            'slug' => 'hedefler-template-approver',
+            'created_by' => $this->owner->id,
+            'is_active' => true,
+        ]);
+
+        FormFieldM::create([
+            'form_template_id' => $template->id,
+            'label' => 'SATIŞ GRUBU TANIMI',
+            'field_key' => 'satis_grubu_tanimi',
+            'type' => 'user_list',
+            'filter_by_user_group' => true,
+            'sort_order' => 1,
+        ]);
+
+        $response = app(FormExportS::class)->exportEmptyTemplate($template, null, $approver);
+        $this->assertInstanceOf(BinaryFileResponse::class, $response);
+
+        $filePath = $response->getFile()->getPathname();
+        $spreadsheet = IOFactory::load($filePath);
+        $listSheet = $spreadsheet->getSheetByName('_LISTELER');
+
+        $this->assertNotNull($listSheet);
+        $values = [];
+        for ($r = 2; $r <= 10; $r++) {
+            $v = $listSheet->getCell('A' . $r)->getValue();
+            if ($v !== null && $v !== '') {
+                $values[] = $v;
+            }
+        }
+
+        $this->assertContains('ONAYLAYAN MÜDÜR', $values);
+        $this->assertContains('SERHAT TÜMER', $values);
+        $this->assertGreaterThanOrEqual(3, count($values));
+
+        @unlink($filePath);
+    }
+
     private function createMinimalSqliteSchema(): void
     {
         Schema::create('roles', function (Blueprint $table) {
             $table->id();
             $table->string('name');
             $table->string('slug')->unique();
+            $table->timestamps();
+        });
+
+        Schema::create('permissions', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->string('slug')->unique();
+            $table->timestamps();
+        });
+
+        Schema::create('role_permission', function (Blueprint $table) {
+            $table->unsignedBigInteger('role_id');
+            $table->unsignedBigInteger('permission_id');
+        });
+
+        Schema::create('user_permission', function (Blueprint $table) {
+            $table->unsignedBigInteger('user_id');
+            $table->unsignedBigInteger('permission_id');
+            $table->boolean('allowed')->default(true);
+        });
+
+        Schema::create('master_data_types', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->unsignedBigInteger('parent_id')->nullable();
+            $table->string('sort_mode')->default('alphabetical');
+            $table->timestamps();
+        });
+
+        Schema::create('master_data_items', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('type_id');
+            $table->string('name');
+            $table->unsignedBigInteger('parent_id')->nullable();
+            $table->integer('sort_order')->default(0);
+            $table->unsignedBigInteger('user_id')->nullable();
             $table->timestamps();
         });
 

@@ -195,8 +195,9 @@ class FormExportS
      * Parçalı form ise ilgili kriter hücresini kilitler (Data Validation) ve pasif sütunları biçimlendirir.
      * Tüm dropdown (master_data, select, year, user_list) alanlarını Excel Veri Doğrulama listesi olarak ekler.
      */
-    public function exportEmptyTemplate(FormTemplateM $formTemplate, ?string $partitionValue = null)
+    public function exportEmptyTemplate(FormTemplateM $formTemplate, ?string $partitionValue = null, ?UserM $downloadingUser = null)
     {
+        $downloadingUser = $downloadingUser ?? auth()->user();
         $templateId = $formTemplate->id;
         $templatePath = storage_path("app/templates/template_{$templateId}.xlsx");
         
@@ -379,7 +380,7 @@ class FormExportS
                 }
 
                 // 2. Standart / Bağımsız Dropdown Seçeneklerini Hesapla
-                $options = $this->resolveFieldDropdownOptions($field, $partitionValue, $partitionField, $masterDataTree, $usersList);
+                $options = $this->resolveFieldDropdownOptions($field, $partitionValue, $partitionField, $masterDataTree, $usersList, $downloadingUser);
 
                 if (!empty($options)) {
                     if (!$helperSheet) {
@@ -439,9 +440,24 @@ class FormExportS
     /**
      * Alanın tipine ve parçalama kriterine göre geçerli dropdown seçeneklerini döndürür.
      */
-    private function resolveFieldDropdownOptions($field, ?string $partitionValue, $partitionField, $masterDataTree, $usersList): array
+    private function resolveFieldDropdownOptions($field, ?string $partitionValue, $partitionField, $masterDataTree, $usersList, ?UserM $downloadingUser = null): array
     {
         $options = [];
+
+        if (!empty($field->filter_by_user_group) && $downloadingUser) {
+            $downloadingUser->loadMissing('role');
+            $permissionS = app(PermissionS::class);
+            $canSeeFullList = $downloadingUser->id === 1
+                || ($downloadingUser->role && $downloadingUser->role->slug === 'sistem_yoneticisi')
+                || $permissionS->hasPermission($downloadingUser, 'form_entries.approve')
+                || $permissionS->hasPermission($downloadingUser, 'form_entries.approve_group')
+                || $permissionS->hasPermission($downloadingUser, 'form_entries.view_all');
+
+            if (!$canSeeFullList) {
+                $selfName = trim((string) $downloadingUser->name);
+                return $selfName !== '' ? [$selfName] : [];
+            }
+        }
 
         if ($field->type === 'master_data' && $field->master_data_type_id) {
             $mType = $masterDataTree[$field->master_data_type_id] ?? null;
