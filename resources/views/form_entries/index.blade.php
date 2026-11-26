@@ -706,8 +706,18 @@
                                     </div>
 
                                     <div class="max-h-72 overflow-y-auto space-y-2 pr-1 border border-slate-200 rounded-2xl p-2 bg-slate-50/50">
+                                        @php
+                                            $totalConsolidationItems = $eligibleForConsolidation->count();
+                                        @endphp
                                         @foreach($eligibleForConsolidation as $item)
-                                            <label class="flex items-center justify-between p-3 rounded-xl bg-white border border-slate-200/90 hover:border-indigo-400 hover:shadow-xs transition cursor-pointer group">
+                                            @php
+                                                $freshness = $totalConsolidationItems > 1 ? (1 - ($loop->index / ($totalConsolidationItems - 1))) : 1;
+                                                $bgAlpha = number_format(0.02 + ($freshness * 0.16), 3, '.', '');
+                                                $borderAlpha = number_format(0.14 + ($freshness * 0.42), 3, '.', '');
+                                                $leftBorderAlpha = number_format(0.18 + ($freshness * 0.82), 3, '.', '');
+                                            @endphp
+                                            <label class="flex items-center justify-between p-3 rounded-xl border hover:shadow-xs transition cursor-pointer group"
+                                                style="background-color: rgba(79, 70, 229, {{ $bgAlpha }}); border-color: rgba(79, 70, 229, {{ $borderAlpha }}); border-left-width: 4px; border-left-color: rgba(79, 70, 229, {{ $leftBorderAlpha }});">
                                                 <div class="flex items-center gap-3">
                                                     <input type="checkbox" name="entry_ids[]" value="{{ $item->id }}"
                                                         x-model="selectedEntries"
@@ -721,14 +731,14 @@
                                                                 ⚡ {{ $item->partition_value }}
                                                             </span>
                                                         </div>
-                                                        <div class="text-[11px] text-slate-400 mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                                                        <div class="text-[11px] text-slate-600 mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5">
                                                             <span>#{{ $item->id }}</span>
                                                             <span>&bull;</span>
                                                             <span>{{ $item->rows->count() }} Satır</span>
                                                             <span>&bull;</span>
                                                             <span>{{ $item->created_at ? $item->created_at->format('d.m.Y H:i') : $item->entry_date->format('d.m.Y') }}</span>
                                                             <span>&bull;</span>
-                                                            <span class="font-semibold text-slate-600">{{ $item->user?->name ?? '-' }}</span>
+                                                            <span class="font-bold text-slate-800">{{ $item->user?->name ?? '-' }}</span>
                                                         </div>
                                                     </div>
                                                 </div>
