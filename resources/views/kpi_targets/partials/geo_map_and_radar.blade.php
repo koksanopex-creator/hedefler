@@ -20,7 +20,8 @@
         box-shadow: none !important;
         position: absolute !important;
     }
-    #kpi-world-map svg {
+    #kpi-world-map svg,
+    #kpi-world-map .jvm-container {
         width: 100% !important;
         height: 100% !important;
         display: block;
@@ -43,6 +44,19 @@
         height: calc(100vh - 170px) !important;
         max-height: calc(100vh - 170px) !important;
     }
+    /* 3. Ülke Detay Modalının Harita ve Radar Üstünde Görünmesi İçin */
+    .kpi-country-modal-overlay {
+        position: fixed !important;
+        inset: 0 !important;
+        z-index: 2147483647 !important;
+        background-color: rgba(2, 6, 23, 0.78) !important;
+        backdrop-filter: blur(4px);
+    }
+    .kpi-country-modal-box {
+        position: relative !important;
+        z-index: 2147483647 !important;
+        background-color: #0f172a !important;
+    }
 </style>
 
 <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-200/80 space-y-6"
@@ -53,6 +67,9 @@
         isFullscreen: false,
         selectedCountry: null,
         openCountryModal(iso) {
+            document.querySelectorAll('.jvm-tooltip').forEach(el => {
+                el.style.display = 'none';
+            });
             const mapData = window.kpiGeoCountries || {};
             if (mapData[iso]) {
                 this.selectedCountry = mapData[iso];
@@ -62,15 +79,15 @@
             this.selectedCountry = null;
         },
         resizeMap() {
-            const doResize = () => {
-                if (window.kpiMapInstance && typeof window.kpiMapInstance.updateSize === 'function') {
+            const rebuild = () => {
+                if (typeof window.initKpiWorldMap === 'function') {
+                    window.initKpiWorldMap();
+                } else if (window.kpiMapInstance && typeof window.kpiMapInstance.updateSize === 'function') {
                     window.kpiMapInstance.updateSize();
                 }
                 window.dispatchEvent(new Event('resize'));
             };
-            requestAnimationFrame(doResize);
-            setTimeout(doResize, 120);
-            setTimeout(doResize, 320);
+            requestAnimationFrame(() => setTimeout(rebuild, 180));
         },
         toggleTheater() {
             this.isTheaterMode = !this.isTheaterMode;
@@ -330,9 +347,9 @@
 
             {{-- Ülke İşyeri Kırılımı Detay Modalı (Normal ve Fullscreen modunda #kpi-geo-map-card içinde çalışır) --}}
             <div x-show="selectedCountry" x-cloak style="display: none;"
-                class="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-xs"
+                class="kpi-country-modal-overlay z-50 flex items-center justify-center p-4"
                 @click.self="closeCountryModal()">
-                <div class="bg-slate-900 text-white border border-slate-700 rounded-2xl shadow-2xl max-w-xl w-full overflow-hidden"
+                <div class="kpi-country-modal-box bg-slate-900 text-white border border-slate-700 rounded-2xl shadow-2xl max-w-xl w-full overflow-hidden"
                     @click.stop>
                     <div class="px-5 py-4 bg-slate-800/80 border-b border-slate-700 flex items-center justify-between">
                         <div>
@@ -494,9 +511,36 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }));
 
-    if (document.getElementById('kpi-world-map')) {
+    const applyColors = (m) => {
+        if (!m || !m.regions) return;
+        Object.keys(countryColors).forEach(code => {
+            const r = m.regions[code];
+            if (r && r.element) {
+                r.element.setStyle('fill', countryColors[code]);
+                if (r.element.shape && r.element.shape.style && r.element.shape.style.initial) {
+                    r.element.shape.style.initial.fill = countryColors[code];
+                }
+            }
+        });
+    };
+
+    window.initKpiWorldMap = function () {
+        const mapEl = document.getElementById('kpi-world-map');
+        if (!mapEl) return;
+
         try {
-            window.kpiMapInstance = new jsVectorMap({
+            if (window.kpiMapInstance && typeof window.kpiMapInstance.destroy === 'function') {
+                window.kpiMapInstance.destroy();
+            }
+        } catch (err) {
+            // Yoksay
+        }
+        window.kpiMapInstance = null;
+        document.querySelectorAll('.jvm-tooltip').forEach(el => el.remove());
+        mapEl.innerHTML = '';
+
+        try {
+            const instance = new jsVectorMap({
                 selector: '#kpi-world-map',
                 map: 'world',
                 backgroundColor: 'transparent',
@@ -519,11 +563,8 @@ document.addEventListener('DOMContentLoaded', function () {
                         cursor: 'pointer'
                     }
                 },
-                series: {
-                    regions: [{
-                        attribute: 'fill',
-                        values: countryColors
-                    }]
+                onLoaded: (m) => {
+                    applyColors(m);
                 },
                 markers: mapMarkers,
                 markerStyle: {
@@ -622,10 +663,20 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
                 }
             });
+            window.kpiMapInstance = instance;
+            applyColors(instance);
+
+            const card = document.getElementById('kpi-geo-map-card');
+            const tooltip = document.querySelector('.jvm-tooltip');
+            if (document.fullscreenElement === card && tooltip && card) {
+                card.appendChild(tooltip);
+            }
         } catch (e) {
             console.error('jsVectorMap init error:', e);
         }
-    }
+    };
+
+    window.initKpiWorldMap();
 
     // 2. RADAR GRAFİĞİ KURULUMU (Chart.js)
     const radarCtx = document.getElementById('kpi-radar-chart');
