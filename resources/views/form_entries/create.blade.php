@@ -1597,6 +1597,20 @@
             </div>
 
             <!-- Excel Fill Toast Notification -->
+            <style>
+                @keyframes salesWarnBlink {
+                    0%, 100% {
+                        box-shadow: 0 0 0 0 rgba(250, 204, 21, 0.85), 0 20px 30px -10px rgba(180, 83, 9, 0.55);
+                        border-color: #fde047;
+                        transform: scale(1);
+                    }
+                    50% {
+                        box-shadow: 0 0 0 8px rgba(250, 204, 21, 0.15), 0 25px 40px -10px rgba(245, 158, 11, 0.85);
+                        border-color: #ffffff;
+                        transform: scale(1.02);
+                    }
+                }
+            </style>
             <div x-show="toastMessage"
                  x-transition:enter="transition ease-out duration-250"
                  x-transition:enter-start="opacity-0 translate-y-3"
@@ -1605,12 +1619,23 @@
                  x-transition:leave-start="opacity-100 translate-y-0"
                  x-transition:leave-end="opacity-0 translate-y-3"
                  class="fixed bottom-6 right-6 z-[99999999] bg-slate-900/90 text-white px-4 py-2.5 rounded-xl shadow-2xl flex items-center gap-2.5 text-xs font-semibold backdrop-blur-sm border border-slate-700/60"
+                 :style="toastVariant === 'warning'
+                     ? 'display: flex; z-index: 99999999 !important; background-color: #b45309; border: 2px solid #fde047; color: #ffffff; font-size: 15px; line-height: 1.45; padding: 16px 22px; max-width: 560px; border-radius: 16px; animation: salesWarnBlink 0.9s ease-in-out infinite;'
+                     : 'z-index: 99999999 !important;'"
                  style="display: none; z-index: 99999999 !important;">
-                <span class="flex h-2 w-2 relative">
-                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                    <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                <span class="flex h-2.5 w-2.5 relative shrink-0">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
+                          :style="toastVariant === 'warning' ? 'background-color: #fde047;' : 'background-color: #34d399;'"></span>
+                    <span class="relative inline-flex rounded-full h-2.5 w-2.5"
+                          :style="toastVariant === 'warning' ? 'background-color: #fef08a;' : 'background-color: #10b981;'"></span>
                 </span>
-                <span x-text="toastMessage"></span>
+                <span x-text="toastMessage" class="flex-1"></span>
+                <button type="button"
+                        x-show="toastVariant === 'warning'"
+                        @click="toastMessage = ''; toastVariant = 'default'; if (toastTimeout) clearTimeout(toastTimeout);"
+                        class="ml-2 shrink-0 rounded-lg px-2 py-0.5 text-white/90 hover:text-white cursor-pointer"
+                        style="background-color: rgba(0,0,0,0.22); font-size: 16px; line-height: 1;"
+                        title="Kapat">&times;</button>
             </div>
 
             <!-- Global Arama Kutulu Dropdown Popover (Tüm Tablo İçin Tekil, Yüksek Performanslı) -->
@@ -1903,6 +1928,7 @@
                 filters: {},
                 uniqueValues: {},
                 toastMessage: '',
+                toastVariant: 'default',
                 toastTimeout: null,
                 showImportValidationModal: false,
                 importValidationData: {
@@ -1960,12 +1986,14 @@
                     return this.rows[rowOrIndex];
                 },
 
-                showToast(msg, durationOrType = 3500) {
+                showToast(msg, durationOrType = 3500, variant = 'default') {
                     const duration = typeof durationOrType === 'number' ? durationOrType : 3500;
+                    this.toastVariant = variant !== 'default' ? variant : (durationOrType === 'warning' ? 'warning' : 'default');
                     this.toastMessage = msg;
                     if (this.toastTimeout) clearTimeout(this.toastTimeout);
                     this.toastTimeout = setTimeout(() => {
                         this.toastMessage = '';
+                        this.toastVariant = 'default';
                     }, duration);
                 },
 
@@ -4656,7 +4684,7 @@
                                         this.showUploadModal = false;
                                         this.isLargeDataset = false;
                                         if (autoReplacedSalesCount > 0) {
-                                            this.showToast(`⚠️ ${autoReplacedSalesCount} satırda farklı satışçı adı '${autoReplacedTargetName}' olarak otomatik dönüştürüldü. Verileri kontrol ediniz, kendi satış verileriniz olmayabilir!`, 4000);
+                                            this.showToast(`⚠️ ${autoReplacedSalesCount} satırda farklı satışçı adı '${autoReplacedTargetName}' olarak otomatik dönüştürüldü. Verileri kontrol ediniz, kendi satış verileriniz olmayabilir!`, 10000, 'warning');
                                         } else {
                                             this.showToast(`✓ ${totalPasteRows} satır veri başarıyla yapıştırıldı.`);
                                         }
@@ -5016,7 +5044,7 @@
                                                     this.hasUnsavedChanges = true;
                                                     this.saveDraftAjax(true, (err, res) => {
                                                         if (replacedSalesCount > 0) {
-                                                            this.showToast(`⚠️ ${replacedSalesCount} satırda farklı satışçı adı '${replacedSalesName}' olarak otomatik dönüştürüldü. Verileri kontrol ediniz, kendi satış verileriniz olmayabilir!`, 4000);
+                                                            this.showToast(`⚠️ ${replacedSalesCount} satırda farklı satışçı adı '${replacedSalesName}' olarak otomatik dönüştürüldü. Verileri kontrol ediniz, kendi satış verileriniz olmayabilir!`, 10000, 'warning');
                                                         } else if (!err) {
                                                             this.showToast(`✓ ${totalRows} satır içe aktarıldı ve taslak olarak kaydedildi.`);
                                                         } else {

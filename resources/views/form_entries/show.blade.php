@@ -49,41 +49,6 @@
                     @endif
                 </div>
 
-                @if(!$formEntry->is_consolidated)
-                    @if(!empty($canSubmitApproval) && $canSubmitApproval)
-                        <button type="button"
-                            onclick="if(this.dataset.clicked) return; this.dataset.clicked = 'true'; this.classList.add('btn-loading'); document.body.classList.add('cursor-wait'); window.dispatchEvent(new CustomEvent('open-submit-approval-modal')); setTimeout(() => { delete this.dataset.clicked; this.classList.remove('btn-loading'); document.body.classList.remove('cursor-wait'); }, 800);"
-                            @click="$dispatch('open-submit-approval-modal')"
-                            class="inline-flex items-center px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold rounded-lg shadow-sm transition gap-1.5 cursor-pointer"
-                            title="{{ __('Onaya Gönder') }}">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
-                            </svg>
-                            <span>{{ __('Onaya Gönder') }}</span>
-                        </button>
-                    @endif
-
-                    @if(!empty($canWithdraw) && $canWithdraw)
-                        <button type="button"
-                            onclick="if(this.dataset.clicked) return; this.dataset.clicked = 'true'; this.classList.add('btn-loading'); document.body.classList.add('cursor-wait'); window.dispatchEvent(new CustomEvent('open-withdraw-modal')); setTimeout(() => { delete this.dataset.clicked; this.classList.remove('btn-loading'); document.body.classList.remove('cursor-wait'); }, 800);"
-                            @click="$dispatch('open-withdraw-modal')"
-                            class="inline-flex items-center px-3.5 py-2 {{ $formEntry->status === 'submitted' ? 'bg-amber-600 hover:bg-amber-700' : 'bg-rose-600 hover:bg-rose-700' }} active:scale-95 text-white text-xs font-bold rounded-lg shadow-sm transition gap-1.5 cursor-pointer"
-                            title="{{ $formEntry->status === 'submitted' ? __('Geri Çek') : __('Taslağı Sil') }}">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                @if($formEntry->status === 'submitted')
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path>
-                                @else
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                @endif
-                            </svg>
-                            <span>{{ $formEntry->status === 'submitted' ? __('Geri Çek') : __('Taslağı Sil') }}</span>
-                        </button>
-                    @endif
-                @endif
-
                 @if(!empty($pendingRevision))
                     <button type="button" disabled
                         class="inline-flex items-center px-3.5 py-2 bg-amber-100 text-amber-800 border border-amber-300 text-xs font-bold rounded-lg shadow-sm gap-1.5 cursor-not-allowed opacity-80 select-none"
@@ -126,17 +91,17 @@
                     </button>
                 @endif
 
-                @if(app(\App\Services\PermissionS::class)->hasPermission(Auth::user(), 'exports.manage'))
+                @if((!empty($isSelf) && $isSelf) || !empty($isSuperAdmin) || app(\App\Services\PermissionS::class)->hasPermission(Auth::user(), 'exports.manage'))
                     <button type="button"
                         onclick="if(this.dataset.clicked) return; this.dataset.clicked = 'true'; this.classList.add('btn-loading'); document.body.classList.add('cursor-wait'); let origHtml = this.innerHTML; this.innerHTML = '<svg class=\'animate-spin w-4 h-4 mr-1.5 inline-block text-white\' fill=\'none\' viewBox=\'0 0 24 24\'><circle class=\'opacity-25\' cx=\'12\' cy=\'12\' r=\'10\' stroke=\'currentColor\' stroke-width=\'4\'></circle><path class=\'opacity-75\' fill=\'currentColor\' d=\'M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z\'></path></svg> <span>İndiriliyor...</span>'; if(document.getElementById('exportExcelBtn')) document.getElementById('exportExcelBtn').click(); setTimeout(() => { this.innerHTML = origHtml; this.classList.remove('btn-loading'); document.body.classList.remove('cursor-wait'); delete this.dataset.clicked; }, 3500);"
                         class="inline-flex items-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold uppercase tracking-widest rounded-lg shadow-sm transition cursor-pointer gap-1.5"
-                        title="Excel Olarak İndir">
+                        title="{{ __('Excel Olarak İndir') }}">
                         <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
                             </path>
                         </svg>
-                        <span>Excel</span>
+                        <span>{{ __('Excel Olarak İndir') }}</span>
                     </button>
                 @endif
             </div>

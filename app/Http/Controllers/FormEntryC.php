@@ -1458,9 +1458,11 @@ class FormEntryC extends Controller
     public function export(Request $request, FormEntryM $formEntry)
     {
         $user = Auth::user();
+        $isOwner = ($formEntry->user_id === $user->id);
+        $isSuperAdmin = ($user->role && $user->role->slug === 'sistem_yoneticisi') || $this->permissionService->hasPermission($user, 'roles.manage') || $user->id === 1;
 
-        // Sıkı Yetki Kontrolü: Kesinlikle exports.manage yetkisi olmalı. 
-        if (!$this->permissionService->hasPermission($user, 'exports.manage')) {
+        // Form sahibi, Sistem Yöneticisi veya exports.manage yetkisine sahip kullanıcılar Excel çıktısı alabilir
+        if (!$isOwner && !$isSuperAdmin && !$this->permissionService->hasPermission($user, 'exports.manage')) {
             abort(403, 'Bu Excel çıktısını alma yetkiniz (exports.manage) bulunmamaktadır.');
         }
 
