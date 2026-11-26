@@ -17,25 +17,84 @@
     .revision-blink-badge {
         animation: revisionBadgeBlink 1.15s ease-in-out infinite;
     }
+    .modern-entries-table thead tr {
+        background-color: #f8fafc !important;
+        border-bottom: 1px solid #e2e8f0 !important;
+    }
+    .modern-entries-table thead th {
+        font-size: 10px !important;
+        font-weight: 700 !important;
+        letter-spacing: 0.08em !important;
+        color: #64748b !important;
+        padding-top: 0.75rem !important;
+        padding-bottom: 0.75rem !important;
+    }
     .user-group-spacer td {
-        height: 14px !important;
-        background-color: #f1f5f9 !important;
+        height: 16px !important;
+        background-color: #f8fafc !important;
         padding: 0 !important;
-        border: none !important;
+        border-top: 1px solid #e2e8f0 !important;
+        border-bottom: 1px solid #e2e8f0 !important;
     }
     .user-group-header {
-        background: linear-gradient(90deg, #1e293b 0%, #312e81 100%) !important;
-        color: #ffffff !important;
-        border-left: 5px solid #818cf8 !important;
+        background: linear-gradient(90deg, #eef2ff 0%, #f8fafc 65%, #ffffff 100%) !important;
+        color: #0f172a !important;
+        border-top: 1px solid #c7d2fe !important;
+        border-bottom: 1px solid #e2e8f0 !important;
+        border-left: 4px solid #4f46e5 !important;
     }
     .user-group-header:hover {
-        background: linear-gradient(90deg, #0f172a 0%, #3730a3 100%) !important;
+        background: linear-gradient(90deg, #e0e7ff 0%, #f1f5f9 100%) !important;
     }
     .user-group-row {
-        border-left: 5px solid #a5b4fc !important;
+        background-color: #ffffff !important;
+        border-left: 4px solid #e0e7ff !important;
+    }
+    .user-group-row:hover {
+        background-color: #f8fafc !important;
     }
     .user-group-child-row {
-        border-left: 5px solid #6366f1 !important;
+        background-color: #f8fafc !important;
+        border-left: 4px solid #818cf8 !important;
+    }
+    .ug-avatar {
+        background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%) !important;
+        color: #ffffff !important;
+        box-shadow: 0 2px 6px rgba(79, 70, 229, 0.25);
+    }
+    .ug-chevron {
+        background-color: #ffffff !important;
+        border: 1px solid #cbd5e1 !important;
+        color: #475569 !important;
+    }
+    .ug-dept-pill {
+        background-color: #ffffff !important;
+        color: #475569 !important;
+        border: 1px solid #e2e8f0 !important;
+    }
+    .ug-time-pill {
+        background-color: #eff6ff !important;
+        color: #0369a1 !important;
+        border: 1px solid #bae6fd !important;
+    }
+    .ug-count-pill {
+        background-color: #4f46e5 !important;
+        color: #ffffff !important;
+    }
+    .ug-draft-pill {
+        background-color: #f1f5f9 !important;
+        color: #334155 !important;
+        border: 1px solid #cbd5e1 !important;
+    }
+    .ug-submitted-pill {
+        background-color: #fef3c7 !important;
+        color: #92400e !important;
+        border: 1px solid #fcd34d !important;
+    }
+    .ug-approved-pill {
+        background-color: #dcfce7 !important;
+        color: #166534 !important;
+        border: 1px solid #86efac !important;
     }
 </style>
 <x-app-layout>
@@ -270,9 +329,9 @@
                 @endif
 
                 <div class="w-full overflow-x-auto">
-                    <table class="w-full divide-y divide-gray-200">
+                    <table class="modern-entries-table w-full divide-y divide-slate-200/80">
                         <thead>
-                            <tr class="bg-gray-50/70 border-b border-gray-200">
+                            <tr>
                                 @if(!empty($canDelete) && $canDelete && $entries->count() > 0)
                                     <th class="w-10 px-3 py-3 text-center">
                                         <input type="checkbox" 
@@ -317,50 +376,50 @@
                                         <td colspan="{{ $groupColspan }}" class="px-4 py-3">
                                             <div class="flex flex-wrap items-center justify-between gap-2">
                                                 <div class="flex items-center gap-3 min-w-0">
-                                                    <span class="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-white/15 border border-white/25 text-white shadow-2xs transition-transform duration-200"
+                                                    <span class="ug-chevron inline-flex items-center justify-center w-6 h-6 rounded-lg shadow-2xs transition-transform duration-200"
                                                         :class="collapsedUserIds.includes({{ (int) $groupUserId }}) ? '-rotate-90' : ''">
                                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/>
                                                         </svg>
                                                     </span>
-                                                    <div class="w-8 h-8 rounded-full bg-amber-400 text-slate-950 font-black text-xs flex items-center justify-center shadow-sm shrink-0">
+                                                    <div class="ug-avatar w-8 h-8 rounded-full font-black text-xs flex items-center justify-center shrink-0">
                                                         {{ mb_substr($groupUser?->name ?? '?', 0, 1) }}
                                                     </div>
                                                     <div class="flex items-center gap-2 flex-wrap min-w-0">
                                                         @if($groupUser)
                                                             <a href="{{ route('users.profile', $groupUser->id) }}" @click.stop
-                                                                class="text-xs sm:text-sm font-black text-white hover:text-amber-300 hover:underline truncate">
+                                                                class="text-xs sm:text-sm font-black text-slate-900 hover:text-indigo-700 hover:underline truncate">
                                                                 {{ $groupUser->name }}
                                                             </a>
                                                         @else
-                                                            <span class="text-xs sm:text-sm font-black text-white">Bilinmeyen Kullanıcı</span>
+                                                            <span class="text-xs sm:text-sm font-black text-slate-900">Bilinmeyen Kullanıcı</span>
                                                         @endif
-                                                        <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-white/15 text-indigo-100 border border-white/25">
+                                                        <span class="ug-dept-pill px-2 py-0.5 rounded-md text-[10px] font-bold">
                                                             {{ $groupUser?->group?->name ?? 'Grup Yok' }}
                                                         </span>
                                                         @if($uLatestAt)
-                                                            <span class="px-2 py-0.5 rounded-md text-[10px] font-mono font-semibold bg-slate-950/40 text-sky-200 border border-white/15">
+                                                            <span class="ug-time-pill px-2 py-0.5 rounded-md text-[10px] font-mono font-semibold">
                                                                 Son: {{ $uLatestAt->format('d.m.Y H:i') }}
                                                             </span>
                                                         @endif
                                                     </div>
                                                 </div>
                                                 <div class="flex items-center gap-1.5 flex-wrap text-[11px]">
-                                                    <span class="px-2.5 py-0.5 rounded-full font-extrabold bg-white text-indigo-900 shadow-xs">
+                                                    <span class="ug-count-pill px-2.5 py-0.5 rounded-full font-extrabold shadow-2xs">
                                                         {{ $userEntries->count() }} Kayıt
                                                     </span>
                                                     @if($uDraftCount > 0)
-                                                        <span class="px-2 py-0.5 rounded-full font-bold bg-slate-200 text-slate-900">
+                                                        <span class="ug-draft-pill px-2 py-0.5 rounded-full font-bold">
                                                             {{ $uDraftCount }} Taslak
                                                         </span>
                                                     @endif
                                                     @if($uSubmittedCount > 0)
-                                                        <span class="px-2 py-0.5 rounded-full font-bold bg-amber-400 text-slate-950">
+                                                        <span class="ug-submitted-pill px-2 py-0.5 rounded-full font-bold">
                                                             {{ $uSubmittedCount }} Onay Bekliyor
                                                         </span>
                                                     @endif
                                                     @if($uApprovedCount > 0)
-                                                        <span class="px-2 py-0.5 rounded-full font-bold bg-emerald-400 text-slate-950">
+                                                        <span class="ug-approved-pill px-2 py-0.5 rounded-full font-bold">
                                                             {{ $uApprovedCount }} Onaylı
                                                         </span>
                                                     @endif
