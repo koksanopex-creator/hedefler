@@ -1,20 +1,56 @@
 @section('title', 'Veri Detayı')
 <style>
-    body.cursor-wait, body.cursor-wait * {
+    body.cursor-wait,
+    body.cursor-wait * {
         cursor: wait !important;
     }
+
     .btn-loading {
         pointer-events: none !important;
         opacity: 0.70 !important;
         cursor: wait !important;
     }
+
+    .pill-sender-indigo {
+        background-color: #e0e7ff !important;
+        color: #3730a3 !important;
+        border: 1px solid #a5b4fc !important;
+    }
+
+    .pill-date-sky {
+        background-color: #e0f2fe !important;
+        color: #075985 !important;
+        border: 1px solid #7dd3fc !important;
+    }
+
+    .pill-approver-emerald {
+        background-color: #059669 !important;
+        color: #ffffff !important;
+        border: 1px solid #047857 !important;
+    }
+
+    .pill-wait-rose {
+        background-color: #e11d48 !important;
+        color: #ffffff !important;
+        border: 1px solid #be123c !important;
+    }
+
+    .pill-elapsed-indigo {
+        background-color: #4f46e5 !important;
+        color: #ffffff !important;
+        border: 1px solid #4338ca !important;
+    }
+
     @keyframes revisionBadgeBlink {
-        0%, 100% {
+
+        0%,
+        100% {
             opacity: 1;
             background-color: #fef3c7;
             border-color: #f59e0b;
             box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.45);
         }
+
         50% {
             opacity: 0.45;
             background-color: #fde68a;
@@ -22,6 +58,7 @@
             box-shadow: 0 0 10px 2px rgba(245, 158, 11, 0.55);
         }
     }
+
     .revision-blink-badge {
         animation: revisionBadgeBlink 1.15s ease-in-out infinite;
     }
@@ -47,7 +84,8 @@
                         @elseif($formEntry->status === 'submitted')
                             <span
                                 class="inline-flex items-center px-3 py-1 font-semibold rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-xs">
-                                <span class="w-1.5 h-1.5 bg-amber-500 rounded-full mr-1.5 animate-pulse"></span>{{ __('Onay Bekliyor') }}
+                                <span
+                                    class="w-1.5 h-1.5 bg-amber-500 rounded-full mr-1.5 animate-pulse"></span>{{ __('Onay Bekliyor') }}
                             </span>
                         @elseif($formEntry->status === 'approved')
                             <span
@@ -152,11 +190,13 @@
 
                             @if((Auth::id() === $formEntry->user_id || Auth::user()->id === 1 || (Auth::user()->role && Auth::user()->role->slug === 'sistem_yoneticisi')) && (Auth::user()->id === 1 || (Auth::user()->role && Auth::user()->role->slug === 'sistem_yoneticisi') || app(\App\Services\PermissionS::class)->hasPermission(Auth::user(), 'form_entries.consolidate')))
                                 @if(!empty($addableParts) && $addableParts->isNotEmpty())
-                                    <div x-data="{ openAddParts: false, selectedAddParts: [], submittingAdd: false }" class="inline-block text-left shrink-0">
+                                    <div x-data="{ openAddParts: false, selectedAddParts: [], submittingAdd: false }"
+                                        class="inline-block text-left shrink-0">
                                         <button type="button" @click="openAddParts = true"
                                             class="px-3.5 py-2 bg-amber-400 hover:bg-amber-300 text-slate-900 text-xs font-black rounded-xl transition shadow-xs flex items-center gap-1.5 cursor-pointer">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                                                    d="M12 4v16m8-8H4" />
                                             </svg>
                                             <span>Parça Ekle ({{ $addableParts->count() }})</span>
                                         </button>
@@ -165,11 +205,14 @@
                                         <div x-show="openAddParts" style="display: none;"
                                             class="fixed inset-0 z-50 overflow-y-auto whitespace-normal"
                                             aria-labelledby="add-parts-modal-title" role="dialog" aria-modal="true">
-                                            <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-                                                <div x-show="openAddParts" @click="if(!submittingAdd) openAddParts = false" x-transition.opacity
+                                            <div
+                                                class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                                                <div x-show="openAddParts" @click="if(!submittingAdd) openAddParts = false"
+                                                    x-transition.opacity
                                                     class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity"
                                                     aria-hidden="true"></div>
-                                                <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+                                                <span class="hidden sm:inline-block sm:align-middle sm:h-screen"
+                                                    aria-hidden="true">&#8203;</span>
                                                 <div x-show="openAddParts" x-transition
                                                     class="inline-block align-bottom bg-white rounded-3xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-xl sm:w-full border border-slate-100 whitespace-normal">
                                                     <form action="{{ route('form-entries.consolidate') }}" method="POST"
@@ -178,26 +221,36 @@
                                                         <div class="p-6 space-y-5">
                                                             <div class="flex items-start justify-between gap-4">
                                                                 <div>
-                                                                    <h3 class="text-lg font-black text-slate-900" id="add-parts-modal-title">
+                                                                    <h3 class="text-lg font-black text-slate-900"
+                                                                        id="add-parts-modal-title">
                                                                         #{{ $formEntry->id }} Konsolide Forma Parça Ekle
                                                                     </h3>
                                                                     <p class="text-xs text-slate-500 mt-0.5">
-                                                                        Yeni bir konsolide form oluşturulmaz; seçtiğiniz parçalar doğrudan mevcut <strong>#{{ $formEntry->id }}</strong> numaralı forma eklenir.
+                                                                        Yeni bir konsolide form oluşturulmaz; seçtiğiniz parçalar
+                                                                        doğrudan mevcut <strong>#{{ $formEntry->id }}</strong>
+                                                                        numaralı forma eklenir.
                                                                     </p>
                                                                 </div>
-                                                                <button type="button" @click="if(!submittingAdd) openAddParts = false" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg cursor-pointer">
-                                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                                                <button type="button"
+                                                                    @click="if(!submittingAdd) openAddParts = false"
+                                                                    class="text-slate-400 hover:text-slate-600 p-1 rounded-lg cursor-pointer">
+                                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor"
+                                                                        viewBox="0 0 24 24">
+                                                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                                                            stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                                                                     </svg>
                                                                 </button>
                                                             </div>
 
                                                             <div class="flex items-center justify-between text-xs">
-                                                                <span class="font-bold text-slate-700">Eklenecek Parçaları Seçiniz:</span>
-                                                                <span class="font-extrabold text-indigo-600" x-text="selectedAddParts.length + ' parça seçildi'"></span>
+                                                                <span class="font-bold text-slate-700">Eklenecek Parçaları
+                                                                    Seçiniz:</span>
+                                                                <span class="font-extrabold text-indigo-600"
+                                                                    x-text="selectedAddParts.length + ' parça seçildi'"></span>
                                                             </div>
 
-                                                            <div class="max-h-72 overflow-y-auto space-y-2 pr-1 border border-slate-200 rounded-2xl p-2 bg-slate-50/50">
+                                                            <div
+                                                                class="max-h-72 overflow-y-auto space-y-2 pr-1 border border-slate-200 rounded-2xl p-2 bg-slate-50/50">
                                                                 @php
                                                                     $totalAddable = $addableParts->count();
                                                                 @endphp
@@ -208,17 +261,21 @@
                                                                         $borderAlpha = number_format(0.14 + ($freshness * 0.42), 3, '.', '');
                                                                         $leftBorderAlpha = number_format(0.18 + ($freshness * 0.82), 3, '.', '');
                                                                     @endphp
-                                                                    <label class="flex items-center justify-between p-3 rounded-xl border hover:shadow-xs transition cursor-pointer"
+                                                                    <label
+                                                                        class="flex items-center justify-between p-3 rounded-xl border hover:shadow-xs transition cursor-pointer"
                                                                         style="background-color: rgba(79, 70, 229, {{ $bgAlpha }}); border-color: rgba(79, 70, 229, {{ $borderAlpha }}); border-left-width: 4px; border-left-color: rgba(79, 70, 229, {{ $leftBorderAlpha }});">
                                                                         <div class="flex items-center gap-3">
-                                                                            <input type="checkbox" name="entry_ids[]" value="{{ $partItem->id }}"
-                                                                                x-model="selectedAddParts"
+                                                                            <input type="checkbox" name="entry_ids[]"
+                                                                                value="{{ $partItem->id }}" x-model="selectedAddParts"
                                                                                 class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4">
                                                                             <div>
-                                                                                <span class="px-2 py-0.5 rounded-md text-[11px] font-extrabold bg-amber-100 text-amber-800 border border-amber-300">
-                                                                                    ⚡ {{ $partItem->partition_value ?: ('Parça #' . $partItem->id) }}
+                                                                                <span
+                                                                                    class="px-2 py-0.5 rounded-md text-[11px] font-extrabold bg-amber-100 text-amber-800 border border-amber-300">
+                                                                                    ⚡
+                                                                                    {{ $partItem->partition_value ?: ('Parça #' . $partItem->id) }}
                                                                                 </span>
-                                                                                <div class="text-[11px] text-slate-600 mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                                                                                <div
+                                                                                    class="text-[11px] text-slate-600 mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5">
                                                                                     <span>#{{ $partItem->id }}</span>
                                                                                     <span>&bull;</span>
                                                                                     <span>{{ $partItem->rows->count() }} Satır</span>
@@ -229,26 +286,35 @@
                                                                         </div>
                                                                         <div>
                                                                             @if($partItem->status === 'approved')
-                                                                                <span class="text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 px-2 py-0.5 rounded-full">Onaylandı</span>
+                                                                                <span
+                                                                                    class="text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 px-2 py-0.5 rounded-full">Onaylandı</span>
                                                                             @elseif($partItem->status === 'submitted')
-                                                                                <span class="text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-300 px-2 py-0.5 rounded-full">Onay Bekliyor</span>
+                                                                                <span
+                                                                                    class="text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-300 px-2 py-0.5 rounded-full">Onay
+                                                                                    Bekliyor</span>
                                                                             @else
-                                                                                <span class="text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-300 px-2 py-0.5 rounded-full">Taslak</span>
+                                                                                <span
+                                                                                    class="text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-300 px-2 py-0.5 rounded-full">Taslak</span>
                                                                             @endif
                                                                         </div>
                                                                     </label>
                                                                 @endforeach
                                                             </div>
                                                         </div>
-                                                        <div class="bg-slate-50 px-6 py-4 border-t border-slate-100 flex items-center justify-end gap-3">
-                                                            <button type="button" @click="if(!submittingAdd) openAddParts = false" :disabled="submittingAdd"
+                                                        <div
+                                                            class="bg-slate-50 px-6 py-4 border-t border-slate-100 flex items-center justify-end gap-3">
+                                                            <button type="button" @click="if(!submittingAdd) openAddParts = false"
+                                                                :disabled="submittingAdd"
                                                                 class="px-4 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-white transition cursor-pointer">
                                                                 İptal
                                                             </button>
-                                                            <button type="submit" :disabled="submittingAdd || selectedAddParts.length < 1"
+                                                            <button type="submit"
+                                                                :disabled="submittingAdd || selectedAddParts.length < 1"
                                                                 :class="(submittingAdd || selectedAddParts.length < 1) ? 'opacity-50 cursor-not-allowed bg-indigo-400' : 'bg-indigo-600 hover:bg-indigo-700'"
                                                                 class="px-5 py-2 rounded-xl text-xs font-black text-white shadow-sm transition inline-flex items-center gap-1.5 cursor-pointer">
-                                                                <span x-text="submittingAdd ? 'Ekleniyor...' : 'Seçilen Parçaları #{{ $formEntry->id }}\'ye Ekle'">Seçilen Parçaları #{{ $formEntry->id }}'ye Ekle</span>
+                                                                <span
+                                                                    x-text="submittingAdd ? 'Ekleniyor...' : 'Seçilen Parçaları #{{ $formEntry->id }}\'ye Ekle'">Seçilen
+                                                                    Parçaları #{{ $formEntry->id }}'ye Ekle</span>
                                                             </button>
                                                         </div>
                                                     </form>
@@ -300,7 +366,8 @@
                                                                 <p class="text-sm text-slate-600 whitespace-normal break-words">
                                                                     Bu konsolide formu dağıtmak ve altındaki
                                                                     <strong>{{ $formEntry->children->count() }} bağımsız
-                                                                        parçayı</strong> tekrar ayrı ayrı listelenecek hale getirmek
+                                                                        parçayı</strong> tekrar ayrı ayrı listelenecek hale
+                                                                    getirmek
                                                                     istediğinize emin misiniz?
                                                                 </p>
                                                                 <div
@@ -308,7 +375,8 @@
                                                                     <span class="shrink-0 text-base leading-none">💡</span>
                                                                     <span
                                                                         class="flex-1 whitespace-normal break-words leading-relaxed">Parçaların
-                                                                        girilmiş hiçbir verisi kaybolmaz; sadece ana form bağlantısı
+                                                                        girilmiş hiçbir verisi kaybolmaz; sadece ana form
+                                                                        bağlantısı
                                                                         çözülerek parçalar tekrar bağımsız hale gelir.</span>
                                                                 </div>
                                                             </div>
@@ -317,7 +385,8 @@
                                                 </div>
                                                 <div class="bg-slate-50 px-5 py-3.5 sm:px-6 sm:flex sm:flex-row-reverse gap-2 border-t border-slate-100"
                                                     x-data="{ dissolving: false }">
-                                                    <form action="{{ route('form-entries.dissolve', $formEntry) }}" method="POST"
+                                                    <form action="{{ route('form-entries.dissolve', $formEntry) }}"
+                                                        method="POST"
                                                         @submit="if(dissolving) { $event.preventDefault(); return false; } dissolving = true; document.body.classList.add('cursor-wait');">
                                                         @csrf
                                                         <button type="submit" :disabled="dissolving"
@@ -326,7 +395,8 @@
                                                             class="w-full inline-flex items-center justify-center rounded-xl border border-transparent shadow-sm px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 sm:w-auto transition gap-1.5 cursor-pointer">
                                                             <svg x-show="dissolving" style="display: none;"
                                                                 class="animate-spin -ml-1 mr-1.5 h-4 w-4 text-white"
-                                                                xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                                xmlns="http://www.w3.org/2000/svg" fill="none"
+                                                                viewBox="0 0 24 24">
                                                                 <circle class="opacity-25" cx="12" cy="12" r="10"
                                                                     stroke="currentColor" stroke-width="4"></circle>
                                                                 <path class="opacity-75" fill="currentColor"
@@ -363,7 +433,8 @@
                                     </span>
                                     @if($child->revisionRequests->firstWhere('status', 'pending'))
                                         <span
-                                            class="text-[10px] font-bold bg-amber-400/25 text-amber-200 border border-amber-300/50 px-1.5 py-0.2 rounded">Düzenleme Talebi</span>
+                                            class="text-[10px] font-bold bg-amber-400/25 text-amber-200 border border-amber-300/50 px-1.5 py-0.2 rounded">Düzenleme
+                                            Talebi</span>
                                     @elseif($child->status === 'approved')
                                         <span
                                             class="text-[10px] font-bold bg-emerald-500/30 text-emerald-200 border border-emerald-400/30 px-1.5 py-0.2 rounded">Onaylandı</span>
@@ -476,28 +547,34 @@
                             </svg>
                         </div>
                         <div>
-                            <h4 class="font-bold text-amber-950">Düzenleme (Revizyon) Talebi Değerlendirme Aşamasında</h4>
-                            <p class="mt-1 text-xs text-amber-800 leading-relaxed">
-                                Bu form için <strong>{{ $pendingRevision->user->name }}</strong> tarafından
-                                ({{ $pendingRevision->created_at->format('d.m.Y H:i') }}) düzenleme talebi iletilmiştir.
+                            <h4 class="font-bold text-slate-700 text-xs uppercase tracking-wider">Düzenleme (Revizyon) Talebi Değerlendirme Aşamasında</h4>
+                            <p class="mt-1.5 text-xs text-slate-600 leading-relaxed flex flex-wrap items-center gap-1.5">
+                                <span>Bu form için</span>
+                                <span class="pill-sender-indigo inline-flex items-center px-2 py-0.5 rounded-md font-extrabold">{{ $pendingRevision->user->name }}</span>
+                                <span>tarafından</span>
+                                <span class="pill-date-sky inline-flex items-center px-2 py-0.5 rounded-md font-bold font-mono">{{ $pendingRevision->created_at->format('d.m.Y H:i') }}</span>
+                                <span>tarihinde düzenleme talebi iletilmiştir.</span>
                             </p>
                             @if(!empty($pendingRevisionApprovers) || !empty($revisionWaitText))
-                                <div class="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-amber-900">
+                                <div class="mt-2 flex flex-wrap items-center gap-2 text-xs">
                                     @if(!empty($pendingRevisionApprovers))
-                                        <span>
-                                            <strong>Onay Beklenen:</strong> {{ implode(', ', $pendingRevisionApprovers) }}
+                                        <span class="inline-flex items-center gap-1.5 text-slate-500 font-medium">
+                                            <span>Onay Beklenen:</span>
+                                            <span class="pill-approver-emerald inline-flex items-center px-2.5 py-0.5 rounded-md font-extrabold shadow-xs">{{ implode(', ', $pendingRevisionApprovers) }}</span>
                                         </span>
                                     @endif
                                     @if(!empty($revisionWaitText))
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-amber-100 border border-amber-300 font-semibold text-amber-900">
+                                        <span
+                                            class="pill-wait-rose inline-flex items-center px-2.5 py-0.5 rounded-full font-bold shadow-xs">
                                             ⏱ {{ $revisionWaitText }}
                                         </span>
                                     @endif
                                 </div>
                             @endif
                             <p
-                                class="mt-1.5 text-xs font-medium text-amber-950 bg-amber-100/70 p-2.5 rounded-lg border border-amber-200">
-                                <strong>Talep Gerekçesi:</strong> {{ $pendingRevision->reason }}
+                                class="mt-2 text-xs text-slate-900 bg-white p-2.5 rounded-lg border border-amber-200 shadow-2xs">
+                                <span class="text-slate-500 font-semibold">Talep Gerekçesi:</span>
+                                <span class="font-bold text-slate-900">{{ $pendingRevision->reason }}</span>
                             </p>
                         </div>
                     </div>
@@ -515,19 +592,23 @@
 
                             <div x-show="openCancelRev" x-cloak style="display: none;"
                                 class="fixed inset-0 z-50 overflow-y-auto whitespace-normal" role="dialog" aria-modal="true">
-                                <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+                                <div
+                                    class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
                                     <div class="fixed inset-0 transition-opacity bg-slate-900/60 backdrop-blur-xs"
                                         @click="if(!cancellingRev) openCancelRev = false"></div>
                                     <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
                                     <div
                                         class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full border border-gray-100">
-                                        <form action="{{ route('form-entries.revision-requests.cancel', $pendingRevision) }}" method="POST"
+                                        <form action="{{ route('form-entries.revision-requests.cancel', $pendingRevision) }}"
+                                            method="POST"
                                             @submit="if(cancellingRev) { $event.preventDefault(); return false; } cancellingRev = true; document.body.classList.add('cursor-wait');">
                                             @csrf
                                             <div class="bg-rose-600 px-6 py-4 flex items-center justify-between text-white">
-                                                <h3 class="text-base font-extrabold tracking-tight">Düzenleme Talebini Geri Çek</h3>
+                                                <h3 class="text-base font-extrabold tracking-tight">Düzenleme Talebini Geri Çek
+                                                </h3>
                                                 <button type="button" @click="if(!cancellingRev) openCancelRev = false"
-                                                    class="text-rose-100 hover:text-white cursor-pointer" :disabled="cancellingRev">
+                                                    class="text-rose-100 hover:text-white cursor-pointer"
+                                                    :disabled="cancellingRev">
                                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                             d="M6 18L18 6M6 6l12 12"></path>
@@ -539,18 +620,23 @@
                                                     İlettiğiniz düzenleme talebini geri çekmek istediğinize emin misiniz?
                                                 </p>
                                                 <p class="text-xs text-gray-500 leading-relaxed">
-                                                    Talep geri çekildiğinde yöneticilere gönderilen uygulama içi bildirimler de kaldırılır ve form önceki <strong>"Onaylandı"</strong> durumuna geri döner.
+                                                    Talep geri çekildiğinde yöneticilere gönderilen uygulama içi bildirimler de
+                                                    kaldırılır ve form önceki <strong>"Onaylandı"</strong> durumuna geri döner.
                                                 </p>
                                             </div>
-                                            <div class="bg-gray-50 px-6 py-3 flex items-center justify-end gap-3 border-t border-gray-100">
-                                                <button type="button" @click="if(!cancellingRev) openCancelRev = false" :disabled="cancellingRev"
+                                            <div
+                                                class="bg-gray-50 px-6 py-3 flex items-center justify-end gap-3 border-t border-gray-100">
+                                                <button type="button" @click="if(!cancellingRev) openCancelRev = false"
+                                                    :disabled="cancellingRev"
                                                     class="px-4 py-2 text-xs font-bold text-gray-600 hover:text-gray-800 bg-white border border-gray-200 rounded-lg cursor-pointer">
                                                     Vazgeç
                                                 </button>
                                                 <button type="submit" :disabled="cancellingRev"
                                                     :class="cancellingRev ? 'opacity-70 cursor-wait pointer-events-none' : ''"
                                                     class="px-5 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-lg shadow-sm cursor-pointer transition">
-                                                    <span x-text="cancellingRev ? 'Geri Çekiliyor...' : 'Evet, Talebi Geri Çek'">Evet, Talebi Geri Çek</span>
+                                                    <span
+                                                        x-text="cancellingRev ? 'Geri Çekiliyor...' : 'Evet, Talebi Geri Çek'">Evet,
+                                                        Talebi Geri Çek</span>
                                                 </button>
                                             </div>
                                         </form>
@@ -700,12 +786,15 @@
                             </svg>
                         </div>
                         <div class="truncate">
-                            <p class="text-[11px] text-gray-500 uppercase font-bold tracking-wider">{{ __('Veriyi Giren') }}</p>
+                            <p class="text-[11px] text-gray-500 uppercase font-bold tracking-wider">
+                                {{ __('Veriyi Giren') }}
+                            </p>
                             <a href="{{ route('users.profile', $formEntry->user->id) }}" @click.stop
                                 class="font-extrabold text-gray-900 hover:text-indigo-600 hover:underline transition-colors text-sm truncate block">
                                 {{ $formEntry->user->name }}
                             </a>
-                            <p class="text-xs text-gray-500 truncate">{{ $formEntry->user->group->name ?? __('Grup Yok') }}
+                            <p class="text-xs text-gray-500 truncate">
+                                {{ $formEntry->user->group->name ?? __('Grup Yok') }}
                             </p>
                         </div>
                     </div>
@@ -748,7 +837,8 @@
                                     <span class="text-indigo-600 font-semibold">{{ __('Taslak Sürüm') }}
                                         v{{ $formEntry->versions->first()?->version_number ?? 1 }}</span>
                                     @if($formEntry->versions->count() > 1)
-                                        <span class="text-gray-400">({{ $formEntry->versions->count() }} {{ __('kez kaydedildi') }})</span>
+                                        <span class="text-gray-400">({{ $formEntry->versions->count() }}
+                                            {{ __('kez kaydedildi') }})</span>
                                     @endif
                                 @endif
                             </p>
@@ -782,24 +872,24 @@
                                 </svg>
                             </div>
                             <div class="min-w-0">
-                                <p class="text-[11px] text-amber-700 uppercase font-bold tracking-wider">Düzenleme Durumu
+                                <p class="text-[11px] text-slate-500 uppercase font-bold tracking-wider">Düzenleme Durumu
                                 </p>
-                                <p class="font-extrabold text-amber-950 text-sm">
+                                <p class="font-extrabold text-amber-900 text-sm">
                                     Talep İnceleniyor
                                 </p>
-                                <p class="text-xs text-amber-800 truncate">
+                                <p class="text-xs font-mono font-bold text-sky-700 truncate mt-0.5">
                                     {{ $pendingRevision->created_at->format('d.m.Y H:i') }}
                                 </p>
                                 @if(!empty($pendingRevisionApprovers))
-                                    <p class="text-xs text-amber-900 truncate mt-0.5"
+                                    <p class="text-xs text-slate-500 truncate mt-1 flex items-center gap-1"
                                         title="{{ implode(', ', $pendingRevisionApprovers) }}">
-                                        <span class="font-semibold">Onay Beklenen:</span>
-                                        {{ implode(', ', $pendingRevisionApprovers) }}
+                                        <span class="font-medium shrink-0">Onay Beklenen:</span>
+                                        <span class="pill-approver-emerald inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-extrabold truncate">{{ implode(', ', $pendingRevisionApprovers) }}</span>
                                     </p>
                                 @endif
                                 @if(!empty($revisionWaitText))
                                     <span
-                                        class="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-900 border border-amber-200">
+                                        class="pill-wait-rose inline-flex items-center mt-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold shadow-xs">
                                         ⏱ {{ $revisionWaitText }}
                                     </span>
                                 @endif
@@ -830,26 +920,27 @@
                                 </svg>
                             </div>
                             <div class="min-w-0">
-                                <p class="text-[11px] text-emerald-700 uppercase font-bold tracking-wider">Onaylanma Tarihi
+                                <p class="text-[11px] text-slate-500 uppercase font-bold tracking-wider">Onaylanma Tarihi
                                 </p>
-                                <p class="font-extrabold text-emerald-950 text-sm">
+                                <p class="font-extrabold text-sky-700 font-mono text-sm">
                                     {{ $formEntry->approved_at ? $formEntry->approved_at->format('d.m.Y H:i') : '-' }}
                                 </p>
-                                <p class="text-xs text-emerald-800 truncate">
+                                <p class="text-xs text-slate-500 truncate mt-1 flex items-center gap-1">
                                     @if(!empty($approvedByDisplayName))
+                                        <span class="font-medium shrink-0">Onaylayan:</span>
                                         @if(!empty($approvedByLinkId))
-                                            Onaylayan: <a href="{{ route('users.profile', $approvedByLinkId) }}"
-                                                class="font-bold hover:underline" @click.stop>{{ $approvedByDisplayName }}</a>
+                                            <a href="{{ route('users.profile', $approvedByLinkId) }}"
+                                                class="pill-approver-emerald inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-extrabold hover:opacity-90 truncate" @click.stop>{{ $approvedByDisplayName }}</a>
                                         @else
-                                            Onaylayan: <span class="font-bold">{{ $approvedByDisplayName }}</span>
+                                            <span class="pill-approver-emerald inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-extrabold truncate">{{ $approvedByDisplayName }}</span>
                                         @endif
                                     @else
-                                        Form Onaylandı
+                                        <span class="font-semibold text-emerald-700">Form Onaylandı</span>
                                     @endif
                                 </p>
                                 @if(!empty($approvalElapsedText))
                                     <span
-                                        class="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-200">
+                                        class="pill-elapsed-indigo inline-flex items-center mt-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold shadow-xs">
                                         ⏱ {{ $approvalElapsedText }}
                                     </span>
                                 @endif
@@ -880,11 +971,11 @@
                                 </svg>
                             </div>
                             <div class="min-w-0">
-                                <p class="text-[11px] text-amber-700 uppercase font-bold tracking-wider">Onay Durumu</p>
-                                <p class="font-extrabold text-amber-950 text-sm">
+                                <p class="text-[11px] text-slate-500 uppercase font-bold tracking-wider">Onay Durumu</p>
+                                <p class="font-extrabold text-amber-900 text-sm">
                                     Onay Bekliyor
                                 </p>
-                                <p class="text-xs text-amber-800 truncate">
+                                <p class="text-xs text-slate-500 truncate">
                                     @if(!empty($approvedRevision))
                                         Revizyon sonrası onaya gönderildi
                                     @else
@@ -892,15 +983,15 @@
                                     @endif
                                 </p>
                                 @if(!empty($pendingApprovalApprovers))
-                                    <p class="text-xs text-amber-900 truncate mt-0.5"
+                                    <p class="text-xs text-slate-500 truncate mt-1 flex items-center gap-1"
                                         title="{{ implode(', ', $pendingApprovalApprovers) }}">
-                                        <span class="font-semibold">Onay Beklenen:</span>
-                                        {{ implode(', ', $pendingApprovalApprovers) }}
+                                        <span class="font-medium shrink-0">Onay Beklenen:</span>
+                                        <span class="pill-approver-emerald inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-extrabold truncate">{{ implode(', ', $pendingApprovalApprovers) }}</span>
                                     </p>
                                 @endif
                                 @if(!empty($approvalWaitText))
                                     <span
-                                        class="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-900 border border-amber-200">
+                                        class="pill-wait-rose inline-flex items-center mt-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold shadow-xs">
                                         ⏱ {{ $approvalWaitText }}
                                     </span>
                                 @endif
@@ -1072,7 +1163,8 @@
                                             d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path>
                                     @else
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                                        </path>
                                     @endif
                                 </svg>
                                 <span>{{ $formEntry->status === 'submitted' ? 'Geri Çek' : 'Taslağı Sil' }}</span>
@@ -1112,27 +1204,33 @@
 
                         <!-- Sütunları Göster / Gizle Menüsü -->
                         <div class="relative" x-data="{ colManageOpen: false }">
-                            <button type="button" @click.stop="colManageOpen = !colManageOpen" @click.away="colManageOpen = false"
+                            <button type="button" @click.stop="colManageOpen = !colManageOpen"
+                                @click.away="colManageOpen = false"
                                 class="inline-flex items-center px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg font-semibold text-xs transition cursor-pointer shadow-xs gap-1.5 select-none"
                                 :class="hiddenColumns.length > 0 
                                     ? 'bg-amber-100 text-amber-900 border border-amber-300 ring-1 ring-amber-400/50' 
                                     : (isFullscreen ? 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700' : 'bg-white hover:bg-gray-100 text-gray-700 border border-gray-300')"
                                 title="Tablodaki sütunları göster veya gizle">
-                                <svg class="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                <svg class="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                 </svg>
                                 <span>Sütunlar</span>
-                                <span x-show="hiddenColumns.length > 0" class="px-1.5 py-0.2 bg-amber-500 text-white rounded-full text-[10px] font-black" x-text="hiddenColumns.length + ' Gizli'"></span>
+                                <span x-show="hiddenColumns.length > 0"
+                                    class="px-1.5 py-0.2 bg-amber-500 text-white rounded-full text-[10px] font-black"
+                                    x-text="hiddenColumns.length + ' Gizli'"></span>
                             </button>
 
                             <!-- Dropdown Popover -->
-                            <div x-show="colManageOpen" x-transition.opacity
-                                @click.stop
+                            <div x-show="colManageOpen" x-transition.opacity @click.stop
                                 class="absolute right-0 mt-2 w-72 rounded-xl shadow-2xl bg-white border border-gray-200 z-50 p-3 text-left"
                                 style="display: none; max-height: 420px;">
                                 <div class="flex items-center justify-between pb-2 border-b border-gray-100">
-                                    <span class="text-xs font-black text-gray-800 uppercase tracking-wide">Sütun Görünürlüğü</span>
+                                    <span class="text-xs font-black text-gray-800 uppercase tracking-wide">Sütun
+                                        Görünürlüğü</span>
                                     <button type="button" @click="showAllColumns()" x-show="hiddenColumns.length > 0"
                                         class="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 cursor-pointer">
                                         Tümünü Göster
@@ -1140,13 +1238,17 @@
                                 </div>
                                 <div class="max-h-64 overflow-y-auto py-2 space-y-1">
                                     <template x-for="f in fields" :key="f.id">
-                                        <label class="flex items-center justify-between p-1.5 rounded-lg hover:bg-gray-50 cursor-pointer transition select-none">
+                                        <label
+                                            class="flex items-center justify-between p-1.5 rounded-lg hover:bg-gray-50 cursor-pointer transition select-none">
                                             <div class="flex items-center gap-2 truncate">
-                                                <input type="checkbox" :checked="!isColumnHidden(f.id)" @change="toggleColumn(f.id)"
+                                                <input type="checkbox" :checked="!isColumnHidden(f.id)"
+                                                    @change="toggleColumn(f.id)"
                                                     class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 h-4 w-4">
-                                                <span class="text-xs font-medium text-gray-700 truncate" x-text="f.label || f.name"></span>
+                                                <span class="text-xs font-medium text-gray-700 truncate"
+                                                    x-text="f.label || f.name"></span>
                                             </div>
-                                            <span x-show="f.is_disabled" class="text-[9px] font-bold text-rose-700 bg-rose-50 border border-rose-200 px-1.5 py-0.2 rounded shrink-0">Pasif</span>
+                                            <span x-show="f.is_disabled"
+                                                class="text-[9px] font-bold text-rose-700 bg-rose-50 border border-rose-200 px-1.5 py-0.2 rounded shrink-0">Pasif</span>
                                         </label>
                                     </template>
                                 </div>
@@ -1310,12 +1412,12 @@
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-800 sticky top-0 z-20 shadow-md">
                             <tr>
-                                <th class="w-12 px-4 py-3 text-center text-xs font-medium text-white uppercase tracking-wider bg-gray-800 sticky left-0 z-30 border-r border-gray-700 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.3)]">
+                                <th
+                                    class="w-12 px-4 py-3 text-center text-xs font-medium text-white uppercase tracking-wider bg-gray-800 sticky left-0 z-30 border-r border-gray-700 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.3)]">
                                     #</th>
 
                                 <template x-for="field in fields" :key="field.id">
-                                    <th :id="'show-th-field-' + field.id"
-                                        :style="getColumnStickyStyle(field.id)"
+                                    <th :id="'show-th-field-' + field.id" :style="getColumnStickyStyle(field.id)"
                                         :class="getColumnStickyClass(field.id, 'th')"
                                         class="px-2 sm:px-4 py-3 text-left text-[10px] sm:text-xs font-medium text-white uppercase tracking-wider group relative bg-gray-800 min-w-[160px]">
                                         <div class="flex flex-col space-y-1">
@@ -1324,16 +1426,25 @@
                                                 <div class="flex items-center gap-1.5 cursor-pointer select-none truncate hover:text-indigo-200 transition-colors"
                                                     @click="sortColumn(field.id)"
                                                     :title="field.type === 'number' ? 'Sıralamak için tıklayın (Küçükten Büyüğe / Büyükten Küçüğe)' : 'Sıralamak için tıklayın (A\'dan Z\'ye / Z\'den A\'ya)'">
-                                                    <span class="truncate" x-html="field.label + (field.is_required ? ' <span class=\'text-red-400\'>*</span>' : '')"></span>
+                                                    <span class="truncate"
+                                                        x-html="field.label + (field.is_required ? ' <span class=\'text-red-400\'>*</span>' : '')"></span>
                                                     <span class="inline-flex items-center shrink-0">
-                                                        <template x-if="sortFieldId === field.id && sortDirection === 'asc'">
-                                                            <span class="text-[9px] font-black px-1.5 py-0.2 rounded bg-indigo-500 text-white shadow-2xs inline-flex items-center" x-text="field.type === 'number' ? '▲ 1-9' : '▲ A-Z'"></span>
+                                                        <template
+                                                            x-if="sortFieldId === field.id && sortDirection === 'asc'">
+                                                            <span
+                                                                class="text-[9px] font-black px-1.5 py-0.2 rounded bg-indigo-500 text-white shadow-2xs inline-flex items-center"
+                                                                x-text="field.type === 'number' ? '▲ 1-9' : '▲ A-Z'"></span>
                                                         </template>
-                                                        <template x-if="sortFieldId === field.id && sortDirection === 'desc'">
-                                                            <span class="text-[9px] font-black px-1.5 py-0.2 rounded bg-amber-500 text-white shadow-2xs inline-flex items-center" x-text="field.type === 'number' ? '▼ 9-1' : '▼ Z-A'"></span>
+                                                        <template
+                                                            x-if="sortFieldId === field.id && sortDirection === 'desc'">
+                                                            <span
+                                                                class="text-[9px] font-black px-1.5 py-0.2 rounded bg-amber-500 text-white shadow-2xs inline-flex items-center"
+                                                                x-text="field.type === 'number' ? '▼ 9-1' : '▼ Z-A'"></span>
                                                         </template>
                                                         <template x-if="sortFieldId !== field.id || !sortDirection">
-                                                            <span class="text-gray-400 hover:text-white transition-opacity text-[10px] ml-0.5 opacity-60 hover:opacity-100 font-bold" title="Sıralamak için tıklayın (A-Z / 1-9)">⇅</span>
+                                                            <span
+                                                                class="text-gray-400 hover:text-white transition-opacity text-[10px] ml-0.5 opacity-60 hover:opacity-100 font-bold"
+                                                                title="Sıralamak için tıklayın (A-Z / 1-9)">⇅</span>
                                                         </template>
                                                     </span>
                                                     <span x-show="field.is_disabled"
@@ -1357,27 +1468,33 @@
                                                                 : (isColumnPinnedRight(field.id) 
                                                                     ? 'Sağa Sabitlendi (Sütun işlemleri için tıklayın)' 
                                                                     : 'Sütun Seçenekleri (Sabitle / Sırala / Gizle)')">
-                                                            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                                                      d="M16 12l2-2a2.828 2.828 0 10-4-4l-2 2m-4 4l-4 4m6-6l-4-4m10 6l-6 6M5 19l4-4" />
+                                                            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none"
+                                                                stroke="currentColor">
+                                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                                    stroke-width="2"
+                                                                    d="M16 12l2-2a2.828 2.828 0 10-4-4l-2 2m-4 4l-4 4m6-6l-4-4m10 6l-6 6M5 19l4-4" />
                                                             </svg>
-                                                            <span x-show="isColumnPinnedLeft(field.id)" class="text-[9px] font-bold leading-none">←</span>
-                                                            <span x-show="isColumnPinnedRight(field.id)" class="text-[9px] font-bold leading-none">→</span>
+                                                            <span x-show="isColumnPinnedLeft(field.id)"
+                                                                class="text-[9px] font-bold leading-none">←</span>
+                                                            <span x-show="isColumnPinnedRight(field.id)"
+                                                                class="text-[9px] font-bold leading-none">→</span>
                                                         </button>
 
                                                         <!-- Sütun İşlemleri Açılır Menüsü -->
-                                                        <div x-show="pinOpen" x-transition.opacity
-                                                            @click.stop
+                                                        <div x-show="pinOpen" x-transition.opacity @click.stop
                                                             class="absolute z-50 mt-1 right-0 rounded-xl shadow-2xl bg-gray-900 border border-gray-700 py-1.5 text-xs text-left"
                                                             style="display: none; min-width: 175px;">
-                                                            <div class="px-2.5 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Sabitleme</div>
+                                                            <div
+                                                                class="px-2.5 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                                                                Sabitleme</div>
                                                             <button type="button"
                                                                 @click="setColumnPin(field.id, 'left'); pinOpen = false"
                                                                 class="w-full flex items-center px-3 py-1.5 transition-colors cursor-pointer"
                                                                 :class="isColumnPinnedLeft(field.id) ? 'bg-amber-500/20 text-amber-300 font-semibold' : 'text-gray-200 hover:bg-gray-800 hover:text-white'">
                                                                 <span class="mr-2 text-sm font-bold">←</span>
                                                                 <span>Sola Sabitle</span>
-                                                                <span x-show="isColumnPinnedLeft(field.id)" class="ml-auto text-amber-400 text-xs">✓</span>
+                                                                <span x-show="isColumnPinnedLeft(field.id)"
+                                                                    class="ml-auto text-amber-400 text-xs">✓</span>
                                                             </button>
                                                             <button type="button"
                                                                 @click="setColumnPin(field.id, 'right'); pinOpen = false"
@@ -1385,7 +1502,8 @@
                                                                 :class="isColumnPinnedRight(field.id) ? 'bg-emerald-500/20 text-emerald-300 font-semibold' : 'text-gray-200 hover:bg-gray-800 hover:text-white'">
                                                                 <span class="mr-2 text-sm font-bold">→</span>
                                                                 <span>Sağa Sabitle</span>
-                                                                <span x-show="isColumnPinnedRight(field.id)" class="ml-auto text-emerald-400 text-xs">✓</span>
+                                                                <span x-show="isColumnPinnedRight(field.id)"
+                                                                    class="ml-auto text-emerald-400 text-xs">✓</span>
                                                             </button>
                                                             <template x-if="isColumnPinned(field.id)">
                                                                 <button type="button"
@@ -1397,22 +1515,30 @@
                                                             </template>
 
                                                             <div class="border-t border-gray-700/80 my-1"></div>
-                                                            <div class="px-2.5 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Sıralama</div>
+                                                            <div
+                                                                class="px-2.5 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                                                                Sıralama</div>
                                                             <button type="button"
                                                                 @click="setSortDirection(field.id, 'asc'); pinOpen = false"
                                                                 class="w-full flex items-center px-3 py-1.5 text-gray-200 hover:bg-gray-800 hover:text-white transition-colors cursor-pointer"
                                                                 :class="sortFieldId === field.id && sortDirection === 'asc' ? 'bg-indigo-600/30 text-indigo-300 font-semibold' : ''">
                                                                 <span class="mr-2 text-xs font-bold">▲</span>
-                                                                <span x-text="field.type === 'number' ? 'Küçükten Büyüğe (1 → 9)' : 'A\'dan Z\'ye Sırala'"></span>
-                                                                <span x-show="sortFieldId === field.id && sortDirection === 'asc'" class="ml-auto text-indigo-400 text-xs">✓</span>
+                                                                <span
+                                                                    x-text="field.type === 'number' ? 'Küçükten Büyüğe (1 → 9)' : 'A\'dan Z\'ye Sırala'"></span>
+                                                                <span
+                                                                    x-show="sortFieldId === field.id && sortDirection === 'asc'"
+                                                                    class="ml-auto text-indigo-400 text-xs">✓</span>
                                                             </button>
                                                             <button type="button"
                                                                 @click="setSortDirection(field.id, 'desc'); pinOpen = false"
                                                                 class="w-full flex items-center px-3 py-1.5 text-gray-200 hover:bg-gray-800 hover:text-white transition-colors cursor-pointer"
                                                                 :class="sortFieldId === field.id && sortDirection === 'desc' ? 'bg-indigo-600/30 text-indigo-300 font-semibold' : ''">
                                                                 <span class="mr-2 text-xs font-bold">▼</span>
-                                                                <span x-text="field.type === 'number' ? 'Büyükten Küçüğe (9 → 1)' : 'Z\'den A\'ya Sırala'"></span>
-                                                                <span x-show="sortFieldId === field.id && sortDirection === 'desc'" class="ml-auto text-indigo-400 text-xs">✓</span>
+                                                                <span
+                                                                    x-text="field.type === 'number' ? 'Büyükten Küçüğe (9 → 1)' : 'Z\'den A\'ya Sırala'"></span>
+                                                                <span
+                                                                    x-show="sortFieldId === field.id && sortDirection === 'desc'"
+                                                                    class="ml-auto text-indigo-400 text-xs">✓</span>
                                                             </button>
                                                             <template x-if="sortFieldId === field.id && sortDirection">
                                                                 <button type="button"
@@ -1458,29 +1584,41 @@
                                                             class="absolute z-50 mt-2 w-52 rounded-xl shadow-2xl bg-white border border-gray-200 ring-1 ring-black/5 divide-y divide-gray-100"
                                                             style="display: none; min-width: 210px;">
                                                             <!-- Excel Tarzı Hızlı Sıralama -->
-                                                            <div class="p-1.5 bg-gray-50/70 rounded-t-xl text-xs space-y-0.5">
-                                                                <div class="px-2 py-0.5 text-[10px] font-black text-gray-400 uppercase tracking-wider">Sıralama (Excel)</div>
+                                                            <div
+                                                                class="p-1.5 bg-gray-50/70 rounded-t-xl text-xs space-y-0.5">
+                                                                <div
+                                                                    class="px-2 py-0.5 text-[10px] font-black text-gray-400 uppercase tracking-wider">
+                                                                    Sıralama (Excel)</div>
                                                                 <button type="button"
                                                                     @click="setSortDirection(field.id, 'asc'); open = false;"
                                                                     class="w-full flex items-center justify-between px-2.5 py-1.5 text-xs rounded-lg transition-colors cursor-pointer"
                                                                     :class="sortFieldId === Number(field.id) && sortDirection === 'asc' ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-gray-700 hover:bg-gray-100'">
                                                                     <span class="flex items-center gap-1.5">
-                                                                        <span class="text-xs font-bold text-indigo-600">▲</span>
-                                                                        <span x-text="field.type === 'number' ? 'Küçükten Büyüğe (1 → 9)' : 'A\'dan Z\'ye Sırala'"></span>
+                                                                        <span
+                                                                            class="text-xs font-bold text-indigo-600">▲</span>
+                                                                        <span
+                                                                            x-text="field.type === 'number' ? 'Küçükten Büyüğe (1 → 9)' : 'A\'dan Z\'ye Sırala'"></span>
                                                                     </span>
-                                                                    <span x-show="sortFieldId === Number(field.id) && sortDirection === 'asc'" class="text-indigo-600 text-xs font-black">✓</span>
+                                                                    <span
+                                                                        x-show="sortFieldId === Number(field.id) && sortDirection === 'asc'"
+                                                                        class="text-indigo-600 text-xs font-black">✓</span>
                                                                 </button>
                                                                 <button type="button"
                                                                     @click="setSortDirection(field.id, 'desc'); open = false;"
                                                                     class="w-full flex items-center justify-between px-2.5 py-1.5 text-xs rounded-lg transition-colors cursor-pointer"
                                                                     :class="sortFieldId === Number(field.id) && sortDirection === 'desc' ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-gray-700 hover:bg-gray-100'">
                                                                     <span class="flex items-center gap-1.5">
-                                                                        <span class="text-xs font-bold text-indigo-600">▼</span>
-                                                                        <span x-text="field.type === 'number' ? 'Büyükten Küçüğe (9 → 1)' : 'Z\'den A\'ya Sırala'"></span>
+                                                                        <span
+                                                                            class="text-xs font-bold text-indigo-600">▼</span>
+                                                                        <span
+                                                                            x-text="field.type === 'number' ? 'Büyükten Küçüğe (9 → 1)' : 'Z\'den A\'ya Sırala'"></span>
                                                                     </span>
-                                                                    <span x-show="sortFieldId === Number(field.id) && sortDirection === 'desc'" class="text-indigo-600 text-xs font-black">✓</span>
+                                                                    <span
+                                                                        x-show="sortFieldId === Number(field.id) && sortDirection === 'desc'"
+                                                                        class="text-indigo-600 text-xs font-black">✓</span>
                                                                 </button>
-                                                                <template x-if="sortFieldId === Number(field.id) && sortDirection">
+                                                                <template
+                                                                    x-if="sortFieldId === Number(field.id) && sortDirection">
                                                                     <button type="button"
                                                                         @click="clearSort(); open = false;"
                                                                         class="w-full flex items-center gap-1.5 px-2.5 py-1 text-[11px] text-amber-700 hover:bg-amber-50 rounded-lg font-semibold transition-colors cursor-pointer">
@@ -1490,18 +1628,22 @@
                                                                 </template>
                                                             </div>
 
-                                                            <div class="p-2 border-b border-gray-100 flex justify-between gap-2 bg-white">
-                                                                <span class="text-[10px] font-black text-gray-400 uppercase tracking-wider self-center">Filtre</span>
+                                                            <div
+                                                                class="p-2 border-b border-gray-100 flex justify-between gap-2 bg-white">
+                                                                <span
+                                                                    class="text-[10px] font-black text-gray-400 uppercase tracking-wider self-center">Filtre</span>
                                                                 <div class="flex items-center gap-2">
                                                                     <button type="button"
                                                                         @click="selectAllFilters(field.id)"
-                                                                        class="text-[10px] font-semibold text-indigo-600 hover:text-indigo-800 cursor-pointer">Tümünü Seç</button>
+                                                                        class="text-[10px] font-semibold text-indigo-600 hover:text-indigo-800 cursor-pointer">Tümünü
+                                                                        Seç</button>
                                                                     <span class="text-gray-300">|</span>
                                                                     <button type="button" @click="clearFilter(field.id)"
                                                                         class="text-[10px] font-semibold text-red-600 hover:text-red-800 cursor-pointer">Temizle</button>
                                                                 </div>
                                                             </div>
-                                                            <div class="max-h-56 overflow-y-auto p-2 space-y-0.5 bg-white rounded-b-xl">
+                                                            <div
+                                                                class="max-h-56 overflow-y-auto p-2 space-y-0.5 bg-white rounded-b-xl">
                                                                 <template x-for="val in uniqueValues[field.id] || []"
                                                                     :key="val">
                                                                     <label
@@ -1533,7 +1675,8 @@
                             <template x-for="(row, originalRowIndex) in visibleRows()" :key="row.id">
                                 <tr class="hover:bg-indigo-50 transition-colors group"
                                     :class="isRowNew(row._origIndex ?? originalRowIndex) ? 'bg-emerald-50/40' : ''">
-                                    <td class="w-12 px-4 py-3 whitespace-nowrap text-center text-sm font-medium text-gray-500 sticky left-0 z-10 bg-white group-hover:bg-indigo-50 border-r border-gray-200 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)]">
+                                    <td
+                                        class="w-12 px-4 py-3 whitespace-nowrap text-center text-sm font-medium text-gray-500 sticky left-0 z-10 bg-white group-hover:bg-indigo-50 border-r border-gray-200 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)]">
                                         <div class="flex flex-col items-center justify-center">
                                             <span x-text="originalRowIndex + 1"></span>
                                             <template x-if="isRowNew(row._origIndex ?? originalRowIndex)">
@@ -1543,8 +1686,7 @@
                                         </div>
                                     </td>
                                     <template x-for="field in fields" :key="field.id">
-                                        <td :style="getColumnStickyStyle(field.id)"
-                                            :class="[
+                                        <td :style="getColumnStickyStyle(field.id)" :class="[
                                                 getColumnStickyClass(field.id, 'td'),
                                                 {
                                                     'text-right': field.type === 'number',
@@ -1555,7 +1697,8 @@
                                             <div class="flex items-center gap-1.5"
                                                 :class="field.type === 'number' ? 'justify-end' : ''">
                                                 <span x-text="formatValue(row.values[field.id], field.type)"></span>
-                                                <template x-if="isCellChanged(row._origIndex ?? originalRowIndex, field.id)">
+                                                <template
+                                                    x-if="isCellChanged(row._origIndex ?? originalRowIndex, field.id)">
                                                     <span
                                                         class="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full text-[9px] font-black bg-amber-500 text-white shadow-2xs shrink-0"
                                                         title="Sürümler Arası Farklı Değer">Δ</span>
@@ -1563,7 +1706,8 @@
                                             </div>
 
                                             <!-- HOVER TOOLTIP: Sürümler Arası Çoklu Değer Karşılaştırması -->
-                                            <template x-if="isCellChanged(row._origIndex ?? originalRowIndex, field.id)">
+                                            <template
+                                                x-if="isCellChanged(row._origIndex ?? originalRowIndex, field.id)">
                                                 <div class="absolute left-1/2 -translate-x-1/2 hidden group-hover/cell:flex flex-col z-50 p-2.5 bg-slate-900 text-white text-[11px] rounded-xl shadow-2xl pointer-events-none min-w-[240px] max-w-[340px] border border-slate-700 animate-in fade-in duration-100"
                                                     :class="originalRowIndex <= 1 ? 'top-full mt-1.5' : 'bottom-full mb-1.5'">
                                                     <div
@@ -1681,7 +1825,9 @@
                             </div>
 
                             <div class="flex flex-wrap gap-3">
-                                <button type="submit" @click="if(submitting) { $event.preventDefault(); return false; } action = 'approved'" :disabled="submitting"
+                                <button type="submit"
+                                    @click="if(submitting) { $event.preventDefault(); return false; } action = 'approved'"
+                                    :disabled="submitting"
                                     :class="submitting ? 'opacity-70 cursor-wait pointer-events-none' : ''"
                                     class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-6 rounded-lg shadow-sm transition flex items-center text-xs uppercase tracking-wider cursor-pointer">
                                     <svg x-show="!submitting" class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor"
@@ -1701,7 +1847,9 @@
                                         x-text="submitting && action === 'approved' ? 'Onaylanıyor...' : 'Veriyi Onayla'">Veriyi
                                         Onayla</span>
                                 </button>
-                                <button type="submit" @click="if(submitting) { $event.preventDefault(); return false; } action = 'rejected'" :disabled="submitting"
+                                <button type="submit"
+                                    @click="if(submitting) { $event.preventDefault(); return false; } action = 'rejected'"
+                                    :disabled="submitting"
                                     :class="submitting ? 'opacity-70 cursor-wait pointer-events-none' : ''"
                                     class="bg-rose-600 hover:bg-rose-700 text-white font-bold py-2.5 px-6 rounded-lg shadow-sm transition flex items-center text-xs uppercase tracking-wider cursor-pointer">
                                     <svg x-show="!submitting" class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor"
@@ -1765,7 +1913,9 @@
                             </div>
 
                             <div class="flex flex-wrap gap-3">
-                                <button type="submit" @click="if(submitting) { $event.preventDefault(); return false; } revAction = 'approve'" :disabled="submitting"
+                                <button type="submit"
+                                    @click="if(submitting) { $event.preventDefault(); return false; } revAction = 'approve'"
+                                    :disabled="submitting"
                                     :class="submitting ? 'opacity-70 cursor-wait pointer-events-none' : ''"
                                     class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-6 rounded-lg shadow-sm transition flex items-center text-xs uppercase tracking-wider cursor-pointer">
                                     <svg x-show="!submitting" class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor"
@@ -1794,7 +1944,9 @@
                                     </svg>
                                     Talebi Reddet
                                 </button>
-                                <button type="submit" x-show="revAction === 'reject'" @click="if(submitting) { $event.preventDefault(); return false; }" :disabled="submitting"
+                                <button type="submit" x-show="revAction === 'reject'"
+                                    @click="if(submitting) { $event.preventDefault(); return false; }"
+                                    :disabled="submitting"
                                     :class="submitting ? 'opacity-70 cursor-wait pointer-events-none' : ''"
                                     class="bg-rose-700 hover:bg-rose-800 text-white font-bold py-2.5 px-6 rounded-lg shadow-sm transition flex items-center text-xs uppercase tracking-wider cursor-pointer">
                                     <svg x-show="submitting" class="animate-spin -ml-1 mr-1.5 h-4 w-4 text-white"
@@ -1916,52 +2068,52 @@
                     })->unique('slug')->sortBy('label');
                 @endphp
                 <div x-data="{ 
-                        searchQuery: '',
-                        selectedUser: '',
-                        selectedDate: '',
-                        selectedAction: '',
-                        showAllLogs: false, 
-                        showLogModal: false, 
-                        activeLogDetail: { date: '', user: '', action: '', badgeClass: '', description: '' },
-                        logsMeta: [
-                            @foreach($logs as $index => $log)
-                                {
-                                    index: {{ $index }},
-                                    userId: '{{ $log->user_id ?? 'system' }}',
-                                    dateStr: '{{ $log->created_at->format('Y-m-d') }}',
-                                    action: '{{ $log->action }}',
-                                    searchable: @js(mb_strtolower($log->created_at->format('d.m.Y H:i:s') . ' ' . ($log->user->name ?? 'Sistem') . ' ' . $log->action_label . ' ' . $log->description))
-                                },
-                            @endforeach
-                        ],
-                        get filteredLogs() {
-                            return this.logsMeta.filter(item => {
-                                if (this.selectedUser && this.selectedUser !== item.userId) return false;
-                                if (this.selectedDate && this.selectedDate !== item.dateStr) return false;
-                                if (this.selectedAction && this.selectedAction !== item.action) return false;
-                                if (this.searchQuery) {
-                                    const q = this.searchQuery.toLowerCase().trim();
-                                    if (!item.searchable.includes(q)) return false;
-                                }
-                                return true;
-                            });
-                        },
-                        get isFiltering() {
-                            return Boolean(this.searchQuery || this.selectedUser || this.selectedDate || this.selectedAction);
-                        },
-                        isRowVisible(index) {
-                            const match = this.filteredLogs.some(item => item.index === index);
-                            if (!match) return false;
-                            if (!this.isFiltering && !this.showAllLogs && index >= 10) return false;
-                            return true;
-                        },
-                        resetFilters() {
-                            this.searchQuery = '';
-                            this.selectedUser = '';
-                            this.selectedDate = '';
-                            this.selectedAction = '';
-                        }
-                    }" class="bg-white overflow-hidden shadow-sm sm:rounded-lg border border-gray-200 mt-8">
+                                    searchQuery: '',
+                                    selectedUser: '',
+                                    selectedDate: '',
+                                    selectedAction: '',
+                                    showAllLogs: false, 
+                                    showLogModal: false, 
+                                    activeLogDetail: { date: '', user: '', action: '', badgeClass: '', description: '' },
+                                    logsMeta: [
+                                        @foreach($logs as $index => $log)
+                                            {
+                                                index: {{ $index }},
+                                                userId: '{{ $log->user_id ?? 'system' }}',
+                                                dateStr: '{{ $log->created_at->format('Y-m-d') }}',
+                                                action: '{{ $log->action }}',
+                                                searchable: @js(mb_strtolower($log->created_at->format('d.m.Y H:i:s') . ' ' . ($log->user->name ?? 'Sistem') . ' ' . $log->action_label . ' ' . $log->description))
+                                            },
+                                        @endforeach
+                                    ],
+                                    get filteredLogs() {
+                                        return this.logsMeta.filter(item => {
+                                            if (this.selectedUser && this.selectedUser !== item.userId) return false;
+                                            if (this.selectedDate && this.selectedDate !== item.dateStr) return false;
+                                            if (this.selectedAction && this.selectedAction !== item.action) return false;
+                                            if (this.searchQuery) {
+                                                const q = this.searchQuery.toLowerCase().trim();
+                                                if (!item.searchable.includes(q)) return false;
+                                            }
+                                            return true;
+                                        });
+                                    },
+                                    get isFiltering() {
+                                        return Boolean(this.searchQuery || this.selectedUser || this.selectedDate || this.selectedAction);
+                                    },
+                                    isRowVisible(index) {
+                                        const match = this.filteredLogs.some(item => item.index === index);
+                                        if (!match) return false;
+                                        if (!this.isFiltering && !this.showAllLogs && index >= 10) return false;
+                                        return true;
+                                    },
+                                    resetFilters() {
+                                        this.searchQuery = '';
+                                        this.selectedUser = '';
+                                        this.selectedDate = '';
+                                        this.selectedAction = '';
+                                    }
+                                }" class="bg-white overflow-hidden shadow-sm sm:rounded-lg border border-gray-200 mt-8">
                     <div
                         class="p-4 border-b border-gray-100 bg-gray-50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                         <div class="flex items-center">
@@ -2142,13 +2294,14 @@
                                                                     {{ $diffCount }} Alan Değişikliği
                                                                 </span>
                                                             @endif
-                                                            <button type="button" @click="activeLogDetail = {
-                                                                                    date: '{{ $log->created_at->format('d.m.Y H:i:s') }}',
-                                                                                    user: '{{ $log->user->name ?? 'Sistem' }}',
-                                                                                    action: '{{ $log->action_label }}',
-                                                                                    badgeClass: '{{ $log->action_badge_class }}',
-                                                                                    description: @js($log->description)
-                                                                                }; showLogModal = true;"
+                                                            <button type="button"
+                                                                @click="activeLogDetail = {
+                                                                                                                                    date: '{{ $log->created_at->format('d.m.Y H:i:s') }}',
+                                                                                                                                    user: '{{ $log->user->name ?? 'Sistem' }}',
+                                                                                                                                    action: '{{ $log->action_label }}',
+                                                                                                                                    badgeClass: '{{ $log->action_badge_class }}',
+                                                                                                                                    description: @js($log->description)
+                                                                                                                                }; showLogModal = true;"
                                                                 class="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-600 hover:text-indigo-800 hover:underline cursor-pointer">
                                                                 <svg class="w-3.5 h-3.5 text-indigo-600" fill="none"
                                                                     stroke="currentColor" viewBox="0 0 24 24">
@@ -2309,7 +2462,8 @@
                                         #{{ $formEntry->id }}</span>
                                 </h3>
                                 <p class="text-xs text-indigo-200/80">{{ $formEntry->template->name }} -
-                                    {{ $formEntry->entry_date->format('d.m.Y') }}</p>
+                                    {{ $formEntry->entry_date->format('d.m.Y') }}
+                                </p>
                             </div>
                         </div>
                         <button type="button" @click="open = false"
@@ -2723,7 +2877,8 @@
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                 d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
                                         </svg>
-                                        <h3 class="text-base font-extrabold tracking-tight">Taslak Parçaları Onaya Gönder</h3>
+                                        <h3 class="text-base font-extrabold tracking-tight">Taslak Parçaları Onaya Gönder
+                                        </h3>
                                     </div>
                                     <button type="button" @click="if(!submitting) open = false"
                                         class="text-emerald-200 hover:text-white cursor-pointer" :disabled="submitting">
@@ -2735,20 +2890,24 @@
                                 </div>
                                 <div class="p-6 space-y-3">
                                     <p class="text-sm font-semibold text-gray-800">
-                                        Bu konsolide forma bağlı <strong>{{ $draftChildrenCount }} adet taslak parçayı</strong> onaya göndermek istediğinize emin misiniz?
+                                        Bu konsolide forma bağlı <strong>{{ $draftChildrenCount }} adet taslak
+                                            parçayı</strong> onaya göndermek istediğinize emin misiniz?
                                     </p>
-                                    <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-700 space-y-1.5">
+                                    <div
+                                        class="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-700 space-y-1.5">
                                         <div class="font-bold text-slate-800">Onaya Gönderilecek Parçalar:</div>
                                         <div class="flex flex-wrap gap-1.5">
                                             @foreach($draftChildren as $dc)
-                                                <span class="px-2 py-0.5 bg-amber-100 text-amber-900 border border-amber-300 font-bold rounded">
+                                                <span
+                                                    class="px-2 py-0.5 bg-amber-100 text-amber-900 border border-amber-300 font-bold rounded">
                                                     ⚡ {{ $dc->partition_value ?: ('Parça #' . $dc->id) }}
                                                 </span>
                                             @endforeach
                                         </div>
                                     </div>
                                     <p class="text-xs text-gray-500 leading-relaxed">
-                                        Tüm taslak parçaların durumu <strong>"Onay Bekliyor"</strong> olarak güncellenecek ve yöneticinizin incelemesine sunulacaktır.
+                                        Tüm taslak parçaların durumu <strong>"Onay Bekliyor"</strong> olarak güncellenecek
+                                        ve yöneticinizin incelemesine sunulacaktır.
                                     </p>
                                 </div>
                                 <div
@@ -2803,7 +2962,8 @@
                                                     d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path>
                                             @else
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                                                </path>
                                             @endif
                                         </svg>
                                         <h3 class="text-base font-extrabold tracking-tight">
@@ -2826,16 +2986,18 @@
                                         </p>
                                         <p class="text-xs text-gray-500 leading-relaxed">
                                             Form onay sürecinden geri çekildiğinde tekrar taslak durumuna dönecek, yöneticinin
-                                             onay listesinden kaldırılacak ve üzerinde dilediğiniz düzenlemeyi yapabileceksiniz.
+                                            onay listesinden kaldırılacak ve üzerinde dilediğiniz düzenlemeyi yapabileceksiniz.
                                         </p>
                                     @else
                                         <p class="text-sm font-semibold text-gray-800">
                                             Bu taslak kaydını silmek istediğinize emin misiniz?
                                         </p>
                                         <p class="text-xs text-rose-600 font-medium leading-relaxed">
-                                            ⚠️ Bu işlem geri alınamaz. Taslak ve formdaki girilen tüm satırlar sistemden kalıcı olarak silinecektir.
+                                            ⚠️ Bu işlem geri alınamaz. Taslak ve formdaki girilen tüm satırlar sistemden kalıcı
+                                            olarak silinecektir.
                                             @if($formEntry->is_consolidated)
-                                                <br><span class="text-gray-600 font-normal">Bu konsolide taslak silindiğinde, birleştirilen parçalar bağımsız taslak formlar olarak korunur.</span>
+                                                <br><span class="text-gray-600 font-normal">Bu konsolide taslak silindiğinde,
+                                                    birleştirilen parçalar bağımsız taslak formlar olarak korunur.</span>
                                             @endif
                                         </p>
                                     @endif
@@ -2858,7 +3020,8 @@
                                                 d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
                                             </path>
                                         </svg>
-                                        <span x-text="submitting ? '{{ $formEntry->status === 'submitted' ? 'İşleniyor...' : 'Siliniyor...' }}' : '{{ $formEntry->status === 'submitted' ? 'Evet, Geri Çek' : 'Evet, Taslağı Sil' }}'">{{ $formEntry->status === 'submitted' ? 'Evet, Geri Çek' : 'Evet, Taslağı Sil' }}</span>
+                                        <span
+                                            x-text="submitting ? '{{ $formEntry->status === 'submitted' ? 'İşleniyor...' : 'Siliniyor...' }}' : '{{ $formEntry->status === 'submitted' ? 'Evet, Geri Çek' : 'Evet, Taslağı Sil' }}'">{{ $formEntry->status === 'submitted' ? 'Evet, Geri Çek' : 'Evet, Taslağı Sil' }}</span>
                                     </button>
                                 </div>
                             </form>
@@ -2869,724 +3032,724 @@
 
             <!-- AlpineJS Grid Logic for Show -->
             <script>
-        document.addEventListener('alpine:init', () => {
-            Alpine.data('formShowApp', (fields, showTotals, versions = [], templateId = null) => ({
-                fields: fields,
-                showTotals: showTotals,
-                versions: versions || [],
-                templateId: templateId || {{ $formEntry->form_template_id ?? $formEntry->template->id }},
-                pinnedColumns: (() => {
-                    try {
-                        let tid = templateId || {{ $formEntry->form_template_id ?? $formEntry->template->id }};
-                        let stored = localStorage.getItem(`pinned_columns_template_${tid}`);
-                        if (stored) {
-                            let parsed = JSON.parse(stored);
-                            if (Array.isArray(parsed)) return { left: parsed.map(Number), right: [] };
-                            if (parsed && typeof parsed === 'object') {
-                                return {
-                                    left: Array.isArray(parsed.left) ? parsed.left.map(Number) : [],
-                                    right: Array.isArray(parsed.right) ? parsed.right.map(Number) : []
-                                };
-                            }
-                        }
-                    } catch(e) {}
-                    return { left: [], right: [] };
-                })(),
-                pinnedLeftOffsets: {},
-                pinnedRightOffsets: {},
-                hiddenColumns: (() => {
-                    try {
-                        let tid = templateId || {{ $formEntry->form_template_id ?? $formEntry->template->id }};
-                        let stored = localStorage.getItem(`hidden_columns_template_${tid}`);
-                        if (stored) return JSON.parse(stored).map(Number);
-                    } catch(e) {}
-                    return [];
-                })(),
-                sortFieldId: null,
-                sortDirection: null, // 'asc' | 'desc' | null
-                rows: [],
-                totals: {},
-                filteredTotals: {},
-                filters: {},
-                uniqueValues: {},
-                isFullscreen: false,
-                compareMode: false,
-                selectedVersionIds: [],
-                compareMap: {},
-
-                areValuesEqual(v1, v2) {
-                    const s1 = (v1 === null || v1 === undefined) ? '' : String(v1).trim();
-                    const s2 = (v2 === null || v2 === undefined) ? '' : String(v2).trim();
-                    if (s1 === s2) return true;
-
-                    // Sayısal format toleransı (1000 ile 1.000, 1000.00 gibi farkları eşit kabul et)
-                    const clean1 = s1.replace(/\./g, '').replace(',', '.');
-                    const clean2 = s2.replace(/\./g, '').replace(',', '.');
-                    const n1 = parseFloat(clean1);
-                    const n2 = parseFloat(clean2);
-                    if (!isNaN(n1) && !isNaN(n2) && clean1.match(/^-?\d+(\.\d+)?$/) && clean2.match(/^-?\d+(\.\d+)?$/)) {
-                        return Math.abs(n1 - n2) < 0.00001;
-                    }
-                    return false;
-                },
-
-                toggleCompareMode() {
-                    this.compareMode = !this.compareMode;
-                    if (this.compareMode) {
-                        if (this.selectedVersionIds.length === 0 && this.versions.length >= 2) {
-                            // Varsayılan olarak en yeni 2 sürümü seç (örn: v3 ve v2)
-                            this.selectedVersionIds = [this.versions[0].id, this.versions[1].id];
-                        } else if (this.selectedVersionIds.length === 0 && this.versions.length === 1) {
-                            this.selectedVersionIds = [this.versions[0].id];
-                        }
-                        this.buildCompareMap();
-                    } else {
-                        this.selectedVersionIds = [];
-                        this.compareMap = {};
-                    }
-                },
-
-                toggleVersion(vId) {
-                    const id = parseInt(vId);
-                    const idx = this.selectedVersionIds.indexOf(id);
-                    if (idx > -1) {
-                        this.selectedVersionIds.splice(idx, 1);
-                    } else {
-                        this.selectedVersionIds.push(id);
-                    }
-                    this.buildCompareMap();
-                },
-
-                selectAllVersions() {
-                    this.selectedVersionIds = this.versions.map(v => v.id);
-                    this.buildCompareMap();
-                },
-
-                clearAllVersions() {
-                    this.selectedVersionIds = [];
-                    this.buildCompareMap();
-                },
-
-                getSelectedVersionsLabel() {
-                    if (!this.selectedVersionIds || this.selectedVersionIds.length === 0) {
-                        return 'Sürüm Seçiniz...';
-                    }
-                    const selected = this.versions
-                        .filter(v => this.selectedVersionIds.includes(v.id))
-                        .sort((a, b) => a.version_number - b.version_number);
-
-                    if (selected.length <= 3) {
-                        return selected.map(v => 'v' + v.version_number).join(', ') + ' (' + selected.length + ' Seçili)';
-                    }
-                    return selected.slice(0, 2).map(v => 'v' + v.version_number).join(', ') + ' + ' + (selected.length - 2) + ' daha (' + selected.length + ' Seçili)';
-                },
-
-                getSelectedVersionsSummary() {
-                    if (!this.selectedVersionIds || this.selectedVersionIds.length === 0) {
-                        return '[Sürüm Seçilmedi]';
-                    }
-                    const selected = this.versions
-                        .filter(v => this.selectedVersionIds.includes(v.id))
-                        .sort((a, b) => a.version_number - b.version_number);
-
-                    return '[' + selected.map(v => 'v' + v.version_number).join(' vs ') + ' kıyaslanıyor]';
-                },
-
-                buildCompareMap() {
-                    if (!this.compareMode || !this.selectedVersionIds || this.selectedVersionIds.length === 0) {
-                        this.compareMap = {};
-                        return;
-                    }
-
-                    // Seçilen sürümleri version_number artan sıraya göre al (örn: v1, v2, v3...)
-                    const selVersions = this.versions
-                        .filter(v => this.selectedVersionIds.includes(v.id))
-                        .sort((a, b) => a.version_number - b.version_number);
-
-                    let map = {};
-
-                    this.rows.forEach((row, rIdx) => {
-                        map[rIdx] = {
-                            fields: {}
-                        };
-
-                        this.fields.forEach(f => {
-                            const currentVal = (row.values && row.values[f.id] !== undefined && row.values[f.id] !== null) ? String(row.values[f.id]).trim() : '';
-
-                             // Her seçilen versiyondaki değeri topla
-                              const versionEntries = selVersions.map(v => {
-                                const oldRow = (v.rows_data && v.rows_data[rIdx]) ? v.rows_data[rIdx] : null;
-                                const val = (oldRow && oldRow.values && oldRow.values[f.id] !== undefined && oldRow.values[f.id] !== null) ? String(oldRow.values[f.id]).trim() : '';
-                                  const hasRow = !!oldRow;
-                                return {
-                                    version_id: v.id,
-                                    version_number: v.version_number,
-                                    time: v.created_at_formatted ? v.created_at_formatted.split(' ')[1] : '',
-                                    hasRow: hasRow,
-                                    rawVal: val,
-                                    formattedVal: hasRow ? this.formatValue(val, f.type) : '-'
-                                };
-                            });
-
-                            // Değişiklik kontrolü:
-                            let isChanged = false;
-                            if (versionEntries.length === 1) {
-                                isChanged = !this.areValuesEqual(versionEntries[0].rawVal, currentVal);
-                            } else if (versionEntries.length >= 2) {
-                                const firstVal = versionEntries[0].rawVal;
-                                for (let i = 1; i < versionEntries.length; i++) {
-                                    if (!this.areValuesEqual(versionEntries[i].rawVal, firstVal)) {
-                                        isChanged = true;
-                                        break;
+                document.addEventListener('alpine:init', () => {
+                    Alpine.data('formShowApp', (fields, showTotals, versions = [], templateId = null) => ({
+                        fields: fields,
+                        showTotals: showTotals,
+                        versions: versions || [],
+                        templateId: templateId || {{ $formEntry->form_template_id ?? $formEntry->template->id }},
+                        pinnedColumns: (() => {
+                            try {
+                                let tid = templateId || {{ $formEntry->form_template_id ?? $formEntry->template->id }};
+                                let stored = localStorage.getItem(`pinned_columns_template_${tid}`);
+                                if (stored) {
+                                    let parsed = JSON.parse(stored);
+                                    if (Array.isArray(parsed)) return { left: parsed.map(Number), right: [] };
+                                    if (parsed && typeof parsed === 'object') {
+                                        return {
+                                            left: Array.isArray(parsed.left) ? parsed.left.map(Number) : [],
+                                            right: Array.isArray(parsed.right) ? parsed.right.map(Number) : []
+                                        };
                                     }
                                 }
+                            } catch (e) { }
+                            return { left: [], right: [] };
+                        })(),
+                        pinnedLeftOffsets: {},
+                        pinnedRightOffsets: {},
+                        hiddenColumns: (() => {
+                            try {
+                                let tid = templateId || {{ $formEntry->form_template_id ?? $formEntry->template->id }};
+                                let stored = localStorage.getItem(` hidde n_columns_template_${tid}`);
+                                if (stored) return JSON.parse(stored).map(Number);
+                            } catch (e) { }
+                            return [];
+                        })(),
+                        sortFieldId: null,
+                        sortDirection: null, // 'asc' | 'desc' | null
+                        rows: [],
+                        totals: {},
+                        filteredTotals: {},
+                        filters: {},
+                        uniqueValues: {},
+                        isFullscreen: false,
+                        compareMode: false,
+                        selectedVersionIds: [],
+                        compareMap: {},
+
+                        areValuesEqual(v1, v2) {
+                            const s1 = (v1 === null || v1 === undefined) ? '' : String(v1).trim();
+                            const s2 = (v2 === null || v2 === undefined) ? '' : String(v2).trim();
+                            if (s1 === s2) return true;
+
+                            // Sayısal format toleransı (1000 ile 1.000, 1000.00 gibi farkları eşit kabul et)
+                            const clean1 = s1.replace(/\./g, '').replace(',', '.');
+                            const clean2 = s2.replace(/\./g, '').replace(',', '.');
+                            const n1 = parseFloat(clean1);
+                            const n2 = parseFloat(clean2);
+                            if (!isNaN(n1) && !isNaN(n2) && clean1.match(/^-?\d+(\.\d+)?$/) && clean2.match(/^-?\d+(\.\d+)?$/)) {
+                                return Math.abs(n1 - n2) < 0.00001;
+                            }
+                            return false;
+                        },
+
+                        toggleCompareMode() {
+                            this.compareMode = !this.compareMode;
+                            if (this.compareMode) {
+                                if (this.selectedVersionIds.length === 0 && this.versions.length >= 2) {
+                                    // Varsayılan olarak en yeni 2 sürümü seç (örn: v3 ve v2)
+                                    this.selectedVersionIds = [this.versions[0].id, this.versions[1].id];
+                                } else if (this.selectedVersionIds.length === 0 && this.versions.length === 1) {
+                                    this.selectedVersionIds = [this.versions[0].id];
+                                }
+                                this.buildCompareMap();
+                            } else {
+                                this.selectedVersionIds = [];
+                                this.compareMap = {};
+                            }
+                        },
+
+                        toggleVersion(vId) {
+                            const id = parseInt(vId);
+                            const idx = this.selectedVersionIds.indexOf(id);
+                            if (idx > -1) {
+                                this.selectedVersionIds.splice(idx, 1);
+                            } else {
+                                this.selectedVersionIds.push(id);
+                            }
+                            this.buildCompareMap();
+                        },
+
+                        selectAllVersions() {
+                            this.selectedVersionIds = this.versions.map(v => v.id);
+                            this.buildCompareMap();
+                        },
+
+                        clearAllVersions() {
+                            this.selectedVersionIds = [];
+                            this.buildCompareMap();
+                        },
+
+                        getSelectedVersionsLabel() {
+                            if (!this.selectedVersionIds || this.selectedVersionIds.length === 0) {
+                                return 'Sürüm Seçiniz...';
+                            }
+                            const selected = this.versions
+                                .filter(v => this.selectedVersionIds.includes(v.id))
+                                .sort((a, b) => a.version_number - b.version_number);
+
+                            if (selected.length <= 3) {
+                                return selected.map(v => 'v' + v.version_number).join(', ') + ' (' + selected.length + ' Seçili)';
+                            }
+                            return selected.slice(0, 2).map(v => 'v' + v.version_number).join(', ') + ' + ' + (selected.length - 2) + ' daha (' + selected.length + ' Seçili)';
+                        },
+
+                        getSelectedVersionsSummary() {
+                            if (!this.selectedVersionIds || this.selectedVersionIds.length === 0) {
+                                return '[Sürüm Seçilmedi]';
+                            }
+                            const selected = this.versions
+                                .filter(v => this.selectedVersionIds.includes(v.id))
+                                .sort((a, b) => a.version_number - b.version_number);
+
+                            return '[' + selected.map(v => 'v' + v.version_number).join(' vs ') + ' kıyaslanıyor]';
+                        },
+
+                        buildCompareMap() {
+                            if (!this.compareMode || !this.selectedVersionIds || this.selectedVersionIds.length === 0) {
+                                this.compareMap = {};
+                                return;
                             }
 
-                            // Tooltip için sürüm bazlı tarihçe listesi oluştur
-                            let history = [];
-                            if (versionEntries.length >= 2) {
-                                history = versionEntries.map((ve, idx) => {
-                                    const isDiff = idx > 0 ? !this.areValuesEqual(ve.rawVal, versionEntries[idx - 1].rawVal) : false;
-                                    return {
-                                        version_key: 'v_' + ve.version_id,
-                                        label: 'v' + ve.version_number,
-                                        time: ve.time,
-                                        formattedVal: ve.formattedVal,
-                                        isDifferent: isDiff,
-                                        isCurrent: false
+                            // Seçilen sürümleri version_number artan sıraya göre al (örn: v1, v2, v3...)
+                            const selVersions = this.versions
+                                .filter(v => this.selectedVersionIds.includes(v.id))
+                                .sort((a, b) => a.version_number - b.version_number);
+
+                            let map = {};
+
+                            this.rows.forEach((row, rIdx) => {
+                                map[rIdx] = {
+                                    fields: {}
+                                };
+
+                                this.fields.forEach(f => {
+                                    const currentVal = (row.values && row.values[f.id] !== undefined && row.values[f.id] !== null) ? String(row.values[f.id]).trim() : '';
+
+                                    // Her seçilen versiyondaki değeri topla
+                                    const versionEntries = selVersions.map(v => {
+                                        const oldRow = (v.rows_data && v.rows_data[rIdx]) ? v.rows_data[rIdx] : null;
+                                        const val = (oldRow && oldRow.values && oldRow.values[f.id] !== undefined && oldRow.values[f.id] !== null) ? String(oldRow.values[f.id]).trim() : '';
+                                        const hasRow = !!oldRow;
+                                        return {
+                                            version_id: v.id,
+                                            version_number: v.version_number,
+                                            time: v.created_at_formatted ? v.created_at_formatted.split(' ')[1] : '',
+                                            hasRow: hasRow,
+                                            rawVal: val,
+                                            formattedVal: hasRow ? this.formatValue(val, f.type) : '-'
+                                        };
+                                    });
+
+                                    // Değişiklik kontrolü:
+                                    let isChanged = false;
+                                    if (versionEntries.length === 1) {
+                                        isChanged = !this.areValuesEqual(versionEntries[0].rawVal, currentVal);
+                                    } else if (versionEntries.length >= 2) {
+                                        const firstVal = versionEntries[0].rawVal;
+                                        for (let i = 1; i < versionEntries.length; i++) {
+                                            if (!this.areValuesEqual(versionEntries[i].rawVal, firstVal)) {
+                                                isChanged = true;
+                                                break;
+                                            }
+                                        }
+                                    }
+
+                                    // Tooltip için sürüm bazlı tarihçe listesi oluştur
+                                    let history = [];
+                                    if (versionEntries.length >= 2) {
+                                        history = versionEntries.map((ve, idx) => {
+                                            const isDiff = idx > 0 ? !this.areValuesEqual(ve.rawVal, versionEntries[idx - 1].rawVal) : false;
+                                            return {
+                                                version_key: 'v_' + ve.version_id,
+                                                label: 'v' + ve.version_number,
+                                                time: ve.time,
+                                                formattedVal: ve.formattedVal,
+                                                isDifferent: isDiff,
+                                                isCurrent: false
+                                            };
+                                        });
+                                    } else if (versionEntries.length === 1) {
+                                        history = [
+                                            {
+                                                version_key: 'v_' + versionEntries[0].version_id,
+                                                label: 'v' + versionEntries[0].version_number,
+                                                time: versionEntries[0].time,
+                                                formattedVal: versionEntries[0].formattedVal,
+                                                isDifferent: isChanged,
+                                                isCurrent: false
+                                            },
+                                            {
+                                                version_key: 'current',
+                                                label: 'Güncel',
+                                                time: '',
+                                                formattedVal: this.formatValue(currentVal, f.type),
+                                                isDifferent: isChanged,
+                                                isCurrent: true
+                                            }
+                                        ];
+                                    }
+
+                                    map[rIdx].fields[f.id] = {
+                                        isChanged: isChanged,
+                                        history: history
                                     };
                                 });
-                            } else if (versionEntries.length === 1) {
-                                history = [
-                                    {
-                                        version_key: 'v_' + versionEntries[0].version_id,
-                                        label: 'v' + versionEntries[0].version_number,
-                                        time: versionEntries[0].time,
-                                        formattedVal: versionEntries[0].formattedVal,
-                                        isDifferent: isChanged,
-                                        isCurrent: false
-                                    },
-                                    {
-                                        version_key: 'current',
-                                        label: 'Güncel',
-                                        time: '',
-                                        formattedVal: this.formatValue(currentVal, f.type),
-                                        isDifferent: isChanged,
-                                        isCurrent: true
+                            });
+
+                            this.compareMap = map;
+                        },
+
+                        isCellChanged(rIdx, fId) {
+                            if (!this.compareMode || !this.selectedVersionIds || this.selectedVersionIds.length === 0) return false;
+                            return !!(this.compareMap[rIdx] && this.compareMap[rIdx].fields && this.compareMap[rIdx].fields[fId] && this.compareMap[rIdx].fields[fId].isChanged);
+                        },
+
+                        getCellVersionHistory(rIdx, fId) {
+                            if (!this.compareMode || !this.compareMap[rIdx] || !this.compareMap[rIdx].fields || !this.compareMap[rIdx].fields[fId]) return [];
+                            return this.compareMap[rIdx].fields[fId].history || [];
+                        },
+
+                        isRowNew(rIdx) {
+                            if (!this.compareMode || !this.selectedVersionIds || this.selectedVersionIds.length === 0) return false;
+                            const selVersions = this.versions.filter(v => this.selectedVersionIds.includes(v.id));
+                            if (selVersions.length === 0) return false;
+                            const oldestSel = selVersions.sort((a, b) => a.version_number - b.version_number)[0];
+                            return oldestSel && (!oldestSel.rows_data || rIdx >= oldestSel.rows_data.length);
+                        },
+
+                        toggleFullscreen() {
+                            this.isFullscreen = !this.isFullscreen;
+                            if (this.isFullscreen) {
+                                document.body.classList.add('overflow-hidden');
+                                try {
+                                    if (document.documentElement.requestFullscreen && !document.fullscreenElement) {
+                                        document.documentElement.requestFullscreen().catch(() => { });
                                     }
-                                ];
+                                } catch (e) { }
+                            } else {
+                                document.body.classList.remove('overflow-hidden');
+                                try {
+                                    if (document.exitFullscreen && document.fullscreenElement) {
+                                        document.exitFullscreen().catch(() => { });
+                                    }
+                                } catch (e) { }
+                            }
+                            this.$nextTick(() => {
+                                this.updatePinnedOffsets();
+                            });
+                        },
+
+                        isColumnPinned(fieldId) {
+                            return this.isColumnPinnedLeft(fieldId) || this.isColumnPinnedRight(fieldId);
+                        },
+
+                        isColumnPinnedLeft(fieldId) {
+                            if (!fieldId || !this.pinnedColumns || !Array.isArray(this.pinnedColumns.left)) return false;
+                            const numId = Number(fieldId);
+                            return this.pinnedColumns.left.some(id => Number(id) === numId);
+                        },
+
+                        isColumnPinnedRight(fieldId) {
+                            if (!fieldId || !this.pinnedColumns || !Array.isArray(this.pinnedColumns.right)) return false;
+                            const numId = Number(fieldId);
+                            return this.pinnedColumns.right.some(id => Number(id) === numId);
+                        },
+
+                        isLastPinnedLeft(fieldId) {
+                            const numId = Number(fieldId);
+                            if (!this.isColumnPinnedLeft(numId)) return false;
+                            for (let i = this.fields.length - 1; i >= 0; i--) {
+                                if (this.isColumnPinnedLeft(this.fields[i].id) && !this.isColumnHidden(this.fields[i].id)) {
+                                    return Number(this.fields[i].id) === numId;
+                                }
+                            }
+                            return false;
+                        },
+
+                        isFirstPinnedRight(fieldId) {
+                            const numId = Number(fieldId);
+                            if (!this.isColumnPinnedRight(numId)) return false;
+                            for (let i = 0; i < this.fields.length; i++) {
+                                if (this.isColumnPinnedRight(this.fields[i].id) && !this.isColumnHidden(this.fields[i].id)) {
+                                    return Number(this.fields[i].id) === numId;
+                                }
+                            }
+                            return false;
+                        },
+
+                        getPinnedLeftOffset(fieldId) {
+                            const idStr = String(fieldId);
+                            if (!this.isColumnPinnedLeft(idStr)) return '';
+                            return this.pinnedLeftOffsets[idStr] || '48px';
+                        },
+
+                        getPinnedRightOffset(fieldId) {
+                            const idStr = String(fieldId);
+                            if (!this.isColumnPinnedRight(idStr)) return '';
+                            return this.pinnedRightOffsets[idStr] || '0px';
+                        },
+
+                        getColumnStickyStyle(fieldId) {
+                            const idStr = String(fieldId);
+                            if (this.isColumnHidden(idStr)) {
+                                return { display: 'none' };
+                            }
+                            if (this.isColumnPinnedLeft(idStr)) {
+                                return { left: this.getPinnedLeftOffset(idStr) };
+                            }
+                            if (this.isColumnPinnedRight(idStr)) {
+                                return { right: this.getPinnedRightOffset(idStr) };
+                            }
+                            return {};
+                        },
+
+                        getColumnStickyClass(fieldId, type = 'td') {
+                            const isLeft = this.isColumnPinnedLeft(fieldId);
+                            const isRight = this.isColumnPinnedRight(fieldId);
+                            if (!isLeft && !isRight) return '';
+
+                            const isLastLeft = isLeft && this.isLastPinnedLeft(fieldId);
+                            const isFirstRight = isRight && this.isFirstPinnedRight(fieldId);
+
+                            if (type === 'th') {
+                                let cls = 'sticky z-30 bg-gray-800 ';
+                                if (isLastLeft) {
+                                    cls += 'border-r-2 border-indigo-400 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.3)]';
+                                } else if (isLeft) {
+                                    cls += 'border-r border-gray-700 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.2)]';
+                                } else if (isFirstRight) {
+                                    cls += 'border-l-2 border-indigo-400 shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.3)]';
+                                } else if (isRight) {
+                                    cls += 'border-l border-gray-700 shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.2)]';
+                                }
+                                return cls;
                             }
 
-                            map[rIdx].fields[f.id] = {
-                                isChanged: isChanged,
-                                history: history
-                            };
-                        });
-                    });
-
-                    this.compareMap = map;
-                },
-
-                isCellChanged(rIdx, fId) {
-                    if (!this.compareMode || !this.selectedVersionIds || this.selectedVersionIds.length === 0) return false;
-                    return !!(this.compareMap[rIdx] && this.compareMap[rIdx].fields && this.compareMap[rIdx].fields[fId] && this.compareMap[rIdx].fields[fId].isChanged);
-                },
-
-                getCellVersionHistory(rIdx, fId) {
-                    if (!this.compareMode || !this.compareMap[rIdx] || !this.compareMap[rIdx].fields || !this.compareMap[rIdx].fields[fId]) return [];
-                    return this.compareMap[rIdx].fields[fId].history || [];
-                },
-
-                isRowNew(rIdx) {
-                    if (!this.compareMode || !this.selectedVersionIds || this.selectedVersionIds.length === 0) return false;
-                    const selVersions = this.versions.filter(v => this.selectedVersionIds.includes(v.id));
-                    if (selVersions.length === 0) return false;
-                    const oldestSel = selVersions.sort((a, b) => a.version_number - b.version_number)[0];
-                    return oldestSel && (!oldestSel.rows_data || rIdx >= oldestSel.rows_data.length);
-                },
-
-                toggleFullscreen() {
-                    this.isFullscreen = !this.isFullscreen;
-                    if (this.isFullscreen) {
-                        document.body.classList.add('overflow-hidden');
-                        try {
-                            if (document.documentElement.requestFullscreen && !document.fullscreenElement) {
-                                document.documentElement.requestFullscreen().catch(() => {});
+                            if (type === 'td') {
+                                let cls = 'sticky z-10 bg-white group-hover:bg-indigo-50 ';
+                                if (isLastLeft) {
+                                    cls += 'border-r-2 border-indigo-400 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.08)]';
+                                } else if (isLeft) {
+                                    cls += 'border-r border-gray-200 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.04)]';
+                                } else if (isFirstRight) {
+                                    cls += 'border-l-2 border-indigo-400 shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.08)]';
+                                } else if (isRight) {
+                                    cls += 'border-l border-gray-200 shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.04)]';
+                                }
+                                return cls;
                             }
-                        } catch(e) {}
-                    } else {
-                        document.body.classList.remove('overflow-hidden');
-                        try {
-                            if (document.exitFullscreen && document.fullscreenElement) {
-                                document.exitFullscreen().catch(() => {});
+
+                            if (type === 'tfoot-sub') {
+                                let cls = 'sticky z-10 bg-indigo-50 ';
+                                if (isLastLeft) {
+                                    cls += 'border-r-2 border-indigo-400 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.08)]';
+                                } else if (isLeft) {
+                                    cls += 'border-r border-indigo-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.04)]';
+                                } else if (isFirstRight) {
+                                    cls += 'border-l-2 border-indigo-400 shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.08)]';
+                                } else if (isRight) {
+                                    cls += 'border-l border-indigo-100 shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.04)]';
+                                }
+                                return cls;
                             }
-                        } catch(e) {}
-                    }
-                    this.$nextTick(() => {
-                        this.updatePinnedOffsets();
-                    });
-                },
 
-                isColumnPinned(fieldId) {
-                    return this.isColumnPinnedLeft(fieldId) || this.isColumnPinnedRight(fieldId);
-                },
-
-                isColumnPinnedLeft(fieldId) {
-                    if (!fieldId || !this.pinnedColumns || !Array.isArray(this.pinnedColumns.left)) return false;
-                    const numId = Number(fieldId);
-                    return this.pinnedColumns.left.some(id => Number(id) === numId);
-                },
-
-                isColumnPinnedRight(fieldId) {
-                    if (!fieldId || !this.pinnedColumns || !Array.isArray(this.pinnedColumns.right)) return false;
-                    const numId = Number(fieldId);
-                    return this.pinnedColumns.right.some(id => Number(id) === numId);
-                },
-
-                isLastPinnedLeft(fieldId) {
-                    const numId = Number(fieldId);
-                    if (!this.isColumnPinnedLeft(numId)) return false;
-                    for (let i = this.fields.length - 1; i >= 0; i--) {
-                        if (this.isColumnPinnedLeft(this.fields[i].id) && !this.isColumnHidden(this.fields[i].id)) {
-                            return Number(this.fields[i].id) === numId;
-                        }
-                    }
-                    return false;
-                },
-
-                isFirstPinnedRight(fieldId) {
-                    const numId = Number(fieldId);
-                    if (!this.isColumnPinnedRight(numId)) return false;
-                    for (let i = 0; i < this.fields.length; i++) {
-                        if (this.isColumnPinnedRight(this.fields[i].id) && !this.isColumnHidden(this.fields[i].id)) {
-                            return Number(this.fields[i].id) === numId;
-                        }
-                    }
-                    return false;
-                },
-
-                getPinnedLeftOffset(fieldId) {
-                    const idStr = String(fieldId);
-                    if (!this.isColumnPinnedLeft(idStr)) return '';
-                    return this.pinnedLeftOffsets[idStr] || '48px';
-                },
-
-                getPinnedRightOffset(fieldId) {
-                    const idStr = String(fieldId);
-                    if (!this.isColumnPinnedRight(idStr)) return '';
-                    return this.pinnedRightOffsets[idStr] || '0px';
-                },
-
-                getColumnStickyStyle(fieldId) {
-                    const idStr = String(fieldId);
-                    if (this.isColumnHidden(idStr)) {
-                        return { display: 'none' };
-                    }
-                    if (this.isColumnPinnedLeft(idStr)) {
-                        return { left: this.getPinnedLeftOffset(idStr) };
-                    }
-                    if (this.isColumnPinnedRight(idStr)) {
-                        return { right: this.getPinnedRightOffset(idStr) };
-                    }
-                    return {};
-                },
-
-                getColumnStickyClass(fieldId, type = 'td') {
-                    const isLeft = this.isColumnPinnedLeft(fieldId);
-                    const isRight = this.isColumnPinnedRight(fieldId);
-                    if (!isLeft && !isRight) return '';
-
-                    const isLastLeft = isLeft && this.isLastPinnedLeft(fieldId);
-                    const isFirstRight = isRight && this.isFirstPinnedRight(fieldId);
-
-                    if (type === 'th') {
-                        let cls = 'sticky z-30 bg-gray-800 ';
-                        if (isLastLeft) {
-                            cls += 'border-r-2 border-indigo-400 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.3)]';
-                        } else if (isLeft) {
-                            cls += 'border-r border-gray-700 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.2)]';
-                        } else if (isFirstRight) {
-                            cls += 'border-l-2 border-indigo-400 shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.3)]';
-                        } else if (isRight) {
-                            cls += 'border-l border-gray-700 shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.2)]';
-                        }
-                        return cls;
-                    }
-
-                    if (type === 'td') {
-                        let cls = 'sticky z-10 bg-white group-hover:bg-indigo-50 ';
-                        if (isLastLeft) {
-                            cls += 'border-r-2 border-indigo-400 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.08)]';
-                        } else if (isLeft) {
-                            cls += 'border-r border-gray-200 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.04)]';
-                        } else if (isFirstRight) {
-                            cls += 'border-l-2 border-indigo-400 shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.08)]';
-                        } else if (isRight) {
-                            cls += 'border-l border-gray-200 shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.04)]';
-                        }
-                        return cls;
-                    }
-
-                    if (type === 'tfoot-sub') {
-                        let cls = 'sticky z-10 bg-indigo-50 ';
-                        if (isLastLeft) {
-                            cls += 'border-r-2 border-indigo-400 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.08)]';
-                        } else if (isLeft) {
-                            cls += 'border-r border-indigo-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.04)]';
-                        } else if (isFirstRight) {
-                            cls += 'border-l-2 border-indigo-400 shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.08)]';
-                        } else if (isRight) {
-                            cls += 'border-l border-indigo-100 shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.04)]';
-                        }
-                        return cls;
-                    }
-
-                    if (type === 'tfoot-total') {
-                        let cls = 'sticky z-10 bg-gray-100 ';
-                        if (isLastLeft) {
-                            cls += 'border-r-2 border-indigo-400 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.08)]';
-                        } else if (isLeft) {
-                            cls += 'border-r border-gray-200 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.04)]';
-                        } else if (isFirstRight) {
-                            cls += 'border-l-2 border-indigo-400 shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.08)]';
-                        } else if (isRight) {
-                            cls += 'border-l border-gray-200 shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.04)]';
-                        }
-                        return cls;
-                    }
-
-                    return '';
-                },
-
-                updatePinnedOffsets() {
-                    this.$nextTick(() => {
-                        // 1. Sola sabitlenen sütunların ofsetlerini hesapla (soldan sağa)
-                        let currentLeft = 48; // '#' sütunu w-12 = 48px
-                        let leftOffsets = {};
-                        for (let i = 0; i < this.fields.length; i++) {
-                            const f = this.fields[i];
-                            if (this.isColumnPinnedLeft(f.id) && !this.isColumnHidden(f.id)) {
-                                leftOffsets[String(f.id)] = currentLeft + 'px';
-                                const thEl = document.getElementById('show-th-field-' + f.id);
-                                const w = thEl ? thEl.offsetWidth : 160;
-                                currentLeft += w;
+                            if (type === 'tfoot-total') {
+                                let cls = 'sticky z-10 bg-gray-100 ';
+                                if (isLastLeft) {
+                                    cls += 'border-r-2 border-indigo-400 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.08)]';
+                                } else if (isLeft) {
+                                    cls += 'border-r border-gray-200 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.04)]';
+                                } else if (isFirstRight) {
+                                    cls += 'border-l-2 border-indigo-400 shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.08)]';
+                                } else if (isRight) {
+                                    cls += 'border-l border-gray-200 shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.04)]';
+                                }
+                                return cls;
                             }
-                        }
-                        this.pinnedLeftOffsets = leftOffsets;
 
-                        // 2. Sağa sabitlenen sütunların ofsetlerini hesapla (sağdan sola)
-                        let currentRight = 0; // show ekranında sağda sil sütunu yok
-                        let rightOffsets = {};
-                        for (let i = this.fields.length - 1; i >= 0; i--) {
-                            const f = this.fields[i];
-                            if (this.isColumnPinnedRight(f.id) && !this.isColumnHidden(f.id)) {
-                                rightOffsets[String(f.id)] = currentRight + 'px';
-                                const thEl = document.getElementById('show-th-field-' + f.id);
-                                const w = thEl ? thEl.offsetWidth : 160;
-                                currentRight += w;
+                            return '';
+                        },
+
+                        updatePinnedOffsets() {
+                            this.$nextTick(() => {
+                                // 1. Sola sabitlenen sütunların ofsetlerini hesapla (soldan sağa)
+                                let currentLeft = 48; // '#' sütunu w-12 = 48px
+                                let leftOffsets = {};
+                                for (let i = 0; i < this.fields.length; i++) {
+                                    const f = this.fields[i];
+                                    if (this.isColumnPinnedLeft(f.id) && !this.isColumnHidden(f.id)) {
+                                        leftOffsets[String(f.id)] = currentLeft + 'px';
+                                        const thEl = document.getElementById('show-th-field-' + f.id);
+                                        const w = thEl ? thEl.offsetWidth : 160;
+                                        currentLeft += w;
+                                    }
+                                }
+                                this.pinnedLeftOffsets = leftOffsets;
+
+                                // 2. Sağa sabitlenen sütunların ofsetlerini hesapla (sağdan sola)
+                                let currentRight = 0; // show ekranında sağda sil sütunu yok
+                                let rightOffsets = {};
+                                for (let i = this.fields.length - 1; i >= 0; i--) {
+                                    const f = this.fields[i];
+                                    if (this.isColumnPinnedRight(f.id) && !this.isColumnHidden(f.id)) {
+                                        rightOffsets[String(f.id)] = currentRight + 'px';
+                                        const thEl = document.getElementById('show-th-field-' + f.id);
+                                        const w = thEl ? thEl.offsetWidth : 160;
+                                        currentRight += w;
+                                    }
+                                }
+                                this.pinnedRightOffsets = rightOffsets;
+                            });
+                        },
+
+                        setColumnPin(fieldId, side) {
+                            const numId = Number(fieldId);
+                            if (!this.pinnedColumns || typeof this.pinnedColumns !== 'object') {
+                                this.pinnedColumns = { left: [], right: [] };
                             }
-                        }
-                        this.pinnedRightOffsets = rightOffsets;
-                    });
-                },
+                            this.pinnedColumns.left = (this.pinnedColumns.left || []).filter(id => Number(id) !== numId);
+                            this.pinnedColumns.right = (this.pinnedColumns.right || []).filter(id => Number(id) !== numId);
 
-                setColumnPin(fieldId, side) {
-                    const numId = Number(fieldId);
-                    if (!this.pinnedColumns || typeof this.pinnedColumns !== 'object') {
-                        this.pinnedColumns = { left: [], right: [] };
-                    }
-                    this.pinnedColumns.left = (this.pinnedColumns.left || []).filter(id => Number(id) !== numId);
-                    this.pinnedColumns.right = (this.pinnedColumns.right || []).filter(id => Number(id) !== numId);
+                            if (side === 'left') {
+                                this.pinnedColumns.left.push(numId);
+                            } else if (side === 'right') {
+                                this.pinnedColumns.right.push(numId);
+                            }
 
-                    if (side === 'left') {
-                        this.pinnedColumns.left.push(numId);
-                    } else if (side === 'right') {
-                        this.pinnedColumns.right.push(numId);
-                    }
+                            this.updatePinnedOffsets();
 
-                    this.updatePinnedOffsets();
+                            try {
+                                localStorage.setItem(`pinned_columns_template_${this.templateId}`, JSON.stringify(this.pinnedColumns));
+                            } catch (e) { }
+                        },
 
-                    try {
-                        localStorage.setItem(`pinned_columns_template_${this.templateId}`, JSON.stringify(this.pinnedColumns));
-                    } catch(e) {}
-                },
+                        isColumnHidden(fieldId) {
+                            if (!fieldId || !this.hiddenColumns) return false;
+                            const numId = Number(fieldId);
+                            return this.hiddenColumns.some(id => Number(id) === numId);
+                        },
 
-                isColumnHidden(fieldId) {
-                    if (!fieldId || !this.hiddenColumns) return false;
-                    const numId = Number(fieldId);
-                    return this.hiddenColumns.some(id => Number(id) === numId);
-                },
+                        hideColumn(fieldId) {
+                            const numId = Number(fieldId);
+                            if (!this.isColumnHidden(numId)) {
+                                this.hiddenColumns.push(numId);
+                                this.saveHiddenColumns();
+                                this.updatePinnedOffsets();
+                            }
+                        },
 
-                hideColumn(fieldId) {
-                    const numId = Number(fieldId);
-                    if (!this.isColumnHidden(numId)) {
-                        this.hiddenColumns.push(numId);
-                        this.saveHiddenColumns();
-                        this.updatePinnedOffsets();
-                    }
-                },
+                        showColumn(fieldId) {
+                            const numId = Number(fieldId);
+                            this.hiddenColumns = this.hiddenColumns.filter(id => Number(id) !== numId);
+                            this.saveHiddenColumns();
+                            this.updatePinnedOffsets();
+                        },
 
-                showColumn(fieldId) {
-                    const numId = Number(fieldId);
-                    this.hiddenColumns = this.hiddenColumns.filter(id => Number(id) !== numId);
-                    this.saveHiddenColumns();
-                    this.updatePinnedOffsets();
-                },
+                        toggleColumn(fieldId) {
+                            if (this.isColumnHidden(fieldId)) {
+                                this.showColumn(fieldId);
+                            } else {
+                                this.hideColumn(fieldId);
+                            }
+                        },
 
-                toggleColumn(fieldId) {
-                    if (this.isColumnHidden(fieldId)) {
-                        this.showColumn(fieldId);
-                    } else {
-                        this.hideColumn(fieldId);
-                    }
-                },
+                        showAllColumns() {
+                            this.hiddenColumns = [];
+                            this.saveHiddenColumns();
+                            this.updatePinnedOffsets();
+                        },
 
-                showAllColumns() {
-                    this.hiddenColumns = [];
-                    this.saveHiddenColumns();
-                    this.updatePinnedOffsets();
-                },
+                        saveHiddenColumns() {
+                            try {
+                                localStorage.setItem(`hidden_columns_template_${this.templateId}`, JSON.stringify(this.hiddenColumns));
+                            } catch (e) { }
+                        },
 
-                saveHiddenColumns() {
-                    try {
-                        localStorage.setItem(`hidden_columns_template_${this.templateId}`, JSON.stringify(this.hiddenColumns));
-                    } catch(e) {}
-                },
+                        sortColumn(fieldId) {
+                            const numId = Number(fieldId);
+                            const field = this.fields.find(f => Number(f.id) === numId);
+                            if (!field) return;
 
-                sortColumn(fieldId) {
-                    const numId = Number(fieldId);
-                    const field = this.fields.find(f => Number(f.id) === numId);
-                    if (!field) return;
+                            if (this.sortFieldId === numId) {
+                                if (this.sortDirection === 'asc') {
+                                    this.sortDirection = 'desc';
+                                } else if (this.sortDirection === 'desc') {
+                                    this.sortDirection = null;
+                                    this.sortFieldId = null;
+                                }
+                            } else {
+                                this.sortFieldId = numId;
+                                this.sortDirection = 'asc';
+                            }
 
-                    if (this.sortFieldId === numId) {
-                        if (this.sortDirection === 'asc') {
-                            this.sortDirection = 'desc';
-                        } else if (this.sortDirection === 'desc') {
-                            this.sortDirection = null;
+                            this.applySort();
+                        },
+
+                        setSortDirection(fieldId, dir) {
+                            this.sortFieldId = Number(fieldId);
+                            this.sortDirection = dir;
+                            this.applySort();
+                        },
+
+                        applySort() {
+                            if (!this.sortDirection || !this.sortFieldId) {
+                                this.rows.sort((a, b) => (a._origIndex ?? 0) - (b._origIndex ?? 0));
+                                this.calculateTotals();
+                                return;
+                            }
+
+                            const field = this.fields.find(f => Number(f.id) === Number(this.sortFieldId));
+                            if (!field) return;
+
+                            const dir = this.sortDirection === 'asc' ? 1 : -1;
+                            const isNum = field.type === 'number';
+
+                            this.rows.sort((a, b) => {
+                                let valA = a.values ? a.values[field.id] : '';
+                                let valB = b.values ? b.values[field.id] : '';
+
+                                let emptyA = valA === undefined || valA === null || String(valA).trim() === '' || String(valA).trim() === '-';
+                                let emptyB = valB === undefined || valB === null || String(valB).trim() === '' || String(valB).trim() === '-';
+
+                                if (emptyA && emptyB) return 0;
+                                if (emptyA) return 1;
+                                if (emptyB) return -1;
+
+                                if (isNum) {
+                                    let numA = parseFloat(String(valA).replace(/\./g, '').replace(',', '.'));
+                                    let numB = parseFloat(String(valB).replace(/\./g, '').replace(',', '.'));
+                                    if (isNaN(numA)) numA = 0;
+                                    if (isNaN(numB)) numB = 0;
+                                    return (numA - numB) * dir;
+                                } else {
+                                    return String(valA).localeCompare(String(valB), 'tr', { numeric: true, sensitivity: 'base' }) * dir;
+                                }
+                            });
+
+                            this.calculateTotals();
+                        },
+
+                        clearSort() {
                             this.sortFieldId = null;
-                        }
-                    } else {
-                        this.sortFieldId = numId;
-                        this.sortDirection = 'asc';
-                    }
+                            this.sortDirection = null;
+                            this.rows.sort((a, b) => (a._origIndex ?? 0) - (b._origIndex ?? 0));
+                            this.calculateTotals();
+                        },
 
-                    this.applySort();
-                },
-
-                setSortDirection(fieldId, dir) {
-                    this.sortFieldId = Number(fieldId);
-                    this.sortDirection = dir;
-                    this.applySort();
-                },
-
-                applySort() {
-                    if (!this.sortDirection || !this.sortFieldId) {
-                        this.rows.sort((a, b) => (a._origIndex ?? 0) - (b._origIndex ?? 0));
-                        this.calculateTotals();
-                        return;
-                    }
-
-                    const field = this.fields.find(f => Number(f.id) === Number(this.sortFieldId));
-                    if (!field) return;
-
-                    const dir = this.sortDirection === 'asc' ? 1 : -1;
-                    const isNum = field.type === 'number';
-
-                    this.rows.sort((a, b) => {
-                        let valA = a.values ? a.values[field.id] : '';
-                        let valB = b.values ? b.values[field.id] : '';
-
-                        let emptyA = valA === undefined || valA === null || String(valA).trim() === '' || String(valA).trim() === '-';
-                        let emptyB = valB === undefined || valB === null || String(valB).trim() === '' || String(valB).trim() === '-';
-
-                        if (emptyA && emptyB) return 0;
-                        if (emptyA) return 1;
-                        if (emptyB) return -1;
-
-                        if (isNum) {
-                            let numA = parseFloat(String(valA).replace(/\./g, '').replace(',', '.'));
-                            let numB = parseFloat(String(valB).replace(/\./g, '').replace(',', '.'));
-                            if (isNaN(numA)) numA = 0;
-                            if (isNaN(numB)) numB = 0;
-                            return (numA - numB) * dir;
-                        } else {
-                            return String(valA).localeCompare(String(valB), 'tr', { numeric: true, sensitivity: 'base' }) * dir;
-                        }
-                    });
-
-                    this.calculateTotals();
-                },
-
-                clearSort() {
-                    this.sortFieldId = null;
-                    this.sortDirection = null;
-                    this.rows.sort((a, b) => (a._origIndex ?? 0) - (b._origIndex ?? 0));
-                    this.calculateTotals();
-                },
-
-                init() {
-                    // Blade'den gelen verileri JSON objesine aktarma
-                    let existingRows = {!! json_encode($formEntry->rows->map(function ($row) {
+                        init() {
+                            // Blade'den gelen verileri JSON objesine aktarma
+                            let existingRows = {!! json_encode($formEntry->rows->map(function ($row) {
     $values = [];
     foreach ($row->values as $val) {
         $values[$val->form_field_id] = $val->value;
     }
     return ['id' => $row->id, 'values' => (object) $values];
 })) !!};
-                    existingRows.forEach((r, idx) => { r._origIndex = idx; });
-                    this.rows = existingRows;
+                            existingRows.forEach((r, idx) => { r._origIndex = idx; });
+                            this.rows = existingRows;
 
-                    this.fields.forEach(f => {
-                        this.filters[f.id] = [];
-                        this.uniqueValues[f.id] = [];
-                    });
+                            this.fields.forEach(f => {
+                                this.filters[f.id] = [];
+                                this.uniqueValues[f.id] = [];
+                            });
 
-                    this.calculateTotals();
-                    this.updatePinnedOffsets();
-                    window.addEventListener('resize', () => {
-                        this.updatePinnedOffsets();
-                    });
-                },
+                            this.calculateTotals();
+                            this.updatePinnedOffsets();
+                            window.addEventListener('resize', () => {
+                                this.updatePinnedOffsets();
+                            });
+                        },
 
-                calcUniqueValues(fieldId) {
-                    let values = new Set();
-                    this.rows.forEach(r => {
-                        let val = r.values[fieldId];
-                        if (val === undefined || val === null) val = '';
-                        values.add(String(val).trim());
-                    });
-                    this.uniqueValues[fieldId] = Array.from(values).sort();
+                        calcUniqueValues(fieldId) {
+                            let values = new Set();
+                            this.rows.forEach(r => {
+                                let val = r.values[fieldId];
+                                if (val === undefined || val === null) val = '';
+                                values.add(String(val).trim());
+                            });
+                            this.uniqueValues[fieldId] = Array.from(values).sort();
 
-                    if (this.filters[fieldId]) {
-                        this.filters[fieldId] = this.filters[fieldId].filter(v => this.uniqueValues[fieldId].includes(v));
-                    }
-                },
+                            if (this.filters[fieldId]) {
+                                this.filters[fieldId] = this.filters[fieldId].filter(v => this.uniqueValues[fieldId].includes(v));
+                            }
+                        },
 
-                selectAllFilters(fieldId) {
-                    this.calcUniqueValues(fieldId);
-                    this.filters[fieldId] = [...this.uniqueValues[fieldId]];
-                    this.calculateTotals();
-                },
+                        selectAllFilters(fieldId) {
+                            this.calcUniqueValues(fieldId);
+                            this.filters[fieldId] = [...this.uniqueValues[fieldId]];
+                            this.calculateTotals();
+                        },
 
-                clearFilter(fieldId) {
-                    this.filters[fieldId] = [];
-                    this.calculateTotals();
-                },
+                        clearFilter(fieldId) {
+                            this.filters[fieldId] = [];
+                            this.calculateTotals();
+                        },
 
-                visibleRows() {
-                    return this.rows.filter(row => {
-                        for (const fieldId in this.filters) {
-                            if (this.filters[fieldId] && this.filters[fieldId].length > 0) {
-                                let val = String(row.values[fieldId] || '').trim();
-                                if (!this.filters[fieldId].includes(val)) {
-                                    return false;
+                        visibleRows() {
+                            return this.rows.filter(row => {
+                                for (const fieldId in this.filters) {
+                                    if (this.filters[fieldId] && this.filters[fieldId].length > 0) {
+                                        let val = String(row.values[fieldId] || '').trim();
+                                        if (!this.filters[fieldId].includes(val)) {
+                                            return false;
+                                        }
+                                    }
+                                }
+                                return true;
+                            });
+                        },
+
+                        calculateTotals() {
+                            if (!this.showTotals) return;
+
+                            let newTotals = {};
+                            let newFilteredTotals = {};
+
+                            this.fields.forEach(f => {
+                                if (f.is_summable && f.type === 'number') {
+                                    newTotals[f.id] = 0;
+                                    newFilteredTotals[f.id] = 0;
+                                }
+                            });
+
+                            // Genel Toplam Hesapla (Tümü)
+                            this.rows.forEach(r => {
+                                this.fields.forEach(f => {
+                                    if (f.is_summable && f.type === 'number') {
+                                        let val = parseFloat(this.parseRawNumber(r.values[f.id]));
+                                        if (!isNaN(val)) {
+                                            newTotals[f.id] = (parseFloat(newTotals[f.id] || 0) + val).toFixed(2);
+                                        }
+                                    }
+                                });
+                            });
+
+                            // Filtrelenmiş Toplam Hesapla
+                            let vRows = this.visibleRows();
+                            vRows.forEach(r => {
+                                this.fields.forEach(f => {
+                                    if (f.is_summable && f.type === 'number') {
+                                        let val = parseFloat(this.parseRawNumber(r.values[f.id]));
+                                        if (!isNaN(val)) {
+                                            newFilteredTotals[f.id] = (parseFloat(newFilteredTotals[f.id] || 0) + val).toFixed(2);
+                                        }
+                                    }
+                                });
+                            });
+
+                            Object.keys(newTotals).forEach(k => {
+                                newTotals[k] = parseFloat(newTotals[k]).toFixed(2);
+                                newFilteredTotals[k] = parseFloat(newFilteredTotals[k]).toFixed(2);
+                            });
+
+                            this.totals = newTotals;
+                            this.filteredTotals = newFilteredTotals;
+                        },
+
+                        parseRawNumber(val) {
+                            if (val === undefined || val === null || val === '') return '';
+                            let str = String(val).trim();
+                            if (str === '' || str === '-') return '';
+
+                            let isNegative = str.startsWith('-');
+                            if (isNegative) str = str.substring(1);
+
+                            if (str.includes(',')) {
+                                let parts = str.replace(/[^\d,]/g, '').split(',');
+                                let intPart = parts[0].replace(/\D/g, '') || '0';
+                                let decPart = parts.slice(1).join('').replace(/\D/g, '');
+                                return (isNegative ? '-' : '') + intPart + (decPart !== '' ? '.' + decPart : '');
+                            }
+
+                            if (str.includes('.')) {
+                                let parts = str.split('.');
+                                if (parts.length === 2 && parts[1].length <= 2) {
+                                    return (isNegative ? '-' : '') + parts[0].replace(/\D/g, '') + '.' + parts[1].replace(/\D/g, '');
+                                }
+                                return (isNegative ? '-' : '') + str.replace(/\D/g, '');
+                            }
+
+                            let clean = str.replace(/\D/g, '');
+                            return isNegative ? '-' + clean : clean;
+                        },
+
+                        formatValue(val, type) {
+                            if (val === undefined || val === null || val === '') return '-';
+                            if (type === 'number') {
+                                let clean = this.parseRawNumber(val);
+                                let fVal = parseFloat(clean);
+                                if (!isNaN(fVal)) {
+                                    return Number.isInteger(fVal)
+                                        ? fVal.toLocaleString('tr-TR')
+                                        : fVal.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                                 }
                             }
+                            return val;
+                        },
+
+                        formatTotalDisplay(val) {
+                            if (val === undefined || val === null || val === '') return '0,00';
+                            let clean = this.parseRawNumber(val);
+                            let fVal = parseFloat(clean);
+                            if (isNaN(fVal)) return '0,00';
+                            return fVal.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                         }
-                        return true;
+                    }));
+
+                    window.addEventListener('pageshow', () => {
+                        document.body.classList.remove('cursor-wait');
                     });
-                },
-
-                calculateTotals() {
-                    if (!this.showTotals) return;
-
-                    let newTotals = {};
-                    let newFilteredTotals = {};
-
-                    this.fields.forEach(f => {
-                        if (f.is_summable && f.type === 'number') {
-                            newTotals[f.id] = 0;
-                            newFilteredTotals[f.id] = 0;
-                        }
-                    });
-
-                    // Genel Toplam Hesapla (Tümü)
-                    this.rows.forEach(r => {
-                        this.fields.forEach(f => {
-                            if (f.is_summable && f.type === 'number') {
-                                let val = parseFloat(this.parseRawNumber(r.values[f.id]));
-                                if (!isNaN(val)) {
-                                    newTotals[f.id] = (parseFloat(newTotals[f.id] || 0) + val).toFixed(2);
-                                }
-                            }
-                        });
-                    });
-
-                    // Filtrelenmiş Toplam Hesapla
-                    let vRows = this.visibleRows();
-                    vRows.forEach(r => {
-                        this.fields.forEach(f => {
-                            if (f.is_summable && f.type === 'number') {
-                                let val = parseFloat(this.parseRawNumber(r.values[f.id]));
-                                if (!isNaN(val)) {
-                                    newFilteredTotals[f.id] = (parseFloat(newFilteredTotals[f.id] || 0) + val).toFixed(2);
-                                }
-                            }
-                        });
-                    });
-
-                    Object.keys(newTotals).forEach(k => {
-                        newTotals[k] = parseFloat(newTotals[k]).toFixed(2);
-                        newFilteredTotals[k] = parseFloat(newFilteredTotals[k]).toFixed(2);
-                    });
-
-                    this.totals = newTotals;
-                    this.filteredTotals = newFilteredTotals;
-                },
-
-                parseRawNumber(val) {
-                    if (val === undefined || val === null || val === '') return '';
-                    let str = String(val).trim();
-                    if (str === '' || str === '-') return '';
-
-                    let isNegative = str.startsWith('-');
-                    if (isNegative) str = str.substring(1);
-
-                    if (str.includes(',')) {
-                        let parts = str.replace(/[^\d,]/g, '').split(',');
-                        let intPart = parts[0].replace(/\D/g, '') || '0';
-                        let decPart = parts.slice(1).join('').replace(/\D/g, '');
-                        return (isNegative ? '-' : '') + intPart + (decPart !== '' ? '.' + decPart : '');
-                    }
-
-                    if (str.includes('.')) {
-                        let parts = str.split('.');
-                        if (parts.length === 2 && parts[1].length <= 2) {
-                            return (isNegative ? '-' : '') + parts[0].replace(/\D/g, '') + '.' + parts[1].replace(/\D/g, '');
-                        }
-                        return (isNegative ? '-' : '') + str.replace(/\D/g, '');
-                    }
-
-                    let clean = str.replace(/\D/g, '');
-                    return isNegative ? '-' + clean : clean;
-                },
-
-                formatValue(val, type) {
-                    if (val === undefined || val === null || val === '') return '-';
-                    if (type === 'number') {
-                        let clean = this.parseRawNumber(val);
-                        let fVal = parseFloat(clean);
-                        if (!isNaN(fVal)) {
-                            return Number.isInteger(fVal)
-                                ? fVal.toLocaleString('tr-TR')
-                                : fVal.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                        }
-                    }
-                    return val;
-                },
-
-                formatTotalDisplay(val) {
-                    if (val === undefined || val === null || val === '') return '0,00';
-                    let clean = this.parseRawNumber(val);
-                    let fVal = parseFloat(clean);
-                    if (isNaN(fVal)) return '0,00';
-                    return fVal.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                }
-            }));
-
-            window.addEventListener('pageshow', () => {
-                document.body.classList.remove('cursor-wait');
-            });
-        });
-    </script>
+                });
+            </script>
 </x-app-layout>
