@@ -172,6 +172,113 @@
                         <div class="flex items-center gap-2 shrink-0 flex-wrap">
 
                             @if((Auth::id() === $formEntry->user_id || Auth::user()->id === 1 || (Auth::user()->role && Auth::user()->role->slug === 'sistem_yoneticisi')) && (Auth::user()->id === 1 || (Auth::user()->role && Auth::user()->role->slug === 'sistem_yoneticisi') || app(\App\Services\PermissionS::class)->hasPermission(Auth::user(), 'form_entries.consolidate')))
+                                @if(!empty($addableParts) && $addableParts->isNotEmpty())
+                                    <div x-data="{ openAddParts: false, selectedAddParts: [], submittingAdd: false }" class="inline-block text-left shrink-0">
+                                        <button type="button" @click="openAddParts = true"
+                                            class="px-3.5 py-2 bg-amber-400 hover:bg-amber-300 text-slate-900 text-xs font-black rounded-xl transition shadow-xs flex items-center gap-1.5 cursor-pointer">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
+                                            </svg>
+                                            <span>Parça Ekle ({{ $addableParts->count() }})</span>
+                                        </button>
+
+                                        <!-- Mevcut Konsolide Forma Ek Parça Ekleme Modalı -->
+                                        <div x-show="openAddParts" style="display: none;"
+                                            class="fixed inset-0 z-50 overflow-y-auto whitespace-normal"
+                                            aria-labelledby="add-parts-modal-title" role="dialog" aria-modal="true">
+                                            <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                                                <div x-show="openAddParts" @click="if(!submittingAdd) openAddParts = false" x-transition.opacity
+                                                    class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity"
+                                                    aria-hidden="true"></div>
+                                                <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+                                                <div x-show="openAddParts" x-transition
+                                                    class="inline-block align-bottom bg-white rounded-3xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-xl sm:w-full border border-slate-100 whitespace-normal">
+                                                    <form action="{{ route('form-entries.consolidate') }}" method="POST"
+                                                        @submit="if(submittingAdd || selectedAddParts.length < 1) { $event.preventDefault(); return false; } submittingAdd = true; document.body.classList.add('cursor-wait');">
+                                                        @csrf
+                                                        <div class="p-6 space-y-5">
+                                                            <div class="flex items-start justify-between gap-4">
+                                                                <div>
+                                                                    <h3 class="text-lg font-black text-slate-900" id="add-parts-modal-title">
+                                                                        #{{ $formEntry->id }} Konsolide Forma Parça Ekle
+                                                                    </h3>
+                                                                    <p class="text-xs text-slate-500 mt-0.5">
+                                                                        Yeni bir konsolide form oluşturulmaz; seçtiğiniz parçalar doğrudan mevcut <strong>#{{ $formEntry->id }}</strong> numaralı forma eklenir.
+                                                                    </p>
+                                                                </div>
+                                                                <button type="button" @click="if(!submittingAdd) openAddParts = false" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg cursor-pointer">
+                                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                                                    </svg>
+                                                                </button>
+                                                            </div>
+
+                                                            <div class="flex items-center justify-between text-xs">
+                                                                <span class="font-bold text-slate-700">Eklenecek Parçaları Seçiniz:</span>
+                                                                <span class="font-extrabold text-indigo-600" x-text="selectedAddParts.length + ' parça seçildi'"></span>
+                                                            </div>
+
+                                                            <div class="max-h-72 overflow-y-auto space-y-2 pr-1 border border-slate-200 rounded-2xl p-2 bg-slate-50/50">
+                                                                @php
+                                                                    $totalAddable = $addableParts->count();
+                                                                @endphp
+                                                                @foreach($addableParts as $partItem)
+                                                                    @php
+                                                                        $freshness = $totalAddable > 1 ? (1 - ($loop->index / ($totalAddable - 1))) : 1;
+                                                                        $bgAlpha = number_format(0.02 + ($freshness * 0.16), 3, '.', '');
+                                                                        $borderAlpha = number_format(0.14 + ($freshness * 0.42), 3, '.', '');
+                                                                        $leftBorderAlpha = number_format(0.18 + ($freshness * 0.82), 3, '.', '');
+                                                                    @endphp
+                                                                    <label class="flex items-center justify-between p-3 rounded-xl border hover:shadow-xs transition cursor-pointer"
+                                                                        style="background-color: rgba(79, 70, 229, {{ $bgAlpha }}); border-color: rgba(79, 70, 229, {{ $borderAlpha }}); border-left-width: 4px; border-left-color: rgba(79, 70, 229, {{ $leftBorderAlpha }});">
+                                                                        <div class="flex items-center gap-3">
+                                                                            <input type="checkbox" name="entry_ids[]" value="{{ $partItem->id }}"
+                                                                                x-model="selectedAddParts"
+                                                                                class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4">
+                                                                            <div>
+                                                                                <span class="px-2 py-0.5 rounded-md text-[11px] font-extrabold bg-amber-100 text-amber-800 border border-amber-300">
+                                                                                    ⚡ {{ $partItem->partition_value ?: ('Parça #' . $partItem->id) }}
+                                                                                </span>
+                                                                                <div class="text-[11px] text-slate-600 mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                                                                                    <span>#{{ $partItem->id }}</span>
+                                                                                    <span>&bull;</span>
+                                                                                    <span>{{ $partItem->rows->count() }} Satır</span>
+                                                                                    <span>&bull;</span>
+                                                                                    <span>{{ $partItem->created_at ? $partItem->created_at->format('d.m.Y H:i') : $partItem->entry_date->format('d.m.Y') }}</span>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div>
+                                                                            @if($partItem->status === 'approved')
+                                                                                <span class="text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 px-2 py-0.5 rounded-full">Onaylandı</span>
+                                                                            @elseif($partItem->status === 'submitted')
+                                                                                <span class="text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-300 px-2 py-0.5 rounded-full">Onay Bekliyor</span>
+                                                                            @else
+                                                                                <span class="text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-300 px-2 py-0.5 rounded-full">Taslak</span>
+                                                                            @endif
+                                                                        </div>
+                                                                    </label>
+                                                                @endforeach
+                                                            </div>
+                                                        </div>
+                                                        <div class="bg-slate-50 px-6 py-4 border-t border-slate-100 flex items-center justify-end gap-3">
+                                                            <button type="button" @click="if(!submittingAdd) openAddParts = false" :disabled="submittingAdd"
+                                                                class="px-4 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-white transition cursor-pointer">
+                                                                İptal
+                                                            </button>
+                                                            <button type="submit" :disabled="submittingAdd || selectedAddParts.length < 1"
+                                                                :class="(submittingAdd || selectedAddParts.length < 1) ? 'opacity-50 cursor-not-allowed bg-indigo-400' : 'bg-indigo-600 hover:bg-indigo-700'"
+                                                                class="px-5 py-2 rounded-xl text-xs font-black text-white shadow-sm transition inline-flex items-center gap-1.5 cursor-pointer">
+                                                                <span x-text="submittingAdd ? 'Ekleniyor...' : 'Seçilen Parçaları #{{ $formEntry->id }}\'ye Ekle'">Seçilen Parçaları #{{ $formEntry->id }}'ye Ekle</span>
+                                                            </button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endif
+
                                 <div x-data="{ openDissolve: false }" class="inline-block text-left shrink-0">
                                     <button type="button" @click="openDissolve = true"
                                         class="px-3.5 py-2 bg-white/10 hover:bg-rose-600 border border-white/20 text-white text-xs font-bold rounded-xl transition shadow-xs flex items-center gap-1.5 cursor-pointer">

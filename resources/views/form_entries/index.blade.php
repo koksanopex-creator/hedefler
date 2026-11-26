@@ -31,7 +31,13 @@
                         class="group relative inline-flex items-center justify-center py-2.5 px-4 border border-indigo-200 text-sm font-bold rounded-xl text-indigo-700 bg-indigo-50 hover:bg-indigo-100 shadow-xs hover:shadow transition-all cursor-pointer">
                         <svg class="w-5 h-5 mr-1.5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
                         {{ __('Parçaları Birleştir') }}
-                        @if(isset($eligibleForConsolidation) && $eligibleForConsolidation->count() >= 2)
+                        @php
+                            $showConsolidateBadge = isset($eligibleForConsolidation) && (
+                                $eligibleForConsolidation->count() >= 2
+                                || ($eligibleForConsolidation->count() >= 1 && isset($existingConsolidatedMap) && $existingConsolidatedMap->isNotEmpty())
+                            );
+                        @endphp
+                        @if($showConsolidateBadge)
                             <span class="ml-1.5 px-2 py-0.5 rounded-full text-[10px] font-black bg-indigo-600 text-white">
                                 {{ $eligibleForConsolidation->count() }}
                             </span>
@@ -698,10 +704,44 @@
                                 </button>
                             </div>
 
-                            @if(isset($eligibleForConsolidation) && $eligibleForConsolidation->count() >= 2)
+                            @php
+                                $hasTargetConsolidated = !empty($currentUserConsolidated) || (
+                                    isset($eligibleForConsolidation)
+                                    && isset($existingConsolidatedMap)
+                                    && $eligibleForConsolidation->contains(fn($e) => $existingConsolidatedMap->has("{$e->user_id}_{$e->form_template_id}"))
+                                );
+                                $canShowConsolidateList = isset($eligibleForConsolidation) && (
+                                    $eligibleForConsolidation->count() >= 2
+                                    || ($eligibleForConsolidation->count() >= 1 && $hasTargetConsolidated)
+                                );
+                            @endphp
+
+                            @if($canShowConsolidateList)
+                                @if(!empty($currentUserConsolidated))
+                                    <div class="p-3.5 rounded-2xl bg-indigo-50 border border-indigo-200 text-xs text-indigo-950 flex items-start justify-between gap-3">
+                                        <div class="space-y-1">
+                                            <div class="font-extrabold flex items-center gap-1.5 text-indigo-900">
+                                                <span>🔗 Mevcut Konsolide Formunuz:</span>
+                                                <a href="{{ $currentUserConsolidated['url'] }}" class="underline hover:text-indigo-700 font-black">
+                                                    #{{ $currentUserConsolidated['id'] }}
+                                                </a>
+                                            </div>
+                                            <p class="text-[11px] text-indigo-800 leading-relaxed">
+                                                Kullanıcı başına tek bir konsolide form bulunur. Seçeceğiniz ek parçalar yeni bir konsolide form oluşturmadan doğrudan
+                                                <strong>#{{ $currentUserConsolidated['id'] }}</strong> numaralı formunuza eklenecektir.
+                                            </p>
+                                        </div>
+                                        <a href="{{ $currentUserConsolidated['url'] }}" class="shrink-0 px-2.5 py-1.5 rounded-lg bg-white border border-indigo-200 text-[11px] font-bold text-indigo-700 hover:bg-indigo-100 transition">
+                                            Formu Aç &rarr;
+                                        </a>
+                                    </div>
+                                @endif
+
                                 <div class="space-y-3">
                                     <div class="flex items-center justify-between text-xs">
-                                        <span class="font-bold text-slate-700">Birleştirilecek Parçaları Seçiniz (En az 2):</span>
+                                        <span class="font-bold text-slate-700">
+                                            {{ $hasTargetConsolidated ? 'Eklenecek / Birleştirilecek Parçaları Seçiniz (En az 1):' : 'Birleştirilecek Parçaları Seçiniz (En az 2):' }}
+                                        </span>
                                         <span class="font-extrabold text-indigo-600" x-text="selectedEntries.length + ' parça seçildi'"></span>
                                     </div>
 
@@ -715,6 +755,7 @@
                                                 $bgAlpha = number_format(0.02 + ($freshness * 0.16), 3, '.', '');
                                                 $borderAlpha = number_format(0.14 + ($freshness * 0.42), 3, '.', '');
                                                 $leftBorderAlpha = number_format(0.18 + ($freshness * 0.82), 3, '.', '');
+                                                $targetCons = isset($existingConsolidatedMap) ? $existingConsolidatedMap->get("{$item->user_id}_{$item->form_template_id}") : null;
                                             @endphp
                                             <label class="flex items-center justify-between p-3 rounded-xl border hover:shadow-xs transition cursor-pointer group"
                                                 style="background-color: rgba(79, 70, 229, {{ $bgAlpha }}); border-color: rgba(79, 70, 229, {{ $borderAlpha }}); border-left-width: 4px; border-left-color: rgba(79, 70, 229, {{ $leftBorderAlpha }});">
@@ -723,13 +764,18 @@
                                                         x-model="selectedEntries"
                                                         class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4">
                                                     <div>
-                                                        <div class="flex items-center gap-2">
+                                                        <div class="flex items-center gap-2 flex-wrap">
                                                             <span class="text-xs font-black text-slate-900 group-hover:text-indigo-600 transition">
                                                                 {{ $item->template->name }}
                                                             </span>
                                                             <span class="px-2 py-0.5 rounded-md text-[11px] font-extrabold bg-amber-100 text-amber-800 border border-amber-300">
                                                                 ⚡ {{ $item->partition_value }}
                                                             </span>
+                                                            @if($targetCons)
+                                                                <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-indigo-100 text-indigo-800 border border-indigo-200">
+                                                                    &rarr; #{{ $targetCons['id'] }}'ye eklenir
+                                                                </span>
+                                                            @endif
                                                         </div>
                                                         <div class="text-[11px] text-slate-600 mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5">
                                                             <span>#{{ $item->id }}</span>
@@ -755,14 +801,14 @@
                                         @endforeach
                                     </div>
                                     <p class="text-[11px] text-slate-500 italic">
-                                        💡 Not: Birleştirme sonrasında parçaların tüm satırları tek bir ana form altında toplanacak ve bu parçalar konsolide ana forma bağlanacaktır. Dilediğiniz zaman konsolidasyonu dağıtabilirsiniz.
+                                        💡 Not: Birleştirme sonrasında parçaların tüm satırları kullanıcının tek konsolide formu altında toplanır. Yeni eklenen parçalar da yeni ID açmadan mevcut konsolide forma bağlanır.
                                     </p>
                                 </div>
                             @else
                                 <div class="p-8 text-center bg-slate-50 rounded-2xl border border-slate-200 text-slate-500 space-y-2">
                                     <svg class="w-10 h-10 mx-auto text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                                     <p class="text-sm font-bold text-slate-700">Henüz Birleştirilecek Yeterli Parça Yok</p>
-                                    <p class="text-xs text-slate-400">Birleştirme işlemi için aynı şablona ait en az 2 adet bağımsız parçalı form kaydı bulunmalıdır.</p>
+                                    <p class="text-xs text-slate-400">Birleştirme işlemi için aynı şablona ait en az 2 adet bağımsız parçalı form kaydı (veya mevcut konsolide formunuza eklenecek en az 1 yeni parça) bulunmalıdır.</p>
                                 </div>
                             @endif
                         </div>
@@ -771,13 +817,13 @@
                             <button type="button" @click="openConsolidateModal = false" class="px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-white transition cursor-pointer">
                                 İptal
                             </button>
-                            @if(isset($eligibleForConsolidation) && $eligibleForConsolidation->count() >= 2)
+                            @if($canShowConsolidateList)
                                 <button type="submit"
-                                    :disabled="selectedEntries.length < 2"
-                                    :class="selectedEntries.length < 2 ? 'opacity-50 cursor-not-allowed bg-indigo-400' : 'bg-indigo-600 hover:bg-indigo-700 active:scale-98'"
+                                    :disabled="selectedEntries.length < {{ $hasTargetConsolidated ? 1 : 2 }}"
+                                    :class="selectedEntries.length < {{ $hasTargetConsolidated ? 1 : 2 }} ? 'opacity-50 cursor-not-allowed bg-indigo-400' : 'bg-indigo-600 hover:bg-indigo-700 active:scale-98'"
                                     class="px-5 py-2.5 rounded-xl text-xs font-black text-white shadow-md shadow-indigo-500/20 transition flex items-center gap-1.5 cursor-pointer">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                                    <span>Seçilen Parçaları Birleştir</span>
+                                    <span>{{ !empty($currentUserConsolidated) ? "Seçilen Parçaları #{$currentUserConsolidated['id']}'ye Ekle" : 'Seçilen Parçaları Birleştir' }}</span>
                                 </button>
                             @endif
                         </div>

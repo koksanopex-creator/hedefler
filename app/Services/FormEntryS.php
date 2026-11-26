@@ -269,7 +269,8 @@ class FormEntryS
     }
 
     /**
-     * Seçilen parçalı form kayıtlarını tek bir ana (konsolide) form altında birleştirir.
+     * Seçilen parçalı form kayıtlarını tek bir ana (konsolide) form altında birleştirir
+     * veya kullanıcının aynı şablon için mevcut konsolide formuna ekler.
      */
     public function consolidateEntries(array $entryIds, UserM $performedBy): FormEntryM
     {
@@ -279,8 +280,12 @@ class FormEntryS
                 ->orderBy('entry_date', 'asc')
                 ->get();
 
-            if ($entries->count() < 2) {
-                throw new \Exception('Birleştirme işlemi için en az 2 adet parçalı form seçilmelidir.');
+            if ($entries->isEmpty()) {
+                throw new \Exception('Birleştirilecek form parçası bulunamadı.');
+            }
+
+            if ($entries->contains(fn($e) => $e->is_consolidated || $e->parent_id !== null)) {
+                throw new \Exception('Seçilen kayıtlardan bazıları zaten bir konsolide forma bağlı veya konsolide ana formdur.');
             }
 
             $templateIds = $entries->pluck('form_template_id')->unique();
@@ -295,6 +300,42 @@ class FormEntryS
 
             $template = $entries->first()->template;
             $firstEntry = $entries->first();
+
+            // Aynı kullanıcı + aynı şablon için mevcut benzersiz konsolide kaydı kontrol et
+            $existingConsolidated = FormEntryM::with(['children'])
+                ->where('form_template_id', $template->id)
+                ->where('user_id', $firstEntry->user_id)
+                ->where('is_consolidated', true)
+                ->orderBy('id', 'asc')
+                ->first();
+
+            if ($existingConsolidated) {
+                if ($existingConsolidated->status === 'approved') {
+                    throw new \Exception("#{$existingConsolidated->id} numaralı konsolide form onaylandığı için yeni parça eklenemez. Önce onay geri alma veya revizyon işlemi yapılmalıdır.");
+                }
+
+                $startOrder = ($existingConsolidated->rows()->max('row_order') ?? -1) + 1;
+                $this->appendEntriesToConsolidatedParent($existingConsolidated, $entries, $startOrder);
+
+                $existingConsolidated->load('children');
+                $allPartLabels = $existingConsolidated->children->map(function ($e) {
+                    return $e->partition_value ?: "#{$e->id}";
+                })->unique()->filter()->values()->toArray();
+
+                $allPartsStr = implode(', ', $allPartLabels);
+                $dateFormatted = $existingConsolidated->entry_date
+                    ? $existingConsolidated->entry_date->format('d.m.Y')
+                    : now()->format('d.m.Y');
+
+                $existingConsolidated->title = "Konsolide Form ({$allPartsStr}) - {$template->name} ({$dateFormatted})";
+                $existingConsolidated->save();
+
+                return $existingConsolidated;
+            }
+
+            if ($entries->count() < 2) {
+                throw new \Exception('İlk birleştirme işlemi için en az 2 adet parçalı form seçilmelidir.');
+            }
 
             // Bölüm isimlerini topla (Örn: KAPAK, PREFORM, LEVHA)
             $partitionLabels = $entries->map(function ($e) {
@@ -332,29 +373,35 @@ class FormEntryS
             $parent->template_snapshot = $template->fields->toArray();
             $parent->save();
 
-            // Tüm parçaların satırlarını parent'a kopyala
-            $parentRowOrder = 0;
-            foreach ($entries as $childEntry) {
-                foreach ($childEntry->rows as $childRow) {
-                    $newRow = $parent->rows()->create([
-                        'row_order' => $parentRowOrder++
-                    ]);
-
-                    foreach ($childRow->values as $childVal) {
-                        $newRow->values()->create([
-                            'form_field_id' => $childVal->form_field_id,
-                            'value' => $childVal->value
-                        ]);
-                    }
-                }
-
-                // Child entry'yi parent'a bağla
-                $childEntry->parent_id = $parent->id;
-                $childEntry->save();
-            }
+            $this->appendEntriesToConsolidatedParent($parent, $entries, 0);
 
             return $parent;
         });
+    }
+
+    /**
+     * Seçilen parçalı kayıtların satırlarını konsolide ana forma kopyalar ve parent_id bağını kurar.
+     */
+    private function appendEntriesToConsolidatedParent(FormEntryM $parent, $entries, int $startOrder = 0): void
+    {
+        $parentRowOrder = $startOrder;
+        foreach ($entries as $childEntry) {
+            foreach ($childEntry->rows as $childRow) {
+                $newRow = $parent->rows()->create([
+                    'row_order' => $parentRowOrder++
+                ]);
+
+                foreach ($childRow->values as $childVal) {
+                    $newRow->values()->create([
+                        'form_field_id' => $childVal->form_field_id,
+                        'value' => $childVal->value
+                    ]);
+                }
+            }
+
+            $childEntry->parent_id = $parent->id;
+            $childEntry->save();
+        }
     }
 
     /**

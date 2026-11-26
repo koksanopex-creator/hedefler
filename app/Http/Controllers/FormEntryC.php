@@ -120,7 +120,26 @@ class FormEntryC extends Controller
                 ->get()
             : collect();
 
-        return view('form_entries.index', compact('entries', 'canViewApprover', 'statusCounts', 'scope', 'scopeCounts', 'eligibleForConsolidation', 'canConsolidate', 'canDelete'));
+        $existingConsolidatedMap = $canConsolidate
+            ? (clone $baseQuery)
+                ->where('is_consolidated', true)
+                ->orderBy('id', 'asc')
+                ->get(['id', 'user_id', 'form_template_id', 'title', 'status'])
+                ->keyBy(fn($e) => "{$e->user_id}_{$e->form_template_id}")
+                ->map(fn($e) => [
+                    'id' => $e->id,
+                    'user_id' => $e->user_id,
+                    'template_id' => $e->form_template_id,
+                    'title' => $e->title,
+                    'status' => $e->status,
+                    'url' => route('form-entries.show', $e),
+                ])
+            : collect();
+        $currentUserConsolidated = ($user && $existingConsolidatedMap->isNotEmpty())
+            ? $existingConsolidatedMap->first(fn($c) => $c['user_id'] === $user->id)
+            : null;
+
+        return view('form_entries.index', compact('entries', 'canViewApprover', 'statusCounts', 'scope', 'scopeCounts', 'eligibleForConsolidation', 'existingConsolidatedMap', 'currentUserConsolidated', 'canConsolidate', 'canDelete'));
     }
 
     public function selectTemplate(Request $request)
@@ -411,6 +430,19 @@ class FormEntryC extends Controller
         $draftChildrenCount = $draftChildren->count();
         $canSubmitChildrenApproval = ($isSelf || $isSuperAdmin) && $formEntry->is_consolidated && $draftChildrenCount > 0 && $formEntry->status !== 'draft';
 
+        // Mevcut konsolide forma sonradan eklenebilecek (henüz bağlanmamış) aynı kullanıcı+şablon parçaları
+        $addableParts = ($formEntry->is_consolidated && $formEntry->status !== 'approved' && ($isSelf || $isSuperAdmin))
+            ? FormEntryM::where('form_template_id', $formEntry->form_template_id)
+                ->where('user_id', $formEntry->user_id)
+                ->whereNotNull('partition_value')
+                ->whereNull('parent_id')
+                ->where('is_consolidated', false)
+                ->with(['rows'])
+                ->orderBy('created_at', 'desc')
+                ->orderBy('id', 'desc')
+                ->get()
+            : collect();
+
         if ($canViewLogs || $canViewHistory) {
             $baseLogsQuery = \App\Models\ActivityLogM::where('model_type', FormEntryM::class)
                 ->where('model_id', $formEntry->id)
@@ -450,7 +482,8 @@ class FormEntryC extends Controller
             'canWithdraw',
             'draftChildren',
             'draftChildrenCount',
-            'canSubmitChildrenApproval'
+            'canSubmitChildrenApproval',
+            'addableParts'
         ));
     }
 
@@ -830,11 +863,11 @@ class FormEntryC extends Controller
         }
 
         $request->validate([
-            'entry_ids' => 'required|array|min:2',
+            'entry_ids' => 'required|array|min:1',
             'entry_ids.*' => 'required|integer|exists:form_entries,id'
         ], [
             'entry_ids.required' => 'Birleştirilecek formlar seçilmelidir.',
-            'entry_ids.min' => 'Birleştirme işlemi için en az 2 adet parçalı form seçilmelidir.'
+            'entry_ids.min' => 'En az 1 adet parçalı form seçilmelidir.'
         ]);
 
         // Kullanıcı yetki ve mülkiyet kontrolü: Superadmin değilse sadece kendi girdiği parçaları birleştirebilir
@@ -850,14 +883,25 @@ class FormEntryC extends Controller
         try {
             $parent = $this->formEntryService->consolidateEntries($request->entry_ids, $user);
 
+            if ($parent->wasRecentlyCreated) {
+                $this->activityLogService->log(
+                    'form_entry.consolidated',
+                    "Parçalı formlar konsolide edildi ve #{$parent->id} numaralı birleştirilmiş ana form oluşturuldu.",
+                    $parent
+                );
+
+                return redirect()->route('form-entries.show', $parent)
+                    ->with('success', "Seçilen " . count($request->entry_ids) . " parçalı kayıt başarıyla birleştirildi ve #{$parent->id} numaralı konsolide form oluşturuldu.");
+            }
+
             $this->activityLogService->log(
                 'form_entry.consolidated',
-                "Parçalı formlar konsolide edildi ve #{$parent->id} numaralı birleştirilmiş ana form oluşturuldu.",
+                "Mevcut #{$parent->id} numaralı konsolide forma " . count($request->entry_ids) . " adet ek parça eklendi.",
                 $parent
             );
 
             return redirect()->route('form-entries.show', $parent)
-                ->with('success', "Seçilen " . count($request->entry_ids) . " parçalı kayıt başarıyla birleştirildi ve #{$parent->id} numaralı konsolide form oluşturuldu.");
+                ->with('success', "Seçilen " . count($request->entry_ids) . " adet ek parça mevcut #{$parent->id} numaralı konsolide formunuza başarıyla eklendi.");
         } catch (\Exception $e) {
             return back()->with('error', 'Birleştirme sırasında bir hata oluştu: ' . $e->getMessage());
         }
