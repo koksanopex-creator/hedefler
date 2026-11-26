@@ -304,6 +304,79 @@ class WaitingDurationAndApproverDisplayTest extends TestCase
         $responseMasked->assertDontSee('GİZLİ SÜPER ADMİN');
     }
 
+    public function test_group_isolation_blocks_other_group_manager_even_with_approve_permission_and_excludes_from_pending_approvers(): void
+    {
+        $foreignGroup = GroupM::create([
+            'name' => 'YURT DIŞI',
+            'is_active' => true,
+        ]);
+
+        // YURT DIŞI yöneticisine approve_group yanında yanlışlıkla/ek olarak approve yetkisi tanımlansa bile
+        // form_entries.view_all yetkisi yoksa YURT İÇİ personelinin formunu göremez, onaylayamaz ve listede yer almaz.
+        $permApproveGlobal = PermissionM::create([
+            'name' => 'Genel Onay',
+            'slug' => 'form_entries.approve',
+            'group' => 'form_entries',
+        ]);
+        $this->managerRole->permissions()->attach([$permApproveGlobal->id]);
+
+        $foreignManager = UserM::create([
+            'name' => 'MUSTAFA AKDOĞAN',
+            'email' => 'mustafa-iso@koksan.com',
+            'password' => bcrypt('password'),
+            'role_id' => $this->managerRole->id,
+            'group_id' => $foreignGroup->id,
+            'is_active' => true,
+            'approval_status' => 'approved',
+        ]);
+
+        DB::table('group_manager')->insert([
+            'group_id' => $foreignGroup->id,
+            'user_id' => $foreignManager->id,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $service = app(FormEntryS::class);
+        $entry = $service->saveEntry($this->template, $this->owner, '2026-11-26', [
+            [$this->valueField->id => '300'],
+        ], 'submitted');
+
+        $controller = app(FormEntryC::class);
+        $approvalApprovers = $controller->resolvePendingApproverNames($entry->fresh('user'), false, false);
+        $revisionApprovers = $controller->resolvePendingApproverNames($entry->fresh('user'), true, false);
+
+        $this->assertSame(['MEHMET MÜDÜR'], $approvalApprovers);
+        $this->assertSame(['MEHMET MÜDÜR'], $revisionApprovers);
+
+        // Farklı grup yöneticisi YURT İÇİ formuna erişememeli / onaylayamamalı (403)
+        $this->actingAs($foreignManager)
+            ->get(route('form-entries.show', $entry))
+            ->assertForbidden();
+
+        $this->actingAs($foreignManager)
+            ->post(route('form-entries.review', $entry), ['status' => 'approved'])
+            ->assertForbidden();
+
+        // Kendi grup yöneticisi görebilmeli ve revizyonu değerlendirebilmeli
+        $this->actingAs($this->groupManager)
+            ->get(route('form-entries.show', $entry))
+            ->assertOk()
+            ->assertSee('MEHMET MÜDÜR')
+            ->assertDontSee('MUSTAFA AKDOĞAN');
+
+        $rev = FormRevisionRequestM::create([
+            'form_entry_id' => $entry->id,
+            'user_id' => $this->owner->id,
+            'reason' => 'Grup izolasyon testi',
+            'status' => 'pending',
+        ]);
+
+        $this->actingAs($foreignManager)
+            ->post(route('form-entries.revision-requests.review', $rev), ['action' => 'approve'])
+            ->assertForbidden();
+    }
+
     private function createMinimalSqliteSchema(): void
     {
         Schema::create('roles', function (Blueprint $table) {

@@ -377,13 +377,19 @@ class FormEntryC extends Controller
     {
         $user = Auth::user();
         $isSuperAdmin = ($user->role && $user->role->slug === 'sistem_yoneticisi') || $this->permissionService->hasPermission($user, 'roles.manage') || $user->id === 1;
+        $formEntry->loadMissing('user');
 
-        // Yetki Kontrolü
+        $hasGlobalView = $this->permissionService->hasPermission($user, 'form_entries.view_all');
+        $hasGroupView = $this->permissionService->hasPermission($user, 'form_entries.view_group');
+        $isGroupManagerOfUser = $formEntry->user && $formEntry->user->group_id && $user->managedGroups()->where('groups.id', $formEntry->user->group_id)->exists();
+        $isSameGroup = $formEntry->user && $formEntry->user->group_id && $user->group_id && (int) $user->group_id === (int) $formEntry->user->group_id;
+
+        // Yetki ve Grup İzolasyonu Kontrolü
         if (
             $formEntry->user_id !== $user->id &&
             !$isSuperAdmin &&
-            !$this->permissionService->hasPermission($user, 'form_entries.view_all') &&
-            !$this->permissionService->hasPermission($user, 'form_entries.view_group')
+            !$hasGlobalView &&
+            !($hasGroupView && ($isGroupManagerOfUser || $isSameGroup))
         ) {
             abort(403);
         }
@@ -403,13 +409,13 @@ class FormEntryC extends Controller
 
         $formEntry->load(['template.fields', 'rows.values', 'user.group', 'revisionRequests.reviewer', 'revisionRequests.user', 'approver.role', 'versions.user', 'children.rows', 'children.revisionRequests', 'parent']);
 
-        // Onay Yetkisi & Grup İzolasyonu Kontrolü
+        // Onay Yetkisi & Grup İzolasyonu Kontrolü (view_all yoksa yalnızca sorumlu olduğu grup onaylanabilir)
         $hasGlobalApprove = $this->permissionService->hasPermission($user, 'form_entries.approve');
         $hasGroupApprove = $this->permissionService->hasPermission($user, 'form_entries.approve_group');
-        $isGroupManagerOfUser = $formEntry->user && $formEntry->user->group_id && $user->managedGroups()->where('groups.id', $formEntry->user->group_id)->exists();
+        $hasTrueGlobalApprove = $hasGlobalView && $hasGlobalApprove;
 
         $isSelf = $formEntry->user_id === $user->id;
-        $canApprove = (!$isSelf || $isSuperAdmin) && ($isSuperAdmin || $hasGlobalApprove || ($hasGroupApprove && $isGroupManagerOfUser));
+        $canApprove = (!$isSelf || $isSuperAdmin) && ($isSuperAdmin || $hasTrueGlobalApprove || (($hasGroupApprove || $hasGlobalApprove) && $isGroupManagerOfUser));
 
         // Onayı Geri Alma Yetkisi
         $canRevert = $canApprove && in_array($formEntry->status, ['approved', 'rejected']);
@@ -424,7 +430,7 @@ class FormEntryC extends Controller
 
         // Revizyon Taleplerini Yönetme Yetkisi (Sistem Yöneticisi veya form_entries.manage_revision_requests yetkili Grup Yöneticisi)
         $hasManageRevision = $this->permissionService->hasPermission($user, 'form_entries.manage_revision_requests');
-        $canManageRevision = ($isSuperAdmin || ($hasManageRevision && ($isGroupManagerOfUser || $hasGlobalApprove))) && (!$isSelf || $isSuperAdmin);
+        $canManageRevision = ($isSuperAdmin || ($hasManageRevision && ($isGroupManagerOfUser || $hasTrueGlobalApprove))) && (!$isSelf || $isSuperAdmin);
 
         $canViewLogs = $this->permissionService->hasPermission($user, 'form_entries.view_logs');
         $canViewHistory = $isSuperAdmin || $this->permissionService->hasPermission($user, 'form_entries.view_history');
@@ -555,11 +561,13 @@ class FormEntryC extends Controller
                 abort(403, 'Onaylanmış bir formu sadece Sistem Yöneticisi doğrudan düzenleyebilir. Düzenleme yapabilmek için lütfen form detayından "Düzenleme Talep Et (Revizyon)" butonunu kullanınız.');
             }
         } else {
+            $hasGlobalView = $this->permissionService->hasPermission($user, 'form_entries.view_all');
             $hasGlobalApprove = $this->permissionService->hasPermission($user, 'form_entries.approve');
             $hasGroupApprove = $this->permissionService->hasPermission($user, 'form_entries.approve_group');
+            $hasTrueGlobalApprove = $hasGlobalView && $hasGlobalApprove;
             $isGroupManagerOfUser = $formEntry->user && $formEntry->user->group_id && $user->managedGroups()->where('groups.id', $formEntry->user->group_id)->exists();
 
-            if ($formEntry->user_id !== $user->id && !$isSuperAdmin && !$hasGlobalApprove && !($hasGroupApprove && $isGroupManagerOfUser)) {
+            if ($formEntry->user_id !== $user->id && !$isSuperAdmin && !$hasTrueGlobalApprove && !(($hasGroupApprove || $hasGlobalApprove) && $isGroupManagerOfUser)) {
                 abort(403, 'Bu taslağı düzenleme yetkiniz yok.');
             }
         }
@@ -604,11 +612,13 @@ class FormEntryC extends Controller
                 abort(403, 'Onaylanmış bir formu sadece Sistem Yöneticisi doğrudan güncelleyebilir.');
             }
         } else {
+            $hasGlobalView = $this->permissionService->hasPermission($user, 'form_entries.view_all');
             $hasGlobalApprove = $this->permissionService->hasPermission($user, 'form_entries.approve');
             $hasGroupApprove = $this->permissionService->hasPermission($user, 'form_entries.approve_group');
+            $hasTrueGlobalApprove = $hasGlobalView && $hasGlobalApprove;
             $isGroupManagerOfUser = $formEntry->user && $formEntry->user->group_id && $user->managedGroups()->where('groups.id', $formEntry->user->group_id)->exists();
 
-            if ($formEntry->user_id !== $user->id && !$isSuperAdmin && !$hasGlobalApprove && !($hasGroupApprove && $isGroupManagerOfUser)) {
+            if ($formEntry->user_id !== $user->id && !$isSuperAdmin && !$hasTrueGlobalApprove && !(($hasGroupApprove || $hasGlobalApprove) && $isGroupManagerOfUser)) {
                 abort(403, 'Bu kaydı güncelleme yetkiniz yok.');
             }
         }
@@ -766,11 +776,13 @@ class FormEntryC extends Controller
         $isSuperAdmin = ($user->role && $user->role->slug === 'sistem_yoneticisi') || $this->permissionService->hasPermission($user, 'roles.manage') || $user->id === 1;
 
         // Yetki ve Grup İzolasyonu Kontrolü (Model 1)
+        $hasGlobalView = $this->permissionService->hasPermission($user, 'form_entries.view_all');
         $hasGlobalApprove = $this->permissionService->hasPermission($user, 'form_entries.approve');
         $hasGroupApprove = $this->permissionService->hasPermission($user, 'form_entries.approve_group');
+        $hasTrueGlobalApprove = $hasGlobalView && $hasGlobalApprove;
         $isGroupManagerOfUser = $formEntry->user && $formEntry->user->group_id && $user->managedGroups()->where('groups.id', $formEntry->user->group_id)->exists();
 
-        if (!$isSuperAdmin && !$hasGlobalApprove && !($hasGroupApprove && $isGroupManagerOfUser)) {
+        if (!$isSuperAdmin && !$hasTrueGlobalApprove && !(($hasGroupApprove || $hasGlobalApprove) && $isGroupManagerOfUser)) {
             abort(403, 'Sadece sorumlu olduğunuz departman/gruptaki personellerin form girişlerini onaylama veya reddetme yetkiniz bulunmaktadır.');
         }
 
@@ -874,11 +886,13 @@ class FormEntryC extends Controller
         $user = $request->user();
         $isSuperAdmin = ($user->role && $user->role->slug === 'sistem_yoneticisi') || $this->permissionService->hasPermission($user, 'roles.manage') || $user->id === 1;
 
+        $hasGlobalView = $this->permissionService->hasPermission($user, 'form_entries.view_all');
         $hasGlobalApprove = $this->permissionService->hasPermission($user, 'form_entries.approve');
         $hasGroupApprove = $this->permissionService->hasPermission($user, 'form_entries.approve_group');
+        $hasTrueGlobalApprove = $hasGlobalView && $hasGlobalApprove;
         $isGroupManagerOfUser = $formEntry->user && $formEntry->user->group_id && $user->managedGroups()->where('groups.id', $formEntry->user->group_id)->exists();
 
-        if (!$isSuperAdmin && !$hasGlobalApprove && !($hasGroupApprove && $isGroupManagerOfUser)) {
+        if (!$isSuperAdmin && !$hasTrueGlobalApprove && !(($hasGroupApprove || $hasGlobalApprove) && $isGroupManagerOfUser)) {
             abort(403, 'Bu formun onay durumunu geri alma yetkiniz bulunmamaktadır.');
         }
 
@@ -1321,10 +1335,12 @@ class FormEntryC extends Controller
         $isSuperAdmin = ($user->role && $user->role->slug === 'sistem_yoneticisi') || $this->permissionService->hasPermission($user, 'roles.manage') || $user->id === 1;
 
         $hasManageRevision = $this->permissionService->hasPermission($user, 'form_entries.manage_revision_requests');
+        $hasGlobalView = $this->permissionService->hasPermission($user, 'form_entries.view_all');
         $hasGlobalApprove = $this->permissionService->hasPermission($user, 'form_entries.approve');
+        $hasTrueGlobalApprove = $hasGlobalView && $hasGlobalApprove;
         $isGroupManagerOfUser = $formEntry->user && $formEntry->user->group_id && $user->managedGroups()->where('groups.id', $formEntry->user->group_id)->exists();
 
-        if (!$isSuperAdmin && !($hasManageRevision && ($isGroupManagerOfUser || $hasGlobalApprove))) {
+        if (!$isSuperAdmin && !($hasManageRevision && ($isGroupManagerOfUser || $hasTrueGlobalApprove))) {
             abort(403, 'Düzenleme taleplerini değerlendirme yetkiniz bulunmamaktadır.');
         }
 
@@ -1979,21 +1995,22 @@ class FormEntryC extends Controller
             }
 
             $isGroupMgr = $ownerGroupId && $candidate->managedGroups->contains('id', $ownerGroupId);
+            $hasGlobalView = $checkPermission($candidate, 'form_entries.view_all');
+            $hasGlobalApprove = $checkPermission($candidate, 'form_entries.approve');
+            $hasTrueGlobalApprove = $hasGlobalView && $hasGlobalApprove;
 
             if ($forRevision) {
                 $hasManageRev = $checkPermission($candidate, 'form_entries.manage_revision_requests');
-                $hasGlobalApprove = $checkPermission($candidate, 'form_entries.approve');
                 if ($hasManageRev && $isGroupMgr) {
                     $groupApprovers[$candidate->id] = $candidate->name;
-                } elseif ($hasManageRev && $hasGlobalApprove) {
+                } elseif ($hasManageRev && $hasTrueGlobalApprove) {
                     $globalApprovers[$candidate->id] = $candidate->name;
                 }
             } else {
                 $hasGroupApprove = $checkPermission($candidate, 'form_entries.approve_group');
-                $hasGlobalApprove = $checkPermission($candidate, 'form_entries.approve');
                 if ($isGroupMgr && ($hasGroupApprove || $hasGlobalApprove)) {
                     $groupApprovers[$candidate->id] = $candidate->name;
-                } elseif ($hasGlobalApprove) {
+                } elseif ($hasTrueGlobalApprove) {
                     $globalApprovers[$candidate->id] = $candidate->name;
                 }
             }

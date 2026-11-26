@@ -513,13 +513,43 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const applyColors = (m) => {
         if (!m || !m.regions) return;
-        Object.keys(countryColors).forEach(code => {
+        Object.keys(m.regions).forEach(code => {
             const r = m.regions[code];
-            if (r && r.element) {
+            if (!r || !r.element || !r.element.shape) return;
+
+            const currentStyle = r.element.shape.style || {};
+            if (countryColors[code]) {
+                r.element.shape.style = {
+                    ...currentStyle,
+                    initial: {
+                        ...(currentStyle.initial || {}),
+                        fill: countryColors[code],
+                        fillOpacity: 1
+                    },
+                    hover: {
+                        ...(currentStyle.hover || {}),
+                        fill: '#f59e0b',
+                        fillOpacity: 0.95,
+                        cursor: 'pointer'
+                    }
+                };
                 r.element.setStyle('fill', countryColors[code]);
-                if (r.element.shape && r.element.shape.style && r.element.shape.style.initial) {
-                    r.element.shape.style.initial.fill = countryColors[code];
-                }
+            } else {
+                r.element.shape.style = {
+                    ...currentStyle,
+                    initial: {
+                        ...(currentStyle.initial || {}),
+                        fill: '#334155',
+                        fillOpacity: 1
+                    },
+                    hover: {
+                        ...(currentStyle.hover || {}),
+                        fill: '#3f4f66',
+                        fillOpacity: 1,
+                        cursor: 'default'
+                    }
+                };
+                r.element.setStyle('fill', '#334155');
             }
         });
     };
@@ -558,9 +588,9 @@ document.addEventListener('DOMContentLoaded', function () {
                         fillOpacity: 1
                     },
                     hover: {
-                        fill: '#6366f1',
-                        fillOpacity: 0.9,
-                        cursor: 'pointer'
+                        fill: '#3f4f66',
+                        fillOpacity: 1,
+                        cursor: 'default'
                     }
                 },
                 onLoaded: (m) => {
