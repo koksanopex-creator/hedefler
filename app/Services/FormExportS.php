@@ -14,6 +14,7 @@ use PhpOffice\PhpSpreadsheet\Cell\DataValidation;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use Illuminate\Support\Facades\Storage;
 
@@ -115,9 +116,11 @@ class FormExportS
                         $sheet->getStyle($colLetter . $currentRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                     }
                 } else {
-                    // Sayısal değerse sayı olarak yaz ki excel'de toplama yapılabilsin
-                    if ($fieldObj->type === 'number' && is_numeric($val)) {
-                        $sheet->setCellValue($cellCoord, (float) $val);
+                    // Sayısal değerse sayı olarak yaz ve binlik ayraçlı format (#,##0.00) uygula
+                    $numericVal = $fieldObj->type === 'number' ? $this->parseNumericValue($val) : null;
+                    if ($numericVal !== null) {
+                        $sheet->setCellValue($cellCoord, $numericVal);
+                        $sheet->getStyle($colLetter . $currentRow)->getNumberFormat()->setFormatCode(NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1);
                     } else {
                         $sheet->setCellValue($cellCoord, (string) $val);
                     }
@@ -136,11 +139,13 @@ class FormExportS
 
             $colIndex = 2; // İlk sütun Sıra No
             foreach ($fieldsToExport as $field) {
-                if ($field->is_summable && $field->type === 'number') {
+                $fieldObj = is_array($field) ? (object)$field : $field;
+                if (!empty($fieldObj->is_summable) && ($fieldObj->type ?? null) === 'number') {
                     $colLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($colIndex);
                     $formula = '=SUM(' . $colLetter . $startRow . ':' . $colLetter . ($lastDataRow - 1) . ')';
                     $sheet->setCellValue($colLetter . $lastDataRow, $formula);
                     $sheet->getStyle($colLetter . $lastDataRow)->getFont()->setBold(true);
+                    $sheet->getStyle($colLetter . $lastDataRow)->getNumberFormat()->setFormatCode(NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1);
                 }
                 $colIndex++;
             }
@@ -513,5 +518,42 @@ class FormExportS
         }
 
         return false;
+    }
+
+    /**
+     * Ham sayısal metni (örn. "961920", "10.1", "961.920,00") float değere dönüştürür.
+     */
+    private function parseNumericValue(mixed $val): ?float
+    {
+        if ($val === null || $val === '') {
+            return null;
+        }
+
+        if (is_int($val) || is_float($val)) {
+            return (float) $val;
+        }
+
+        $trimmed = trim(str_replace(' ', '', (string) $val));
+        if ($trimmed === '') {
+            return null;
+        }
+
+        if (is_numeric($trimmed)) {
+            return (float) $trimmed;
+        }
+
+        // TR biçimi (örn. "961.920,00" veya "10,1")
+        if (str_contains($trimmed, ',')) {
+            $normalized = str_replace(',', '.', str_replace('.', '', $trimmed));
+            return is_numeric($normalized) ? (float) $normalized : null;
+        }
+
+        // Çoklu nokta binlik ayracı (örn. "1.234.567")
+        if (substr_count($trimmed, '.') > 1) {
+            $normalized = str_replace('.', '', $trimmed);
+            return is_numeric($normalized) ? (float) $normalized : null;
+        }
+
+        return null;
     }
 }
