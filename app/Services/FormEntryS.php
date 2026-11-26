@@ -68,7 +68,9 @@ class FormEntryS
                 if (!$userScope['is_admin']) {
                     $allowedNamesLower = array_map(fn($n) => mb_strtolower(trim($n)), $userScope['allowed_user_names']);
 
+                    $checkRowNum = 0;
                     foreach ($rowsData as $rowData) {
+                        $checkRowNum++;
                         if (empty(array_filter($rowData))) continue;
 
                         foreach ($restrictedFields as $field) {
@@ -83,7 +85,7 @@ class FormEntryS
                                     }
                                 }
                                 if (!$isPermitted) {
-                                    throw new \Exception("Yetkisiz veri girişi: '{$field->label}' alanında '{$val}' seçme yetkiniz bulunmamaktadır.");
+                                    throw new \Exception("Yetkisiz veri girişi (Satır {$checkRowNum}): '{$field->label}' alanında '{$val}' seçme yetkiniz bulunmamaktadır.");
                                 }
                             }
                         }

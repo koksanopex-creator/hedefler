@@ -14,6 +14,7 @@ use App\Services\SettingS;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class FormEntryC extends Controller
@@ -316,15 +317,19 @@ class FormEntryC extends Controller
 
         $partitionValue = $request->filled('partition_value') ? trim($request->input('partition_value')) : null;
 
-        $entry = $this->formEntryService->saveEntry(
-            $formTemplate,
-            $request->user(),
-            $request->entry_date,
-            $request->rows,
-            $status,
-            $existingEntry,
-            $partitionValue
-        );
+        try {
+            $entry = $this->formEntryService->saveEntry(
+                $formTemplate,
+                $request->user(),
+                $request->entry_date,
+                $request->rows,
+                $status,
+                $existingEntry,
+                $partitionValue
+            );
+        } catch (\Exception $e) {
+            return $this->handleSaveException($request, $e, 'store');
+        }
 
         $actionName = $status === 'draft' ? 'form_entry.draft' : ($existingEntry ? 'form_entry.update' : 'form_entry.create');
         $dateFormatted = \Carbon\Carbon::parse($request->entry_date)->format('d.m.Y');
@@ -623,15 +628,19 @@ class FormEntryC extends Controller
             ? trim($request->input('partition_value'))
             : $formEntry->partition_value;
 
-        $this->formEntryService->saveEntry(
-            $formEntry->template,
-            $formEntry->user,
-            $request->entry_date,
-            $request->rows,
-            $status,
-            $formEntry,
-            $partitionValue
-        );
+        try {
+            $this->formEntryService->saveEntry(
+                $formEntry->template,
+                $formEntry->user,
+                $request->entry_date,
+                $request->rows,
+                $status,
+                $formEntry,
+                $partitionValue
+            );
+        } catch (\Exception $e) {
+            return $this->handleSaveException($request, $e, 'update');
+        }
 
         // Değişiklikleri kalem kalem tespit et (Field-level diffing)
         $formEntry->load('rows.values');
@@ -1728,5 +1737,25 @@ class FormEntryC extends Controller
             'is_partitioned' => $isPartitioned ? '1' : '0',
             'entry_date' => $formEntry->entry_date ? $formEntry->entry_date->format('d.m.Y') : '',
         ];
+    }
+
+    /**
+     * Form kayıt/güncelleme sırasında oluşan iş kuralı hatalarını 500 yerine kullanıcı uyarısına dönüştürür.
+     */
+    private function handleSaveException(Request $request, \Exception $e, string $context)
+    {
+        Log::warning("FormEntryC::{$context} kayıt uyarısı", [
+            'user_id' => $request->user()?->id,
+            'message' => $e->getMessage(),
+        ]);
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        }
+
+        return back()->withInput()->with('error', $e->getMessage());
     }
 }
