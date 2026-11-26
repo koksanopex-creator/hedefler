@@ -180,6 +180,14 @@ class FormEntriesUserGroupingTest extends TestCase
         $response->assertDontSee('26 Nov 2026');
     }
 
+    public function test_empty_entries_page_renders_empty_state_message(): void
+    {
+        $response = $this->actingAs($this->userBeta)->get(route('form-entries.index'));
+        $response->assertOk();
+        $response->assertSee('Henüz bir veri girişi bulunmuyor');
+        $response->assertSee('Yeni bir form doldurarak hedef veri girişinizi başlatabilirsiniz.');
+    }
+
     private function createMinimalSqliteSchema(): void
     {
         Schema::create('roles', function (Blueprint $table) {

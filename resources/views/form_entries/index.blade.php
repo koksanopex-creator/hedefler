@@ -119,7 +119,9 @@
 </style>
 @php
     $groupByUsers = !empty($canSeeMultipleUsers) && $entries->count() > 0;
-    $entryGroups = $groupByUsers ? $entries->groupBy('user_id') : collect([0 => $entries]);
+    $entryGroups = $entries->count() > 0
+        ? ($groupByUsers ? $entries->groupBy('user_id') : collect([0 => $entries]))
+        : collect();
     $allUserGroupIds = $groupByUsers ? $entryGroups->keys()->values()->map(fn($id) => (int) $id)->all() : [];
     $groupColspan = (!empty($canDelete) && $canDelete ? 1 : 0) + ((isset($canViewApprover) && $canViewApprover) ? 6 : 5);
 @endphp
@@ -484,7 +486,9 @@
                             <tbody class="bg-white divide-y divide-gray-100">
                                 @php
                                     $groupByUsers = !empty($canSeeMultipleUsers) && $entries->count() > 0;
-                                    $entryGroups = $groupByUsers ? $entries->groupBy('user_id') : collect([0 => $entries]);
+                                    $entryGroups = $entries->count() > 0
+                                        ? ($groupByUsers ? $entries->groupBy('user_id') : collect([0 => $entries]))
+                                        : collect();
                                     $groupColspan = (!empty($canDelete) && $canDelete ? 1 : 0) + ((isset($canViewApprover) && $canViewApprover) ? 6 : 5);
                                 @endphp
                                 @forelse($entryGroups as $groupUserId => $userEntries)
@@ -1229,10 +1233,10 @@
                                 @empty
                                     <tr>
                                         <td colspan="{{ (!empty($canDelete) && $canDelete ? 1 : 0) + ((isset($canViewApprover) && $canViewApprover) ? 6 : 5) }}"
-                                            class="px-4 py-12 whitespace-nowrap text-center">
-                                            <div class="flex flex-col items-center justify-center">
-                                                <div class="bg-gray-50 rounded-full p-4 mb-3">
-                                                    <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor"
+                                            class="px-4 py-14 whitespace-nowrap text-center">
+                                            <div class="flex flex-col items-center justify-center max-w-md mx-auto whitespace-normal">
+                                                <div class="bg-indigo-50 border border-indigo-100 rounded-2xl p-4 mb-3">
+                                                    <svg class="w-8 h-8 text-indigo-500" fill="none" stroke="currentColor"
                                                         viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round"
                                                             stroke-width="2"
@@ -1240,8 +1244,19 @@
                                                         </path>
                                                     </svg>
                                                 </div>
-                                                <p class="text-gray-500 font-medium">Bu kriterde listelenecek veri girişi
-                                                    bulunamadı.</p>
+                                                <h4 class="text-sm font-bold text-slate-800">
+                                                    {{ (request()->filled('status') || (request()->filled('scope') && request('scope') !== 'all')) ? __('Bu kriterde listelenecek veri girişi bulunamadı') : __('Henüz bir veri girişi bulunmuyor') }}
+                                                </h4>
+                                                <p class="text-xs text-slate-500 mt-1 mb-4">
+                                                    {{ __('Yeni bir form doldurarak hedef veri girişinizi başlatabilirsiniz.') }}
+                                                </p>
+                                                <a href="{{ route('form-entries.select-template') }}"
+                                                    class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-2xs transition">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                                    </svg>
+                                                    <span>{{ __('Yeni Veri Girişi') }}</span>
+                                                </a>
                                             </div>
                                         </td>
                                     </tr>
