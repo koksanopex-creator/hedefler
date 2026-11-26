@@ -106,8 +106,24 @@ class FormEntryC extends Controller
             $query->whereDate('entry_date', today());
         }
 
-        $entries = $query->with(['template', 'user.group', 'revisionRequests', 'approver', 'children.template', 'children.rows', 'children.versions', 'children.approver', 'children.user', 'children.revisionRequests', 'parent', 'partitionField', 'versions'])
-            ->orderBy('updated_at', 'desc')
+        $canSeeMultipleUsers = $user
+            ? ($isSuperAdmin
+                || $this->permissionService->hasPermission($user, 'form_entries.view_all')
+                || $this->permissionService->hasPermission($user, 'form_entries.view_group'))
+            : false;
+
+        $query->with(['template', 'user.group', 'revisionRequests', 'approver', 'children.template', 'children.rows', 'children.versions', 'children.approver', 'children.user', 'children.revisionRequests', 'parent', 'partitionField', 'versions']);
+
+        if ($canSeeMultipleUsers) {
+            $query->orderBy(
+                \App\Models\UserM::select('name')
+                    ->whereColumn('users.id', 'form_entries.user_id')
+                    ->limit(1),
+                'asc'
+            );
+        }
+
+        $entries = $query->orderBy('updated_at', 'desc')
             ->orderBy('id', 'desc')
             ->paginate(20)
             ->withQueryString();
@@ -147,7 +163,7 @@ class FormEntryC extends Controller
             ? $existingConsolidatedMap->first(fn($c) => $c['user_id'] === $user->id)
             : null;
 
-        return view('form_entries.index', compact('entries', 'canViewApprover', 'statusCounts', 'scope', 'scopeCounts', 'eligibleForConsolidation', 'existingConsolidatedMap', 'currentUserConsolidated', 'canConsolidate', 'canDelete'));
+        return view('form_entries.index', compact('entries', 'canViewApprover', 'statusCounts', 'scope', 'scopeCounts', 'eligibleForConsolidation', 'existingConsolidatedMap', 'currentUserConsolidated', 'canConsolidate', 'canDelete', 'canSeeMultipleUsers'));
     }
 
     public function selectTemplate(Request $request)

@@ -26,11 +26,19 @@
         openBulkDeleteModal: false, 
         isDeletingBulk: false,
         expandedConsolidatedIds: [],
+        collapsedUserIds: [],
         toggleExpanded(id) {
             if (this.expandedConsolidatedIds.includes(id)) {
                 this.expandedConsolidatedIds = this.expandedConsolidatedIds.filter(x => x !== id);
             } else {
                 this.expandedConsolidatedIds.push(id);
+            }
+        },
+        toggleUserGroup(uid) {
+            if (this.collapsedUserIds.includes(uid)) {
+                this.collapsedUserIds = this.collapsedUserIds.filter(x => x !== uid);
+            } else {
+                this.collapsedUserIds.push(uid);
             }
         }
     }" @open-consolidate-modal.window="openConsolidateModal = true">
@@ -265,8 +273,74 @@
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-100">
-                            @forelse($entries as $entry)
-                                <tr class="hover:bg-indigo-50/30 transition-colors group" :class="selectedDeleteIds.includes({{ $entry->id }}) ? 'bg-rose-50/40' : ''">
+                            @php
+                                $groupByUsers = !empty($canSeeMultipleUsers) && $entries->count() > 0;
+                                $entryGroups = $groupByUsers ? $entries->groupBy('user_id') : collect([0 => $entries]);
+                                $groupColspan = (!empty($canDelete) && $canDelete ? 1 : 0) + ((isset($canViewApprover) && $canViewApprover) ? 6 : 5);
+                            @endphp
+                            @forelse($entryGroups as $groupUserId => $userEntries)
+                                @if($groupByUsers)
+                                    @php
+                                        $groupUser = $userEntries->first()?->user;
+                                        $uDraftCount = $userEntries->where('status', 'draft')->count();
+                                        $uSubmittedCount = $userEntries->where('status', 'submitted')->count();
+                                        $uApprovedCount = $userEntries->where('status', 'approved')->count();
+                                    @endphp
+                                    <tr class="bg-indigo-50/75 hover:bg-indigo-100/70 border-y border-indigo-200/80 transition-colors cursor-pointer"
+                                        @click="toggleUserGroup({{ (int) $groupUserId }})">
+                                        <td colspan="{{ $groupColspan }}" class="px-4 py-2.5">
+                                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                                <div class="flex items-center gap-2.5 min-w-0">
+                                                    <span class="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-white border border-indigo-200 text-indigo-600 shadow-2xs transition-transform duration-200"
+                                                        :class="collapsedUserIds.includes({{ (int) $groupUserId }}) ? '-rotate-90' : ''">
+                                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/>
+                                                        </svg>
+                                                    </span>
+                                                    <div class="w-7 h-7 rounded-full bg-indigo-600 text-white font-black text-xs flex items-center justify-center shadow-xs shrink-0">
+                                                        {{ mb_substr($groupUser?->name ?? '?', 0, 1) }}
+                                                    </div>
+                                                    <div class="flex items-center gap-2 flex-wrap min-w-0">
+                                                        @if($groupUser)
+                                                            <a href="{{ route('users.profile', $groupUser->id) }}" @click.stop
+                                                                class="text-xs sm:text-sm font-black text-slate-900 hover:text-indigo-700 hover:underline truncate">
+                                                                {{ $groupUser->name }}
+                                                            </a>
+                                                        @else
+                                                            <span class="text-xs sm:text-sm font-black text-slate-900">Bilinmeyen Kullanıcı</span>
+                                                        @endif
+                                                        <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-white text-slate-600 border border-slate-200">
+                                                            {{ $groupUser?->group?->name ?? 'Grup Yok' }}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <div class="flex items-center gap-1.5 flex-wrap text-[11px]">
+                                                    <span class="px-2.5 py-0.5 rounded-full font-extrabold bg-indigo-600 text-white shadow-2xs">
+                                                        {{ $userEntries->count() }} Kayıt
+                                                    </span>
+                                                    @if($uDraftCount > 0)
+                                                        <span class="px-2 py-0.5 rounded-full font-bold bg-gray-200/80 text-gray-800">
+                                                            {{ $uDraftCount }} Taslak
+                                                        </span>
+                                                    @endif
+                                                    @if($uSubmittedCount > 0)
+                                                        <span class="px-2 py-0.5 rounded-full font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                                                            {{ $uSubmittedCount }} Onay Bekliyor
+                                                        </span>
+                                                    @endif
+                                                    @if($uApprovedCount > 0)
+                                                        <span class="px-2 py-0.5 rounded-full font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                                            {{ $uApprovedCount }} Onaylı
+                                                        </span>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @endif
+                                @foreach($userEntries as $entry)
+                                <tr @if($groupByUsers) x-show="!collapsedUserIds.includes({{ (int) $groupUserId }})" @endif
+                                    class="hover:bg-indigo-50/30 transition-colors group" :class="selectedDeleteIds.includes({{ $entry->id }}) ? 'bg-rose-50/40' : ''">
                                     @if(!empty($canDelete) && $canDelete)
                                         <td class="w-10 px-3 py-3 text-center" @click.stop>
                                             <input type="checkbox" 
@@ -599,7 +673,7 @@
                                 {{-- Konsolide Forma Bağlı Alt Parçalar (Hiyerarşik / Alt Kategori Görünümü) --}}
                                 @if($entry->is_consolidated && $entry->children && $entry->children->count() > 0)
                                     @foreach($entry->children as $child)
-                                        <tr x-show="expandedConsolidatedIds.includes({{ $entry->id }})" x-cloak
+                                        <tr x-show="{{ $groupByUsers ? ('!collapsedUserIds.includes(' . (int) $groupUserId . ') && ') : '' }}expandedConsolidatedIds.includes({{ $entry->id }})" x-cloak
                                             x-transition:enter="transition ease-out duration-150"
                                             x-transition:enter-start="opacity-0 -translate-y-1"
                                             x-transition:enter-end="opacity-100 translate-y-0"
@@ -693,6 +767,7 @@
                                         </tr>
                                     @endforeach
                                 @endif
+                                @endforeach
                             @empty
                                 <tr>
                                     <td colspan="{{ (!empty($canDelete) && $canDelete ? 1 : 0) + ((isset($canViewApprover) && $canViewApprover) ? 6 : 5) }}" class="px-4 py-12 whitespace-nowrap text-center">
