@@ -48,9 +48,8 @@ class FormExportS
             $sheet = $spreadsheet->getActiveSheet();
             $sheet->setTitle(substr($formEntry->template->name, 0, 30));
 
-            // Sütun Başlıkları 1. satır
+            // Sütun Başlıkları 1. satır (Sıra No olmadan doğrudan A sütunundan başlar)
             $colIndex = 1;
-            $sheet->setCellValue([$colIndex++, 1], 'Sıra No');
             foreach ($fieldsToExport as $field) {
                 $sheet->setCellValue([$colIndex++, 1], $field->label);
             }
@@ -62,8 +61,8 @@ class FormExportS
             $sheet->getStyle($headerRange)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
                 ->getStartColor()->setARGB('FF1E3A8A'); // Koyu Mavi (Tailwind indigo-900 civarı)
 
-            // Sıra No ve Başlık Satırını dondur
-            $sheet->freezePane('B2');
+            // Başlık Satırını dondur
+            $sheet->freezePane('A2');
         }
 
         // Verileri Yaz
@@ -87,9 +86,6 @@ class FormExportS
         foreach ($rowsToExport as $rowIndex => $row) {
             $currentRow = $startRow + $rowIndex;
             $colIndex = 1;
-            
-            // Sıra No
-            $sheet->setCellValue([$colIndex++, $currentRow], $rowIndex + 1);
 
             foreach ($fieldsToExport as $field) {
                 $fieldObj = is_array($field) ? (object)$field : $field;
@@ -134,10 +130,15 @@ class FormExportS
 
         // Alt Toplam (Eğer açıksa ve sıfırdan oluşturulmuşsa)
         if (!file_exists($templatePath) && $formEntry->template->show_row_totals) {
-            $sheet->setCellValue('A' . $lastDataRow, 'TOPLAM:');
-            $sheet->getStyle('A' . $lastDataRow)->getFont()->setBold(true);
+            $firstField = collect($fieldsToExport)->first();
+            $firstFieldObj = is_array($firstField) ? (object) $firstField : $firstField;
+            $firstFieldIsSummable = $firstFieldObj && !empty($firstFieldObj->is_summable) && ($firstFieldObj->type ?? null) === 'number';
+            if (!$firstFieldIsSummable) {
+                $sheet->setCellValue('A' . $lastDataRow, 'TOPLAM:');
+                $sheet->getStyle('A' . $lastDataRow)->getFont()->setBold(true);
+            }
 
-            $colIndex = 2; // İlk sütun Sıra No
+            $colIndex = 1;
             foreach ($fieldsToExport as $field) {
                 $fieldObj = is_array($field) ? (object)$field : $field;
                 if (!empty($fieldObj->is_summable) && ($fieldObj->type ?? null) === 'number') {

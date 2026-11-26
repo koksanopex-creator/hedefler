@@ -99,23 +99,25 @@ class FormExportNumberFormatTest extends TestCase
         $spreadsheet = IOFactory::load($filePath);
         $sheet = $spreadsheet->getActiveSheet();
 
-        // A=Sıra No, B=BELGE TÜRÜ, C=TOPLAM TESLİMAT MİKTARI, D=TONAJ
-        $this->assertSame(961920.0, (float) $sheet->getCell('C2')->getValue());
+        // A=BELGE TÜRÜ, B=TOPLAM TESLİMAT MİKTARI, C=TONAJ (Sıra No sütunu yok)
+        $this->assertSame('BELGE TÜRÜ', $sheet->getCell('A1')->getValue());
+
+        $this->assertSame(961920.0, (float) $sheet->getCell('B2')->getValue());
+        $this->assertSame(NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1, $sheet->getStyle('B2')->getNumberFormat()->getFormatCode());
+
+        $this->assertSame(10.1, (float) $sheet->getCell('C2')->getValue());
         $this->assertSame(NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1, $sheet->getStyle('C2')->getNumberFormat()->getFormatCode());
 
-        $this->assertSame(10.1, (float) $sheet->getCell('D2')->getValue());
-        $this->assertSame(NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1, $sheet->getStyle('D2')->getNumberFormat()->getFormatCode());
-
-        $this->assertSame(0.51, (float) $sheet->getCell('D3')->getValue());
-        $this->assertSame(NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1, $sheet->getStyle('D3')->getNumberFormat()->getFormatCode());
+        $this->assertSame(0.51, (float) $sheet->getCell('C3')->getValue());
+        $this->assertSame(NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1, $sheet->getStyle('C3')->getNumberFormat()->getFormatCode());
 
         // Alt toplam (=SUM) hücreleri de binlik ayraç formatında olmalı
+        $this->assertSame('=SUM(B2:B3)', $sheet->getCell('B4')->getValue());
+        $this->assertSame(NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1, $sheet->getStyle('B4')->getNumberFormat()->getFormatCode());
         $this->assertSame('=SUM(C2:C3)', $sheet->getCell('C4')->getValue());
         $this->assertSame(NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1, $sheet->getStyle('C4')->getNumberFormat()->getFormatCode());
-        $this->assertSame('=SUM(D2:D3)', $sheet->getCell('D4')->getValue());
-        $this->assertSame(NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1, $sheet->getStyle('D4')->getNumberFormat()->getFormatCode());
 
-        // Sıra No sütunu (#,##0.00) olmamalı
+        // Metin sütunu (BELGE TÜRÜ) (#,##0.00) olmamalı
         $this->assertNotSame(NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1, $sheet->getStyle('A2')->getNumberFormat()->getFormatCode());
 
         @unlink($filePath);
