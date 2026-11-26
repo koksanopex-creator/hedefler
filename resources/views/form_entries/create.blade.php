@@ -29,26 +29,30 @@
             background-color: #312e81;
             transform: scale(1.35);
         }
-        /* Tablo Yatay ve Dikey Scrollbar - Her zaman belirgin ve kolay tutulabilir */
+        /* Tablo Yatay ve Dikey Scrollbar - Her zaman belirgin, sabit ve kolay tutulabilir */
         .table-scroll-container {
             scrollbar-width: auto;
-            scrollbar-color: #6366f1 #f1f5f9;
+            scrollbar-color: #4f46e5 #e2e8f0;
+            overflow-x: scroll !important;
+            overflow-y: auto !important;
         }
         .table-scroll-container::-webkit-scrollbar {
-            height: 14px;
-            width: 10px;
+            height: 16px !important;
+            width: 12px !important;
+            display: block !important;
         }
         .table-scroll-container::-webkit-scrollbar-track {
-            background: #f8fafc;
-            border-top: 1px solid #e2e8f0;
+            background: #f1f5f9 !important;
+            border-top: 2px solid #cbd5e1 !important;
+            border-bottom: 1px solid #e2e8f0 !important;
         }
         .table-scroll-container::-webkit-scrollbar-thumb {
-            background: #818cf8;
-            border-radius: 6px;
-            border: 2px solid #f8fafc;
+            background: #4f46e5 !important;
+            border-radius: 8px !important;
+            border: 2px solid #f1f5f9 !important;
         }
         .table-scroll-container::-webkit-scrollbar-thumb:hover {
-            background: #4f46e5;
+            background: #3730a3 !important;
         }
 
         /* Veri girişi ekranında üst başlık ve padding optimizasyonu: Tablo maksimum dikey alanı kullansın */
@@ -214,8 +218,8 @@
                 <input type="hidden" name="partition_value" value="{{ $partitionValue ?? ($existingEntry->partition_value ?? '') }}">
 
                 <div x-ref="mainCardContainer"
-                     :class="isFullscreen ? 'fixed inset-0 z-[999999] bg-white flex flex-col w-screen h-screen overflow-hidden m-0 p-0' : 'bg-white shadow-xl sm:rounded-lg border border-gray-200 flex flex-col transition-all'"
-                     :style="isFullscreen ? 'position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; width: 100vw !important; height: 100vh !important; z-index: 9999999 !important; margin: 0 !important; padding: 0 !important;' : 'height: ' + normalCardHeight + '; max-height: ' + normalCardHeight + '; min-height: 420px;'">
+                     :class="isFullscreen ? 'fixed inset-0 z-[999999] bg-white flex flex-col w-screen h-screen overflow-hidden m-0 p-0' : 'bg-white shadow-xl sm:rounded-lg border border-gray-200 flex flex-col overflow-hidden transition-all'"
+                     :style="isFullscreen ? 'position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; width: 100vw !important; height: 100vh !important; z-index: 9999999 !important; margin: 0 !important; padding: 0 !important;' : 'height: ' + normalCardHeight + '; max-height: ' + normalCardHeight + '; min-height: 180px;'">
                     
                     <!-- Üst Eylem & Hızlı Satır Çubuğu (Top Action Bar - Konumu Asla Aşağı Kaymaz) -->
                     <div class="px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 flex-shrink-0 transition-colors"
@@ -1073,7 +1077,7 @@
 
                     <!-- Bottom Toolbar (En altta her zaman sabit & hazır) -->
                     <div
-                        class="px-3 sm:px-4 py-1.5 sm:py-2 bg-gray-50/95 backdrop-blur-xs border-t border-gray-200 flex flex-row justify-between items-center gap-2 flex-shrink-0 sticky bottom-0 z-30 shadow-[0_-4px_16px_rgba(0,0,0,0.06)]"
+                        class="px-3 sm:px-4 py-1.5 sm:py-2 bg-gray-50/95 backdrop-blur-xs border-t border-gray-200 flex flex-row justify-between items-center gap-2 flex-shrink-0 z-10 shadow-[0_-4px_16px_rgba(0,0,0,0.06)]"
                         :class="isFullscreen ? 'shadow-lg bg-slate-100 border-slate-300' : 'sm:rounded-b-lg'">
                         <div class="flex items-center gap-1.5 sm:gap-2 flex-wrap lg:flex-nowrap">
                             <!-- Seri Satır Ekle (Alt Bar) -->
@@ -2343,10 +2347,12 @@
                         const el = this.$refs.mainCardContainer;
                         if (!el) return;
                         const rect = el.getBoundingClientRect();
-                        const docTop = rect.top + window.scrollY;
-                        // Ekranın en altına 8px pay bırakarak kart yüksekliğini dinamik hesaplar: Butonlar ve yatay scroll her zaman ekranda sabit kalır
-                        const available = Math.floor(window.innerHeight - docTop - 8);
-                        this.normalCardHeight = Math.max(available, 440) + 'px';
+                        const vh = window.innerHeight || document.documentElement.clientHeight;
+                        const topOffset = Math.max(rect.top, 0);
+                        // Kartın üst noktasından pencere tabanına kadar olan net alan (12px alt güvenlik payı)
+                        // Ekran çözünürlüğü düşük olduğunda ya da zoom yapıldığında kartın ve yatay scrollbar'ın ekrandan taşmasını ASLA engeller
+                        const available = Math.floor(vh - topOffset - 12);
+                        this.normalCardHeight = Math.max(available, 180) + 'px';
                     });
                 },
 
@@ -2842,6 +2848,15 @@
                         this.updatePinnedOffsets();
                         this.updateCardHeight();
                     });
+                    if (window.visualViewport) {
+                        window.visualViewport.addEventListener('resize', () => {
+                            this.updatePinnedOffsets();
+                            this.updateCardHeight();
+                        });
+                    }
+                    window.addEventListener('scroll', () => {
+                        this.updateCardHeight();
+                    }, { passive: true });
                     setTimeout(() => this.updateCardHeight(), 50);
                     setTimeout(() => this.updateCardHeight(), 250);
                     setTimeout(() => this.updateCardHeight(), 600);
