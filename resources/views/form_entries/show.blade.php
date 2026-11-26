@@ -347,7 +347,10 @@
                                     <span class="text-xs font-black text-amber-300">
                                         ⚡ {{ $child->partition_value ?: ('Parça #' . $child->id) }}
                                     </span>
-                                    @if($child->status === 'approved')
+                                    @if($child->revisionRequests->firstWhere('status', 'pending'))
+                                        <span
+                                            class="text-[10px] font-bold bg-amber-400/25 text-amber-200 border border-amber-300/50 px-1.5 py-0.2 rounded">Düzenleme Talebi</span>
+                                    @elseif($child->status === 'approved')
                                         <span
                                             class="text-[10px] font-bold bg-emerald-500/30 text-emerald-200 border border-emerald-400/30 px-1.5 py-0.2 rounded">Onaylandı</span>
                                     @elseif($child->status === 'submitted')
@@ -450,9 +453,9 @@
             {{-- Bekleyen Düzenleme (Revizyon) Talebi Uyarısı --}}
             @if(!empty($pendingRevision))
                 <div
-                    class="p-4 mb-5 text-sm bg-amber-50 border-l-4 border-amber-500 text-amber-900 rounded-r-xl shadow-sm flex items-start justify-between gap-3">
+                    class="p-4 mb-5 text-sm bg-amber-50 border-l-4 border-amber-500 text-amber-900 rounded-r-xl shadow-sm flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                     <div class="flex items-start gap-3">
-                        <div class="p-1.5 bg-amber-100 text-amber-700 rounded-lg mt-0.5">
+                        <div class="p-1.5 bg-amber-100 text-amber-700 rounded-lg mt-0.5 shrink-0">
                             <svg class="w-5 h-5 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -470,6 +473,64 @@
                             </p>
                         </div>
                     </div>
+
+                    @if((!empty($isSelf) && $isSelf) || !empty($isSuperAdmin) || Auth::id() === $pendingRevision->user_id)
+                        <div x-data="{ openCancelRev: false, cancellingRev: false }" class="shrink-0">
+                            <button type="button" @click="openCancelRev = true"
+                                class="inline-flex items-center px-3.5 py-2 bg-white hover:bg-rose-50 text-rose-700 border border-rose-300 text-xs font-bold rounded-lg shadow-2xs transition gap-1.5 cursor-pointer">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path>
+                                </svg>
+                                <span>Talebi Geri Çek</span>
+                            </button>
+
+                            <div x-show="openCancelRev" x-cloak style="display: none;"
+                                class="fixed inset-0 z-50 overflow-y-auto whitespace-normal" role="dialog" aria-modal="true">
+                                <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+                                    <div class="fixed inset-0 transition-opacity bg-slate-900/60 backdrop-blur-xs"
+                                        @click="if(!cancellingRev) openCancelRev = false"></div>
+                                    <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+                                    <div
+                                        class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full border border-gray-100">
+                                        <form action="{{ route('form-entries.revision-requests.cancel', $pendingRevision) }}" method="POST"
+                                            @submit="if(cancellingRev) { $event.preventDefault(); return false; } cancellingRev = true; document.body.classList.add('cursor-wait');">
+                                            @csrf
+                                            <div class="bg-rose-600 px-6 py-4 flex items-center justify-between text-white">
+                                                <h3 class="text-base font-extrabold tracking-tight">Düzenleme Talebini Geri Çek</h3>
+                                                <button type="button" @click="if(!cancellingRev) openCancelRev = false"
+                                                    class="text-rose-100 hover:text-white cursor-pointer" :disabled="cancellingRev">
+                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                            d="M6 18L18 6M6 6l12 12"></path>
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                            <div class="p-6 space-y-2.5">
+                                                <p class="text-sm font-semibold text-gray-800">
+                                                    İlettiğiniz düzenleme talebini geri çekmek istediğinize emin misiniz?
+                                                </p>
+                                                <p class="text-xs text-gray-500 leading-relaxed">
+                                                    Talep geri çekildiğinde yöneticilere gönderilen uygulama içi bildirimler de kaldırılır ve form önceki <strong>"Onaylandı"</strong> durumuna geri döner.
+                                                </p>
+                                            </div>
+                                            <div class="bg-gray-50 px-6 py-3 flex items-center justify-end gap-3 border-t border-gray-100">
+                                                <button type="button" @click="if(!cancellingRev) openCancelRev = false" :disabled="cancellingRev"
+                                                    class="px-4 py-2 text-xs font-bold text-gray-600 hover:text-gray-800 bg-white border border-gray-200 rounded-lg cursor-pointer">
+                                                    Vazgeç
+                                                </button>
+                                                <button type="submit" :disabled="cancellingRev"
+                                                    :class="cancellingRev ? 'opacity-70 cursor-wait pointer-events-none' : ''"
+                                                    class="px-5 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-lg shadow-sm cursor-pointer transition">
+                                                    <span x-text="cancellingRev ? 'Geri Çekiliyor...' : 'Evet, Talebi Geri Çek'">Evet, Talebi Geri Çek</span>
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
                 </div>
             @endif
 

@@ -473,6 +473,44 @@ class FormEntryS
     }
 
     /**
+     * Bir alt parça yeniden onaylandığında bağlı olduğu konsolide ana formun satırlarını
+     * tüm alt parçaların güncel satırlarından yeniden derler.
+     */
+    public function rebuildConsolidatedParentRows(FormEntryM $parent): void
+    {
+        if (!$parent->is_consolidated) {
+            return;
+        }
+
+        DB::transaction(function () use ($parent) {
+            $parent->load([
+                'children' => fn($q) => $q->orderBy('id', 'asc'),
+                'children.rows.values',
+            ]);
+
+            $parent->rows()->delete();
+
+            $parentRowOrder = 0;
+            foreach ($parent->children as $child) {
+                foreach ($child->rows as $childRow) {
+                    $newRow = $parent->rows()->create([
+                        'row_order' => $parentRowOrder++,
+                    ]);
+
+                    foreach ($childRow->values as $childVal) {
+                        $newRow->values()->create([
+                            'form_field_id' => $childVal->form_field_id,
+                            'value' => $childVal->value,
+                        ]);
+                    }
+                }
+            }
+
+            $parent->touch();
+        });
+    }
+
+    /**
      * Konsolide formu dağıtır (çözer) ve parçaları bağımsız hale getirir.
      */
     public function dissolveConsolidation(FormEntryM $parentEntry, UserM $performedBy): bool

@@ -56,6 +56,13 @@ class FormEntryC extends Controller
         // Diğer durumlarda (tümü veya konsolide) ana/bağımsız formlar baz alınarak mükerrer alt taslak kirliliği önlenir.
         $countQuery = $scope === 'partitions' ? (clone $baseQuery)->whereNotNull('partition_value') : (clone $rootQuery);
 
+        $hasPendingRevisionScope = function ($q) use ($scope) {
+            $q->whereHas('revisionRequests', fn($rq) => $rq->where('status', 'pending'));
+            if ($scope !== 'partitions') {
+                $q->orWhereHas('children.revisionRequests', fn($rq) => $rq->where('status', 'pending'));
+            }
+        };
+
         $statusCounts = [
             'all' => (clone $countQuery)->count(),
             'submitted' => (clone $countQuery)->where('status', 'submitted')->count(),
@@ -64,7 +71,7 @@ class FormEntryC extends Controller
                 ->count(),
             'draft' => (clone $countQuery)->where('status', 'draft')->count(),
             'rejected' => (clone $countQuery)->where('status', 'rejected')->count(),
-            'revision_pending' => (clone $countQuery)->whereHas('revisionRequests', fn($q) => $q->where('status', 'pending'))->count(),
+            'revision_pending' => (clone $countQuery)->where($hasPendingRevisionScope)->count(),
         ];
 
         $scopeCounts = [
@@ -86,7 +93,7 @@ class FormEntryC extends Controller
 
         if ($request->filled('status')) {
             if ($request->status === 'revision_pending') {
-                $query->whereHas('revisionRequests', fn($q) => $q->where('status', 'pending'));
+                $query->where($hasPendingRevisionScope);
             } elseif ($request->status === 'approved') {
                 $query->where('status', 'approved')
                     ->whereDoesntHave('revisionRequests', fn($q) => $q->where('status', 'pending'));
@@ -99,7 +106,7 @@ class FormEntryC extends Controller
             $query->whereDate('entry_date', today());
         }
 
-        $entries = $query->with(['template', 'user.group', 'revisionRequests', 'approver', 'children.template', 'children.rows', 'children.versions', 'children.approver', 'children.user', 'parent', 'partitionField', 'versions'])
+        $entries = $query->with(['template', 'user.group', 'revisionRequests', 'approver', 'children.template', 'children.rows', 'children.versions', 'children.approver', 'children.user', 'children.revisionRequests', 'parent', 'partitionField', 'versions'])
             ->orderBy('updated_at', 'desc')
             ->orderBy('id', 'desc')
             ->paginate(20)
@@ -394,8 +401,7 @@ class FormEntryC extends Controller
             );
         }
 
-        $formEntry->load(['template.fields', 'rows.values', 'user.group', 'revisionRequests.reviewer', 'revisionRequests.user', 'approver', 'versions.user']);
-        $formEntry->load(['template.fields', 'rows.values', 'user.group', 'revisionRequests.reviewer', 'revisionRequests.user', 'approver', 'versions.user', 'children.rows', 'parent']);
+        $formEntry->load(['template.fields', 'rows.values', 'user.group', 'revisionRequests.reviewer', 'revisionRequests.user', 'approver', 'versions.user', 'children.rows', 'children.revisionRequests', 'parent']);
 
         // Onay Yetkisi & Grup İzolasyonu Kontrolü
         $hasGlobalApprove = $this->permissionService->hasPermission($user, 'form_entries.approve');
@@ -774,6 +780,19 @@ class FormEntryC extends Controller
                         $child
                     );
                     app(\App\Services\KpiTargetS::class)->recalculateForEntry($child);
+                }
+            } elseif (!empty($formEntry->parent_id)) {
+                // Birleştirilmiş forma bağlı bir alt parça yeniden onaylandıysa konsolide ana formun satırlarını güncelle
+                $parentEntry = FormEntryM::find($formEntry->parent_id);
+                if ($parentEntry && $parentEntry->is_consolidated) {
+                    $this->formEntryService->rebuildConsolidatedParentRows($parentEntry);
+                    $pLabel = $formEntry->partition_value ?: "#{$formEntry->id}";
+                    $this->activityLogService->log(
+                        'form_entry.update',
+                        "[{$pLabel}] parçası (#{$formEntry->id}) yeniden onaylandığı için konsolide ana form (#{$parentEntry->id}) güncel onaylı verilerle senkronize edildi.",
+                        $parentEntry
+                    );
+                    app(\App\Services\KpiTargetS::class)->recalculateForEntry($parentEntry);
                 }
             }
 
@@ -1287,6 +1306,25 @@ class FormEntryC extends Controller
             $formEntry->approved_by = null;
             $formEntry->save();
 
+            // Eğer konsolide ana formda düzenleme talebi onaylandıysa tüm bağlı parçaları da düzenlemeye aç
+            if ($formEntry->is_consolidated) {
+                $formEntry->loadMissing('children');
+                foreach ($formEntry->children as $child) {
+                    if ($child->status === 'approved') {
+                        $child->status = 'submitted';
+                        $child->approved_at = null;
+                        $child->approved_by = null;
+                        $child->save();
+
+                        $this->activityLogService->log(
+                            'form_entry.revision_approved',
+                            "Konsolide ana form (#{$formEntry->id}) düzenleme talebi onaylandığı için bu parça da düzenlemeye açıldı.",
+                            $child
+                        );
+                    }
+                }
+            }
+
             // KPI hedeflerini geçici olarak güncelle (onay kalktı)
             app(\App\Services\KpiTargetS::class)->recalculateForEntry($formEntry);
 
@@ -1339,6 +1377,68 @@ class FormEntryC extends Controller
         $revisionRequest->update(['is_dismissed_by_user' => true]);
 
         return back()->with('info', 'Bilgilendirme kapatıldı.');
+    }
+
+    /**
+     * Personel / Sistem Yöneticisi: Bekleyen düzenleme (revizyon) talebini geri çeker ve bildirimleri temizler.
+     */
+    public function cancelRevisionRequest(Request $request, FormRevisionRequestM $revisionRequest)
+    {
+        $user = $request->user() ?? Auth::user();
+        $isSuperAdmin = ($user->role && $user->role->slug === 'sistem_yoneticisi') || $this->permissionService->hasPermission($user, 'roles.manage') || $user->id === 1;
+        $formEntry = $revisionRequest->formEntry;
+
+        if (!$formEntry) {
+            abort(404);
+        }
+
+        if ($revisionRequest->user_id !== $user->id && $formEntry->user_id !== $user->id && !$isSuperAdmin) {
+            abort(403, 'Bu düzenleme talebini geri çekme yetkiniz bulunmamaktadır.');
+        }
+
+        if ($revisionRequest->status !== 'pending') {
+            return back()->with('error', 'Bu düzenleme talebi zaten değerlendirildiği için geri çekilemez.');
+        }
+
+        // Bu talep için gönderilmiş uygulama içi zil bildirimlerini geri çek
+        try {
+            $since = $revisionRequest->created_at ? $revisionRequest->created_at->copy()->subSeconds(5) : now()->subHour();
+            $candidateNotifications = DB::table('notifications')
+                ->where('type', \App\Notifications\DynamicNotification::class)
+                ->where('created_at', '>=', $since)
+                ->get(['id', 'data']);
+
+            $idsToDelete = [];
+            $pattern = '#/form-entries/' . preg_quote((string) $formEntry->id, '#') . '(?:$|[?\#])#';
+            foreach ($candidateNotifications as $nRow) {
+                $payload = is_string($nRow->data) ? json_decode($nRow->data, true) : (array) $nRow->data;
+                $actionUrl = (string) ($payload['actionUrl'] ?? '');
+                if ($actionUrl !== '' && preg_match($pattern, $actionUrl)) {
+                    $idsToDelete[] = $nRow->id;
+                }
+            }
+
+            if (!empty($idsToDelete)) {
+                DB::table('notifications')->whereIn('id', $idsToDelete)->delete();
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Düzenleme talebi bildirim temizleme uyarısı: ' . $e->getMessage());
+        }
+
+        $formEntry->loadMissing(['template', 'user']);
+        $tName = $formEntry->template?->name ?? 'Dinamik Form';
+        $eDate = $formEntry->entry_date ? $formEntry->entry_date->format('d.m.Y') : '-';
+        $oName = $formEntry->user?->name ?? 'Kullanıcı';
+
+        $revisionRequest->delete();
+
+        $this->activityLogService->log(
+            'form_entry.revision_cancelled',
+            "Bekleyen düzenleme talebi geri çekildi. Form: [{$tName}] (Giriş Tarihi: {$eDate}, Sahibi: {$oName}, Form ID: #{$formEntry->id}).",
+            $formEntry
+        );
+
+        return redirect()->route('form-entries.show', $formEntry)->with('success', 'Düzenleme talebiniz başarıyla geri çekildi.');
     }
 
     public function destroy(Request $request, FormEntryM $formEntry)

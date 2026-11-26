@@ -391,32 +391,45 @@
                                         </div>
                                     </td>
                                     <td class="px-3.5 py-3 whitespace-nowrap">
-                                        @if($entry->revisionRequests->firstWhere('status', 'pending'))
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-800 border border-amber-300 shadow-2xs" title="Düzenleme (revizyon) talebi değerlendirme aşamasında">
-                                                <span class="w-1.5 h-1.5 bg-amber-500 rounded-full mr-1 animate-pulse"></span>
-                                                {{ __('Revizyon Bekliyor') }}
-                                            </span>
-                                        @elseif($entry->status === 'draft')
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-gray-100 text-gray-700 border border-gray-200">
-                                                <span class="w-1.5 h-1.5 bg-gray-400 rounded-full mr-1"></span>
-                                                {{ __('Taslak') }}
-                                            </span>
-                                        @elseif($entry->status === 'submitted')
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
-                                                <span class="w-1.5 h-1.5 bg-amber-500 rounded-full mr-1 animate-pulse"></span>
-                                                {{ __('Onay Bekliyor') }}
-                                            </span>
-                                        @elseif($entry->status === 'approved')
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                                <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-1"></span>
-                                                {{ __('Onaylandı') }}
-                                            </span>
-                                        @elseif($entry->status === 'rejected')
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-red-50 text-red-700 border border-red-200 cursor-help" title="{{ $entry->rejection_reason }}">
-                                                <span class="w-1.5 h-1.5 bg-red-500 rounded-full mr-1"></span>
-                                                {{ __('Reddedildi') }}
-                                            </span>
-                                        @endif
+                                        @php
+                                            $pendingChildRevCount = $entry->is_consolidated
+                                                ? $entry->children->filter(fn($c) => (bool) $c->revisionRequests->firstWhere('status', 'pending'))->count()
+                                                : 0;
+                                        @endphp
+                                        <div class="flex flex-col items-start gap-1">
+                                            @if($entry->revisionRequests->firstWhere('status', 'pending'))
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-800 border border-amber-300 shadow-2xs" title="Düzenleme (revizyon) talebi değerlendirme aşamasında">
+                                                    <span class="w-1.5 h-1.5 bg-amber-500 rounded-full mr-1 animate-pulse"></span>
+                                                    {{ __('Revizyon Bekliyor') }}
+                                                </span>
+                                            @elseif($entry->status === 'draft')
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-gray-100 text-gray-700 border border-gray-200">
+                                                    <span class="w-1.5 h-1.5 bg-gray-400 rounded-full mr-1"></span>
+                                                    {{ __('Taslak') }}
+                                                </span>
+                                            @elseif($entry->status === 'submitted')
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                                                    <span class="w-1.5 h-1.5 bg-amber-500 rounded-full mr-1 animate-pulse"></span>
+                                                    {{ __('Onay Bekliyor') }}
+                                                </span>
+                                            @elseif($entry->status === 'approved')
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                                    <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-1"></span>
+                                                    {{ __('Onaylandı') }}
+                                                </span>
+                                            @elseif($entry->status === 'rejected')
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-red-50 text-red-700 border border-red-200 cursor-help" title="{{ $entry->rejection_reason }}">
+                                                    <span class="w-1.5 h-1.5 bg-red-500 rounded-full mr-1"></span>
+                                                    {{ __('Reddedildi') }}
+                                                </span>
+                                            @endif
+                                            @if($pendingChildRevCount > 0)
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-300 shadow-2xs" title="Bağlı alt parçada düzenleme talebi bulunuyor">
+                                                    <span class="w-1.5 h-1.5 bg-amber-500 rounded-full mr-1 animate-pulse"></span>
+                                                    Düzenleme Talebi ({{ $pendingChildRevCount }} Parça)
+                                                </span>
+                                            @endif
+                                        </div>
                                     </td>
                                     @if(isset($canViewApprover) && $canViewApprover)
                                         <td class="px-3.5 py-3 whitespace-nowrap text-xs text-gray-500">
@@ -603,7 +616,12 @@
                                                 </div>
                                             </td>
                                             <td class="px-3.5 py-2.5 whitespace-nowrap">
-                                                @if($child->status === 'draft')
+                                                @if($child->revisionRequests->firstWhere('status', 'pending'))
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-800 border border-amber-300 shadow-2xs" title="Düzenleme talebi değerlendirme aşamasında">
+                                                        <span class="w-1.5 h-1.5 bg-amber-500 rounded-full mr-1 animate-pulse"></span>
+                                                        Düzenleme Talebi Bekliyor
+                                                    </span>
+                                                @elseif($child->status === 'draft')
                                                     <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gray-100 text-gray-700 border border-gray-200">
                                                         <span class="w-1.5 h-1.5 bg-gray-400 rounded-full mr-1"></span>
                                                         Taslak
