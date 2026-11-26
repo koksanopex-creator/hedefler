@@ -20,6 +20,11 @@
         box-shadow: none !important;
         position: absolute !important;
     }
+    #kpi-world-map svg {
+        width: 100% !important;
+        height: 100% !important;
+        display: block;
+    }
     /* 2. Tam Ekran (Fullscreen) Modu Sitilleri */
     #kpi-geo-map-card:fullscreen {
         padding: 1.5rem !important;
@@ -33,19 +38,44 @@
         justify-content: space-between !important;
     }
     #kpi-geo-map-card:fullscreen #kpi-world-map {
-        height: calc(100vh - 160px) !important;
-        max-height: calc(100vh - 160px) !important;
+        width: 100% !important;
+        flex: 1 1 auto !important;
+        height: calc(100vh - 170px) !important;
+        max-height: calc(100vh - 170px) !important;
     }
 </style>
 
 <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-200/80 space-y-6"
+    @kpi-open-country.window="openCountryModal($event.detail.iso)"
+    @keydown.escape.window="if (selectedCountry) closeCountryModal()"
     x-data="{
         isTheaterMode: false,
         isFullscreen: false,
+        selectedCountry: null,
+        openCountryModal(iso) {
+            const mapData = window.kpiGeoCountries || {};
+            if (mapData[iso]) {
+                this.selectedCountry = mapData[iso];
+            }
+        },
+        closeCountryModal() {
+            this.selectedCountry = null;
+        },
+        resizeMap() {
+            const doResize = () => {
+                if (window.kpiMapInstance && typeof window.kpiMapInstance.updateSize === 'function') {
+                    window.kpiMapInstance.updateSize();
+                }
+                window.dispatchEvent(new Event('resize'));
+            };
+            requestAnimationFrame(doResize);
+            setTimeout(doResize, 120);
+            setTimeout(doResize, 320);
+        },
         toggleTheater() {
             this.isTheaterMode = !this.isTheaterMode;
             $nextTick(() => {
-                window.dispatchEvent(new Event('resize'));
+                this.resizeMap();
             });
         },
         toggleFullscreen() {
@@ -80,7 +110,7 @@
                     document.body.appendChild(tooltip);
                 }
             }
-            $nextTick(() => { window.dispatchEvent(new Event('resize')); });
+            $nextTick(() => { resizeMap(); });
         });
     ">
 
@@ -193,15 +223,34 @@
             :class="isTheaterMode ? 'col-span-12' : 'lg:col-span-7'">
             
             {{-- Harita Başlığı ve YouTube Tarzı Kontrol Butonları --}}
-            <div class="flex items-center justify-between mb-3 z-10">
-                <div class="flex items-center gap-2">
+            @php
+                $currentMapYear = (int) ($geoData['year'] ?? date('Y'));
+                $mapYearParam = $yearParamName ?? 'year';
+                $mapYearsList = collect($availableYears ?? [$currentMapYear])
+                    ->map(fn($y) => (int) $y)
+                    ->push($currentMapYear)
+                    ->unique()
+                    ->sortDesc()
+                    ->values()
+                    ->all();
+            @endphp
+            <div class="flex items-center justify-between mb-3 z-10 flex-wrap gap-2">
+                <div class="flex items-center gap-2 flex-wrap">
                     <span class="text-xs font-bold uppercase tracking-wider text-indigo-400">Küresel Satış & Hedef Isı Haritası</span>
-                    <span class="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-400/30">
-                        {{ $geoData['year'] ?? date('Y') }} Dönemi
-                    </span>
+                    <div class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-indigo-500/20 text-indigo-200 border border-indigo-400/30">
+                        <select aria-label="Dönem Yılı Seçimi"
+                            onchange="const u = new URL(window.location.href); u.searchParams.set('{{ $mapYearParam }}', this.value); window.location.href = u.toString();"
+                            class="bg-transparent border-0 py-0 pl-0.5 pr-4 text-[10px] font-mono font-bold text-indigo-200 focus:ring-0 cursor-pointer">
+                            @foreach($mapYearsList as $yOpt)
+                                <option value="{{ $yOpt }}" class="bg-slate-900 text-white" {{ $currentMapYear === $yOpt ? 'selected' : '' }}>
+                                    {{ $yOpt }} Dönemi
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
                     <span class="hidden sm:inline-flex items-center gap-1 text-[10px] text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded-md border border-slate-700">
                         <svg class="w-3 h-3 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"/></svg>
-                        Mouse ile Yakınlaş
+                        Ülkeye Tıkla / Yakınlaş
                     </span>
                 </div>
 
@@ -233,24 +282,143 @@
             {{-- SVG Harita Konteyneri (Mouse scroll zoom aktif) --}}
             <div id="kpi-world-map" class="w-full transition-all duration-300 relative z-10" :class="isTheaterMode ? 'h-[500px]' : 'h-[330px] sm:h-[370px]'"></div>
 
-            {{-- Harita Altı Ülke Özet Şeridi --}}
+            {{-- Harita Altı Ülke Özet Şeridi (Tıklanabilir -> İşyeri Kırılımı Modalı) --}}
             <div class="mt-4 pt-3 border-t border-slate-800/80 grid grid-cols-2 sm:grid-cols-4 gap-2 z-10">
-                @forelse(array_slice($geoData['countries'] ?? [], 0, 4) as $iso => $cty)
-                    <div class="bg-slate-800/60 p-2.5 rounded-xl border border-slate-700/60">
-                        <div class="flex items-center justify-between text-[11px]">
-                            <span class="font-bold text-slate-200 truncate">{{ $cty['name'] }}</span>
-                            <span class="font-extrabold" style="color: {{ $cty['color'] }}">%{{ $cty['rate'] }}</span>
+                @forelse(array_slice($geoData['countries'] ?? [], 0, 8) as $iso => $cty)
+                    <button type="button" @click="openCountryModal('{{ $iso }}')"
+                        class="text-left bg-slate-800/60 hover:bg-slate-800 p-2.5 rounded-xl border border-slate-700/60 hover:border-indigo-400/70 transition-all cursor-pointer group">
+                        <div class="flex items-center justify-between text-[11px] gap-1.5">
+                            <span class="font-bold text-slate-100 group-hover:text-indigo-300 truncate">{{ $cty['name'] }}</span>
+                            @if(($cty['target'] ?? 0) > 0)
+                                <span class="font-extrabold shrink-0" style="color: {{ $cty['color'] }}">%{{ $cty['rate'] }}</span>
+                            @else
+                                <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background-color: {{ $cty['color'] }}"></span>
+                            @endif
                         </div>
-                        <div class="flex items-center justify-between text-[10px] text-slate-400 mt-1">
-                            <span>H: {{ number_format($cty['target'], 0, ',', '.') }}</span>
-                            <span>G: {{ number_format($cty['actual'], 0, ',', '.') }}</span>
-                        </div>
-                    </div>
+                        @if(($cty['target'] ?? 0) > 0)
+                            <div class="flex items-center justify-between text-[10px] text-slate-400 mt-1">
+                                <span>H: {{ number_format($cty['target'], 0, ',', '.') }}</span>
+                                <span>G: {{ number_format($cty['actual'], 0, ',', '.') }}</span>
+                            </div>
+                        @else
+                            <div class="flex items-center justify-between text-[10px] text-slate-300 mt-1">
+                                <span>{{ $cty['entry_rows'] ?? 0 }} Satır</span>
+                                @if(($cty['total_tonaj'] ?? 0) > 0)
+                                    <span class="text-emerald-300 font-semibold">{{ number_format($cty['total_tonaj'], 0, ',', '.') }} Ton</span>
+                                @endif
+                            </div>
+                        @endif
+                        @if(!empty($cty['workplaces']))
+                            <div class="mt-1.5 flex flex-wrap gap-1">
+                                @foreach(array_slice($cty['workplaces'], 0, 3) as $wp)
+                                    <span class="px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-200 border border-indigo-400/30 text-[9px] font-bold truncate max-w-[90px]">
+                                        {{ $wp['name'] }}
+                                    </span>
+                                @endforeach
+                                @if(count($cty['workplaces']) > 3)
+                                    <span class="text-[9px] text-slate-400 font-bold">+{{ count($cty['workplaces']) - 3 }}</span>
+                                @endif
+                            </div>
+                        @endif
+                    </button>
                 @empty
                     <div class="col-span-4 text-center py-2 text-xs text-slate-500">
-                        Henüz filtrelenen kriterde hedef verisi bulunmuyor.
+                        Bu dönem ve kapsam için ülke bazlı veri veya hedef girişi bulunmuyor.
                     </div>
                 @endforelse
+            </div>
+
+            {{-- Ülke İşyeri Kırılımı Detay Modalı (Normal ve Fullscreen modunda #kpi-geo-map-card içinde çalışır) --}}
+            <div x-show="selectedCountry" x-cloak style="display: none;"
+                class="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-xs"
+                @click.self="closeCountryModal()">
+                <div class="bg-slate-900 text-white border border-slate-700 rounded-2xl shadow-2xl max-w-xl w-full overflow-hidden"
+                    @click.stop>
+                    <div class="px-5 py-4 bg-slate-800/80 border-b border-slate-700 flex items-center justify-between">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span class="w-3 h-3 rounded-full inline-block" :style="selectedCountry ? 'background-color:' + selectedCountry.color : ''"></span>
+                                <h4 class="text-base font-black text-white" x-text="selectedCountry ? selectedCountry.name : ''"></h4>
+                                <span class="px-1.5 py-0.5 rounded text-[10px] font-mono bg-slate-700 text-slate-300" x-text="selectedCountry ? selectedCountry.iso : ''"></span>
+                                <span class="px-2 py-0.5 rounded text-[10px] font-mono bg-indigo-500/20 text-indigo-300 border border-indigo-400/30">{{ $currentMapYear }}</span>
+                            </div>
+                            <p class="text-[11px] text-slate-400 mt-0.5">Girilen form verilerine göre işyeri bazlı dağılım özeti</p>
+                        </div>
+                        <button type="button" @click="closeCountryModal()" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700 transition cursor-pointer">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+
+                    <div class="p-5 space-y-4 max-h-[75vh] overflow-y-auto" x-if="selectedCountry">
+                        {{-- Ülke Özet Metrikleri --}}
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                            <div class="bg-slate-800/70 p-3 rounded-xl border border-slate-700/70">
+                                <span class="text-[10px] uppercase tracking-wider text-slate-400 font-bold block">Girilen Satır</span>
+                                <span class="text-lg font-black text-white" x-text="selectedCountry.entry_rows ?? 0"></span>
+                            </div>
+                            <div class="bg-slate-800/70 p-3 rounded-xl border border-slate-700/70">
+                                <span class="text-[10px] uppercase tracking-wider text-slate-400 font-bold block">Toplam Tonaj</span>
+                                <span class="text-lg font-black text-emerald-400" x-text="Number(selectedCountry.total_tonaj || 0).toLocaleString('tr-TR', { maximumFractionDigits: 2 })"></span>
+                            </div>
+                            <div class="bg-slate-800/70 p-3 rounded-xl border border-slate-700/70 col-span-2 sm:col-span-1">
+                                <span class="text-[10px] uppercase tracking-wider text-slate-400 font-bold block">Toplam Tutar</span>
+                                <span class="text-lg font-black text-indigo-300" x-text="Number(selectedCountry.total_tutar || 0).toLocaleString('tr-TR', { maximumFractionDigits: 2 })"></span>
+                            </div>
+                        </div>
+
+                        {{-- KPI Hedef Bilgisi (Varsa) --}}
+                        <template x-if="(selectedCountry.target || 0) > 0">
+                            <div class="bg-indigo-950/50 border border-indigo-500/30 rounded-xl p-3 flex items-center justify-between text-xs">
+                                <div>
+                                    <span class="text-indigo-300 font-bold block">KPI Hedef / Gerçekleşme</span>
+                                    <span class="text-slate-300">
+                                        Hedef: <strong class="text-white" x-text="Number(selectedCountry.target).toLocaleString('tr-TR')"></strong>
+                                        &bull;
+                                        Gerçekleşen: <strong class="text-emerald-400" x-text="Number(selectedCountry.actual).toLocaleString('tr-TR')"></strong>
+                                    </span>
+                                </div>
+                                <span class="text-base font-black text-amber-400" x-text="'%' + selectedCountry.rate"></span>
+                            </div>
+                        </template>
+
+                        {{-- İşyeri Kırılımı Listesi --}}
+                        <div>
+                            <h5 class="text-xs font-extrabold uppercase tracking-wider text-slate-300 mb-2">İşyeri Kırılımı</h5>
+                            <template x-if="selectedCountry.workplaces && selectedCountry.workplaces.length > 0">
+                                <div class="space-y-2">
+                                    <template x-for="wp in selectedCountry.workplaces" :key="wp.name">
+                                        <div class="bg-slate-800/80 border border-slate-700 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                            <div>
+                                                <div class="flex items-center gap-2">
+                                                    <span class="px-2 py-0.5 rounded-md text-xs font-black bg-amber-400/20 text-amber-300 border border-amber-400/40" x-text="wp.name"></span>
+                                                    <span class="text-xs text-slate-300 font-semibold" x-text="wp.rows + ' Satır'"></span>
+                                                </div>
+                                                <template x-if="wp.cities && wp.cities.length > 0">
+                                                    <p class="text-[11px] text-slate-400 mt-1" x-text="'Şehirler: ' + wp.cities.join(', ')"></p>
+                                                </template>
+                                            </div>
+                                            <div class="flex items-center gap-3 text-xs font-mono">
+                                                <div class="text-right">
+                                                    <span class="text-[10px] text-slate-400 block">Tonaj</span>
+                                                    <strong class="text-emerald-400" x-text="Number(wp.tonaj || 0).toLocaleString('tr-TR', { maximumFractionDigits: 2 })"></strong>
+                                                </div>
+                                                <div class="text-right">
+                                                    <span class="text-[10px] text-slate-400 block">Tutar</span>
+                                                    <strong class="text-indigo-300" x-text="Number(wp.tutar || 0).toLocaleString('tr-TR', { maximumFractionDigits: 2 })"></strong>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
+                            </template>
+                            <template x-if="!selectedCountry.workplaces || selectedCountry.workplaces.length === 0">
+                                <div class="text-xs text-slate-400 bg-slate-800/40 border border-slate-800 rounded-xl p-3">
+                                    Bu ülke için henüz form satırında işyeri girişi bulunmuyor (yalnızca KPI hedef kaydı mevcut).
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -299,6 +467,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // 1. DÜNYA HARİTASI KURULUMU (jsVectorMap)
     const geoCountries = @json($geoData['countries'] ?? []);
     const geoCities = @json($geoData['cities'] ?? []);
+    window.kpiGeoCountries = geoCountries;
 
     // Ülke Renk Haritası
     const countryColors = {};
@@ -368,33 +537,61 @@ document.addEventListener('DOMContentLoaded', function () {
                         cursor: 'pointer'
                     }
                 },
+                onRegionClick(event, code) {
+                    if (geoCountries[code]) {
+                        window.dispatchEvent(new CustomEvent('kpi-open-country', { detail: { iso: code } }));
+                    }
+                },
                 onRegionTooltipShow(event, tooltip, code) {
                     const country = geoCountries[code];
                     if (country) {
+                        const wpBadges = (country.workplaces || []).map(wp =>
+                            `<span class="inline-block px-1.5 py-0.5 rounded bg-indigo-500/30 text-indigo-200 border border-indigo-400/40 text-[10px] font-bold">${wp.name}: ${wp.rows} satır</span>`
+                        ).join(' ');
+                        const kpiSection = Number(country.target || 0) > 0 ? `
+                            <div class="flex justify-between text-slate-300">
+                                <span>Hedeflenen:</span>
+                                <strong class="text-white">${Number(country.target).toLocaleString('tr-TR')} ${country.unit}</strong>
+                            </div>
+                            <div class="flex justify-between text-slate-300">
+                                <span>Gerçekleşen:</span>
+                                <strong class="text-emerald-400 font-bold">${Number(country.actual).toLocaleString('tr-TR')} ${country.unit}</strong>
+                            </div>
+                            <div class="flex justify-between text-slate-300">
+                                <span>Başarı Oranı:</span>
+                                <strong class="text-amber-400 font-black">%${country.rate}</strong>
+                            </div>
+                        ` : '';
+                        const entrySection = Number(country.entry_rows || 0) > 0 ? `
+                            <div class="flex justify-between text-slate-300">
+                                <span>Girilen Satır:</span>
+                                <strong class="text-white">${Number(country.entry_rows).toLocaleString('tr-TR')} Satır</strong>
+                            </div>
+                            <div class="flex justify-between text-slate-300">
+                                <span>Toplam Tonaj:</span>
+                                <strong class="text-emerald-400 font-bold">${Number(country.total_tonaj || 0).toLocaleString('tr-TR', { maximumFractionDigits: 2 })}</strong>
+                            </div>
+                            <div class="flex justify-between text-slate-300">
+                                <span>Toplam Tutar:</span>
+                                <strong class="text-indigo-300 font-bold">${Number(country.total_tutar || 0).toLocaleString('tr-TR', { maximumFractionDigits: 2 })}</strong>
+                            </div>
+                        ` : '';
                         tooltip.text(`
-                            <div style="z-index:999999999;" class="p-3 bg-slate-900/95 text-white rounded-xl shadow-2xl border-2 border-indigo-400 text-xs backdrop-blur-md min-w-[170px]">
-                                <div class="font-extrabold text-indigo-300 text-sm border-b border-slate-700 pb-1.5 mb-2 flex items-center justify-between">
+                            <div style="z-index:999999999;" class="p-3 bg-slate-900/95 text-white rounded-xl shadow-2xl border-2 border-indigo-400 text-xs backdrop-blur-md min-w-[200px]">
+                                <div class="font-extrabold text-indigo-300 text-sm border-b border-slate-700 pb-1.5 mb-2 flex items-center justify-between gap-2">
                                     <span>${country.name}</span>
                                     <span class="text-[10px] text-slate-400 font-mono">${code}</span>
                                 </div>
-                                <div class="space-y-1.5">
-                                    <div class="flex justify-between text-slate-300">
-                                        <span>Hedeflenen:</span>
-                                        <strong class="text-white">${Number(country.target).toLocaleString('tr-TR')} ${country.unit}</strong>
-                                    </div>
-                                    <div class="flex justify-between text-slate-300">
-                                        <span>Gerçekleşen:</span>
-                                        <strong class="text-emerald-400 font-bold">${Number(country.actual).toLocaleString('tr-TR')} ${country.unit}</strong>
-                                    </div>
-                                    <div class="flex justify-between text-slate-300 pt-1.5 border-t border-slate-800">
-                                        <span>Başarı Oranı:</span>
-                                        <strong class="text-amber-400 font-black text-sm">%${country.rate}</strong>
-                                    </div>
+                                <div class="space-y-1">
+                                    ${kpiSection}
+                                    ${entrySection}
                                 </div>
+                                ${wpBadges ? `<div class="mt-2 pt-1.5 border-t border-slate-800 flex flex-wrap gap-1">${wpBadges}</div>` : ''}
+                                <div class="mt-1.5 text-[10px] text-amber-300 font-semibold">İşyeri detayı için tıklayın →</div>
                             </div>
                         `, true);
                     } else {
-                        tooltip.text(`<div style="z-index:999999999;" class="px-2.5 py-1 bg-slate-900/95 text-slate-400 text-xs rounded-lg border border-slate-700 shadow-lg">${tooltip.text()} (Hedef Yok)</div>`, true);
+                        tooltip.text(`<div style="z-index:999999999;" class="px-2.5 py-1 bg-slate-900/95 text-slate-400 text-xs rounded-lg border border-slate-700 shadow-lg">${tooltip.text()} (Veri Yok)</div>`, true);
                     }
                 },
                 onMarkerTooltipShow(event, tooltip, index) {

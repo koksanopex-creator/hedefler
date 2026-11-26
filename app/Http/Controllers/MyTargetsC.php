@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Models\FormEntryM;
 use App\Models\KpiTargetM;
 use App\Services\PermissionS;
 use App\Services\KpiTargetS;
+use Carbon\Carbon;
 
 class MyTargetsC extends Controller
 {
@@ -59,9 +61,20 @@ class MyTargetsC extends Controller
         ->pluck('target_year')
         ->toArray();
 
+        $entryYears = FormEntryM::where('user_id', $user->id)
+            ->pluck('entry_date')
+            ->filter()
+            ->map(fn($d) => (int) Carbon::parse($d)->year)
+            ->toArray();
+
+        $availableYears = array_unique(array_merge($availableYears, $entryYears));
+
         $currentYear = (int) date('Y');
         if (!in_array($currentYear, $availableYears)) {
             $availableYears[] = $currentYear;
+        }
+        if (!in_array($selectedYear, $availableYears)) {
+            $availableYears[] = $selectedYear;
         }
         rsort($availableYears);
 

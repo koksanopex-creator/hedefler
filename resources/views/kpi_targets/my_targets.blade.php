@@ -134,7 +134,12 @@
 
             {{-- 2. ETKİLEŞİMLİ COĞRAFİ HARİTA & RADAR ANALİZİ --}}
             @if(isset($geoData) && isset($radarData))
-                @include('kpi_targets.partials.geo_map_and_radar', ['geoData' => $geoData, 'radarData' => $radarData])
+                @include('kpi_targets.partials.geo_map_and_radar', [
+                    'geoData' => $geoData,
+                    'radarData' => $radarData,
+                    'availableYears' => $availableYears ?? [($geoData['year'] ?? (int) date('Y'))],
+                    'yearParamName' => 'year',
+                ])
             @endif
 
             {{-- 3. HEDEFLER LİSTESİ VEYA BOŞ DURUM --}}

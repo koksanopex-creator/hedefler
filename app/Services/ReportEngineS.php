@@ -893,7 +893,16 @@ class ReportEngineS
      */
     public function getCountryIsoCode(string $countryName): ?string
     {
-        $normalized = mb_strtolower(trim($countryName), 'UTF-8');
+        $trimmed = trim($countryName);
+        if ($trimmed === '') {
+            return null;
+        }
+        $normalized = mb_strtolower(str_replace(['İ', 'I'], ['i', 'ı'], $trimmed), 'UTF-8');
+        $asciiFolded = str_replace(
+            ['ı', 'ğ', 'ü', 'ş', 'ö', 'ç'],
+            ['i', 'g', 'u', 's', 'o', 'c'],
+            $normalized
+        );
         $map = [
             'türkiye' => 'TR',
             'turkiye' => 'TR',
@@ -1110,9 +1119,46 @@ class ReportEngineS
             'bahreyn' => 'BH',
             'bahrain' => 'BH',
             'yemen' => 'YE',
+            'kıbrıs' => 'CY',
+            'kibris' => 'CY',
+            'kktc' => 'CY',
+            'cyprus' => 'CY',
+            'cy' => 'CY',
+            'suriye' => 'SY',
+            'syria' => 'SY',
+            'sy' => 'SY',
+            'sirbistan' => 'RS',
+            'hirvatistan' => 'HR',
+            'slovenya' => 'SI',
+            'slovenia' => 'SI',
+            'slovakya' => 'SK',
+            'slovakia' => 'SK',
+            'finlandiya' => 'FI',
+            'finland' => 'FI',
+            'kırgızistan' => 'KG',
+            'kirgizistan' => 'KG',
+            'kyrgyzstan' => 'KG',
+            'tacikistan' => 'TJ',
+            'tajikistan' => 'TJ',
+            'afganistan' => 'AF',
+            'afghanistan' => 'AF',
+            'arjantin' => 'AR',
+            'argentina' => 'AR',
+            'venezuela' => 'VE',
+            'ekvador' => 'EC',
+            'ecuador' => 'EC',
+            'senegal' => 'SN',
+            'moldova' => 'MD',
+            'belarus' => 'BY',
+            'litvanya' => 'LT',
+            'lithuania' => 'LT',
+            'letonya' => 'LV',
+            'latvia' => 'LV',
+            'estonya' => 'EE',
+            'estonia' => 'EE',
         ];
 
-        return $map[$normalized] ?? (strlen($countryName) === 2 ? strtoupper($countryName) : null);
+        return $map[$normalized] ?? $map[$asciiFolded] ?? (strlen($trimmed) === 2 ? strtoupper($trimmed) : null);
     }
 
     /**

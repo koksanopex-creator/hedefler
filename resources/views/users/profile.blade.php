@@ -226,7 +226,12 @@
                     {{-- Coğrafi Harita & Radar Analizi --}}
                     @if(isset($geoData) && isset($radarData))
                         <div class="mt-6">
-                            @include('kpi_targets.partials.geo_map_and_radar', ['geoData' => $geoData, 'radarData' => $radarData])
+                            @include('kpi_targets.partials.geo_map_and_radar', [
+                                'geoData' => $geoData,
+                                'radarData' => $radarData,
+                                'availableYears' => $availableKpiYears ?? [($geoData['year'] ?? (int) date('Y'))],
+                                'yearParamName' => 'kpi_year',
+                            ])
                         </div>
                     @endif
                 </div>

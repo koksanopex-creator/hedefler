@@ -1,4 +1,23 @@
 @section('title', 'Veri Girişleri (Formlar)')
+<style>
+    @keyframes revisionBadgeBlink {
+        0%, 100% {
+            opacity: 1;
+            background-color: #fef3c7;
+            border-color: #f59e0b;
+            box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.45);
+        }
+        50% {
+            opacity: 0.45;
+            background-color: #fde68a;
+            border-color: #d97706;
+            box-shadow: 0 0 10px 2px rgba(245, 158, 11, 0.55);
+        }
+    }
+    .revision-blink-badge {
+        animation: revisionBadgeBlink 1.15s ease-in-out infinite;
+    }
+</style>
 <x-app-layout>
     <div x-data="{ 
         openConsolidateModal: false, 
@@ -398,7 +417,7 @@
                                         @endphp
                                         <div class="flex flex-col items-start gap-1">
                                             @if($entry->revisionRequests->firstWhere('status', 'pending'))
-                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-800 border border-amber-300 shadow-2xs" title="Düzenleme (revizyon) talebi değerlendirme aşamasında">
+                                                <span class="revision-blink-badge inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-800 border border-amber-300 shadow-2xs" title="Düzenleme (revizyon) talebi değerlendirme aşamasında">
                                                     <span class="w-1.5 h-1.5 bg-amber-500 rounded-full mr-1 animate-pulse"></span>
                                                     {{ __('Revizyon Bekliyor') }}
                                                 </span>
@@ -424,7 +443,7 @@
                                                 </span>
                                             @endif
                                             @if($pendingChildRevCount > 0)
-                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-300 shadow-2xs" title="Bağlı alt parçada düzenleme talebi bulunuyor">
+                                                <span class="revision-blink-badge inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-300 shadow-2xs" title="Bağlı alt parçada düzenleme talebi bulunuyor">
                                                     <span class="w-1.5 h-1.5 bg-amber-500 rounded-full mr-1 animate-pulse"></span>
                                                     Düzenleme Talebi ({{ $pendingChildRevCount }} Parça)
                                                 </span>
@@ -617,7 +636,7 @@
                                             </td>
                                             <td class="px-3.5 py-2.5 whitespace-nowrap">
                                                 @if($child->revisionRequests->firstWhere('status', 'pending'))
-                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-800 border border-amber-300 shadow-2xs" title="Düzenleme talebi değerlendirme aşamasında">
+                                                    <span class="revision-blink-badge inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-800 border border-amber-300 shadow-2xs" title="Düzenleme talebi değerlendirme aşamasında">
                                                         <span class="w-1.5 h-1.5 bg-amber-500 rounded-full mr-1 animate-pulse"></span>
                                                         Düzenleme Talebi Bekliyor
                                                     </span>

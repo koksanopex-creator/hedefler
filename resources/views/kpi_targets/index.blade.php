@@ -173,7 +173,9 @@
                     'users' => $users,
                     'groups' => $groups,
                     'geoUserId' => $geoUserId ?? null,
-                    'geoGroupId' => $geoGroupId ?? null
+                    'geoGroupId' => $geoGroupId ?? null,
+                    'availableYears' => $years ?? [($geoData['year'] ?? (int) date('Y'))],
+                    'yearParamName' => 'year',
                 ])
             @endif
 

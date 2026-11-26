@@ -853,20 +853,7 @@ class KpiTargetS
     public function getGeographicDistributionData(?int $userId = null, ?int $year = null, ?int $groupId = null): array
     {
         $year = $year ?? intval(date('Y'));
-
-        // ISO Kodları Eşleştirmesi (jsVectorMap dünya haritası ile tam uyumlu)
-        $countryIsoMap = [
-            'Türkiye' => 'TR',
-            'Turkiye' => 'TR',
-            'Almanya' => 'DE',
-            'Amerika' => 'US',
-            'Kazakistan' => 'KZ',
-            'Libya' => 'LY',
-            'Irak' => 'IQ',
-            'Hollanda' => 'NL',
-            'Belçika' => 'BE',
-            'Belcika' => 'BE',
-        ];
+        $reportEngine = app(\App\Services\ReportEngineS::class);
 
         // Şehir Koordinatları
         $cityCoords = [
@@ -898,7 +885,7 @@ class KpiTargetS
             'Brüksel' => [50.8503, 4.3517],
         ];
 
-        // İlgili hedefleri çek
+        // 1. İlgili KPI hedeflerini çek
         $targetsQuery = KpiTargetM::with(['template', 'targetField', 'realizations'])
             ->where('target_year', $year)
             ->where('status', 'active');
@@ -936,6 +923,26 @@ class KpiTargetS
         $countryStats = [];
         $cityStats = [];
 
+        $initCountry = function (string $iso, string $countryName, string $unit = 'Ton') use (&$countryStats): void {
+            if (!isset($countryStats[$iso])) {
+                $countryStats[$iso] = [
+                    'name' => $countryName,
+                    'iso' => $iso,
+                    'target' => 0.0,
+                    'actual' => 0.0,
+                    'rate' => 0.0,
+                    'unit' => $unit,
+                    'entry_rows' => 0,
+                    'total_tonaj' => 0.0,
+                    'total_tutar' => 0.0,
+                    'total_miktar' => 0.0,
+                    'workplaces' => [],
+                    'cities' => [],
+                    'has_entries_only' => false,
+                ];
+            }
+        };
+
         $ulkeField = FormFieldM::where(function($q) {
             $q->where('field_key', 'ulke')->orWhere('label', 'like', '%Ülke%');
         })->first();
@@ -956,17 +963,9 @@ class KpiTargetS
             $targetVal = floatval($target->target_value);
 
             if ($countryName) {
-                $iso = $countryIsoMap[$countryName] ?? null;
+                $iso = $reportEngine->getCountryIsoCode((string) $countryName);
                 if ($iso) {
-                    if (!isset($countryStats[$iso])) {
-                        $countryStats[$iso] = [
-                            'name' => $countryName,
-                            'iso' => $iso,
-                            'target' => 0.0,
-                            'actual' => 0.0,
-                            'unit' => $target->unit ?? 'Ton',
-                        ];
-                    }
+                    $initCountry($iso, (string) $countryName, $target->unit ?? 'Ton');
                     $countryStats[$iso]['target'] += $targetVal;
                     $countryStats[$iso]['actual'] += $actual;
                 }
@@ -988,22 +987,165 @@ class KpiTargetS
             }
         }
 
-        // Eğer henüz hedef tanımlanmamışsa Master Data'daki ana pazarları hazırla
-        if (empty($countryStats)) {
-            foreach (['TR' => 'Türkiye', 'KZ' => 'Kazakistan', 'DE' => 'Almanya', 'US' => 'Amerika'] as $iso => $name) {
-                $countryStats[$iso] = [
-                    'name' => $name,
-                    'iso' => $iso,
-                    'target' => 0,
-                    'actual' => 0,
-                    'rate' => 0,
-                    'unit' => 'Ton',
-                    'color' => '#e2e8f0',
-                ];
+        // 2. Girilen Form Verilerinden Ülke (Master Data) & İşyeri Kırılımını Bağla
+        $entriesQuery = FormEntryM::with(['template.fields.masterDataType', 'rows.values'])
+            ->whereYear('entry_date', $year)
+            ->where('status', '!=', 'rejected')
+            ->where(function ($q) {
+                $q->where('is_consolidated', false)->orWhereDoesntHave('children');
+            });
+
+        if ($userId) {
+            $entriesQuery->where('user_id', $userId);
+        } elseif ($groupId) {
+            $entriesQuery->whereHas('user', fn($q) => $q->where('group_id', $groupId));
+        }
+
+        $entries = $entriesQuery->get();
+
+        $normalize = fn(?string $s): string => mb_strtolower(str_replace(['İ', 'I'], ['i', 'ı'], trim((string) $s)), 'UTF-8');
+
+        foreach ($entries as $entry) {
+            $fields = $entry->template?->fields ?? collect();
+            if ($fields->isEmpty()) {
+                continue;
             }
-        } else {
-            foreach ($countryStats as $iso => &$c) {
-                $c['rate'] = $c['target'] > 0 ? round(($c['actual'] / $c['target']) * 100, 1) : 0;
+
+            $countryField = $fields->first(function ($f) use ($normalize) {
+                if (($f->type ?? null) === 'master_data' && $f->masterDataType) {
+                    $mdKey = $normalize($f->masterDataType->slug ?? '') . ' ' . $normalize($f->masterDataType->name ?? '');
+                    if (str_contains($mdKey, 'ulke') || str_contains($mdKey, 'ülke') || str_contains($mdKey, 'country')) {
+                        return true;
+                    }
+                }
+                $fKey = $normalize($f->field_key ?? '');
+                $fLabel = $normalize($f->label ?? '');
+                return $fKey === 'ulke' || str_contains($fLabel, 'ülke') || str_contains($fLabel, 'ulke') || str_contains($fLabel, 'country');
+            });
+
+            if (!$countryField) {
+                continue;
+            }
+
+            $workplaceField = $fields->first(function ($f) use ($normalize) {
+                $fKey = $normalize($f->field_key ?? '');
+                $fLabel = $normalize($f->label ?? '');
+                return $fKey === 'isyeri' || str_contains($fLabel, 'işyeri') || str_contains($fLabel, 'isyeri');
+            });
+
+            $entryCityField = $fields->first(function ($f) use ($normalize) {
+                $fKey = $normalize($f->field_key ?? '');
+                $fLabel = $normalize($f->label ?? '');
+                return $fKey === 'sehir' || str_contains($fLabel, 'şehir') || str_contains($fLabel, 'sehir');
+            });
+
+            $tonajField = $fields->first(function ($f) use ($normalize) {
+                return str_contains($normalize($f->field_key ?? ''), 'tonaj') || str_contains($normalize($f->label ?? ''), 'tonaj');
+            });
+            $tutarField = $fields->first(function ($f) use ($normalize) {
+                return str_contains($normalize($f->field_key ?? ''), 'tutar') || str_contains($normalize($f->label ?? ''), 'tutar');
+            });
+            $miktarField = $fields->first(function ($f) use ($normalize) {
+                $fk = $normalize($f->field_key ?? '');
+                $fl = $normalize($f->label ?? '');
+                return str_contains($fk, 'miktar') || str_contains($fl, 'miktar') || str_contains($fl, 'teslimat');
+            });
+
+            foreach ($entry->rows as $row) {
+                $rowVals = [];
+                foreach ($row->values as $val) {
+                    $rowVals[$val->form_field_id] = $val->value;
+                }
+
+                $countryName = trim((string) ($rowVals[$countryField->id] ?? ''));
+                if ($countryName === '') {
+                    continue;
+                }
+
+                $iso = $reportEngine->getCountryIsoCode($countryName);
+                if (!$iso) {
+                    continue;
+                }
+
+                $initCountry($iso, $countryName);
+
+                $wpRaw = !empty($entry->partition_value)
+                    ? trim((string) $entry->partition_value)
+                    : ($workplaceField ? trim((string) ($rowVals[$workplaceField->id] ?? '')) : '');
+                $wpName = $wpRaw !== '' ? mb_strtoupper($wpRaw, 'UTF-8') : 'GENEL';
+                $wpKey = mb_strtolower($wpName, 'UTF-8');
+
+                $rowCity = $entryCityField ? trim((string) ($rowVals[$entryCityField->id] ?? '')) : '';
+                $tonajVal = $tonajField ? $reportEngine->parseNumericValue($rowVals[$tonajField->id] ?? 0) : 0.0;
+                $tutarVal = $tutarField ? $reportEngine->parseNumericValue($rowVals[$tutarField->id] ?? 0) : 0.0;
+                $miktarVal = $miktarField ? $reportEngine->parseNumericValue($rowVals[$miktarField->id] ?? 0) : 0.0;
+
+                $countryStats[$iso]['entry_rows']++;
+                $countryStats[$iso]['total_tonaj'] += $tonajVal;
+                $countryStats[$iso]['total_tutar'] += $tutarVal;
+                $countryStats[$iso]['total_miktar'] += $miktarVal;
+
+                if ($rowCity !== '') {
+                    $countryStats[$iso]['cities'][$rowCity] = true;
+                }
+
+                if (!isset($countryStats[$iso]['workplaces'][$wpKey])) {
+                    $countryStats[$iso]['workplaces'][$wpKey] = [
+                        'name' => $wpName,
+                        'rows' => 0,
+                        'tonaj' => 0.0,
+                        'tutar' => 0.0,
+                        'miktar' => 0.0,
+                        'cities' => [],
+                    ];
+                }
+
+                $countryStats[$iso]['workplaces'][$wpKey]['rows']++;
+                $countryStats[$iso]['workplaces'][$wpKey]['tonaj'] += $tonajVal;
+                $countryStats[$iso]['workplaces'][$wpKey]['tutar'] += $tutarVal;
+                $countryStats[$iso]['workplaces'][$wpKey]['miktar'] += $miktarVal;
+                if ($rowCity !== '') {
+                    $countryStats[$iso]['workplaces'][$wpKey]['cities'][$rowCity] = true;
+                }
+            }
+        }
+
+        // 3. Ülke renklerini, oranlarını ve işyeri sıralamasını hesapla (Veri yoksa boş döner)
+        $maxEntryScore = 0.0;
+        foreach ($countryStats as $c) {
+            if ($c['target'] <= 0 && $c['entry_rows'] > 0) {
+                $score = $c['total_tonaj'] > 0 ? $c['total_tonaj'] : (float) $c['entry_rows'];
+                if ($score > $maxEntryScore) {
+                    $maxEntryScore = $score;
+                }
+            }
+        }
+
+        foreach ($countryStats as $iso => &$c) {
+            $workplacesList = array_values($c['workplaces']);
+            foreach ($workplacesList as &$wp) {
+                $wp['cities'] = array_keys($wp['cities']);
+                $wp['tonaj'] = round($wp['tonaj'], 2);
+                $wp['tutar'] = round($wp['tutar'], 2);
+                $wp['miktar'] = round($wp['miktar'], 2);
+            }
+            unset($wp);
+
+            usort($workplacesList, function ($a, $b) {
+                if ($b['tonaj'] !== $a['tonaj']) {
+                    return $b['tonaj'] <=> $a['tonaj'];
+                }
+                return $b['rows'] <=> $a['rows'];
+            });
+
+            $c['workplaces'] = $workplacesList;
+            $c['cities'] = array_keys($c['cities']);
+            $c['total_tonaj'] = round($c['total_tonaj'], 2);
+            $c['total_tutar'] = round($c['total_tutar'], 2);
+            $c['total_miktar'] = round($c['total_miktar'], 2);
+
+            if ($c['target'] > 0) {
+                $c['rate'] = round(($c['actual'] / $c['target']) * 100, 1);
                 if ($c['rate'] >= 90) {
                     $c['color'] = '#10b981'; // Zümrüt Yeşili
                 } elseif ($c['rate'] >= 70) {
@@ -1013,9 +1155,27 @@ class KpiTargetS
                 } else {
                     $c['color'] = '#94a3b8'; // Gri / Henüz Başlamadı
                 }
+            } else {
+                $c['rate'] = 0;
+                $c['has_entries_only'] = true;
+                $score = $c['total_tonaj'] > 0 ? $c['total_tonaj'] : (float) $c['entry_rows'];
+                $share = $maxEntryScore > 0 ? ($score / $maxEntryScore) : 1.0;
+                if ($share >= 0.65) {
+                    $c['color'] = '#10b981'; // Zümrüt Yeşili
+                } elseif ($share >= 0.25) {
+                    $c['color'] = '#06b6d4'; // Turkuaz / Cyan
+                } else {
+                    $c['color'] = '#6366f1'; // İndigo
+                }
             }
-            unset($c);
         }
+        unset($c);
+
+        uasort($countryStats, function ($a, $b) {
+            $scoreA = $a['target'] > 0 ? $a['actual'] : ($a['total_tonaj'] > 0 ? $a['total_tonaj'] : $a['entry_rows']);
+            $scoreB = $b['target'] > 0 ? $b['actual'] : ($b['total_tonaj'] > 0 ? $b['total_tonaj'] : $b['entry_rows']);
+            return $scoreB <=> $scoreA;
+        });
 
         foreach ($cityStats as $name => &$ct) {
             $ct['rate'] = $ct['target'] > 0 ? round(($ct['actual'] / $ct['target']) * 100, 1) : 0;

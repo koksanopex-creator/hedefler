@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\UserM;
 use App\Models\FormEntryM;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -67,6 +68,17 @@ class UserProfileC extends Controller
 
             if (!empty($dbYears)) {
                 $availableKpiYears = array_unique(array_merge($availableKpiYears, $dbYears));
+            }
+            $entryYears = FormEntryM::where('user_id', $user->id)
+                ->pluck('entry_date')
+                ->filter()
+                ->map(fn($d) => (int) Carbon::parse($d)->year)
+                ->toArray();
+            if (!empty($entryYears)) {
+                $availableKpiYears = array_unique(array_merge($availableKpiYears, $entryYears));
+            }
+            if (!in_array($selectedKpiYear, $availableKpiYears)) {
+                $availableKpiYears[] = $selectedKpiYear;
             }
             rsort($availableKpiYears);
 

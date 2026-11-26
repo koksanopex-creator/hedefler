@@ -401,7 +401,7 @@ class FormEntryC extends Controller
             );
         }
 
-        $formEntry->load(['template.fields', 'rows.values', 'user.group', 'revisionRequests.reviewer', 'revisionRequests.user', 'approver', 'versions.user', 'children.rows', 'children.revisionRequests', 'parent']);
+        $formEntry->load(['template.fields', 'rows.values', 'user.group', 'revisionRequests.reviewer', 'revisionRequests.user', 'approver.role', 'versions.user', 'children.rows', 'children.revisionRequests', 'parent']);
 
         // Onay Yetkisi & Grup İzolasyonu Kontrolü
         $hasGlobalApprove = $this->permissionService->hasPermission($user, 'form_entries.approve');
@@ -431,6 +431,45 @@ class FormEntryC extends Controller
         $canViewApprover = $isSuperAdmin || $this->permissionService->hasPermission($user, 'form_entries.view_approver');
         $logs = collect();
         $historyLogs = collect();
+
+        $pendingRevisionApprovers = !empty($pendingRevision)
+            ? $this->resolvePendingApproverNames($formEntry, true, $isSuperAdmin)
+            : [];
+        $revisionWaitText = !empty($pendingRevision)
+            ? $this->formatWaitingDuration($pendingRevision->created_at)
+            : null;
+
+        $pendingApprovalApprovers = ($formEntry->status === 'submitted' && empty($pendingRevision))
+            ? $this->resolvePendingApproverNames($formEntry, false, $isSuperAdmin)
+            : [];
+        $approvalWaitText = ($formEntry->status === 'submitted' && empty($pendingRevision))
+            ? $this->formatWaitingDuration($formEntry->submitted_at ?? $formEntry->updated_at)
+            : null;
+
+        $approvedByDisplayName = null;
+        $approvedByLinkId = null;
+        $approvalElapsedText = null;
+        if ($formEntry->status === 'approved') {
+            if ($formEntry->approver) {
+                $approverIsSuperAdmin = ($formEntry->approver->role && $formEntry->approver->role->slug === 'sistem_yoneticisi')
+                    || $this->permissionService->hasPermission($formEntry->approver, 'roles.manage')
+                    || (int) $formEntry->approver->id === 1;
+
+                if ($approverIsSuperAdmin && !$isSuperAdmin) {
+                    $approvedByDisplayName = 'Yönetim';
+                } else {
+                    $approvedByDisplayName = $formEntry->approver->name;
+                    $approvedByLinkId = $canViewApprover ? $formEntry->approver->id : null;
+                }
+            }
+
+            if ($formEntry->approved_at) {
+                $approvalElapsedText = $this->formatApprovalElapsedDuration(
+                    $formEntry->submitted_at ?? $formEntry->created_at,
+                    $formEntry->approved_at
+                );
+            }
+        }
 
         // Onaya Gönderme ve Geri Çekme Yetkileri (Form sahibi veya Superadmin)
         $canSubmitApproval = ($isSelf || $isSuperAdmin) && $formEntry->status === 'draft';
@@ -494,7 +533,14 @@ class FormEntryC extends Controller
             'draftChildren',
             'draftChildrenCount',
             'canSubmitChildrenApproval',
-            'addableParts'
+            'addableParts',
+            'pendingRevisionApprovers',
+            'revisionWaitText',
+            'pendingApprovalApprovers',
+            'approvalWaitText',
+            'approvedByDisplayName',
+            'approvedByLinkId',
+            'approvalElapsedText'
         ));
     }
 
@@ -842,6 +888,7 @@ class FormEntryC extends Controller
 
         $prevStatus = $formEntry->status;
         $formEntry->status = 'submitted';
+        $formEntry->submitted_at = now();
         $formEntry->approved_at = null;
         $formEntry->approved_by = null;
         $formEntry->rejection_reason = null;
@@ -850,6 +897,7 @@ class FormEntryC extends Controller
         if ($formEntry->is_consolidated) {
             foreach ($formEntry->children as $child) {
                 $child->status = 'submitted';
+                $child->submitted_at = now();
                 $child->approved_at = null;
                 $child->approved_by = null;
                 $child->save();
@@ -1302,6 +1350,7 @@ class FormEntryC extends Controller
 
             // Formun onayını kaldır ve submitted (düzenlenebilir) duruma al
             $formEntry->status = 'submitted';
+            $formEntry->submitted_at = now();
             $formEntry->approved_at = null;
             $formEntry->approved_by = null;
             $formEntry->save();
@@ -1312,6 +1361,7 @@ class FormEntryC extends Controller
                 foreach ($formEntry->children as $child) {
                     if ($child->status === 'approved') {
                         $child->status = 'submitted';
+                        $child->submitted_at = now();
                         $child->approved_at = null;
                         $child->approved_by = null;
                         $child->save();
@@ -1883,5 +1933,151 @@ class FormEntryC extends Controller
         }
 
         return back()->withInput()->with('error', $e->getMessage());
+    }
+
+    /**
+     * Form onayı veya düzenleme talebi için onay beklenen yetkili kullanıcı isimlerini çözer.
+     *
+     * @return string[]
+     */
+    public function resolvePendingApproverNames(FormEntryM $formEntry, bool $forRevision, bool $viewerIsSuperAdmin): array
+    {
+        $ownerGroupId = $formEntry->user?->group_id;
+
+        $candidates = \App\Models\UserM::where('is_active', true)
+            ->with(['role.permissions', 'permissions', 'managedGroups'])
+            ->orderBy('name', 'asc')
+            ->get(['id', 'name', 'role_id', 'group_id']);
+
+        $groupApprovers = [];
+        $globalApprovers = [];
+        $superAdmins = [];
+
+        $checkPermission = function (\App\Models\UserM $candidate, string $slug): bool {
+            if ($candidate->role && $candidate->role->slug === 'sistem_yoneticisi') {
+                return true;
+            }
+            $override = $candidate->permissions->firstWhere('slug', $slug);
+            if ($override) {
+                return (bool) $override->pivot->allowed;
+            }
+            return $candidate->role ? $candidate->role->permissions->contains('slug', $slug) : false;
+        };
+
+        foreach ($candidates as $candidate) {
+            if ((int) $candidate->id === (int) $formEntry->user_id) {
+                continue;
+            }
+
+            $candidateIsSuperAdmin = ($candidate->role && $candidate->role->slug === 'sistem_yoneticisi')
+                || $checkPermission($candidate, 'roles.manage')
+                || (int) $candidate->id === 1;
+
+            if ($candidateIsSuperAdmin) {
+                $superAdmins[$candidate->id] = $candidate->name;
+                continue;
+            }
+
+            $isGroupMgr = $ownerGroupId && $candidate->managedGroups->contains('id', $ownerGroupId);
+
+            if ($forRevision) {
+                $hasManageRev = $checkPermission($candidate, 'form_entries.manage_revision_requests');
+                $hasGlobalApprove = $checkPermission($candidate, 'form_entries.approve');
+                if ($hasManageRev && $isGroupMgr) {
+                    $groupApprovers[$candidate->id] = $candidate->name;
+                } elseif ($hasManageRev && $hasGlobalApprove) {
+                    $globalApprovers[$candidate->id] = $candidate->name;
+                }
+            } else {
+                $hasGroupApprove = $checkPermission($candidate, 'form_entries.approve_group');
+                $hasGlobalApprove = $checkPermission($candidate, 'form_entries.approve');
+                if ($isGroupMgr && ($hasGroupApprove || $hasGlobalApprove)) {
+                    $groupApprovers[$candidate->id] = $candidate->name;
+                } elseif ($hasGlobalApprove) {
+                    $globalApprovers[$candidate->id] = $candidate->name;
+                }
+            }
+        }
+
+        $resolved = $groupApprovers + $globalApprovers;
+        if (!empty($resolved)) {
+            return array_values($resolved);
+        }
+
+        if ($viewerIsSuperAdmin && !empty($superAdmins)) {
+            return array_values($superAdmins);
+        }
+
+        return ['Yönetim'];
+    }
+
+    /**
+     * Verilen başlangıç zamanından bu yana geçen bekleme süresini Türkçe metne çevirir.
+     */
+    public function formatWaitingDuration(?\Carbon\CarbonInterface $since): ?string
+    {
+        if ($since === null) {
+            return null;
+        }
+
+        $totalMinutes = max(0, (int) $since->diffInMinutes(now()));
+
+        if ($totalMinutes < 1) {
+            return 'Az önce (1 dakikadan az)';
+        }
+
+        if ($totalMinutes < 60) {
+            return "{$totalMinutes} dakikadır bekliyor";
+        }
+
+        if ($totalMinutes < 1440) {
+            $hours = intdiv($totalMinutes, 60);
+            $mins = $totalMinutes % 60;
+            return $mins > 0
+                ? "{$hours} saat {$mins} dakikadır bekliyor"
+                : "{$hours} saattir bekliyor";
+        }
+
+        $days = intdiv($totalMinutes, 1440);
+        $remHours = intdiv($totalMinutes % 1440, 60);
+
+        return $remHours > 0
+            ? "{$days} gün {$remHours} saattir bekliyor"
+            : "{$days} gündür bekliyor";
+    }
+
+    /**
+     * Gönderim tarihi ile onaylanma tarihi arasındaki onay süresini Türkçe metne çevirir.
+     */
+    public function formatApprovalElapsedDuration(?\Carbon\CarbonInterface $start, ?\Carbon\CarbonInterface $end): ?string
+    {
+        if ($start === null || $end === null) {
+            return null;
+        }
+
+        $totalMinutes = $end->lt($start) ? 0 : (int) $start->diffInMinutes($end);
+
+        if ($totalMinutes < 1) {
+            return '1 dakikadan kısa sürede onaylandı';
+        }
+
+        if ($totalMinutes < 60) {
+            return "{$totalMinutes} dakikada onaylandı";
+        }
+
+        if ($totalMinutes < 1440) {
+            $hours = intdiv($totalMinutes, 60);
+            $mins = $totalMinutes % 60;
+            return $mins > 0
+                ? "{$hours} saat {$mins} dakikada onaylandı"
+                : "{$hours} saatte onaylandı";
+        }
+
+        $days = intdiv($totalMinutes, 1440);
+        $remHours = intdiv($totalMinutes % 1440, 60);
+
+        return $remHours > 0
+            ? "{$days} gün {$remHours} saatte onaylandı"
+            : "{$days} günde onaylandı";
     }
 }

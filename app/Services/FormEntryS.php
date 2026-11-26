@@ -53,6 +53,8 @@ class FormEntryS
                 $entry->status = $status;
                 if ($status === 'submitted') {
                     $entry->submitted_at = now();
+                } else {
+                    $entry->submitted_at = null;
                 }
             }
             
@@ -466,6 +468,7 @@ class FormEntryS
                     $child->save();
                 } elseif ($status === 'draft' && $child->status === 'submitted') {
                     $child->status = 'draft';
+                    $child->submitted_at = null;
                     $child->save();
                 }
             }

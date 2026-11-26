@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\KpiTargetM;
 use App\Models\KpiTargetPeriodM;
+use App\Models\FormEntryM;
 use App\Models\FormTemplateM;
 use App\Models\FormFieldM;
 use App\Models\MasterDataItemM;
@@ -11,6 +12,7 @@ use App\Models\UserM;
 use App\Models\GroupM;
 use App\Services\KpiTargetS;
 use App\Services\PermissionS;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -143,7 +145,7 @@ class KpiTargetC extends Controller
         $templates = FormTemplateM::where('is_active', true)->orderBy('name')->get();
         $groups = $this->getAccessibleGroups($user);
         $users = $this->getAccessibleUsers($user);
-        $years = range(date('Y') + 2, 2024);
+        $years = $this->getAvailableYears((int) $filters['year']);
 
         // Özet Metrik Kartları (Kullanıcının yetki kapsamındaki hedeflere göre hesaplanır)
         $baseQuery = $this->kpiService->getTargetsQuery(['year' => $filters['year']], $user);
@@ -230,7 +232,7 @@ class KpiTargetC extends Controller
 
         $groups = $this->getAccessibleGroups($user);
         $users = $this->getAccessibleUsers($user);
-        $years = range(date('Y') + 2, 2024);
+        $years = $this->getAvailableYears();
 
         $isGlobalView = $this->permissionService->hasPermission($user, 'kpi_targets.view_all') ||
             $this->permissionService->hasPermission($user, 'kpi_targets.manage') ||
@@ -448,7 +450,7 @@ class KpiTargetC extends Controller
         $templates = FormTemplateM::with('fields')->where('is_active', true)->orderBy('name')->get();
         $groups = $this->getAccessibleGroups($user);
         $users = $this->getAccessibleUsers($user);
-        $years = range(date('Y') + 2, 2024);
+        $years = $this->getAvailableYears();
         $parentTargets = KpiTargetM::where('id', '!=', $kpiTarget->id)->where('status', 'active')->orderBy('title')->get();
 
         // Şablonun Kriter Filtre Alanları
@@ -698,5 +700,33 @@ class KpiTargetC extends Controller
             'label' => $field->label,
             'options' => $options,
         ]);
+    }
+
+    /**
+     * Form girişleri ve KPI hedeflerindeki tüm yılları birleştirerek yıl listesi üretir.
+     *
+     * @return int[]
+     */
+    private function getAvailableYears(?int $selectedYear = null): array
+    {
+        $entryYears = FormEntryM::pluck('entry_date')
+            ->filter()
+            ->map(fn($d) => (int) Carbon::parse($d)->year)
+            ->toArray();
+
+        $targetYears = KpiTargetM::distinct()
+            ->pluck('target_year')
+            ->map(fn($y) => (int) $y)
+            ->toArray();
+
+        $years = array_merge(range((int) date('Y') + 2, 2024), $entryYears, $targetYears);
+        if ($selectedYear !== null) {
+            $years[] = $selectedYear;
+        }
+
+        $years = array_unique($years);
+        rsort($years);
+
+        return array_values($years);
     }
 }

@@ -8,6 +8,23 @@
         opacity: 0.70 !important;
         cursor: wait !important;
     }
+    @keyframes revisionBadgeBlink {
+        0%, 100% {
+            opacity: 1;
+            background-color: #fef3c7;
+            border-color: #f59e0b;
+            box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.45);
+        }
+        50% {
+            opacity: 0.45;
+            background-color: #fde68a;
+            border-color: #d97706;
+            box-shadow: 0 0 10px 2px rgba(245, 158, 11, 0.55);
+        }
+    }
+    .revision-blink-badge {
+        animation: revisionBadgeBlink 1.15s ease-in-out infinite;
+    }
 </style>
 <x-app-layout>
     <x-slot name="header">
@@ -20,38 +37,35 @@
             </div>
 
             <div class="flex items-center gap-3 flex-wrap">
-                <div class="text-sm">
-                    @if(!empty($pendingRevision))
-                        <span
-                            class="inline-flex items-center px-3 py-1 font-semibold rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-xs shadow-xs">
-                            <span class="w-1.5 h-1.5 bg-amber-500 rounded-full mr-1.5 animate-pulse"></span>{{ __('Düzenleme Talebi Bekliyor') }}
-                        </span>
-                    @elseif($formEntry->status === 'draft')
-                        <span
-                            class="inline-flex items-center px-3 py-1 font-semibold rounded-full bg-gray-100 text-gray-800 border border-gray-200 text-xs">
-                            <span class="w-1.5 h-1.5 bg-gray-400 rounded-full mr-1.5"></span>{{ __('Taslak') }}
-                        </span>
-                    @elseif($formEntry->status === 'submitted')
-                        <span
-                            class="inline-flex items-center px-3 py-1 font-semibold rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-xs">
-                            <span class="w-1.5 h-1.5 bg-amber-500 rounded-full mr-1.5 animate-pulse"></span>{{ __('Onay Bekliyor') }}
-                        </span>
-                    @elseif($formEntry->status === 'approved')
-                        <span
-                            class="inline-flex items-center px-3 py-1 font-semibold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs">
-                            <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-1.5"></span>{{ __('Onaylandı') }}
-                        </span>
-                    @elseif($formEntry->status === 'rejected')
-                        <span
-                            class="inline-flex items-center px-3 py-1 font-semibold rounded-full bg-red-50 text-red-700 border border-red-200 text-xs">
-                            <span class="w-1.5 h-1.5 bg-red-500 rounded-full mr-1.5"></span>{{ __('Reddedildi') }}
-                        </span>
-                    @endif
-                </div>
+                @if(empty($pendingRevision))
+                    <div class="text-sm">
+                        @if($formEntry->status === 'draft')
+                            <span
+                                class="inline-flex items-center px-3 py-1 font-semibold rounded-full bg-gray-100 text-gray-800 border border-gray-200 text-xs">
+                                <span class="w-1.5 h-1.5 bg-gray-400 rounded-full mr-1.5"></span>{{ __('Taslak') }}
+                            </span>
+                        @elseif($formEntry->status === 'submitted')
+                            <span
+                                class="inline-flex items-center px-3 py-1 font-semibold rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-xs">
+                                <span class="w-1.5 h-1.5 bg-amber-500 rounded-full mr-1.5 animate-pulse"></span>{{ __('Onay Bekliyor') }}
+                            </span>
+                        @elseif($formEntry->status === 'approved')
+                            <span
+                                class="inline-flex items-center px-3 py-1 font-semibold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs">
+                                <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-1.5"></span>{{ __('Onaylandı') }}
+                            </span>
+                        @elseif($formEntry->status === 'rejected')
+                            <span
+                                class="inline-flex items-center px-3 py-1 font-semibold rounded-full bg-red-50 text-red-700 border border-red-200 text-xs">
+                                <span class="w-1.5 h-1.5 bg-red-500 rounded-full mr-1.5"></span>{{ __('Reddedildi') }}
+                            </span>
+                        @endif
+                    </div>
+                @endif
 
                 @if(!empty($pendingRevision))
                     <button type="button" disabled
-                        class="inline-flex items-center px-3.5 py-2 bg-amber-100 text-amber-800 border border-amber-300 text-xs font-bold rounded-lg shadow-sm gap-1.5 cursor-not-allowed opacity-80 select-none"
+                        class="revision-blink-badge inline-flex items-center px-3.5 py-2 bg-amber-100 text-amber-800 border border-amber-300 text-xs font-bold rounded-lg shadow-sm gap-1.5 cursor-not-allowed select-none"
                         title="{{ __('Düzenleme Talebi Bekliyor') }}">
                         <svg class="w-4 h-4 animate-spin text-amber-700" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
@@ -467,6 +481,20 @@
                                 Bu form için <strong>{{ $pendingRevision->user->name }}</strong> tarafından
                                 ({{ $pendingRevision->created_at->format('d.m.Y H:i') }}) düzenleme talebi iletilmiştir.
                             </p>
+                            @if(!empty($pendingRevisionApprovers) || !empty($revisionWaitText))
+                                <div class="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-amber-900">
+                                    @if(!empty($pendingRevisionApprovers))
+                                        <span>
+                                            <strong>Onay Beklenen:</strong> {{ implode(', ', $pendingRevisionApprovers) }}
+                                        </span>
+                                    @endif
+                                    @if(!empty($revisionWaitText))
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-amber-100 border border-amber-300 font-semibold text-amber-900">
+                                            ⏱ {{ $revisionWaitText }}
+                                        </span>
+                                    @endif
+                                </div>
+                            @endif
                             <p
                                 class="mt-1.5 text-xs font-medium text-amber-950 bg-amber-100/70 p-2.5 rounded-lg border border-amber-200">
                                 <strong>Talep Gerekçesi:</strong> {{ $pendingRevision->reason }}
@@ -753,7 +781,7 @@
                                     </path>
                                 </svg>
                             </div>
-                            <div class="truncate">
+                            <div class="min-w-0">
                                 <p class="text-[11px] text-amber-700 uppercase font-bold tracking-wider">Düzenleme Durumu
                                 </p>
                                 <p class="font-extrabold text-amber-950 text-sm">
@@ -762,6 +790,19 @@
                                 <p class="text-xs text-amber-800 truncate">
                                     {{ $pendingRevision->created_at->format('d.m.Y H:i') }}
                                 </p>
+                                @if(!empty($pendingRevisionApprovers))
+                                    <p class="text-xs text-amber-900 truncate mt-0.5"
+                                        title="{{ implode(', ', $pendingRevisionApprovers) }}">
+                                        <span class="font-semibold">Onay Beklenen:</span>
+                                        {{ implode(', ', $pendingRevisionApprovers) }}
+                                    </p>
+                                @endif
+                                @if(!empty($revisionWaitText))
+                                    <span
+                                        class="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-900 border border-amber-200">
+                                        ⏱ {{ $revisionWaitText }}
+                                    </span>
+                                @endif
                             </div>
                         </div>
                         @if(!empty($canViewHistory) && $canViewHistory)
@@ -788,20 +829,30 @@
                                         d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                 </svg>
                             </div>
-                            <div class="truncate">
+                            <div class="min-w-0">
                                 <p class="text-[11px] text-emerald-700 uppercase font-bold tracking-wider">Onaylanma Tarihi
                                 </p>
                                 <p class="font-extrabold text-emerald-950 text-sm">
                                     {{ $formEntry->approved_at ? $formEntry->approved_at->format('d.m.Y H:i') : '-' }}
                                 </p>
                                 <p class="text-xs text-emerald-800 truncate">
-                                    @if(!empty($canViewApprover) && $formEntry->approver)
-                                        Onaylayan: <a href="{{ route('users.profile', $formEntry->approver->id) }}"
-                                            class="font-bold hover:underline" @click.stop>{{ $formEntry->approver->name }}</a>
+                                    @if(!empty($approvedByDisplayName))
+                                        @if(!empty($approvedByLinkId))
+                                            Onaylayan: <a href="{{ route('users.profile', $approvedByLinkId) }}"
+                                                class="font-bold hover:underline" @click.stop>{{ $approvedByDisplayName }}</a>
+                                        @else
+                                            Onaylayan: <span class="font-bold">{{ $approvedByDisplayName }}</span>
+                                        @endif
                                     @else
                                         Form Onaylandı
                                     @endif
                                 </p>
+                                @if(!empty($approvalElapsedText))
+                                    <span
+                                        class="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-200">
+                                        ⏱ {{ $approvalElapsedText }}
+                                    </span>
+                                @endif
                             </div>
                         </div>
                         @if(!empty($canViewHistory) && $canViewHistory)
@@ -828,7 +879,7 @@
                                         d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                 </svg>
                             </div>
-                            <div class="truncate">
+                            <div class="min-w-0">
                                 <p class="text-[11px] text-amber-700 uppercase font-bold tracking-wider">Onay Durumu</p>
                                 <p class="font-extrabold text-amber-950 text-sm">
                                     Onay Bekliyor
@@ -840,6 +891,19 @@
                                         Yönetici incelemesinde
                                     @endif
                                 </p>
+                                @if(!empty($pendingApprovalApprovers))
+                                    <p class="text-xs text-amber-900 truncate mt-0.5"
+                                        title="{{ implode(', ', $pendingApprovalApprovers) }}">
+                                        <span class="font-semibold">Onay Beklenen:</span>
+                                        {{ implode(', ', $pendingApprovalApprovers) }}
+                                    </p>
+                                @endif
+                                @if(!empty($approvalWaitText))
+                                    <span
+                                        class="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-900 border border-amber-200">
+                                        ⏱ {{ $approvalWaitText }}
+                                    </span>
+                                @endif
                             </div>
                         </div>
                         @if(!empty($canViewHistory) && $canViewHistory)
