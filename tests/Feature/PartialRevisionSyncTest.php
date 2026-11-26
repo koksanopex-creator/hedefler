@@ -113,8 +113,9 @@ class PartialRevisionSyncTest extends TestCase
             ->post(route('form-entries.revision-requests.review', $rev), ['action' => 'approve'])
             ->assertRedirect();
 
-        // Sadece KAPAK düzenlemeye açılmış olmalı; PREFORM ve konsolide ana form onaylı kalmalı
-        $this->assertEquals('submitted', $kapak->fresh()->status);
+        // Sadece KAPAK düzenlemeye (taslak) açılmış olmalı; PREFORM ve konsolide ana form onaylı kalmalı
+        $this->assertEquals('draft', $kapak->fresh()->status);
+        $this->assertNull($kapak->fresh()->submitted_at);
         $this->assertEquals('approved', $preform->fresh()->status);
         $this->assertEquals('approved', $parent->fresh()->status);
 
@@ -170,9 +171,43 @@ class PartialRevisionSyncTest extends TestCase
             ->post(route('form-entries.revision-requests.review', $rev), ['action' => 'approve'])
             ->assertRedirect();
 
-        $this->assertEquals('submitted', $parent->fresh()->status);
-        $this->assertEquals('submitted', $kapak->fresh()->status);
-        $this->assertEquals('submitted', $preform->fresh()->status);
+        $this->assertEquals('draft', $parent->fresh()->status);
+        $this->assertNull($parent->fresh()->submitted_at);
+        $this->assertEquals('draft', $kapak->fresh()->status);
+        $this->assertNull($kapak->fresh()->submitted_at);
+        $this->assertEquals('draft', $preform->fresh()->status);
+        $this->assertNull($preform->fresh()->submitted_at);
+    }
+
+    public function test_consolidating_approved_children_preserves_real_approver_instead_of_consolidator(): void
+    {
+        $service = app(FormEntryS::class);
+
+        $kapak = $service->saveEntry($this->template, $this->owner, '2026-11-26', [
+            [$this->partitionField->id => 'KAPAK', $this->valueField->id => '100'],
+        ], 'submitted', null, 'KAPAK');
+        $kapak->submitted_at = now()->subHours(3);
+        $kapak->status = 'approved';
+        $kapak->approved_by = $this->approver->id;
+        $kapak->approved_at = now()->subHour();
+        $kapak->save();
+
+        $preform = $service->saveEntry($this->template, $this->owner, '2026-11-26', [
+            [$this->partitionField->id => 'PREFORM', $this->valueField->id => '200'],
+        ], 'submitted', null, 'PREFORM');
+        $preform->submitted_at = now()->subHours(2);
+        $preform->status = 'approved';
+        $preform->approved_by = $this->approver->id;
+        $preform->approved_at = now()->subMinutes(10);
+        $preform->save();
+
+        // Form sahibi ($this->owner) iki onaylı parçayı birleştirdiğinde onaylayan $this->approver kalmalı
+        $parent = $service->consolidateEntries([$kapak->id, $preform->id], $this->owner);
+
+        $this->assertEquals('approved', $parent->status);
+        $this->assertEquals($this->approver->id, $parent->approved_by);
+        $this->assertEquals($preform->approved_at->format('Y-m-d H:i:s'), $parent->approved_at->format('Y-m-d H:i:s'));
+        $this->assertEquals($preform->submitted_at->format('Y-m-d H:i:s'), $parent->submitted_at->format('Y-m-d H:i:s'));
     }
 
     public function test_user_can_cancel_pending_revision_request_and_withdraw_notifications(): void

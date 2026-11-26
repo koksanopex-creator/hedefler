@@ -1364,9 +1364,9 @@ class FormEntryC extends Controller
                 'reviewed_at' => now(),
             ]);
 
-            // Formun onayını kaldır ve submitted (düzenlenebilir) duruma al
-            $formEntry->status = 'submitted';
-            $formEntry->submitted_at = now();
+            // Formun onayını kaldır ve taslak (düzenlenebilir) duruma al; kullanıcı düzenleyip tekrar onaya gönderene kadar onay bekliyor sayılmasın
+            $formEntry->status = 'draft';
+            $formEntry->submitted_at = null;
             $formEntry->approved_at = null;
             $formEntry->approved_by = null;
             $formEntry->save();
@@ -1376,8 +1376,8 @@ class FormEntryC extends Controller
                 $formEntry->loadMissing('children');
                 foreach ($formEntry->children as $child) {
                     if ($child->status === 'approved') {
-                        $child->status = 'submitted';
-                        $child->submitted_at = now();
+                        $child->status = 'draft';
+                        $child->submitted_at = null;
                         $child->approved_at = null;
                         $child->approved_by = null;
                         $child->save();

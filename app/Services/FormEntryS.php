@@ -382,8 +382,16 @@ class FormEntryS
             ]);
 
             if ($allApproved) {
-                $parent->approved_at = now();
-                $parent->approved_by = $performedBy->id;
+                $latestApprovedChild = $entries
+                    ->filter(fn($e) => !empty($e->approved_by))
+                    ->sortByDesc('approved_at')
+                    ->first();
+
+                $parent->approved_by = $latestApprovedChild?->approved_by ?? $performedBy->id;
+                $parent->approved_at = $latestApprovedChild?->approved_at ?? now();
+                $parent->submitted_at = $latestApprovedChild?->submitted_at
+                    ?? $entries->pluck('submitted_at')->filter()->min()
+                    ?? now();
             }
 
             $template->loadMissing('fields');

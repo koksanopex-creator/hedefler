@@ -703,7 +703,7 @@
             @endif
 
             {{-- Onaylanan Revizyon Bilgilendirmesi --}}
-            @if(!empty($approvedRevision) && $formEntry->status === 'submitted')
+            @if(!empty($approvedRevision) && in_array($formEntry->status, ['draft', 'submitted']))
                 <div
                     class="p-4 mb-5 text-sm bg-emerald-50 border-l-4 border-emerald-500 text-emerald-900 rounded-r-xl shadow-sm flex items-start justify-between gap-3">
                     <div class="flex items-start gap-3">
@@ -1062,7 +1062,11 @@
                                     Taslak
                                 </p>
                                 <p class="text-xs text-gray-400 truncate">
-                                    Henüz onaya gönderilmedi
+                                    @if(!empty($approvedRevision))
+                                        Düzenlemeye açıldı (revizyon onaylandı)
+                                    @else
+                                        Henüz onaya gönderilmedi
+                                    @endif
                                 </p>
                             </div>
                         </div>
