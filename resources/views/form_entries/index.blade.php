@@ -1,12 +1,15 @@
 @section('title', 'Veri Girişleri (Formlar)')
 <style>
     @keyframes revisionBadgeBlink {
-        0%, 100% {
+
+        0%,
+        100% {
             opacity: 1;
             background-color: #fef3c7;
             border-color: #f59e0b;
             box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.45);
         }
+
         50% {
             opacity: 0.45;
             background-color: #fde68a;
@@ -14,13 +17,16 @@
             box-shadow: 0 0 10px 2px rgba(245, 158, 11, 0.55);
         }
     }
+
     .revision-blink-badge {
         animation: revisionBadgeBlink 1.15s ease-in-out infinite;
     }
+
     .modern-entries-table thead tr {
         background-color: #f8fafc !important;
         border-bottom: 1px solid #e2e8f0 !important;
     }
+
     .modern-entries-table thead th {
         font-size: 10px !important;
         font-weight: 700 !important;
@@ -29,6 +35,7 @@
         padding-top: 0.75rem !important;
         padding-bottom: 0.75rem !important;
     }
+
     .user-group-spacer td {
         height: 16px !important;
         background-color: #f8fafc !important;
@@ -36,6 +43,7 @@
         border-top: 1px solid #e2e8f0 !important;
         border-bottom: 1px solid #e2e8f0 !important;
     }
+
     .user-group-header {
         background: linear-gradient(90deg, #eef2ff 0%, #f8fafc 65%, #ffffff 100%) !important;
         color: #0f172a !important;
@@ -43,60 +51,78 @@
         border-bottom: 1px solid #e2e8f0 !important;
         border-left: 4px solid #4f46e5 !important;
     }
+
     .user-group-header:hover {
         background: linear-gradient(90deg, #e0e7ff 0%, #f1f5f9 100%) !important;
     }
+
     .user-group-row {
         background-color: #ffffff !important;
         border-left: 4px solid #e0e7ff !important;
     }
+
     .user-group-row:hover {
         background-color: #f8fafc !important;
     }
+
     .user-group-child-row {
         background-color: #f8fafc !important;
         border-left: 4px solid #818cf8 !important;
     }
+
     .ug-avatar {
         background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%) !important;
         color: #ffffff !important;
         box-shadow: 0 2px 6px rgba(79, 70, 229, 0.25);
     }
+
     .ug-chevron {
         background-color: #ffffff !important;
         border: 1px solid #cbd5e1 !important;
         color: #475569 !important;
     }
+
     .ug-dept-pill {
         background-color: #ffffff !important;
         color: #475569 !important;
         border: 1px solid #e2e8f0 !important;
     }
+
     .ug-time-pill {
         background-color: #eff6ff !important;
         color: #0369a1 !important;
         border: 1px solid #bae6fd !important;
     }
+
     .ug-count-pill {
         background-color: #4f46e5 !important;
         color: #ffffff !important;
     }
+
     .ug-draft-pill {
         background-color: #f1f5f9 !important;
         color: #334155 !important;
         border: 1px solid #cbd5e1 !important;
     }
+
     .ug-submitted-pill {
         background-color: #fef3c7 !important;
         color: #92400e !important;
         border: 1px solid #fcd34d !important;
     }
+
     .ug-approved-pill {
         background-color: #dcfce7 !important;
         color: #166534 !important;
         border: 1px solid #86efac !important;
     }
 </style>
+@php
+    $groupByUsers = !empty($canSeeMultipleUsers) && $entries->count() > 0;
+    $entryGroups = $groupByUsers ? $entries->groupBy('user_id') : collect([0 => $entries]);
+    $allUserGroupIds = $groupByUsers ? $entryGroups->keys()->values()->map(fn($id) => (int) $id)->all() : [];
+    $groupColspan = (!empty($canDelete) && $canDelete ? 1 : 0) + ((isset($canViewApprover) && $canViewApprover) ? 6 : 5);
+@endphp
 <x-app-layout>
     <div x-data="{ 
         openConsolidateModal: false, 
@@ -106,6 +132,7 @@
         isDeletingBulk: false,
         expandedConsolidatedIds: [],
         collapsedUserIds: [],
+        allUserGroupIds: @js($allUserGroupIds),
         toggleExpanded(id) {
             if (this.expandedConsolidatedIds.includes(id)) {
                 this.expandedConsolidatedIds = this.expandedConsolidatedIds.filter(x => x !== id);
@@ -119,6 +146,12 @@
             } else {
                 this.collapsedUserIds.push(uid);
             }
+        },
+        expandAllUserGroups() {
+            this.collapsedUserIds = [];
+        },
+        collapseAllUserGroups() {
+            this.collapsedUserIds = [...this.allUserGroupIds];
         }
     }" @open-consolidate-modal.window="openConsolidateModal = true">
         <x-slot name="header">
@@ -127,965 +160,1373 @@
                     <h2 class="font-extrabold text-2xl text-gray-900 tracking-tight">
                         {{ __('Veri Girişleri') }}
                     </h2>
-                    <p class="text-sm text-gray-500 mt-1">{{ __('Doldurduğunuz veya yetkiniz dahilindeki tüm form kayıtları') }}</p>
+                    <p class="text-sm text-gray-500 mt-1">
+                        {{ __('Doldurduğunuz veya yetkiniz dahilindeki tüm form kayıtları') }}
+                    </p>
                 </div>
                 <div class="flex items-center gap-2 flex-wrap">
                     @if(!empty($canConsolidate) && $canConsolidate)
-                    <button type="button"
-                        onclick="window.dispatchEvent(new CustomEvent('open-consolidate-modal'))"
-                        @click="openConsolidateModal = true"
-                        class="group relative inline-flex items-center justify-center py-2.5 px-4 border border-indigo-200 text-sm font-bold rounded-xl text-indigo-700 bg-indigo-50 hover:bg-indigo-100 shadow-xs hover:shadow transition-all cursor-pointer">
-                        <svg class="w-5 h-5 mr-1.5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
-                        {{ __('Parçaları Birleştir') }}
-                        @php
-                            $showConsolidateBadge = isset($eligibleForConsolidation) && (
-                                $eligibleForConsolidation->count() >= 2
-                                || ($eligibleForConsolidation->count() >= 1 && isset($existingConsolidatedMap) && $existingConsolidatedMap->isNotEmpty())
-                            );
-                        @endphp
-                        @if($showConsolidateBadge)
-                            <span class="ml-1.5 px-2 py-0.5 rounded-full text-[10px] font-black bg-indigo-600 text-white">
-                                {{ $eligibleForConsolidation->count() }}
-                            </span>
-                        @endif
-                    </button>
+                        <button type="button" onclick="window.dispatchEvent(new CustomEvent('open-consolidate-modal'))"
+                            @click="openConsolidateModal = true"
+                            class="group relative inline-flex items-center justify-center py-2.5 px-4 border border-indigo-200 text-sm font-bold rounded-xl text-indigo-700 bg-indigo-50 hover:bg-indigo-100 shadow-xs hover:shadow transition-all cursor-pointer">
+                            <svg class="w-5 h-5 mr-1.5 text-indigo-600" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                            </svg>
+                            {{ __('Parçaları Birleştir') }}
+                            @php
+                                $showConsolidateBadge = isset($eligibleForConsolidation) && (
+                                    $eligibleForConsolidation->count() >= 2
+                                    || ($eligibleForConsolidation->count() >= 1 && isset($existingConsolidatedMap) && $existingConsolidatedMap->isNotEmpty())
+                                );
+                            @endphp
+                            @if($showConsolidateBadge)
+                                <span class="ml-1.5 px-2 py-0.5 rounded-full text-[10px] font-black bg-indigo-600 text-white">
+                                    {{ $eligibleForConsolidation->count() }}
+                                </span>
+                            @endif
+                        </button>
                     @endif
-                    <a href="{{ route('form-entries.select-template') }}"
-                        x-data="{ clicking: false }"
-                        @click="if(clicking) { $event.preventDefault(); return false; } clicking = true;"
-                        onclick="if(this.dataset.clicked === 'true'){ return false; } this.dataset.clicked = 'true'; this.classList.add('pointer-events-none', 'opacity-70', 'cursor-not-allowed');"
+                    <a href="{{ route('form-entries.select-template') }}" x-data="{ clicking: false }"
+                        @pageshow.window="clicking = false" @page-restored.window="clicking = false"
+                        @click="if(clicking) { $event.preventDefault(); return false; } clicking = true; setTimeout(() => { clicking = false; }, 8000);"
                         :class="clicking ? 'pointer-events-none opacity-70 cursor-not-allowed' : ''"
                         class="group relative flex items-center justify-center py-2.5 px-5 border border-transparent text-sm font-semibold rounded-xl text-white bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 shadow-md hover:shadow-lg transition-all overflow-hidden select-none">
-                        <svg x-show="!clicking" class="w-5 h-5 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                        <svg x-show="clicking" style="display: none;" class="animate-spin -ml-1 mr-2 h-5 w-5 text-white shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        <svg x-show="!clicking" class="w-5 h-5 mr-2 shrink-0" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4">
+                            </path>
                         </svg>
-                        <span x-text="clicking ? '{{ __('Lütfen bekleyin...') }}' : '{{ __('Yeni Veri Girişi') }}'">{{ __('Yeni Veri Girişi') }}</span>
+                        <svg x-show="clicking" style="display: none;"
+                            class="animate-spin -ml-1 mr-2 h-5 w-5 text-white shrink-0"
+                            xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
+                            </circle>
+                            <path class="opacity-75" fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                            </path>
+                        </svg>
+                        <span
+                            x-text="clicking ? '{{ __('Lütfen bekleyin...') }}' : '{{ __('Yeni Veri Girişi') }}'">{{ __('Yeni Veri Girişi') }}</span>
                     </a>
                 </div>
             </div>
         </x-slot>
 
-    <div class="py-6 sm:py-8">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-xs sm:rounded-2xl border border-gray-100">
-                
-                @if(session('success'))
-                    <div class="p-4 mx-6 mt-6 mb-2 text-sm text-teal-800 bg-teal-50 border border-teal-200 rounded-xl flex items-center" role="alert">
-                        <svg class="w-5 h-5 mr-2 text-teal-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
-                        {{ session('success') }}
-                    </div>
-                @endif
+        <div class="py-6 sm:py-8">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="bg-white overflow-hidden shadow-xs sm:rounded-2xl border border-gray-100">
 
-                @php
-                    $curStatus = request('status');
-                    $curFilterDate = request('filter_date');
-                @endphp
+                    @if(session('success'))
+                        <div class="p-4 mx-6 mt-6 mb-2 text-sm text-teal-800 bg-teal-50 border border-teal-200 rounded-xl flex items-center"
+                            role="alert">
+                            <svg class="w-5 h-5 mr-2 text-teal-500" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd"
+                                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                    clip-rule="evenodd"></path>
+                            </svg>
+                            {{ session('success') }}
+                        </div>
+                    @endif
 
-                <!-- Filtre Tabları & Durum Çubuğu -->
-                <div class="p-4 sm:p-5 border-b border-gray-100 bg-slate-50/60 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div class="flex flex-wrap items-center gap-2">
-                        {{-- Tümü --}}
-                        <a href="{{ route('form-entries.index') }}" 
-                           class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-xs {{ (empty($curStatus) && empty($curFilterDate)) ? 'bg-white text-indigo-700 shadow-sm border border-indigo-200 ring-2 ring-indigo-500/10' : 'bg-white/80 text-gray-600 hover:bg-white hover:text-gray-900 border border-gray-200/80' }}">
-                            <span>{{ __('Tümü') }}</span>
-                            <span class="px-2 py-0.5 rounded-full text-[11px] font-extrabold {{ (empty($curStatus) && empty($curFilterDate)) ? 'bg-indigo-50 text-indigo-700' : 'bg-gray-100 text-gray-600' }}">
-                                {{ $statusCounts['all'] ?? $entries->total() }}
-                            </span>
-                        </a>
+                    @php
+                        $curStatus = request('status');
+                        $curFilterDate = request('filter_date');
+                    @endphp
 
-                        {{-- Onay Bekleyenler --}}
-                        <a href="{{ route('form-entries.index', ['status' => 'submitted']) }}" 
-                           class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-xs {{ $curStatus === 'submitted' ? 'bg-amber-500 text-white shadow-md shadow-amber-500/20 ring-2 ring-amber-400' : 'bg-white text-amber-700 hover:bg-amber-50 border border-amber-200' }}">
-                            @if(($statusCounts['submitted'] ?? 0) > 0)
-                                <span class="relative flex h-2 w-2">
-                                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full {{ $curStatus === 'submitted' ? 'bg-white' : 'bg-amber-400' }} opacity-75"></span>
-                                    <span class="relative inline-flex rounded-full h-2 w-2 {{ $curStatus === 'submitted' ? 'bg-white' : 'bg-amber-500' }}"></span>
+                    <!-- Filtre Tabları & Durum Çubuğu -->
+                    <div
+                        class="p-4 sm:p-5 border-b border-gray-100 bg-slate-50/60 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div class="flex flex-wrap items-center gap-2">
+                            {{-- Tümü --}}
+                            <a href="{{ route('form-entries.index') }}"
+                                class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-xs {{ (empty($curStatus) && empty($curFilterDate)) ? 'bg-white text-indigo-700 shadow-sm border border-indigo-200 ring-2 ring-indigo-500/10' : 'bg-white/80 text-gray-600 hover:bg-white hover:text-gray-900 border border-gray-200/80' }}">
+                                <span>{{ __('Tümü') }}</span>
+                                <span
+                                    class="px-2 py-0.5 rounded-full text-[11px] font-extrabold {{ (empty($curStatus) && empty($curFilterDate)) ? 'bg-indigo-50 text-indigo-700' : 'bg-gray-100 text-gray-600' }}">
+                                    {{ $statusCounts['all'] ?? $entries->total() }}
                                 </span>
-                            @endif
-                            <span>{{ __('Onay Bekleyenler') }}</span>
-                            <span class="px-2 py-0.5 rounded-full text-[11px] font-extrabold {{ $curStatus === 'submitted' ? 'bg-white/20 text-white' : 'bg-amber-100 text-amber-800' }}">
-                                {{ $statusCounts['submitted'] ?? 0 }}
-                            </span>
-                        </a>
+                            </a>
 
-                        {{-- Düzenleme Bekleyenler --}}
-                        <a href="{{ route('form-entries.index', ['status' => 'revision_pending']) }}" 
-                           class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-xs {{ $curStatus === 'revision_pending' ? 'bg-amber-600 text-white shadow-md shadow-amber-600/20 ring-2 ring-amber-400' : 'bg-white text-amber-800 hover:bg-amber-50 border border-amber-300' }}">
-                            @if(($statusCounts['revision_pending'] ?? 0) > 0)
-                                <span class="relative flex h-2 w-2">
-                                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full {{ $curStatus === 'revision_pending' ? 'bg-white' : 'bg-amber-400' }} opacity-75"></span>
-                                    <span class="relative inline-flex rounded-full h-2 w-2 {{ $curStatus === 'revision_pending' ? 'bg-white' : 'bg-amber-500' }}"></span>
+                            {{-- Onay Bekleyenler --}}
+                            <a href="{{ route('form-entries.index', ['status' => 'submitted']) }}"
+                                class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-xs {{ $curStatus === 'submitted' ? 'bg-amber-500 text-white shadow-md shadow-amber-500/20 ring-2 ring-amber-400' : 'bg-white text-amber-700 hover:bg-amber-50 border border-amber-200' }}">
+                                @if(($statusCounts['submitted'] ?? 0) > 0)
+                                    <span class="relative flex h-2 w-2">
+                                        <span
+                                            class="animate-ping absolute inline-flex h-full w-full rounded-full {{ $curStatus === 'submitted' ? 'bg-white' : 'bg-amber-400' }} opacity-75"></span>
+                                        <span
+                                            class="relative inline-flex rounded-full h-2 w-2 {{ $curStatus === 'submitted' ? 'bg-white' : 'bg-amber-500' }}"></span>
+                                    </span>
+                                @endif
+                                <span>{{ __('Onay Bekleyenler') }}</span>
+                                <span
+                                    class="px-2 py-0.5 rounded-full text-[11px] font-extrabold {{ $curStatus === 'submitted' ? 'bg-white/20 text-white' : 'bg-amber-100 text-amber-800' }}">
+                                    {{ $statusCounts['submitted'] ?? 0 }}
                                 </span>
-                            @endif
-                            <span>{{ __('Düzenleme Bekleyenler') }}</span>
-                            <span class="px-2 py-0.5 rounded-full text-[11px] font-extrabold {{ $curStatus === 'revision_pending' ? 'bg-white/20 text-white' : 'bg-amber-100 text-amber-900' }}">
-                                {{ $statusCounts['revision_pending'] ?? 0 }}
-                            </span>
-                        </a>
+                            </a>
 
-                        {{-- Onaylananlar --}}
-                        <a href="{{ route('form-entries.index', ['status' => 'approved']) }}" 
-                           class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-xs {{ $curStatus === 'approved' ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/20 ring-2 ring-emerald-400' : 'bg-white text-emerald-700 hover:bg-emerald-50 border border-emerald-200' }}">
-                            <span>{{ __('Onaylananlar') }}</span>
-                            <span class="px-2 py-0.5 rounded-full text-[11px] font-extrabold {{ $curStatus === 'approved' ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-800' }}">
-                                {{ $statusCounts['approved'] ?? 0 }}
-                            </span>
-                        </a>
-
-                        {{-- Taslaklar --}}
-                        <a href="{{ route('form-entries.index', ['status' => 'draft']) }}" 
-                           class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-xs {{ $curStatus === 'draft' ? 'bg-slate-700 text-white shadow-md ring-2 ring-slate-400' : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200' }}">
-                            <span>{{ __('Taslaklar') }}</span>
-                            <span class="px-2 py-0.5 rounded-full text-[11px] font-extrabold {{ $curStatus === 'draft' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-700' }}">
-                                {{ $statusCounts['draft'] ?? 0 }}
-                            </span>
-                        </a>
-
-                        {{-- Reddedilenler --}}
-                        <a href="{{ route('form-entries.index', ['status' => 'rejected']) }}" 
-                           class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-xs {{ $curStatus === 'rejected' ? 'bg-rose-600 text-white shadow-md shadow-rose-600/20 ring-2 ring-rose-400' : 'bg-white text-rose-700 hover:bg-rose-50 border border-rose-200' }}">
-                            <span>{{ __('Reddedilenler') }}</span>
-                            <span class="px-2 py-0.5 rounded-full text-[11px] font-extrabold {{ $curStatus === 'rejected' ? 'bg-white/20 text-white' : 'bg-rose-100 text-rose-800' }}">
-                                {{ $statusCounts['rejected'] ?? 0 }}
-                            </span>
-                        </a>
-                    </div>
-
-                    @if(!empty($curStatus) || !empty($curFilterDate))
-                        <div class="flex items-center gap-2">
-                            @if($curFilterDate === 'today')
-                                <span class="px-2.5 py-1 rounded-lg text-xs font-bold bg-purple-100 text-purple-700 border border-purple-200">
-                                    📅 Bugünkü Girişler
+                            {{-- Düzenleme Bekleyenler --}}
+                            <a href="{{ route('form-entries.index', ['status' => 'revision_pending']) }}"
+                                class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-xs {{ $curStatus === 'revision_pending' ? 'bg-amber-600 text-white shadow-md shadow-amber-600/20 ring-2 ring-amber-400' : 'bg-white text-amber-800 hover:bg-amber-50 border border-amber-300' }}">
+                                @if(($statusCounts['revision_pending'] ?? 0) > 0)
+                                    <span class="relative flex h-2 w-2">
+                                        <span
+                                            class="animate-ping absolute inline-flex h-full w-full rounded-full {{ $curStatus === 'revision_pending' ? 'bg-white' : 'bg-amber-400' }} opacity-75"></span>
+                                        <span
+                                            class="relative inline-flex rounded-full h-2 w-2 {{ $curStatus === 'revision_pending' ? 'bg-white' : 'bg-amber-500' }}"></span>
+                                    </span>
+                                @endif
+                                <span>{{ __('Düzenleme Bekleyenler') }}</span>
+                                <span
+                                    class="px-2 py-0.5 rounded-full text-[11px] font-extrabold {{ $curStatus === 'revision_pending' ? 'bg-white/20 text-white' : 'bg-amber-100 text-amber-900' }}">
+                                    {{ $statusCounts['revision_pending'] ?? 0 }}
                                 </span>
-                            @endif
-                            <a href="{{ route('form-entries.index') }}" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-500 hover:text-slate-800 hover:bg-white transition-colors border border-dashed border-slate-300">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                                <span>{{ __('Filtreyi Temizle') }}</span>
+                            </a>
+
+                            {{-- Onaylananlar --}}
+                            <a href="{{ route('form-entries.index', ['status' => 'approved']) }}"
+                                class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-xs {{ $curStatus === 'approved' ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/20 ring-2 ring-emerald-400' : 'bg-white text-emerald-700 hover:bg-emerald-50 border border-emerald-200' }}">
+                                <span>{{ __('Onaylananlar') }}</span>
+                                <span
+                                    class="px-2 py-0.5 rounded-full text-[11px] font-extrabold {{ $curStatus === 'approved' ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-800' }}">
+                                    {{ $statusCounts['approved'] ?? 0 }}
+                                </span>
+                            </a>
+
+                            {{-- Taslaklar --}}
+                            <a href="{{ route('form-entries.index', ['status' => 'draft']) }}"
+                                class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-xs {{ $curStatus === 'draft' ? 'bg-slate-700 text-white shadow-md ring-2 ring-slate-400' : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200' }}">
+                                <span>{{ __('Taslaklar') }}</span>
+                                <span
+                                    class="px-2 py-0.5 rounded-full text-[11px] font-extrabold {{ $curStatus === 'draft' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-700' }}">
+                                    {{ $statusCounts['draft'] ?? 0 }}
+                                </span>
+                            </a>
+
+                            {{-- Reddedilenler --}}
+                            <a href="{{ route('form-entries.index', ['status' => 'rejected']) }}"
+                                class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-xs {{ $curStatus === 'rejected' ? 'bg-rose-600 text-white shadow-md shadow-rose-600/20 ring-2 ring-rose-400' : 'bg-white text-rose-700 hover:bg-rose-50 border border-rose-200' }}">
+                                <span>{{ __('Reddedilenler') }}</span>
+                                <span
+                                    class="px-2 py-0.5 rounded-full text-[11px] font-extrabold {{ $curStatus === 'rejected' ? 'bg-white/20 text-white' : 'bg-rose-100 text-rose-800' }}">
+                                    {{ $statusCounts['rejected'] ?? 0 }}
+                                </span>
                             </a>
                         </div>
-                    @endif
-                </div>
 
-                <!-- Kapsam / Kayıt Tipi Filtresi -->
-                <div class="px-4 py-2.5 bg-slate-100/70 border-b border-gray-100 flex flex-wrap items-center justify-between gap-2 text-xs">
-                    <div class="flex items-center gap-1.5 flex-wrap">
-                        <span class="text-slate-500 font-bold uppercase tracking-wider text-[10px] mr-1">{{ __('Kayıt Tipi:') }}</span>
-                        <a href="{{ route('form-entries.index', array_merge(request()->except('scope'), ['scope' => 'all'])) }}"
-                           class="px-2.5 py-1 rounded-lg font-bold transition {{ ($scope ?? 'all') === 'all' ? 'bg-indigo-600 text-white shadow-2xs' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200' }}">
-                            Tümü ({{ $scopeCounts['all'] ?? 0 }})
-                        </a>
-                        <a href="{{ route('form-entries.index', array_merge(request()->except('scope'), ['scope' => 'partitions'])) }}"
-                           class="px-2.5 py-1 rounded-lg font-bold transition {{ ($scope ?? '') === 'partitions' ? 'bg-amber-600 text-white shadow-2xs' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200' }}">
-                            ⚡ Parçalı Kayıtlar ({{ $scopeCounts['partitions'] ?? 0 }})
-                        </a>
-                        <a href="{{ route('form-entries.index', array_merge(request()->except('scope'), ['scope' => 'consolidated'])) }}"
-                           class="px-2.5 py-1 rounded-lg font-bold transition {{ ($scope ?? '') === 'consolidated' ? 'bg-purple-700 text-white shadow-2xs' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200' }}">
-                            🌟 Konsolide Ana Formlar ({{ $scopeCounts['consolidated'] ?? 0 }})
-                        </a>
+                        @if(!empty($curStatus) || !empty($curFilterDate))
+                            <div class="flex items-center gap-2">
+                                @if($curFilterDate === 'today')
+                                    <span
+                                        class="px-2.5 py-1 rounded-lg text-xs font-bold bg-purple-100 text-purple-700 border border-purple-200">
+                                        📅 Bugünkü Girişler
+                                    </span>
+                                @endif
+                                <a href="{{ route('form-entries.index') }}"
+                                    class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-500 hover:text-slate-800 hover:bg-white transition-colors border border-dashed border-slate-300">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                    <span>{{ __('Filtreyi Temizle') }}</span>
+                                </a>
+                            </div>
+                        @endif
                     </div>
-                    @if(isset($eligibleForConsolidation) && $eligibleForConsolidation->count() >= 2)
-                        <button type="button" @click="openConsolidateModal = true" class="text-indigo-600 hover:text-indigo-800 font-extrabold flex items-center gap-1 cursor-pointer">
-                            <span>⚡ {{ $eligibleForConsolidation->count() }} adet birleştirilebilir parça mevcut</span>
-                            <span class="underline">&rarr;</span>
-                        </button>
-                    @endif
-                </div>
 
-                <!-- Toplu İşlem Barı (Silme Yetkisi Olanlar İçin) -->
-                @if(!empty($canDelete) && $canDelete && $entries->count() > 0)
-                    <div x-show="selectedDeleteIds.length > 0" x-cloak
-                         x-transition:enter="transition ease-out duration-150"
-                         x-transition:enter-start="opacity-0 -translate-y-2"
-                         x-transition:enter-end="opacity-100 translate-y-0"
-                         x-transition:leave="transition ease-in duration-100"
-                         x-transition:leave-start="opacity-100 translate-y-0"
-                         x-transition:leave-end="opacity-0 -translate-y-2"
-                         class="px-4 py-3 bg-rose-50 border-b border-rose-200 flex flex-wrap items-center justify-between gap-3 text-xs">
-                        <div class="flex items-center gap-2">
-                            <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-rose-600 text-white font-black text-xs" x-text="selectedDeleteIds.length"></span>
-                            <span class="font-bold text-rose-950">
-                                <span x-text="selectedDeleteIds.length"></span> adet form kaydı seçildi
-                            </span>
-                            <span class="text-rose-300">|</span>
-                            <button type="button" @click="selectedDeleteIds = [{{ $entries->pluck('id')->implode(',') }}]" class="text-rose-700 hover:text-rose-900 font-bold underline cursor-pointer">
-                                Sayfadaki Tümünü Seç ({{ $entries->count() }})
-                            </button>
-                            <span class="text-rose-300">·</span>
-                            <button type="button" @click="selectedDeleteIds = []" class="text-slate-600 hover:text-slate-900 font-semibold cursor-pointer">
-                                Seçimi Temizle
-                            </button>
+                    <!-- Kapsam / Kayıt Tipi Filtresi -->
+                    <div
+                        class="px-4 py-2.5 bg-slate-100/70 border-b border-gray-100 flex flex-wrap items-center justify-between gap-2 text-xs">
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                            <span
+                                class="text-slate-500 font-bold uppercase tracking-wider text-[10px] mr-1">{{ __('Kayıt Tipi:') }}</span>
+                            <a href="{{ route('form-entries.index', array_merge(request()->except('scope'), ['scope' => 'all'])) }}"
+                                class="px-2.5 py-1 rounded-lg font-bold transition {{ ($scope ?? 'all') === 'all' ? 'bg-indigo-600 text-white shadow-2xs' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200' }}">
+                                Tümü ({{ $scopeCounts['all'] ?? 0 }})
+                            </a>
+                            <a href="{{ route('form-entries.index', array_merge(request()->except('scope'), ['scope' => 'partitions'])) }}"
+                                class="px-2.5 py-1 rounded-lg font-bold transition {{ ($scope ?? '') === 'partitions' ? 'bg-amber-600 text-white shadow-2xs' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200' }}">
+                                ⚡ Parçalı Kayıtlar ({{ $scopeCounts['partitions'] ?? 0 }})
+                            </a>
+                            <a href="{{ route('form-entries.index', array_merge(request()->except('scope'), ['scope' => 'consolidated'])) }}"
+                                class="px-2.5 py-1 rounded-lg font-bold transition {{ ($scope ?? '') === 'consolidated' ? 'bg-purple-700 text-white shadow-2xs' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200' }}">
+                                🌟 Konsolide Ana Formlar ({{ $scopeCounts['consolidated'] ?? 0 }})
+                            </a>
                         </div>
-                        <div class="flex items-center gap-2">
-                            <button type="button" 
-                                    @click="openBulkDeleteModal = true"
-                                    class="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white font-bold rounded-xl shadow-xs transition cursor-pointer">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                                <span>Seçilenleri Sil (<span x-text="selectedDeleteIds.length"></span>)</span>
-                            </button>
-                        </div>
-                    </div>
-                @endif
-
-                <div class="w-full overflow-x-auto">
-                    <table class="modern-entries-table w-full divide-y divide-slate-200/80">
-                        <thead>
-                            <tr>
-                                @if(!empty($canDelete) && $canDelete && $entries->count() > 0)
-                                    <th class="w-10 px-3 py-3 text-center">
-                                        <input type="checkbox" 
-                                               @change="selectedDeleteIds = $event.target.checked ? [{{ $entries->pluck('id')->implode(',') }}] : []"
-                                               :checked="selectedDeleteIds.length > 0 && selectedDeleteIds.length === {{ $entries->count() }}"
-                                               class="w-4 h-4 rounded text-rose-600 border-gray-300 focus:ring-rose-500 cursor-pointer"
-                                               title="Sayfadaki Tümünü Seç / Kaldır">
-                                    </th>
-                                @endif
-                                <th class="px-3.5 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider w-28 whitespace-nowrap">{{ __('TARİH') }}</th>
-                                <th class="px-3.5 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider w-44">{{ __('KULLANICI') }}</th>
-                                <th class="px-3.5 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">{{ __('ŞABLON') }}</th>
-                                <th class="px-3.5 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider w-32 whitespace-nowrap">{{ __('DURUM') }}</th>
-                                @if(isset($canViewApprover) && $canViewApprover)
-                                    <th class="px-3.5 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider w-36 whitespace-nowrap">{{ __('ONAYLAYAN') }}</th>
-                                @endif
-                                <th class="px-3.5 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider w-36 whitespace-nowrap">{{ __('İŞLEMLER') }}</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-100">
-                            @php
-                                $groupByUsers = !empty($canSeeMultipleUsers) && $entries->count() > 0;
-                                $entryGroups = $groupByUsers ? $entries->groupBy('user_id') : collect([0 => $entries]);
-                                $groupColspan = (!empty($canDelete) && $canDelete ? 1 : 0) + ((isset($canViewApprover) && $canViewApprover) ? 6 : 5);
-                            @endphp
-                            @forelse($entryGroups as $groupUserId => $userEntries)
-                                @if($groupByUsers)
-                                    @php
-                                        $groupUser = $userEntries->first()?->user;
-                                        $uDraftCount = $userEntries->where('status', 'draft')->count();
-                                        $uSubmittedCount = $userEntries->where('status', 'submitted')->count();
-                                        $uApprovedCount = $userEntries->where('status', 'approved')->count();
-                                        $uLatestAt = $userEntries->map(fn($e) => $e->submitted_at ?? $e->updated_at)->filter()->max();
-                                    @endphp
-                                    @if(!$loop->first)
-                                        <tr class="user-group-spacer">
-                                            <td colspan="{{ $groupColspan }}"></td>
-                                        </tr>
-                                    @endif
-                                    <tr class="user-group-header transition-colors cursor-pointer"
-                                        @click="toggleUserGroup({{ (int) $groupUserId }})">
-                                        <td colspan="{{ $groupColspan }}" class="px-4 py-3">
-                                            <div class="flex flex-wrap items-center justify-between gap-2">
-                                                <div class="flex items-center gap-3 min-w-0">
-                                                    <span class="ug-chevron inline-flex items-center justify-center w-6 h-6 rounded-lg shadow-2xs transition-transform duration-200"
-                                                        :class="collapsedUserIds.includes({{ (int) $groupUserId }}) ? '-rotate-90' : ''">
-                                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/>
-                                                        </svg>
-                                                    </span>
-                                                    <div class="ug-avatar w-8 h-8 rounded-full font-black text-xs flex items-center justify-center shrink-0">
-                                                        {{ mb_substr($groupUser?->name ?? '?', 0, 1) }}
-                                                    </div>
-                                                    <div class="flex items-center gap-2 flex-wrap min-w-0">
-                                                        @if($groupUser)
-                                                            <a href="{{ route('users.profile', $groupUser->id) }}" @click.stop
-                                                                class="text-xs sm:text-sm font-black text-slate-900 hover:text-indigo-700 hover:underline truncate">
-                                                                {{ $groupUser->name }}
-                                                            </a>
-                                                        @else
-                                                            <span class="text-xs sm:text-sm font-black text-slate-900">Bilinmeyen Kullanıcı</span>
-                                                        @endif
-                                                        <span class="ug-dept-pill px-2 py-0.5 rounded-md text-[10px] font-bold">
-                                                            {{ $groupUser?->group?->name ?? 'Grup Yok' }}
-                                                        </span>
-                                                        @if($uLatestAt)
-                                                            <span class="ug-time-pill px-2 py-0.5 rounded-md text-[10px] font-mono font-semibold">
-                                                                Son: {{ $uLatestAt->format('d.m.Y H:i') }}
-                                                            </span>
-                                                        @endif
-                                                    </div>
-                                                </div>
-                                                <div class="flex items-center gap-1.5 flex-wrap text-[11px]">
-                                                    <span class="ug-count-pill px-2.5 py-0.5 rounded-full font-extrabold shadow-2xs">
-                                                        {{ $userEntries->count() }} Kayıt
-                                                    </span>
-                                                    @if($uDraftCount > 0)
-                                                        <span class="ug-draft-pill px-2 py-0.5 rounded-full font-bold">
-                                                            {{ $uDraftCount }} Taslak
-                                                        </span>
-                                                    @endif
-                                                    @if($uSubmittedCount > 0)
-                                                        <span class="ug-submitted-pill px-2 py-0.5 rounded-full font-bold">
-                                                            {{ $uSubmittedCount }} Onay Bekliyor
-                                                        </span>
-                                                    @endif
-                                                    @if($uApprovedCount > 0)
-                                                        <span class="ug-approved-pill px-2 py-0.5 rounded-full font-bold">
-                                                            {{ $uApprovedCount }} Onaylı
-                                                        </span>
-                                                    @endif
-                                                </div>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                @endif
-                                @foreach($userEntries as $entry)
-                                <tr @if($groupByUsers) x-show="!collapsedUserIds.includes({{ (int) $groupUserId }})" @endif
-                                    class="{{ $groupByUsers ? 'user-group-row' : '' }} hover:bg-indigo-50/30 transition-colors group" :class="selectedDeleteIds.includes({{ $entry->id }}) ? 'bg-rose-50/40' : ''">
-                                    @if(!empty($canDelete) && $canDelete)
-                                        <td class="w-10 px-3 py-3 text-center" @click.stop>
-                                            <input type="checkbox" 
-                                                   :value="{{ $entry->id }}" 
-                                                   x-model.number="selectedDeleteIds" 
-                                                   class="w-4 h-4 rounded text-rose-600 border-gray-300 focus:ring-rose-500 cursor-pointer">
-                                        </td>
-                                    @endif
-                                    <td class="px-3.5 py-3 whitespace-nowrap">
-                                        <div class="space-y-1">
-                                            <div class="flex items-center text-xs text-gray-900 font-bold">
-                                                <svg class="w-3.5 h-3.5 mr-1 text-gray-400 group-hover:text-indigo-500 transition-colors shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                                                <span>{{ $entry->entry_date->format('d M Y') }}</span>
-                                            </div>
-                                            <div class="flex items-center gap-1.5 text-[11px] text-gray-500">
-                                                <span class="font-mono text-gray-600 font-semibold" title="Son Kaydedilme / Gönderim Saati">
-                                                    🕒 {{ $entry->updated_at ? $entry->updated_at->format('H:i:s') : '-' }}
-                                                </span>
-                                                @php $vCount = $entry->versions ? $entry->versions->count() : 0; @endphp
-                                                @if($vCount > 1)
-                                                    <div x-data="{
-                                                        open: false,
-                                                        coords: { top: 0, left: 0, placement: 'bottom' },
-                                                        updatePos() {
-                                                            const rect = $el.getBoundingClientRect();
-                                                            const spaceBelow = window.innerHeight - rect.bottom;
-                                                            if (spaceBelow < 170) {
-                                                                this.coords = {
-                                                                    top: rect.top - 8,
-                                                                    left: Math.max(10, rect.left),
-                                                                    placement: 'top'
-                                                                };
-                                                            } else {
-                                                                this.coords = {
-                                                                    top: rect.bottom + 8,
-                                                                    left: Math.max(10, rect.left),
-                                                                    placement: 'bottom'
-                                                                };
-                                                            }
-                                                        }
-                                                    }" 
-                                                    @scroll.window="open = false"
-                                                    class="inline-block">
-                                                        <button type="button" 
-                                                            @mouseenter="updatePos(); open = true" 
-                                                            @mouseleave="open = false" 
-                                                            @click="updatePos(); open = !open"
-                                                            class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 text-[10px] font-black cursor-pointer shadow-2xs">
-                                                            <span>v{{ $entry->versions->first()->version_number }}</span>
-                                                            <span class="text-[9px] text-indigo-500 font-normal">({{ $vCount }} sürüm)</span>
-                                                        </button>
-                                                        <div x-show="open" x-cloak
-                                                            x-transition:enter="transition ease-out duration-150"
-                                                            x-transition:enter-start="opacity-0 scale-95"
-                                                            x-transition:enter-end="opacity-100 scale-100"
-                                                            x-transition:leave="transition ease-in duration-100"
-                                                            x-transition:leave-start="opacity-100 scale-100"
-                                                            x-transition:leave-end="opacity-0 scale-95"
-                                                            :style="coords.placement === 'top' 
-                                                                ? 'position: fixed; left: ' + coords.left + 'px; bottom: ' + (window.innerHeight - coords.top) + 'px; z-index: 999999;' 
-                                                                : 'position: fixed; left: ' + coords.left + 'px; top: ' + coords.top + 'px; z-index: 999999;'"
-                                                            class="w-64 p-2.5 bg-slate-900 text-white rounded-xl shadow-2xl text-xs space-y-1.5 border border-slate-700 pointer-events-none">
-                                                            <div class="font-bold border-b border-slate-700 pb-1 text-slate-300 flex justify-between">
-                                                                <span>Sürüm Geçmişi</span>
-                                                                <span class="text-[10px] text-indigo-300">{{ $vCount }} Kayıt</span>
-                                                            </div>
-                                                            @foreach($entry->versions->take(10) as $v)
-                                                                <div class="flex justify-between items-center text-[10px] py-0.5 border-b border-slate-800 last:border-none">
-                                                                    <span class="font-bold text-amber-300">v{{ $v->version_number }} ({{ $v->formatted_status }})</span>
-                                                                    <span class="text-slate-400 font-mono">{{ $v->created_at ? $v->created_at->format('d.m H:i') : '-' }}</span>
-                                                                </div>
-                                                            @endforeach
-                                                            @if($vCount > 10)
-                                                                <div class="text-[9px] text-slate-400 italic text-center">+{{ $vCount - 10 }} eski sürüm daha</div>
-                                                            @endif
-                                                        </div>
-                                                    </div>
-                                                @endif
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td class="px-3.5 py-3">
-                                        <div class="flex items-center">
-                                            <div class="shrink-0 h-8 w-8 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-full flex items-center justify-center text-indigo-700 font-bold border border-indigo-200 text-xs shadow-2xs">
-                                                {{ mb_substr($entry->user->name, 0, 1) }}
-                                            </div>
-                                            <div class="ml-2.5 min-w-0">
-                                                <a href="{{ route('users.profile', $entry->user->id) }}" class="text-xs sm:text-sm font-bold text-gray-900 hover:text-indigo-600 hover:underline transition-colors block truncate max-w-[130px]" title="{{ $entry->user->name }}">{{ $entry->user->name }}</a>
-                                                <p class="text-[11px] text-gray-400 flex items-center mt-0.5 truncate max-w-[130px]" title="{{ $entry->user->group ? $entry->user->group->name : 'Grup Yok' }}">
-                                                    @if($entry->user->group)
-                                                        <svg class="w-3 h-3 mr-1 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-                                                        {{ $entry->user->group->name }}
-                                                    @else
-                                                        Grup Yok
-                                                    @endif
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td class="px-3.5 py-3">
-                                        <div class="space-y-1">
-                                            <div class="flex items-center gap-1.5 flex-wrap">
-                                                <span class="text-xs font-black text-gray-900 bg-gray-50 border border-gray-200 rounded-md px-2 py-0.5 whitespace-nowrap">
-                                                    {{ $entry->template->name }}
-                                                </span>
-                                                @if($entry->is_consolidated)
-                                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-gradient-to-r from-purple-700 to-indigo-700 text-white shadow-2xs whitespace-nowrap">
-                                                        🌟 Konsolide ({{ $entry->children->count() }} Parça)
-                                                    </span>
-                                                    @if($entry->children->count() > 0)
-                                                        <button type="button" @click.stop="toggleExpanded({{ $entry->id }})"
-                                                            class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold transition-all shadow-2xs cursor-pointer border"
-                                                            :class="expandedConsolidatedIds.includes({{ $entry->id }}) 
-                                                                ? 'bg-purple-100 text-purple-900 border-purple-300 ring-1 ring-purple-300' 
-                                                                : 'bg-white text-slate-700 hover:bg-slate-50 border-slate-300'"
-                                                            title="Bu konsolide formun altındaki parçaları göster / gizle">
-                                                            <svg class="w-3 h-3 transition-transform duration-200" :class="expandedConsolidatedIds.includes({{ $entry->id }}) ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                                                            </svg>
-                                                            <span x-text="expandedConsolidatedIds.includes({{ $entry->id }}) ? 'Alt Parçaları Gizle' : 'Alt Parçaları Göster ({{ $entry->children->count() }})'"></span>
-                                                        </button>
-                                                    @endif
-                                                @elseif($entry->partition_value)
-                                                    <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-amber-100 text-amber-800 border border-amber-300 whitespace-nowrap">
-                                                        ⚡ {{ $entry->partition_value }}
-                                                    </span>
-                                                    @if($entry->parent_id)
-                                                        <a href="{{ route('form-entries.show', $entry->parent_id) }}" class="inline-flex items-center gap-0.5 text-[10px] text-indigo-600 hover:text-indigo-800 font-bold bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200 whitespace-nowrap">
-                                                            <span>🔗 #{{ $entry->parent_id }}</span>
-                                                        </a>
-                                                    @else
-                                                        <span class="text-[10px] text-slate-400 font-semibold whitespace-nowrap">(Ayrık Parça)</span>
-                                                    @endif
-                                                @endif
-                                            </div>
-                                            @if($entry->title)
-                                                <div class="text-[11px] text-slate-500 font-medium truncate max-w-[200px]" title="{{ $entry->title }}">
-                                                    {{ $entry->title }}
-                                                </div>
-                                            @endif
-                                        </div>
-                                    </td>
-                                    <td class="px-3.5 py-3 whitespace-nowrap">
-                                        @php
-                                            $pendingChildRevCount = $entry->is_consolidated
-                                                ? $entry->children->filter(fn($c) => (bool) $c->revisionRequests->firstWhere('status', 'pending'))->count()
-                                                : 0;
-                                        @endphp
-                                        <div class="flex flex-col items-start gap-1">
-                                            @if($entry->revisionRequests->firstWhere('status', 'pending'))
-                                                <span class="revision-blink-badge inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-800 border border-amber-300 shadow-2xs" title="Düzenleme (revizyon) talebi değerlendirme aşamasında">
-                                                    <span class="w-1.5 h-1.5 bg-amber-500 rounded-full mr-1 animate-pulse"></span>
-                                                    {{ __('Revizyon Bekliyor') }}
-                                                </span>
-                                            @elseif($entry->status === 'draft')
-                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-gray-100 text-gray-700 border border-gray-200">
-                                                    <span class="w-1.5 h-1.5 bg-gray-400 rounded-full mr-1"></span>
-                                                    {{ __('Taslak') }}
-                                                </span>
-                                            @elseif($entry->status === 'submitted')
-                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
-                                                    <span class="w-1.5 h-1.5 bg-amber-500 rounded-full mr-1 animate-pulse"></span>
-                                                    {{ __('Onay Bekliyor') }}
-                                                </span>
-                                            @elseif($entry->status === 'approved')
-                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                                    <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-1"></span>
-                                                    {{ __('Onaylandı') }}
-                                                </span>
-                                            @elseif($entry->status === 'rejected')
-                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-red-50 text-red-700 border border-red-200 cursor-help" title="{{ $entry->rejection_reason }}">
-                                                    <span class="w-1.5 h-1.5 bg-red-500 rounded-full mr-1"></span>
-                                                    {{ __('Reddedildi') }}
-                                                </span>
-                                            @endif
-                                            @if($pendingChildRevCount > 0)
-                                                <span class="revision-blink-badge inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-300 shadow-2xs" title="Bağlı alt parçada düzenleme talebi bulunuyor">
-                                                    <span class="w-1.5 h-1.5 bg-amber-500 rounded-full mr-1 animate-pulse"></span>
-                                                    Düzenleme Talebi ({{ $pendingChildRevCount }} Parça)
-                                                </span>
-                                            @endif
-                                        </div>
-                                    </td>
-                                    @if(isset($canViewApprover) && $canViewApprover)
-                                        <td class="px-3.5 py-3 whitespace-nowrap text-xs text-gray-500">
-                                            @if($entry->approver)
-                                                <div class="flex items-center text-emerald-600 font-medium">
-                                                    <svg class="w-3.5 h-3.5 mr-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                                    <a href="{{ route('users.profile', $entry->approver->id) }}" class="hover:underline hover:text-emerald-800 transition-colors block truncate max-w-[120px]" title="{{ $entry->approver->name }}">
-                                                        {{ $entry->approver->name }}
-                                                    </a>
-                                                </div>
-                                            @elseif($entry->status === 'rejected' && $entry->approver)
-                                                <div class="flex items-center text-red-600 font-medium">
-                                                    <svg class="w-3.5 h-3.5 mr-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                                    <a href="{{ route('users.profile', $entry->approver->id) }}" class="hover:underline hover:text-red-800 transition-colors block truncate max-w-[120px]" title="{{ $entry->approver->name }}">
-                                                        {{ $entry->approver->name }}
-                                                    </a>
-                                                </div>
-                                            @else
-                                                <span class="text-gray-400 italic">-</span>
-                                            @endif
-                                        </td>
-                                    @endif
-                                    <td class="px-3.5 py-3 whitespace-nowrap text-right text-xs font-medium">
-                                        <div class="inline-flex items-center justify-end gap-1.5">
-                                            <a href="{{ route('form-entries.show', $entry) }}" class="inline-flex items-center px-2.5 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-bold text-indigo-600 hover:text-indigo-900 hover:bg-indigo-50 hover:border-indigo-300 transition-all shadow-2xs">
-                                                <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
-                                                {{ __('İncele') }}
-                                            </a>
-
-                                            @if(!empty($canConsolidate) && $canConsolidate && $entry->is_consolidated && (Auth::id() === $entry->user_id || Auth::user()->id === 1 || (Auth::user()->role && Auth::user()->role->slug === 'sistem_yoneticisi')))
-                                                <div x-data="{ openDissolve: false }" class="inline-block text-left">
-                                                    <button type="button" @click="openDissolve = true" class="inline-flex items-center px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-amber-700 hover:bg-amber-50 hover:border-amber-300 transition-all shadow-2xs cursor-pointer" title="Konsolidasyonu Dağıt / Parçaları Ayır">
-                                                        <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
-                                                        Dağıt
-                                                    </button>
-
-                                                    <!-- Dağıtma Onay Modalı -->
-                                                    <div x-show="openDissolve" style="display: none;" class="fixed inset-0 z-50 overflow-y-auto whitespace-normal" aria-labelledby="dissolve-modal-title-{{ $entry->id }}" role="dialog" aria-modal="true">
-                                                        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-                                                            <div x-show="openDissolve" @click="openDissolve = false" x-transition.opacity class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity" aria-hidden="true"></div>
-                                                            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-                                                            <div x-show="openDissolve" x-transition class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full border border-slate-100 whitespace-normal">
-                                                                <div class="bg-white px-5 pt-6 pb-5 sm:p-6 sm:pb-5">
-                                                                    <div class="sm:flex sm:items-start gap-4">
-                                                                        <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-2xl bg-amber-100 text-amber-700 sm:mx-0">
-                                                                            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                                                                            </svg>
-                                                                        </div>
-                                                                        <div class="mt-3 text-center sm:mt-0 sm:text-left flex-1 min-w-0 whitespace-normal">
-                                                                            <h3 class="text-lg font-black text-slate-900" id="dissolve-modal-title-{{ $entry->id }}">Konsolidasyonu Dağıt</h3>
-                                                                            <div class="mt-2 space-y-2.5">
-                                                                                <p class="text-sm text-slate-600 whitespace-normal break-words">
-                                                                                    Bu konsolide formu dağıtmak ve altındaki <strong>{{ $entry->children->count() }} parçayı</strong> tekrar bağımsız hale getirmek istediğinize emin misiniz?
-                                                                                </p>
-                                                                                <div class="p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-900 flex items-start gap-2.5 whitespace-normal break-words">
-                                                                                    <span class="shrink-0 text-base leading-none">💡</span>
-                                                                                    <span class="flex-1 whitespace-normal break-words leading-relaxed">Parçaların girilmiş verileri kaybolmaz; sadece ana form bağlantısı çözülerek parçalar ayrı ayrı görüntülenebilir/düzenlenebilir hale gelir.</span>
-                                                                                </div>
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                                <div class="bg-slate-50 px-5 py-3.5 sm:px-6 sm:flex sm:flex-row-reverse gap-2 border-t border-slate-100" x-data="{ dissolving: false }">
-                                                                    <form action="{{ route('form-entries.dissolve', $entry) }}" method="POST"
-                                                                        @submit="if(dissolving) { $event.preventDefault(); return false; } dissolving = true;">
-                                                                        @csrf
-                                                                        <button type="submit"
-                                                                            :disabled="dissolving"
-                                                                            :class="dissolving ? 'opacity-70 cursor-not-allowed pointer-events-none' : ''"
-                                                                            class="w-full inline-flex items-center justify-center rounded-xl border border-transparent shadow-sm px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 sm:w-auto transition gap-1.5 cursor-pointer">
-                                                                            <svg x-show="dissolving" style="display: none;" class="animate-spin -ml-1 mr-1.5 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                                                            </svg>
-                                                                            <span x-text="dissolving ? 'Dağıtılıyor...' : 'Evet, Dağıt'">Evet, Dağıt</span>
-                                                                        </button>
-                                                                    </form>
-                                                                    <button type="button" @click="if(!dissolving) openDissolve = false" :disabled="dissolving"
-                                                                        class="mt-2 sm:mt-0 w-full inline-flex justify-center rounded-xl border border-slate-300 shadow-2xs px-4 py-2.5 bg-white text-sm font-semibold text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:w-auto disabled:opacity-50 cursor-pointer">
-                                                                        İptal
-                                                                    </button>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            @endif
-                                            
-                                            @if(app(\App\Services\PermissionS::class)->hasPermission(Auth::user(), 'form_entries.delete'))
-                                            <div x-data="{ open: false }" class="inline-block">
-                                                <button @click="open = true" class="inline-flex items-center px-2 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-bold text-red-600 hover:text-red-900 hover:bg-red-50 hover:border-red-300 transition-all shadow-2xs cursor-pointer">
-                                                    <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                                                    Sil
-                                                </button>
-
-                                                <!-- Modal -->
-                                                <div x-show="open" style="display: none;" class="fixed inset-0 z-50 overflow-y-auto whitespace-normal" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-                                                    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-                                                        <div x-show="open" @click="open = false" x-transition.opacity class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
-                                                        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-                                                        <div x-show="open" x-transition class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full whitespace-normal">
-                                                            <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                                                                <div class="sm:flex sm:items-start">
-                                                                    <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
-                                                                        <svg class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                                                                        </svg>
-                                                                    </div>
-                                                                    <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left flex-1 min-w-0 whitespace-normal">
-                                                                        <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">Kayıt Silinecek</h3>
-                                                                        <div class="mt-2">
-                                                                            <p class="text-sm text-gray-500 whitespace-normal break-words">Bu form kaydını silmek istediğinize emin misiniz? Bu işlem geri alınamaz.</p>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                            <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse" x-data="{ deleting: false }">
-                                                                <form action="{{ route('form-entries.destroy', $entry) }}" method="POST"
-                                                                    @submit="if(deleting) { $event.preventDefault(); return false; } deleting = true;">
-                                                                    @csrf
-                                                                    @method('DELETE')
-                                                                    <button type="submit"
-                                                                        :disabled="deleting"
-                                                                        :class="deleting ? 'opacity-70 cursor-not-allowed pointer-events-none' : ''"
-                                                                        class="w-full inline-flex items-center justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm transition gap-1.5 cursor-pointer">
-                                                                        <svg x-show="deleting" class="animate-spin -ml-1 mr-1.5 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                                                        </svg>
-                                                                        <span x-text="deleting ? 'Siliniyor...' : 'Evet, Sil'">Evet, Sil</span>
-                                                                    </button>
-                                                                </form>
-                                                                <button type="button" @click="if(!deleting) open = false" :disabled="deleting"
-                                                                    class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50">
-                                                                    İptal
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            @endif
-                                        </div>
-                                    </td>
-                                </tr>
-
-                                {{-- Konsolide Forma Bağlı Alt Parçalar (Hiyerarşik / Alt Kategori Görünümü) --}}
-                                @if($entry->is_consolidated && $entry->children && $entry->children->count() > 0)
-                                    @foreach($entry->children as $child)
-                                        <tr x-show="{{ $groupByUsers ? ('!collapsedUserIds.includes(' . (int) $groupUserId . ') && ') : '' }}expandedConsolidatedIds.includes({{ $entry->id }})" x-cloak
-                                            x-transition:enter="transition ease-out duration-150"
-                                            x-transition:enter-start="opacity-0 -translate-y-1"
-                                            x-transition:enter-end="opacity-100 translate-y-0"
-                                            class="{{ $groupByUsers ? 'user-group-child-row' : '' }} bg-slate-50/90 hover:bg-indigo-50/40 border-l-4 border-indigo-400 transition-colors">
-                                            @if(!empty($canDelete) && $canDelete)
-                                                <td class="w-10 px-3 py-2 text-center text-slate-300 select-none">
-                                                    <span class="text-xs text-indigo-400 font-black">↳</span>
-                                                </td>
-                                            @endif
-                                            <td class="px-3.5 py-2.5 whitespace-nowrap">
-                                                <div class="flex items-center text-[11px] text-slate-600 font-semibold pl-2">
-                                                    <span class="font-mono">{{ $child->entry_date->format('d M Y') }}</span>
-                                                    <span class="text-slate-400 ml-1.5 font-mono text-[10px]">{{ $child->updated_at ? $child->updated_at->format('H:i:s') : '-' }}</span>
-                                                </div>
-                                            </td>
-                                            <td class="px-3.5 py-2.5">
-                                                <div class="text-[11px] font-bold text-slate-700 truncate max-w-[130px]" title="{{ $child->user->name ?? $entry->user->name }}">
-                                                    {{ $child->user->name ?? $entry->user->name }}
-                                                </div>
-                                            </td>
-                                            <td class="px-3.5 py-2.5">
-                                                <div class="flex items-center gap-1.5 flex-wrap">
-                                                    <span class="text-indigo-500 font-black text-xs">↳</span>
-                                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-extrabold bg-amber-100 text-amber-900 border border-amber-300 shadow-2xs">
-                                                        ⚡ {{ $child->partition_value ?: ('Parça #' . $child->id) }}
-                                                    </span>
-                                                    <span class="text-[10px] font-bold text-slate-500 bg-slate-200/80 px-1.5 py-0.2 rounded">
-                                                        Bağlı Alt Parça
-                                                    </span>
-                                                    <span class="text-[11px] text-slate-500 font-medium">
-                                                        ({{ $child->rows->count() }} Satır)
-                                                    </span>
-                                                </div>
-                                            </td>
-                                            <td class="px-3.5 py-2.5 whitespace-nowrap">
-                                                @if($child->revisionRequests->firstWhere('status', 'pending'))
-                                                    <span class="revision-blink-badge inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-800 border border-amber-300 shadow-2xs" title="Düzenleme talebi değerlendirme aşamasında">
-                                                        <span class="w-1.5 h-1.5 bg-amber-500 rounded-full mr-1 animate-pulse"></span>
-                                                        Düzenleme Talebi Bekliyor
-                                                    </span>
-                                                @elseif($child->status === 'draft')
-                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gray-100 text-gray-700 border border-gray-200">
-                                                        <span class="w-1.5 h-1.5 bg-gray-400 rounded-full mr-1"></span>
-                                                        Taslak
-                                                    </span>
-                                                @elseif($child->status === 'submitted')
-                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
-                                                        <span class="w-1.5 h-1.5 bg-blue-500 rounded-full mr-1 animate-pulse"></span>
-                                                        Onay Bekliyor
-                                                    </span>
-                                                @elseif($child->status === 'approved')
-                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                                        <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-1"></span>
-                                                        Onaylandı
-                                                    </span>
-                                                @elseif($child->status === 'rejected')
-                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-red-50 text-red-700 border border-red-200">
-                                                        <span class="w-1.5 h-1.5 bg-red-500 rounded-full mr-1"></span>
-                                                        Reddedildi
-                                                    </span>
-                                                @endif
-                                            </td>
-                                            @if(isset($canViewApprover) && $canViewApprover)
-                                                <td class="px-3.5 py-2.5 whitespace-nowrap text-[11px] text-gray-400">
-                                                    {{ $child->approver?->name ?? '-' }}
-                                                </td>
-                                            @endif
-                                            <td class="px-3.5 py-2.5 whitespace-nowrap text-right text-xs">
-                                                <div class="inline-flex items-center justify-end gap-1.5">
-                                                    @if($child->status === 'draft' && (!empty($isSuperAdmin) || Auth::id() === $child->user_id || Auth::id() === 1))
-                                                        <form action="{{ route('form-entries.submit-children-approval', $entry) }}" method="POST" class="inline"
-                                                            onsubmit="return confirm('{{ $child->partition_value ?: ('Parça #' . $child->id) }} parçasını onaya göndermek istediğinize emin misiniz?');">
-                                                            @csrf
-                                                            <input type="hidden" name="child_id" value="{{ $child->id }}">
-                                                            <button type="submit"
-                                                                class="inline-flex items-center gap-1 px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[10px] font-bold shadow-2xs transition cursor-pointer"
-                                                                title="Bu alt parçayı doğrudan onaya gönder">
-                                                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
-                                                                </svg>
-                                                                <span>Onaya Gönder</span>
-                                                            </button>
-                                                        </form>
-                                                    @endif
-                                                    <a href="{{ route('form-entries.show', $child) }}" 
-                                                       class="inline-flex items-center px-2 py-1 bg-white border border-gray-200 rounded-lg text-[11px] font-bold text-indigo-600 hover:text-indigo-900 hover:bg-indigo-50 transition-all shadow-2xs">
-                                                        İncele &rarr;
-                                                    </a>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                @endif
-                                @endforeach
-                            @empty
-                                <tr>
-                                    <td colspan="{{ (!empty($canDelete) && $canDelete ? 1 : 0) + ((isset($canViewApprover) && $canViewApprover) ? 6 : 5) }}" class="px-4 py-12 whitespace-nowrap text-center">
-                                        <div class="flex flex-col items-center justify-center">
-                                            <div class="bg-gray-50 rounded-full p-4 mb-3">
-                                                <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                                            </div>
-                                            <p class="text-gray-500 font-medium">Bu kriterde listelenecek veri girişi bulunamadı.</p>
-                                        </div>
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-
-                @if($entries->hasPages())
-                    <div class="p-4 border-t border-gray-100 bg-gray-50/50">
-                        {{ $entries->links() }}
-                    </div>
-                @endif
-            </div>
-        </div>
-
-        <!-- KONSOLİDASYON (PARÇALARI BİRLEŞTİRME) MODALI -->
-        <div x-show="openConsolidateModal" @keydown.window.escape="openConsolidateModal = false" style="display: none;" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-            <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-                <div x-show="openConsolidateModal" @click="openConsolidateModal = false" x-transition.opacity class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity" aria-hidden="true"></div>
-                <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-                <div x-show="openConsolidateModal" x-transition class="inline-block align-bottom bg-white rounded-3xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full border border-slate-100">
-                    <form action="{{ route('form-entries.consolidate') }}" method="POST">
-                        @csrf
-                        <div class="p-6 sm:p-8 space-y-6">
-                            <div class="flex items-start justify-between gap-4">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center font-black">
-                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
-                                    </div>
-                                    <div>
-                                        <h3 class="text-lg font-black text-slate-900">Parçalı Formları Birleştir (Konsolidasyon)</h3>
-                                        <p class="text-xs text-slate-500 mt-0.5">Farklı kriterlere göre girilmiş form parçalarını tek bir konsolide formda toplayın.</p>
-                                    </div>
+                        <div class="flex items-center gap-2.5 flex-wrap">
+                            @if($groupByUsers && count($allUserGroupIds) > 0)
+                                <!-- Hepsini Aç / Hepsini Kapat Butonları -->
+                                <div
+                                    class="inline-flex items-center rounded-xl bg-white border border-slate-200 p-0.5 shadow-2xs text-[11px] font-bold">
+                                    <button type="button" @click="expandAllUserGroups()"
+                                        class="px-2.5 py-1 rounded-lg transition-all flex items-center gap-1 cursor-pointer"
+                                        :class="collapsedUserIds.length === 0 ? 'bg-indigo-50 text-indigo-700 font-extrabold shadow-2xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'"
+                                        title="{{ __('Tüm kullanıcı gruplarını aç') }}">
+                                        <svg class="w-3.5 h-3.5 text-indigo-600 shrink-0" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                                                d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                        <span>{{ __('Hepsini Aç') }}</span>
+                                    </button>
+                                    <span class="text-slate-200">|</span>
+                                    <button type="button" @click="collapseAllUserGroups()"
+                                        class="px-2.5 py-1 rounded-lg transition-all flex items-center gap-1 cursor-pointer"
+                                        :class="collapsedUserIds.length === allUserGroupIds.length && allUserGroupIds.length > 0 ? 'bg-indigo-50 text-indigo-700 font-extrabold shadow-2xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'"
+                                        title="{{ __('Tüm kullanıcı gruplarını kapat') }}">
+                                        <svg class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                                                d="M5 15l7-7 7 7" />
+                                        </svg>
+                                        <span>{{ __('Hepsini Kapat') }}</span>
+                                    </button>
                                 </div>
-                                <button type="button" @click="openConsolidateModal = false" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            @endif
+
+                            @if(isset($eligibleForConsolidation) && $eligibleForConsolidation->count() >= 2)
+                                <button type="button" @click="openConsolidateModal = true"
+                                    class="text-indigo-600 hover:text-indigo-800 font-extrabold flex items-center gap-1 cursor-pointer">
+                                    <span>⚡ {{ $eligibleForConsolidation->count() }} adet birleştirilebilir parça
+                                        mevcut</span>
+                                    <span class="underline">&rarr;</span>
+                                </button>
+                            @endif
+                        </div>
+                    </div>
+
+                    <!-- Toplu İşlem Barı (Silme Yetkisi Olanlar İçin) -->
+                    @if(!empty($canDelete) && $canDelete && $entries->count() > 0)
+                        <div x-show="selectedDeleteIds.length > 0" x-cloak
+                            x-transition:enter="transition ease-out duration-150"
+                            x-transition:enter-start="opacity-0 -translate-y-2"
+                            x-transition:enter-end="opacity-100 translate-y-0"
+                            x-transition:leave="transition ease-in duration-100"
+                            x-transition:leave-start="opacity-100 translate-y-0"
+                            x-transition:leave-end="opacity-0 -translate-y-2"
+                            class="px-4 py-3 bg-rose-50 border-b border-rose-200 flex flex-wrap items-center justify-between gap-3 text-xs">
+                            <div class="flex items-center gap-2">
+                                <span
+                                    class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-rose-600 text-white font-black text-xs"
+                                    x-text="selectedDeleteIds.length"></span>
+                                <span class="font-bold text-rose-950">
+                                    <span x-text="selectedDeleteIds.length"></span> adet form kaydı seçildi
+                                </span>
+                                <span class="text-rose-300">|</span>
+                                <button type="button"
+                                    @click="selectedDeleteIds = [{{ $entries->pluck('id')->implode(',') }}]"
+                                    class="text-rose-700 hover:text-rose-900 font-bold underline cursor-pointer">
+                                    Sayfadaki Tümünü Seç ({{ $entries->count() }})
+                                </button>
+                                <span class="text-rose-300">·</span>
+                                <button type="button" @click="selectedDeleteIds = []"
+                                    class="text-slate-600 hover:text-slate-900 font-semibold cursor-pointer">
+                                    Seçimi Temizle
                                 </button>
                             </div>
+                            <div class="flex items-center gap-2">
+                                <button type="button" @click="openBulkDeleteModal = true"
+                                    class="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white font-bold rounded-xl shadow-xs transition cursor-pointer">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                                        </path>
+                                    </svg>
+                                    <span>Seçilenleri Sil (<span x-text="selectedDeleteIds.length"></span>)</span>
+                                </button>
+                            </div>
+                        </div>
+                    @endif
 
-                            @php
-                                $hasTargetConsolidated = !empty($currentUserConsolidated) || (
-                                    isset($eligibleForConsolidation)
-                                    && isset($existingConsolidatedMap)
-                                    && $eligibleForConsolidation->contains(fn($e) => $existingConsolidatedMap->has("{$e->user_id}_{$e->form_template_id}"))
-                                );
-                                $canShowConsolidateList = isset($eligibleForConsolidation) && (
-                                    $eligibleForConsolidation->count() >= 2
-                                    || ($eligibleForConsolidation->count() >= 1 && $hasTargetConsolidated)
-                                );
-                            @endphp
-
-                            @if($canShowConsolidateList)
-                                @if(!empty($currentUserConsolidated))
-                                    <div class="p-3.5 rounded-2xl bg-indigo-50 border border-indigo-200 text-xs text-indigo-950 flex items-start justify-between gap-3">
-                                        <div class="space-y-1">
-                                            <div class="font-extrabold flex items-center gap-1.5 text-indigo-900">
-                                                <span>🔗 Mevcut Konsolide Formunuz:</span>
-                                                <a href="{{ $currentUserConsolidated['url'] }}" class="underline hover:text-indigo-700 font-black">
-                                                    #{{ $currentUserConsolidated['id'] }}
-                                                </a>
-                                            </div>
-                                            <p class="text-[11px] text-indigo-800 leading-relaxed">
-                                                Kullanıcı başına tek bir konsolide form bulunur. Seçeceğiniz ek parçalar yeni bir konsolide form oluşturmadan doğrudan
-                                                <strong>#{{ $currentUserConsolidated['id'] }}</strong> numaralı formunuza eklenecektir.
-                                            </p>
-                                        </div>
-                                        <a href="{{ $currentUserConsolidated['url'] }}" class="shrink-0 px-2.5 py-1.5 rounded-lg bg-white border border-indigo-200 text-[11px] font-bold text-indigo-700 hover:bg-indigo-100 transition">
-                                            Formu Aç &rarr;
-                                        </a>
-                                    </div>
-                                @endif
-
-                                <div class="space-y-3">
-                                    <div class="flex items-center justify-between text-xs">
-                                        <span class="font-bold text-slate-700">
-                                            {{ $hasTargetConsolidated ? 'Eklenecek / Birleştirilecek Parçaları Seçiniz (En az 1):' : 'Birleştirilecek Parçaları Seçiniz (En az 2):' }}
-                                        </span>
-                                        <span class="font-extrabold text-indigo-600" x-text="selectedEntries.length + ' parça seçildi'"></span>
-                                    </div>
-
-                                    <div class="max-h-72 overflow-y-auto space-y-2 pr-1 border border-slate-200 rounded-2xl p-2 bg-slate-50/50">
+                    <div class="w-full overflow-x-auto">
+                        <table class="modern-entries-table w-full divide-y divide-slate-200/80">
+                            <thead>
+                                <tr>
+                                    @if(!empty($canDelete) && $canDelete && $entries->count() > 0)
+                                        <th class="w-10 px-3 py-3 text-center">
+                                            <input type="checkbox"
+                                                @change="selectedDeleteIds = $event.target.checked ? [{{ $entries->pluck('id')->implode(',') }}] : []"
+                                                :checked="selectedDeleteIds.length > 0 && selectedDeleteIds.length === {{ $entries->count() }}"
+                                                class="w-4 h-4 rounded text-rose-600 border-gray-300 focus:ring-rose-500 cursor-pointer"
+                                                title="Sayfadaki Tümünü Seç / Kaldır">
+                                        </th>
+                                    @endif
+                                    <th
+                                        class="px-3.5 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider w-44 whitespace-nowrap">
+                                        {{ __('TARİH') }}
+                                    </th>
+                                    <th
+                                        class="px-3.5 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider w-44">
+                                        {{ __('KULLANICI') }}
+                                    </th>
+                                    <th
+                                        class="px-3.5 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                        {{ __('ŞABLON') }}
+                                    </th>
+                                    <th
+                                        class="px-3.5 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider w-32 whitespace-nowrap">
+                                        {{ __('DURUM') }}
+                                    </th>
+                                    @if(isset($canViewApprover) && $canViewApprover)
+                                        <th
+                                            class="px-3.5 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider w-36 whitespace-nowrap">
+                                            {{ __('ONAYLAYAN') }}
+                                        </th>
+                                    @endif
+                                    <th
+                                        class="px-3.5 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider w-36 whitespace-nowrap">
+                                        {{ __('İŞLEMLER') }}
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-100">
+                                @php
+                                    $groupByUsers = !empty($canSeeMultipleUsers) && $entries->count() > 0;
+                                    $entryGroups = $groupByUsers ? $entries->groupBy('user_id') : collect([0 => $entries]);
+                                    $groupColspan = (!empty($canDelete) && $canDelete ? 1 : 0) + ((isset($canViewApprover) && $canViewApprover) ? 6 : 5);
+                                @endphp
+                                @forelse($entryGroups as $groupUserId => $userEntries)
+                                    @if($groupByUsers)
                                         @php
-                                            $totalConsolidationItems = $eligibleForConsolidation->count();
+                                            $groupUser = $userEntries->first()?->user;
+                                            $uDraftCount = $userEntries->where('status', 'draft')->count();
+                                            $uSubmittedCount = $userEntries->where('status', 'submitted')->count();
+                                            $uApprovedCount = $userEntries->where('status', 'approved')->count();
+                                            $uLatestAt = $userEntries->map(fn($e) => $e->submitted_at ?? $e->updated_at)->filter()->max();
                                         @endphp
-                                        @foreach($eligibleForConsolidation as $item)
-                                            @php
-                                                $freshness = $totalConsolidationItems > 1 ? (1 - ($loop->index / ($totalConsolidationItems - 1))) : 1;
-                                                $bgAlpha = number_format(0.02 + ($freshness * 0.16), 3, '.', '');
-                                                $borderAlpha = number_format(0.14 + ($freshness * 0.42), 3, '.', '');
-                                                $leftBorderAlpha = number_format(0.18 + ($freshness * 0.82), 3, '.', '');
-                                                $targetCons = isset($existingConsolidatedMap) ? $existingConsolidatedMap->get("{$item->user_id}_{$item->form_template_id}") : null;
-                                            @endphp
-                                            <label class="flex items-center justify-between p-3 rounded-xl border hover:shadow-xs transition cursor-pointer group"
-                                                style="background-color: rgba(79, 70, 229, {{ $bgAlpha }}); border-color: rgba(79, 70, 229, {{ $borderAlpha }}); border-left-width: 4px; border-left-color: rgba(79, 70, 229, {{ $leftBorderAlpha }});">
-                                                <div class="flex items-center gap-3">
-                                                    <input type="checkbox" name="entry_ids[]" value="{{ $item->id }}"
-                                                        x-model="selectedEntries"
-                                                        class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4">
-                                                    <div>
-                                                        <div class="flex items-center gap-2 flex-wrap">
-                                                            <span class="text-xs font-black text-slate-900 group-hover:text-indigo-600 transition">
-                                                                {{ $item->template->name }}
-                                                            </span>
-                                                            <span class="px-2 py-0.5 rounded-md text-[11px] font-extrabold bg-amber-100 text-amber-800 border border-amber-300">
-                                                                ⚡ {{ $item->partition_value }}
-                                                            </span>
-                                                            @if($targetCons)
-                                                                <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-indigo-100 text-indigo-800 border border-indigo-200">
-                                                                    &rarr; #{{ $targetCons['id'] }}'ye eklenir
+                                        @if(!$loop->first)
+                                            <tr class="user-group-spacer">
+                                                <td colspan="{{ $groupColspan }}"></td>
+                                            </tr>
+                                        @endif
+                                        <tr class="user-group-header transition-colors cursor-pointer"
+                                            @click="toggleUserGroup({{ (int) $groupUserId }})">
+                                            <td colspan="{{ $groupColspan }}" class="px-4 py-3">
+                                                <div class="flex flex-wrap items-center justify-between gap-2">
+                                                    <div class="flex items-center gap-3 min-w-0">
+                                                        <span
+                                                            class="ug-chevron inline-flex items-center justify-center w-6 h-6 rounded-lg shadow-2xs transition-transform duration-200"
+                                                            :class="collapsedUserIds.includes({{ (int) $groupUserId }}) ? '-rotate-90' : ''">
+                                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor"
+                                                                viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                                    stroke-width="2.5" d="M19 9l-7 7-7-7" />
+                                                            </svg>
+                                                        </span>
+                                                        <div
+                                                            class="ug-avatar w-8 h-8 rounded-full font-black text-xs flex items-center justify-center shrink-0">
+                                                            {{ mb_substr($groupUser?->name ?? '?', 0, 1) }}
+                                                        </div>
+                                                        <div class="flex items-center gap-2 flex-wrap min-w-0">
+                                                            @if($groupUser)
+                                                                <a href="{{ route('users.profile', $groupUser->id) }}" @click.stop
+                                                                    class="text-xs sm:text-sm font-black text-slate-900 hover:text-indigo-700 hover:underline truncate">
+                                                                    {{ $groupUser->name }}
+                                                                </a>
+                                                            @else
+                                                                <span
+                                                                    class="text-xs sm:text-sm font-black text-slate-900">Bilinmeyen
+                                                                    Kullanıcı</span>
+                                                            @endif
+
+                                                            @if($groupUser?->isGroupManager())
+                                                                <span
+                                                                    class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-full border border-amber-200 inline-flex items-center gap-1 shadow-2xs shrink-0">
+                                                                    👑 {{ __('GRUP YÖNETİCİSİ') }}
+                                                                </span>
+                                                                @if($groupUser->role)
+                                                                    <span
+                                                                        class="bg-indigo-50 text-indigo-700 border border-indigo-200/80 text-[10px] font-bold px-2 py-0.5 rounded-md shrink-0">
+                                                                        {{ $groupUser->role->name }}
+                                                                    </span>
+                                                                @endif
+                                                                <span
+                                                                    class="ug-dept-pill px-2 py-0.5 rounded-md text-[10px] font-bold inline-flex items-center gap-1 bg-indigo-50/90 text-indigo-800 border border-indigo-200">
+                                                                    <svg class="w-3 h-3 text-indigo-500 shrink-0" fill="none"
+                                                                        stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                                                            stroke-width="2"
+                                                                            d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10">
+                                                                        </path>
+                                                                    </svg>
+                                                                    {{ $groupUser->display_group_name }}
+                                                                </span>
+                                                            @else
+                                                                <span
+                                                                    class="ug-dept-pill px-2 py-0.5 rounded-md text-[10px] font-bold">
+                                                                    {{ $groupUser?->display_group_name ?? 'Grup Yok' }}
+                                                                </span>
+                                                            @endif
+
+                                                            @if($uLatestAt)
+                                                                <span
+                                                                    class="ug-time-pill px-2 py-0.5 rounded-md text-[10px] font-mono font-semibold">
+                                                                    Son: {{ $uLatestAt->format('d.m.Y H:i') }}
                                                                 </span>
                                                             @endif
                                                         </div>
-                                                        <div class="text-[11px] text-slate-600 mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5">
-                                                            <span>#{{ $item->id }}</span>
-                                                            <span>&bull;</span>
-                                                            <span>{{ $item->rows->count() }} Satır</span>
-                                                            <span>&bull;</span>
-                                                            <span>{{ $item->created_at ? $item->created_at->format('d.m.Y H:i') : $item->entry_date->format('d.m.Y') }}</span>
-                                                            <span>&bull;</span>
-                                                            <span class="font-bold text-slate-800">{{ $item->user?->name ?? '-' }}</span>
+                                                    </div>
+                                                    <div class="flex items-center gap-1.5 flex-wrap text-[11px]">
+                                                        <span
+                                                            class="ug-count-pill px-2.5 py-0.5 rounded-full font-extrabold shadow-2xs">
+                                                            {{ $userEntries->count() }} Kayıt
+                                                        </span>
+                                                        @if($uDraftCount > 0)
+                                                            <span class="ug-draft-pill px-2 py-0.5 rounded-full font-bold">
+                                                                {{ $uDraftCount }} Taslak
+                                                            </span>
+                                                        @endif
+                                                        @if($uSubmittedCount > 0)
+                                                            <span class="ug-submitted-pill px-2 py-0.5 rounded-full font-bold">
+                                                                {{ $uSubmittedCount }} Onay Bekliyor
+                                                            </span>
+                                                        @endif
+                                                        @if($uApprovedCount > 0)
+                                                            <span class="ug-approved-pill px-2 py-0.5 rounded-full font-bold">
+                                                                {{ $uApprovedCount }} Onaylı
+                                                            </span>
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    @endif
+                                    @foreach($userEntries as $entry)
+                                        <tr @if($groupByUsers) x-show="!collapsedUserIds.includes({{ (int) $groupUserId }})"
+                                        @endif
+                                            class="{{ $groupByUsers ? 'user-group-row' : '' }} hover:bg-indigo-50/30 transition-colors group"
+                                            :class="selectedDeleteIds.includes({{ $entry->id }}) ? 'bg-rose-50/40' : ''">
+                                            @if(!empty($canDelete) && $canDelete)
+                                                <td class="w-10 px-3 py-3 text-center" @click.stop>
+                                                    <input type="checkbox" :value="{{ $entry->id }}"
+                                                        x-model.number="selectedDeleteIds"
+                                                        class="w-4 h-4 rounded text-rose-600 border-gray-300 focus:ring-rose-500 cursor-pointer">
+                                                </td>
+                                            @endif
+                                            <td class="px-3.5 py-3 whitespace-nowrap">
+                                                <div class="space-y-1">
+                                                    <div class="flex items-center text-xs text-gray-900 font-bold">
+                                                        <svg class="w-3.5 h-3.5 mr-1 text-gray-400 group-hover:text-indigo-500 transition-colors shrink-0"
+                                                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                                stroke-width="2"
+                                                                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
+                                                            </path>
+                                                        </svg>
+                                                        <span>{{ $entry->entry_date->translatedFormat('d M Y, l') }}</span>
+                                                    </div>
+                                                    <div class="flex items-center gap-1.5 text-[11px] text-gray-500">
+                                                        <span class="font-mono text-gray-600 font-semibold"
+                                                            title="Son Kaydedilme / Gönderim Saati">
+                                                            🕒
+                                                            {{ $entry->updated_at ? $entry->updated_at->format('H:i:s') : '-' }}
+                                                        </span>
+                                                        @php $vCount = $entry->versions ? $entry->versions->count() : 0; @endphp
+                                                        @if($vCount > 1)
+                                                            <div x-data="{
+                                                                                            open: false,
+                                                                                            coords: { top: 0, left: 0, placement: 'bottom' },
+                                                                                            updatePos() {
+                                                                                                const rect = $el.getBoundingClientRect();
+                                                                                                const spaceBelow = window.innerHeight - rect.bottom;
+                                                                                                if (spaceBelow < 170) {
+                                                                                                    this.coords = {
+                                                                                                        top: rect.top - 8,
+                                                                                                        left: Math.max(10, rect.left),
+                                                                                                        placement: 'top'
+                                                                                                    };
+                                                                                                } else {
+                                                                                                    this.coords = {
+                                                                                                        top: rect.bottom + 8,
+                                                                                                        left: Math.max(10, rect.left),
+                                                                                                        placement: 'bottom'
+                                                                                                    };
+                                                                                                }
+                                                                                            }
+                                                                                        }" @scroll.window="open = false"
+                                                                class="inline-block">
+                                                                <button type="button" @mouseenter="updatePos(); open = true"
+                                                                    @mouseleave="open = false" @click="updatePos(); open = !open"
+                                                                    class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 text-[10px] font-black cursor-pointer shadow-2xs">
+                                                                    <span>v{{ $entry->versions->first()->version_number }}</span>
+                                                                    <span
+                                                                        class="text-[9px] text-indigo-500 font-normal">({{ $vCount }}
+                                                                        sürüm)</span>
+                                                                </button>
+                                                                <div x-show="open" x-cloak
+                                                                    x-transition:enter="transition ease-out duration-150"
+                                                                    x-transition:enter-start="opacity-0 scale-95"
+                                                                    x-transition:enter-end="opacity-100 scale-100"
+                                                                    x-transition:leave="transition ease-in duration-100"
+                                                                    x-transition:leave-start="opacity-100 scale-100"
+                                                                    x-transition:leave-end="opacity-0 scale-95"
+                                                                    :style="coords.placement === 'top' 
+                                                                                                    ? 'position: fixed; left: ' + coords.left + 'px; bottom: ' + (window.innerHeight - coords.top) + 'px; z-index: 999999;' 
+                                                                                                    : 'position: fixed; left: ' + coords.left + 'px; top: ' + coords.top + 'px; z-index: 999999;'"
+                                                                    class="w-64 p-2.5 bg-slate-900 text-white rounded-xl shadow-2xl text-xs space-y-1.5 border border-slate-700 pointer-events-none">
+                                                                    <div
+                                                                        class="font-bold border-b border-slate-700 pb-1 text-slate-300 flex justify-between">
+                                                                        <span>Sürüm Geçmişi</span>
+                                                                        <span class="text-[10px] text-indigo-300">{{ $vCount }}
+                                                                            Kayıt</span>
+                                                                    </div>
+                                                                    @foreach($entry->versions->take(10) as $v)
+                                                                        <div
+                                                                            class="flex justify-between items-center text-[10px] py-0.5 border-b border-slate-800 last:border-none">
+                                                                            <span
+                                                                                class="font-bold text-amber-300">v{{ $v->version_number }}
+                                                                                ({{ $v->formatted_status }})</span>
+                                                                            <span
+                                                                                class="text-slate-400 font-mono">{{ $v->created_at ? $v->created_at->format('d.m H:i') : '-' }}</span>
+                                                                        </div>
+                                                                    @endforeach
+                                                                    @if($vCount > 10)
+                                                                        <div class="text-[9px] text-slate-400 italic text-center">
+                                                                            +{{ $vCount - 10 }} eski sürüm daha</div>
+                                                                    @endif
+                                                                </div>
+                                                            </div>
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="px-3.5 py-3">
+                                                <div class="flex items-center">
+                                                    <div
+                                                        class="shrink-0 h-8 w-8 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-full flex items-center justify-center text-indigo-700 font-bold border border-indigo-200 text-xs shadow-2xs">
+                                                        {{ mb_substr($entry->user->name, 0, 1) }}
+                                                    </div>
+                                                    <div class="ml-2.5 min-w-0">
+                                                        <div class="flex items-center gap-1.5 flex-wrap">
+                                                            <a href="{{ route('users.profile', $entry->user->id) }}"
+                                                                class="text-xs sm:text-sm font-bold text-gray-900 hover:text-indigo-600 hover:underline transition-colors block truncate max-w-[130px]"
+                                                                title="{{ $entry->user->name }}">{{ $entry->user->name }}</a>
+                                                            @if($entry->user->isGroupManager())
+                                                                <span
+                                                                    class="bg-amber-100 text-amber-800 text-[9px] font-bold px-1.5 py-0.2 rounded-full border border-amber-200 shrink-0"
+                                                                    title="{{ __('Grup Yöneticisi') }}">
+                                                                    👑 {{ __('Yönetici') }}
+                                                                </span>
+                                                            @endif
+                                                        </div>
+                                                        <div class="text-[11px] text-gray-500 flex items-center mt-0.5 truncate max-w-[160px]"
+                                                            title="{{ $entry->user->display_group_name }}">
+                                                            @if($entry->user->isGroupManager())
+                                                                <svg class="w-3 h-3 mr-1 text-indigo-500 shrink-0" fill="none"
+                                                                    stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                                        stroke-width="2"
+                                                                        d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10">
+                                                                    </path>
+                                                                </svg>
+                                                                <span
+                                                                    class="text-indigo-700 font-semibold truncate">{{ $entry->user->display_group_name }}</span>
+                                                            @elseif($entry->user->group)
+                                                                <svg class="w-3 h-3 mr-1 text-gray-400 shrink-0" fill="none"
+                                                                    stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                                        stroke-width="2"
+                                                                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z">
+                                                                    </path>
+                                                                </svg>
+                                                                <span class="truncate">{{ $entry->user->display_group_name }}</span>
+                                                            @else
+                                                                <span class="truncate">{{ $entry->user->display_group_name }}</span>
+                                                            @endif
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <div>
-                                                    @if($item->status === 'approved')
-                                                        <span class="text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 px-2 py-0.5 rounded-full">Onaylandı</span>
-                                                    @elseif($item->status === 'submitted')
-                                                        <span class="text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-300 px-2 py-0.5 rounded-full">Onay Bekliyor</span>
-                                                    @else
-                                                        <span class="text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-300 px-2 py-0.5 rounded-full">Taslak</span>
+                                            </td>
+                                            <td class="px-3.5 py-3">
+                                                <div class="space-y-1">
+                                                    <div class="flex items-center gap-1.5 flex-wrap">
+                                                        <span
+                                                            class="text-xs font-black text-gray-900 bg-gray-50 border border-gray-200 rounded-md px-2 py-0.5 whitespace-nowrap">
+                                                            {{ $entry->template->name }}
+                                                        </span>
+                                                        @if($entry->is_consolidated)
+                                                            <span
+                                                                class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-gradient-to-r from-purple-700 to-indigo-700 text-white shadow-2xs whitespace-nowrap">
+                                                                🌟 Konsolide ({{ $entry->children->count() }} Parça)
+                                                            </span>
+                                                            @if($entry->children->count() > 0)
+                                                                <button type="button" @click.stop="toggleExpanded({{ $entry->id }})"
+                                                                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold transition-all shadow-2xs cursor-pointer border"
+                                                                    :class="expandedConsolidatedIds.includes({{ $entry->id }}) 
+                                                                                                                ? 'bg-purple-100 text-purple-900 border-purple-300 ring-1 ring-purple-300' 
+                                                                                                                : 'bg-white text-slate-700 hover:bg-slate-50 border-slate-300'"
+                                                                    title="Bu konsolide formun altındaki parçaları göster / gizle">
+                                                                    <svg class="w-3 h-3 transition-transform duration-200"
+                                                                        :class="expandedConsolidatedIds.includes({{ $entry->id }}) ? 'rotate-180' : ''"
+                                                                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                                                            stroke-width="2" d="M19 9l-7 7-7-7" />
+                                                                    </svg>
+                                                                    <span
+                                                                        x-text="expandedConsolidatedIds.includes({{ $entry->id }}) ? 'Alt Parçaları Gizle' : 'Alt Parçaları Göster ({{ $entry->children->count() }})'"></span>
+                                                                </button>
+                                                            @endif
+                                                        @elseif($entry->partition_value)
+                                                            <span
+                                                                class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-amber-100 text-amber-800 border border-amber-300 whitespace-nowrap">
+                                                                ⚡ {{ $entry->partition_value }}
+                                                            </span>
+                                                            @if($entry->parent_id)
+                                                                <a href="{{ route('form-entries.show', $entry->parent_id) }}"
+                                                                    class="inline-flex items-center gap-0.5 text-[10px] text-indigo-600 hover:text-indigo-800 font-bold bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200 whitespace-nowrap">
+                                                                    <span>🔗 #{{ $entry->parent_id }}</span>
+                                                                </a>
+                                                            @else
+                                                                <span
+                                                                    class="text-[10px] text-slate-400 font-semibold whitespace-nowrap">(Ayrık
+                                                                    Parça)</span>
+                                                            @endif
+                                                        @endif
+                                                    </div>
+                                                    @if($entry->title)
+                                                        <div class="text-[11px] text-slate-500 font-medium truncate max-w-[200px]"
+                                                            title="{{ $entry->title }}">
+                                                            {{ $entry->title }}
+                                                        </div>
                                                     @endif
                                                 </div>
-                                            </label>
-                                        @endforeach
-                                    </div>
-                                    <p class="text-[11px] text-slate-500 italic">
-                                        💡 Not: Birleştirme sonrasında parçaların tüm satırları kullanıcının tek konsolide formu altında toplanır. Yeni eklenen parçalar da yeni ID açmadan mevcut konsolide forma bağlanır.
-                                    </p>
-                                </div>
-                            @else
-                                <div class="p-8 text-center bg-slate-50 rounded-2xl border border-slate-200 text-slate-500 space-y-2">
-                                    <svg class="w-10 h-10 mx-auto text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                    <p class="text-sm font-bold text-slate-700">Henüz Birleştirilecek Yeterli Parça Yok</p>
-                                    <p class="text-xs text-slate-400">Birleştirme işlemi için aynı şablona ait en az 2 adet bağımsız parçalı form kaydı (veya mevcut konsolide formunuza eklenecek en az 1 yeni parça) bulunmalıdır.</p>
-                                </div>
-                            @endif
-                        </div>
+                                            </td>
+                                            <td class="px-3.5 py-3 whitespace-nowrap">
+                                                @php
+                                                    $pendingChildRevCount = $entry->is_consolidated
+                                                        ? $entry->children->filter(fn($c) => (bool) $c->revisionRequests->firstWhere('status', 'pending'))->count()
+                                                        : 0;
+                                                @endphp
+                                                <div class="flex flex-col items-start gap-1">
+                                                    @if($entry->revisionRequests->firstWhere('status', 'pending'))
+                                                        <span
+                                                            class="revision-blink-badge inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-800 border border-amber-300 shadow-2xs"
+                                                            title="Düzenleme (revizyon) talebi değerlendirme aşamasında">
+                                                            <span
+                                                                class="w-1.5 h-1.5 bg-amber-500 rounded-full mr-1 animate-pulse"></span>
+                                                            {{ __('Revizyon Bekliyor') }}
+                                                        </span>
+                                                    @elseif($entry->status === 'draft')
+                                                        <span
+                                                            class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-gray-100 text-gray-700 border border-gray-200">
+                                                            <span class="w-1.5 h-1.5 bg-gray-400 rounded-full mr-1"></span>
+                                                            {{ __('Taslak') }}
+                                                        </span>
+                                                    @elseif($entry->status === 'submitted')
+                                                        <span
+                                                            class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                                                            <span
+                                                                class="w-1.5 h-1.5 bg-amber-500 rounded-full mr-1 animate-pulse"></span>
+                                                            {{ __('Onay Bekliyor') }}
+                                                        </span>
+                                                    @elseif($entry->status === 'approved')
+                                                        <span
+                                                            class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                                            <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-1"></span>
+                                                            {{ __('Onaylandı') }}
+                                                        </span>
+                                                    @elseif($entry->status === 'rejected')
+                                                        <span
+                                                            class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-red-50 text-red-700 border border-red-200 cursor-help"
+                                                            title="{{ $entry->rejection_reason }}">
+                                                            <span class="w-1.5 h-1.5 bg-red-500 rounded-full mr-1"></span>
+                                                            {{ __('Reddedildi') }}
+                                                        </span>
+                                                    @endif
+                                                    @if($pendingChildRevCount > 0)
+                                                        <span
+                                                            class="revision-blink-badge inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-300 shadow-2xs"
+                                                            title="Bağlı alt parçada düzenleme talebi bulunuyor">
+                                                            <span
+                                                                class="w-1.5 h-1.5 bg-amber-500 rounded-full mr-1 animate-pulse"></span>
+                                                            Düzenleme Talebi ({{ $pendingChildRevCount }} Parça)
+                                                        </span>
+                                                    @endif
+                                                </div>
+                                            </td>
+                                            @if(isset($canViewApprover) && $canViewApprover)
+                                                <td class="px-3.5 py-3 whitespace-nowrap text-xs text-gray-500">
+                                                    @if($entry->approver)
+                                                        <div class="flex items-center text-emerald-600 font-medium">
+                                                            <svg class="w-3.5 h-3.5 mr-1 flex-shrink-0" fill="none"
+                                                                stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                            </svg>
+                                                            <a href="{{ route('users.profile', $entry->approver->id) }}"
+                                                                class="hover:underline hover:text-emerald-800 transition-colors block truncate max-w-[120px]"
+                                                                title="{{ $entry->approver->name }}">
+                                                                {{ $entry->approver->name }}
+                                                            </a>
+                                                        </div>
+                                                    @elseif($entry->status === 'rejected' && $entry->approver)
+                                                        <div class="flex items-center text-red-600 font-medium">
+                                                            <svg class="w-3.5 h-3.5 mr-1 flex-shrink-0" fill="none"
+                                                                stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                                    d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z">
+                                                                </path>
+                                                            </svg>
+                                                            <a href="{{ route('users.profile', $entry->approver->id) }}"
+                                                                class="hover:underline hover:text-red-800 transition-colors block truncate max-w-[120px]"
+                                                                title="{{ $entry->approver->name }}">
+                                                                {{ $entry->approver->name }}
+                                                            </a>
+                                                        </div>
+                                                    @else
+                                                        <span class="text-gray-400 italic">-</span>
+                                                    @endif
+                                                </td>
+                                            @endif
+                                            <td class="px-3.5 py-3 whitespace-nowrap text-right text-xs font-medium">
+                                                <div class="inline-flex items-center justify-end gap-1.5">
+                                                    <a href="{{ route('form-entries.show', $entry) }}"
+                                                        class="inline-flex items-center px-2.5 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-bold text-indigo-600 hover:text-indigo-900 hover:bg-indigo-50 hover:border-indigo-300 transition-all shadow-2xs">
+                                                        <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor"
+                                                            viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                                stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                                stroke-width="2"
+                                                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z">
+                                                            </path>
+                                                        </svg>
+                                                        {{ __('İncele') }}
+                                                    </a>
 
-                        <div class="bg-slate-50 px-6 py-4 border-t border-slate-100 flex items-center justify-end gap-3">
-                            <button type="button" @click="openConsolidateModal = false" class="px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-white transition cursor-pointer">
-                                İptal
-                            </button>
-                            @if($canShowConsolidateList)
-                                <button type="submit"
-                                    :disabled="selectedEntries.length < {{ $hasTargetConsolidated ? 1 : 2 }}"
-                                    :class="selectedEntries.length < {{ $hasTargetConsolidated ? 1 : 2 }} ? 'opacity-50 cursor-not-allowed bg-indigo-400' : 'bg-indigo-600 hover:bg-indigo-700 active:scale-98'"
-                                    class="px-5 py-2.5 rounded-xl text-xs font-black text-white shadow-md shadow-indigo-500/20 transition flex items-center gap-1.5 cursor-pointer">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                                    <span>{{ !empty($currentUserConsolidated) ? "Seçilen Parçaları #{$currentUserConsolidated['id']}'ye Ekle" : 'Seçilen Parçaları Birleştir' }}</span>
-                                </button>
-                            @endif
+                                                    @if(!empty($canConsolidate) && $canConsolidate && $entry->is_consolidated && (Auth::id() === $entry->user_id || Auth::user()->id === 1 || (Auth::user()->role && Auth::user()->role->slug === 'sistem_yoneticisi')))
+                                                        <div x-data="{ openDissolve: false }" class="inline-block text-left">
+                                                            <button type="button" @click="openDissolve = true"
+                                                                class="inline-flex items-center px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-amber-700 hover:bg-amber-50 hover:border-amber-300 transition-all shadow-2xs cursor-pointer"
+                                                                title="Konsolidasyonu Dağıt / Parçaları Ayır">
+                                                                <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor"
+                                                                    viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                                        stroke-width="2"
+                                                                        d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                                                                </svg>
+                                                                Dağıt
+                                                            </button>
+
+                                                            <!-- Dağıtma Onay Modalı -->
+                                                            <div x-show="openDissolve" style="display: none;"
+                                                                class="fixed inset-0 z-50 overflow-y-auto whitespace-normal"
+                                                                aria-labelledby="dissolve-modal-title-{{ $entry->id }}"
+                                                                role="dialog" aria-modal="true">
+                                                                <div
+                                                                    class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                                                                    <div x-show="openDissolve" @click="openDissolve = false"
+                                                                        x-transition.opacity
+                                                                        class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity"
+                                                                        aria-hidden="true"></div>
+                                                                    <span class="hidden sm:inline-block sm:align-middle sm:h-screen"
+                                                                        aria-hidden="true">&#8203;</span>
+                                                                    <div x-show="openDissolve" x-transition
+                                                                        class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full border border-slate-100 whitespace-normal">
+                                                                        <div class="bg-white px-5 pt-6 pb-5 sm:p-6 sm:pb-5">
+                                                                            <div class="sm:flex sm:items-start gap-4">
+                                                                                <div
+                                                                                    class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-2xl bg-amber-100 text-amber-700 sm:mx-0">
+                                                                                    <svg class="h-6 w-6" fill="none"
+                                                                                        viewBox="0 0 24 24" stroke="currentColor">
+                                                                                        <path stroke-linecap="round"
+                                                                                            stroke-linejoin="round" stroke-width="2"
+                                                                                            d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                                                                                    </svg>
+                                                                                </div>
+                                                                                <div
+                                                                                    class="mt-3 text-center sm:mt-0 sm:text-left flex-1 min-w-0 whitespace-normal">
+                                                                                    <h3 class="text-lg font-black text-slate-900"
+                                                                                        id="dissolve-modal-title-{{ $entry->id }}">
+                                                                                        Konsolidasyonu Dağıt</h3>
+                                                                                    <div class="mt-2 space-y-2.5">
+                                                                                        <p
+                                                                                            class="text-sm text-slate-600 whitespace-normal break-words">
+                                                                                            Bu konsolide formu dağıtmak ve altındaki
+                                                                                            <strong>{{ $entry->children->count() }}
+                                                                                                parçayı</strong> tekrar bağımsız
+                                                                                            hale getirmek istediğinize emin misiniz?
+                                                                                        </p>
+                                                                                        <div
+                                                                                            class="p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-900 flex items-start gap-2.5 whitespace-normal break-words">
+                                                                                            <span
+                                                                                                class="shrink-0 text-base leading-none">💡</span>
+                                                                                            <span
+                                                                                                class="flex-1 whitespace-normal break-words leading-relaxed">Parçaların
+                                                                                                girilmiş verileri kaybolmaz; sadece
+                                                                                                ana form bağlantısı çözülerek
+                                                                                                parçalar ayrı ayrı
+                                                                                                görüntülenebilir/düzenlenebilir hale
+                                                                                                gelir.</span>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div class="bg-slate-50 px-5 py-3.5 sm:px-6 sm:flex sm:flex-row-reverse gap-2 border-t border-slate-100"
+                                                                            x-data="{ dissolving: false }">
+                                                                            <form
+                                                                                action="{{ route('form-entries.dissolve', $entry) }}"
+                                                                                method="POST"
+                                                                                @submit="if(dissolving) { $event.preventDefault(); return false; } dissolving = true;">
+                                                                                @csrf
+                                                                                <button type="submit" :disabled="dissolving"
+                                                                                    :class="dissolving ? 'opacity-70 cursor-not-allowed pointer-events-none' : ''"
+                                                                                    class="w-full inline-flex items-center justify-center rounded-xl border border-transparent shadow-sm px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 sm:w-auto transition gap-1.5 cursor-pointer">
+                                                                                    <svg x-show="dissolving" style="display: none;"
+                                                                                        class="animate-spin -ml-1 mr-1.5 h-4 w-4 text-white"
+                                                                                        xmlns="http://www.w3.org/2000/svg"
+                                                                                        fill="none" viewBox="0 0 24 24">
+                                                                                        <circle class="opacity-25" cx="12" cy="12"
+                                                                                            r="10" stroke="currentColor"
+                                                                                            stroke-width="4"></circle>
+                                                                                        <path class="opacity-75" fill="currentColor"
+                                                                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                                                                        </path>
+                                                                                    </svg>
+                                                                                    <span
+                                                                                        x-text="dissolving ? 'Dağıtılıyor...' : 'Evet, Dağıt'">Evet,
+                                                                                        Dağıt</span>
+                                                                                </button>
+                                                                            </form>
+                                                                            <button type="button"
+                                                                                @click="if(!dissolving) openDissolve = false"
+                                                                                :disabled="dissolving"
+                                                                                class="mt-2 sm:mt-0 w-full inline-flex justify-center rounded-xl border border-slate-300 shadow-2xs px-4 py-2.5 bg-white text-sm font-semibold text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:w-auto disabled:opacity-50 cursor-pointer">
+                                                                                İptal
+                                                                            </button>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    @endif
+
+                                                    @if(app(\App\Services\PermissionS::class)->hasPermission(Auth::user(), 'form_entries.delete'))
+                                                        <div x-data="{ open: false }" class="inline-block">
+                                                            <button @click="open = true"
+                                                                class="inline-flex items-center px-2 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-bold text-red-600 hover:text-red-900 hover:bg-red-50 hover:border-red-300 transition-all shadow-2xs cursor-pointer">
+                                                                <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor"
+                                                                    viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                                        stroke-width="2"
+                                                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                                                                    </path>
+                                                                </svg>
+                                                                Sil
+                                                            </button>
+
+                                                            <!-- Modal -->
+                                                            <div x-show="open" style="display: none;"
+                                                                class="fixed inset-0 z-50 overflow-y-auto whitespace-normal"
+                                                                aria-labelledby="modal-title" role="dialog" aria-modal="true">
+                                                                <div
+                                                                    class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                                                                    <div x-show="open" @click="open = false" x-transition.opacity
+                                                                        class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+                                                                        aria-hidden="true"></div>
+                                                                    <span class="hidden sm:inline-block sm:align-middle sm:h-screen"
+                                                                        aria-hidden="true">&#8203;</span>
+                                                                    <div x-show="open" x-transition
+                                                                        class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full whitespace-normal">
+                                                                        <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                                                                            <div class="sm:flex sm:items-start">
+                                                                                <div
+                                                                                    class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+                                                                                    <svg class="h-6 w-6 text-red-600" fill="none"
+                                                                                        viewBox="0 0 24 24" stroke="currentColor">
+                                                                                        <path stroke-linecap="round"
+                                                                                            stroke-linejoin="round" stroke-width="2"
+                                                                                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                                                                    </svg>
+                                                                                </div>
+                                                                                <div
+                                                                                    class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left flex-1 min-w-0 whitespace-normal">
+                                                                                    <h3 class="text-lg leading-6 font-medium text-gray-900"
+                                                                                        id="modal-title">Kayıt Silinecek</h3>
+                                                                                    <div class="mt-2">
+                                                                                        <p
+                                                                                            class="text-sm text-gray-500 whitespace-normal break-words">
+                                                                                            Bu form kaydını silmek istediğinize emin
+                                                                                            misiniz? Bu işlem geri alınamaz.</p>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse"
+                                                                            x-data="{ deleting: false }">
+                                                                            <form
+                                                                                action="{{ route('form-entries.destroy', $entry) }}"
+                                                                                method="POST"
+                                                                                @submit="if(deleting) { $event.preventDefault(); return false; } deleting = true;">
+                                                                                @csrf
+                                                                                @method('DELETE')
+                                                                                <button type="submit" :disabled="deleting"
+                                                                                    :class="deleting ? 'opacity-70 cursor-not-allowed pointer-events-none' : ''"
+                                                                                    class="w-full inline-flex items-center justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm transition gap-1.5 cursor-pointer">
+                                                                                    <svg x-show="deleting"
+                                                                                        class="animate-spin -ml-1 mr-1.5 h-4 w-4 text-white"
+                                                                                        xmlns="http://www.w3.org/2000/svg"
+                                                                                        fill="none" viewBox="0 0 24 24">
+                                                                                        <circle class="opacity-25" cx="12" cy="12"
+                                                                                            r="10" stroke="currentColor"
+                                                                                            stroke-width="4"></circle>
+                                                                                        <path class="opacity-75" fill="currentColor"
+                                                                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                                                                        </path>
+                                                                                    </svg>
+                                                                                    <span
+                                                                                        x-text="deleting ? 'Siliniyor...' : 'Evet, Sil'">Evet,
+                                                                                        Sil</span>
+                                                                                </button>
+                                                                            </form>
+                                                                            <button type="button"
+                                                                                @click="if(!deleting) open = false"
+                                                                                :disabled="deleting"
+                                                                                class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50">
+                                                                                İptal
+                                                                            </button>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    @endif
+                                                </div>
+                                            </td>
+                                        </tr>
+
+                                        {{-- Konsolide Forma Bağlı Alt Parçalar (Hiyerarşik / Alt Kategori Görünümü) --}}
+                                        @if($entry->is_consolidated && $entry->children && $entry->children->count() > 0)
+                                            @foreach($entry->children as $child)
+                                                <tr x-show="{{ $groupByUsers ? ('!collapsedUserIds.includes(' . (int) $groupUserId . ') && ') : '' }}expandedConsolidatedIds.includes({{ $entry->id }})"
+                                                    x-cloak x-transition:enter="transition ease-out duration-150"
+                                                    x-transition:enter-start="opacity-0 -translate-y-1"
+                                                    x-transition:enter-end="opacity-100 translate-y-0"
+                                                    class="{{ $groupByUsers ? 'user-group-child-row' : '' }} bg-slate-50/90 hover:bg-indigo-50/40 border-l-4 border-indigo-400 transition-colors">
+                                                    @if(!empty($canDelete) && $canDelete)
+                                                        <td class="w-10 px-3 py-2 text-center text-slate-300 select-none">
+                                                            <span class="text-xs text-indigo-400 font-black">↳</span>
+                                                        </td>
+                                                    @endif
+                                                    <td class="px-3.5 py-2.5 whitespace-nowrap">
+                                                        <div class="flex items-center text-[11px] text-slate-600 font-semibold pl-2">
+                                                            <span
+                                                                class="font-mono">{{ $child->entry_date->translatedFormat('d M Y, l') }}</span>
+                                                            <span
+                                                                class="text-slate-400 ml-1.5 font-mono text-[10px]">{{ $child->updated_at ? $child->updated_at->format('H:i:s') : '-' }}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td class="px-3.5 py-2.5">
+                                                        @php $childUser = $child->user ?? $entry->user; @endphp
+                                                        <div class="text-[11px] font-bold text-slate-700 truncate max-w-[130px]"
+                                                            title="{{ $childUser->name ?? '-' }}">
+                                                            {{ $childUser->name ?? '-' }}
+                                                        </div>
+                                                        @if($childUser)
+                                                            <div class="text-[10px] text-slate-500 flex items-center gap-1 truncate max-w-[150px]"
+                                                                title="{{ $childUser->display_group_name }}">
+                                                                @if($childUser->isGroupManager())
+                                                                    <span class="text-amber-600 font-bold shrink-0">👑</span>
+                                                                    <span
+                                                                        class="text-indigo-700 font-semibold truncate">{{ $childUser->display_group_name }}</span>
+                                                                @else
+                                                                    <span class="truncate">{{ $childUser->display_group_name }}</span>
+                                                                @endif
+                                                            </div>
+                                                        @endif
+                                                    </td>
+                                                    <td class="px-3.5 py-2.5">
+                                                        <div class="flex items-center gap-1.5 flex-wrap">
+                                                            <span class="text-indigo-500 font-black text-xs">↳</span>
+                                                            <span
+                                                                class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-extrabold bg-amber-100 text-amber-900 border border-amber-300 shadow-2xs">
+                                                                ⚡ {{ $child->partition_value ?: ('Parça #' . $child->id) }}
+                                                            </span>
+                                                            <span
+                                                                class="text-[10px] font-bold text-slate-500 bg-slate-200/80 px-1.5 py-0.2 rounded">
+                                                                Bağlı Alt Parça
+                                                            </span>
+                                                            <span class="text-[11px] text-slate-500 font-medium">
+                                                                ({{ $child->rows->count() }} Satır)
+                                                            </span>
+                                                        </div>
+                                                    </td>
+                                                    <td class="px-3.5 py-2.5 whitespace-nowrap">
+                                                        @if($child->revisionRequests->firstWhere('status', 'pending'))
+                                                            <span
+                                                                class="revision-blink-badge inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-800 border border-amber-300 shadow-2xs"
+                                                                title="Düzenleme talebi değerlendirme aşamasında">
+                                                                <span
+                                                                    class="w-1.5 h-1.5 bg-amber-500 rounded-full mr-1 animate-pulse"></span>
+                                                                Düzenleme Talebi Bekliyor
+                                                            </span>
+                                                        @elseif($child->status === 'draft')
+                                                            <span
+                                                                class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gray-100 text-gray-700 border border-gray-200">
+                                                                <span class="w-1.5 h-1.5 bg-gray-400 rounded-full mr-1"></span>
+                                                                Taslak
+                                                            </span>
+                                                        @elseif($child->status === 'submitted')
+                                                            <span
+                                                                class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                                                                <span
+                                                                    class="w-1.5 h-1.5 bg-blue-500 rounded-full mr-1 animate-pulse"></span>
+                                                                Onay Bekliyor
+                                                            </span>
+                                                        @elseif($child->status === 'approved')
+                                                            <span
+                                                                class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                                                <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-1"></span>
+                                                                Onaylandı
+                                                            </span>
+                                                        @elseif($child->status === 'rejected')
+                                                            <span
+                                                                class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-red-50 text-red-700 border border-red-200">
+                                                                <span class="w-1.5 h-1.5 bg-red-500 rounded-full mr-1"></span>
+                                                                Reddedildi
+                                                            </span>
+                                                        @endif
+                                                    </td>
+                                                    @if(isset($canViewApprover) && $canViewApprover)
+                                                        <td class="px-3.5 py-2.5 whitespace-nowrap text-[11px] text-gray-400">
+                                                            {{ $child->approver?->name ?? '-' }}
+                                                        </td>
+                                                    @endif
+                                                    <td class="px-3.5 py-2.5 whitespace-nowrap text-right text-xs">
+                                                        <div class="inline-flex items-center justify-end gap-1.5">
+                                                            @if($child->status === 'draft' && (!empty($isSuperAdmin) || Auth::id() === $child->user_id || Auth::id() === 1))
+                                                                <form action="{{ route('form-entries.submit-children-approval', $entry) }}"
+                                                                    method="POST" class="inline"
+                                                                    onsubmit="return confirm('{{ $child->partition_value ?: ('Parça #' . $child->id) }} parçasını onaya göndermek istediğinize emin misiniz?');">
+                                                                    @csrf
+                                                                    <input type="hidden" name="child_id" value="{{ $child->id }}">
+                                                                    <button type="submit"
+                                                                        class="inline-flex items-center gap-1 px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[10px] font-bold shadow-2xs transition cursor-pointer"
+                                                                        title="Bu alt parçayı doğrudan onaya gönder">
+                                                                        <svg class="w-3 h-3" fill="none" stroke="currentColor"
+                                                                            viewBox="0 0 24 24">
+                                                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                                                stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8">
+                                                                            </path>
+                                                                        </svg>
+                                                                        <span>Onaya Gönder</span>
+                                                                    </button>
+                                                                </form>
+                                                            @endif
+                                                            <a href="{{ route('form-entries.show', $child) }}"
+                                                                class="inline-flex items-center px-2 py-1 bg-white border border-gray-200 rounded-lg text-[11px] font-bold text-indigo-600 hover:text-indigo-900 hover:bg-indigo-50 transition-all shadow-2xs">
+                                                                İncele &rarr;
+                                                            </a>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        @endif
+                                    @endforeach
+                                @empty
+                                    <tr>
+                                        <td colspan="{{ (!empty($canDelete) && $canDelete ? 1 : 0) + ((isset($canViewApprover) && $canViewApprover) ? 6 : 5) }}"
+                                            class="px-4 py-12 whitespace-nowrap text-center">
+                                            <div class="flex flex-col items-center justify-center">
+                                                <div class="bg-gray-50 rounded-full p-4 mb-3">
+                                                    <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor"
+                                                        viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                                            stroke-width="2"
+                                                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                                                        </path>
+                                                    </svg>
+                                                </div>
+                                                <p class="text-gray-500 font-medium">Bu kriterde listelenecek veri girişi
+                                                    bulunamadı.</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+
+                    @if($entries->hasPages())
+                        <div class="p-4 border-t border-gray-100 bg-gray-50/50">
+                            {{ $entries->links() }}
                         </div>
-                    </form>
+                    @endif
                 </div>
             </div>
-        </div>
 
-        @if(!empty($canDelete) && $canDelete)
-            <!-- Toplu Silme Onay Modalı -->
-            <div x-show="openBulkDeleteModal" style="display: none;" class="fixed inset-0 z-50 overflow-y-auto whitespace-normal" aria-labelledby="bulk-delete-title" role="dialog" aria-modal="true">
-                <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-                    <div x-show="openBulkDeleteModal" @click="if(!isDeletingBulk) openBulkDeleteModal = false" x-transition.opacity class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+            <!-- KONSOLİDASYON (PARÇALARI BİRLEŞTİRME) MODALI -->
+            <div x-show="openConsolidateModal" @keydown.window.escape="openConsolidateModal = false"
+                style="display: none;" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title"
+                role="dialog" aria-modal="true">
+                <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+                    <div x-show="openConsolidateModal" @click="openConsolidateModal = false" x-transition.opacity
+                        class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity" aria-hidden="true">
+                    </div>
                     <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-                    <div x-show="openBulkDeleteModal" x-transition class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full whitespace-normal border border-gray-200">
-                        <form action="{{ route('form-entries.bulk-destroy') }}" method="POST" @submit="if(isDeletingBulk) { $event.preventDefault(); return false; } isDeletingBulk = true;">
+                    <div x-show="openConsolidateModal" x-transition
+                        class="inline-block align-bottom bg-white rounded-3xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full border border-slate-100">
+                        <form action="{{ route('form-entries.consolidate') }}" method="POST">
                             @csrf
-                            <template x-for="id in selectedDeleteIds" :key="id">
-                                <input type="hidden" name="entry_ids[]" :value="id">
-                            </template>
-                            
-                            <div class="bg-white px-5 pt-6 pb-4 sm:p-6 sm:pb-5">
-                                <div class="sm:flex sm:items-start gap-4">
-                                    <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-11 sm:w-11">
-                                        <svg class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                                        </svg>
-                                    </div>
-                                    <div class="mt-3 text-center sm:mt-0 sm:text-left flex-1 min-w-0">
-                                        <h3 class="text-base font-extrabold text-gray-900" id="bulk-delete-title">
-                                            Seçilen <span x-text="selectedDeleteIds.length"></span> Form Kaydı Silinecek
-                                        </h3>
-                                        <div class="mt-2 text-xs text-gray-600 space-y-1.5 leading-relaxed">
-                                            <p>İşaretlediğiniz <strong class="text-red-700" x-text="selectedDeleteIds.length"></strong> adet form kaydı ve bunlara ait tüm satır/versiyon verileri <strong>kalıcı olarak silinecektir</strong>.</p>
-                                            <p class="text-red-600 font-semibold">Bu işlem geri alınamaz!</p>
+                            <div class="p-6 sm:p-8 space-y-6">
+                                <div class="flex items-start justify-between gap-4">
+                                    <div class="flex items-center gap-3">
+                                        <div
+                                            class="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center font-black">
+                                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <h3 class="text-lg font-black text-slate-900">Parçalı Formları Birleştir
+                                                (Konsolidasyon)</h3>
+                                            <p class="text-xs text-slate-500 mt-0.5">Farklı kriterlere göre girilmiş
+                                                form parçalarını tek bir konsolide formda toplayın.</p>
                                         </div>
                                     </div>
+                                    <button type="button" @click="openConsolidateModal = false"
+                                        class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </button>
                                 </div>
+
+                                @php
+                                    $hasTargetConsolidated = !empty($currentUserConsolidated) || (
+                                        isset($eligibleForConsolidation)
+                                        && isset($existingConsolidatedMap)
+                                        && $eligibleForConsolidation->contains(fn($e) => $existingConsolidatedMap->has("{$e->user_id}_{$e->form_template_id}"))
+                                    );
+                                    $canShowConsolidateList = isset($eligibleForConsolidation) && (
+                                        $eligibleForConsolidation->count() >= 2
+                                        || ($eligibleForConsolidation->count() >= 1 && $hasTargetConsolidated)
+                                    );
+                                @endphp
+
+                                @if($canShowConsolidateList)
+                                    @if(!empty($currentUserConsolidated))
+                                        <div
+                                            class="p-3.5 rounded-2xl bg-indigo-50 border border-indigo-200 text-xs text-indigo-950 flex items-start justify-between gap-3">
+                                            <div class="space-y-1">
+                                                <div class="font-extrabold flex items-center gap-1.5 text-indigo-900">
+                                                    <span>🔗 Mevcut Konsolide Formunuz:</span>
+                                                    <a href="{{ $currentUserConsolidated['url'] }}"
+                                                        class="underline hover:text-indigo-700 font-black">
+                                                        #{{ $currentUserConsolidated['id'] }}
+                                                    </a>
+                                                </div>
+                                                <p class="text-[11px] text-indigo-800 leading-relaxed">
+                                                    Kullanıcı başına tek bir konsolide form bulunur. Seçeceğiniz ek parçalar
+                                                    yeni bir konsolide form oluşturmadan doğrudan
+                                                    <strong>#{{ $currentUserConsolidated['id'] }}</strong> numaralı formunuza
+                                                    eklenecektir.
+                                                </p>
+                                            </div>
+                                            <a href="{{ $currentUserConsolidated['url'] }}"
+                                                class="shrink-0 px-2.5 py-1.5 rounded-lg bg-white border border-indigo-200 text-[11px] font-bold text-indigo-700 hover:bg-indigo-100 transition">
+                                                Formu Aç &rarr;
+                                            </a>
+                                        </div>
+                                    @endif
+
+                                    <div class="space-y-3">
+                                        <div class="flex items-center justify-between text-xs">
+                                            <span class="font-bold text-slate-700">
+                                                {{ $hasTargetConsolidated ? 'Eklenecek / Birleştirilecek Parçaları Seçiniz (En az 1):' : 'Birleştirilecek Parçaları Seçiniz (En az 2):' }}
+                                            </span>
+                                            <span class="font-extrabold text-indigo-600"
+                                                x-text="selectedEntries.length + ' parça seçildi'"></span>
+                                        </div>
+
+                                        <div
+                                            class="max-h-72 overflow-y-auto space-y-2 pr-1 border border-slate-200 rounded-2xl p-2 bg-slate-50/50">
+                                            @php
+                                                $totalConsolidationItems = $eligibleForConsolidation->count();
+                                            @endphp
+                                            @foreach($eligibleForConsolidation as $item)
+                                                @php
+                                                    $freshness = $totalConsolidationItems > 1 ? (1 - ($loop->index / ($totalConsolidationItems - 1))) : 1;
+                                                    $bgAlpha = number_format(0.02 + ($freshness * 0.16), 3, '.', '');
+                                                    $borderAlpha = number_format(0.14 + ($freshness * 0.42), 3, '.', '');
+                                                    $leftBorderAlpha = number_format(0.18 + ($freshness * 0.82), 3, '.', '');
+                                                    $targetCons = isset($existingConsolidatedMap) ? $existingConsolidatedMap->get("{$item->user_id}_{$item->form_template_id}") : null;
+                                                @endphp
+                                                <label
+                                                    class="flex items-center justify-between p-3 rounded-xl border hover:shadow-xs transition cursor-pointer group"
+                                                    style="background-color: rgba(79, 70, 229, {{ $bgAlpha }}); border-color: rgba(79, 70, 229, {{ $borderAlpha }}); border-left-width: 4px; border-left-color: rgba(79, 70, 229, {{ $leftBorderAlpha }});">
+                                                    <div class="flex items-center gap-3">
+                                                        <input type="checkbox" name="entry_ids[]" value="{{ $item->id }}"
+                                                            x-model="selectedEntries"
+                                                            class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4">
+                                                        <div>
+                                                            <div class="flex items-center gap-2 flex-wrap">
+                                                                <span
+                                                                    class="text-xs font-black text-slate-900 group-hover:text-indigo-600 transition">
+                                                                    {{ $item->template->name }}
+                                                                </span>
+                                                                <span
+                                                                    class="px-2 py-0.5 rounded-md text-[11px] font-extrabold bg-amber-100 text-amber-800 border border-amber-300">
+                                                                    ⚡ {{ $item->partition_value }}
+                                                                </span>
+                                                                @if($targetCons)
+                                                                    <span
+                                                                        class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-indigo-100 text-indigo-800 border border-indigo-200">
+                                                                        &rarr; #{{ $targetCons['id'] }}'ye eklenir
+                                                                    </span>
+                                                                @endif
+                                                            </div>
+                                                            <div
+                                                                class="text-[11px] text-slate-600 mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                                                                <span>#{{ $item->id }}</span>
+                                                                <span>&bull;</span>
+                                                                <span>{{ $item->rows->count() }} Satır</span>
+                                                                <span>&bull;</span>
+                                                                <span>{{ $item->created_at ? $item->created_at->format('d.m.Y H:i') : $item->entry_date->format('d.m.Y') }}</span>
+                                                                <span>&bull;</span>
+                                                                <span
+                                                                    class="font-bold text-slate-800">{{ $item->user?->name ?? '-' }}</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        @if($item->status === 'approved')
+                                                            <span
+                                                                class="text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 px-2 py-0.5 rounded-full">Onaylandı</span>
+                                                        @elseif($item->status === 'submitted')
+                                                            <span
+                                                                class="text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-300 px-2 py-0.5 rounded-full">Onay
+                                                                Bekliyor</span>
+                                                        @else
+                                                            <span
+                                                                class="text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-300 px-2 py-0.5 rounded-full">Taslak</span>
+                                                        @endif
+                                                    </div>
+                                                </label>
+                                            @endforeach
+                                        </div>
+                                        <p class="text-[11px] text-slate-500 italic">
+                                            💡 Not: Birleştirme sonrasında parçaların tüm satırları kullanıcının tek
+                                            konsolide formu altında toplanır. Yeni eklenen parçalar da yeni ID açmadan
+                                            mevcut konsolide forma bağlanır.
+                                        </p>
+                                    </div>
+                                @else
+                                    <div
+                                        class="p-8 text-center bg-slate-50 rounded-2xl border border-slate-200 text-slate-500 space-y-2">
+                                        <svg class="w-10 h-10 mx-auto text-slate-400" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        <p class="text-sm font-bold text-slate-700">Henüz Birleştirilecek Yeterli Parça Yok
+                                        </p>
+                                        <p class="text-xs text-slate-400">Birleştirme işlemi için aynı şablona ait en az 2
+                                            adet bağımsız parçalı form kaydı (veya mevcut konsolide formunuza eklenecek en
+                                            az 1 yeni parça) bulunmalıdır.</p>
+                                    </div>
+                                @endif
                             </div>
-                            
-                            <div class="bg-gray-50 px-5 py-3.5 sm:px-6 flex flex-row-reverse gap-2">
-                                <button type="submit"
-                                        :disabled="isDeletingBulk"
-                                        :class="isDeletingBulk ? 'opacity-70 cursor-not-allowed pointer-events-none' : ''"
-                                        class="inline-flex items-center justify-center px-4 py-2 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white text-xs font-bold rounded-xl shadow-xs transition gap-1.5 cursor-pointer">
-                                    <svg x-show="isDeletingBulk" style="display: none;" class="animate-spin -ml-1 mr-1.5 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                    </svg>
-                                    <span x-text="isDeletingBulk ? 'Siliniyor...' : 'Evet, Hepsini Sil (' + selectedDeleteIds.length + ')'"></span>
+
+                            <div
+                                class="bg-slate-50 px-6 py-4 border-t border-slate-100 flex items-center justify-end gap-3">
+                                <button type="button" @click="openConsolidateModal = false"
+                                    class="px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-white transition cursor-pointer">
+                                    İptal
                                 </button>
-                                <button type="button" @click="if(!isDeletingBulk) openBulkDeleteModal = false" :disabled="isDeletingBulk"
-                                        class="inline-flex justify-center px-4 py-2 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 text-xs font-bold rounded-xl shadow-2xs transition cursor-pointer disabled:opacity-50">
-                                    Vazgeç
-                                </button>
+                                @if($canShowConsolidateList)
+                                    <button type="submit"
+                                        :disabled="selectedEntries.length < {{ $hasTargetConsolidated ? 1 : 2 }}"
+                                        :class="selectedEntries.length < {{ $hasTargetConsolidated ? 1 : 2 }} ? 'opacity-50 cursor-not-allowed bg-indigo-400' : 'bg-indigo-600 hover:bg-indigo-700 active:scale-98'"
+                                        class="px-5 py-2.5 rounded-xl text-xs font-black text-white shadow-md shadow-indigo-500/20 transition flex items-center gap-1.5 cursor-pointer">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M5 13l4 4L19 7" />
+                                        </svg>
+                                        <span>{{ !empty($currentUserConsolidated) ? "Seçilen Parçaları #{$currentUserConsolidated['id']}'ye Ekle" : 'Seçilen Parçaları Birleştir' }}</span>
+                                    </button>
+                                @endif
                             </div>
                         </form>
                     </div>
                 </div>
             </div>
-        @endif
-    </div>
+
+            @if(!empty($canDelete) && $canDelete)
+                <!-- Toplu Silme Onay Modalı -->
+                <div x-show="openBulkDeleteModal" style="display: none;"
+                    class="fixed inset-0 z-50 overflow-y-auto whitespace-normal" aria-labelledby="bulk-delete-title"
+                    role="dialog" aria-modal="true">
+                    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                        <div x-show="openBulkDeleteModal" @click="if(!isDeletingBulk) openBulkDeleteModal = false"
+                            x-transition.opacity class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+                            aria-hidden="true"></div>
+                        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+                        <div x-show="openBulkDeleteModal" x-transition
+                            class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full whitespace-normal border border-gray-200">
+                            <form action="{{ route('form-entries.bulk-destroy') }}" method="POST"
+                                @submit="if(isDeletingBulk) { $event.preventDefault(); return false; } isDeletingBulk = true;">
+                                @csrf
+                                <template x-for="id in selectedDeleteIds" :key="id">
+                                    <input type="hidden" name="entry_ids[]" :value="id">
+                                </template>
+
+                                <div class="bg-white px-5 pt-6 pb-4 sm:p-6 sm:pb-5">
+                                    <div class="sm:flex sm:items-start gap-4">
+                                        <div
+                                            class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-11 sm:w-11">
+                                            <svg class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24"
+                                                stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                            </svg>
+                                        </div>
+                                        <div class="mt-3 text-center sm:mt-0 sm:text-left flex-1 min-w-0">
+                                            <h3 class="text-base font-extrabold text-gray-900" id="bulk-delete-title">
+                                                Seçilen <span x-text="selectedDeleteIds.length"></span> Form Kaydı Silinecek
+                                            </h3>
+                                            <div class="mt-2 text-xs text-gray-600 space-y-1.5 leading-relaxed">
+                                                <p>İşaretlediğiniz <strong class="text-red-700"
+                                                        x-text="selectedDeleteIds.length"></strong> adet form kaydı ve
+                                                    bunlara ait tüm satır/versiyon verileri <strong>kalıcı olarak
+                                                        silinecektir</strong>.</p>
+                                                <p class="text-red-600 font-semibold">Bu işlem geri alınamaz!</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="bg-gray-50 px-5 py-3.5 sm:px-6 flex flex-row-reverse gap-2">
+                                    <button type="submit" :disabled="isDeletingBulk"
+                                        :class="isDeletingBulk ? 'opacity-70 cursor-not-allowed pointer-events-none' : ''"
+                                        class="inline-flex items-center justify-center px-4 py-2 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white text-xs font-bold rounded-xl shadow-xs transition gap-1.5 cursor-pointer">
+                                        <svg x-show="isDeletingBulk" style="display: none;"
+                                            class="animate-spin -ml-1 mr-1.5 h-4 w-4 text-white"
+                                            xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                                stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor"
+                                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                            </path>
+                                        </svg>
+                                        <span
+                                            x-text="isDeletingBulk ? 'Siliniyor...' : 'Evet, Hepsini Sil (' + selectedDeleteIds.length + ')'"></span>
+                                    </button>
+                                    <button type="button" @click="if(!isDeletingBulk) openBulkDeleteModal = false"
+                                        :disabled="isDeletingBulk"
+                                        class="inline-flex justify-center px-4 py-2 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 text-xs font-bold rounded-xl shadow-2xs transition cursor-pointer disabled:opacity-50">
+                                        Vazgeç
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            @endif
+        </div>
 </x-app-layout>

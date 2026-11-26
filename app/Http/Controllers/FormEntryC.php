@@ -112,7 +112,25 @@ class FormEntryC extends Controller
                 || $this->permissionService->hasPermission($user, 'form_entries.view_group'))
             : false;
 
-        $query->with(['template', 'user.group', 'revisionRequests', 'approver', 'children.template', 'children.rows', 'children.versions', 'children.approver', 'children.user', 'children.revisionRequests', 'parent', 'partitionField', 'versions']);
+        $query->with([
+            'template',
+            'user.group',
+            'user.managedGroups',
+            'user.role',
+            'revisionRequests',
+            'approver',
+            'children.template',
+            'children.rows',
+            'children.versions',
+            'children.approver',
+            'children.user.group',
+            'children.user.managedGroups',
+            'children.user.role',
+            'children.revisionRequests',
+            'parent',
+            'partitionField',
+            'versions'
+        ]);
 
         if ($canSeeMultipleUsers) {
             $latestForUser = FormEntryM::from('form_entries as fe_u')
@@ -435,7 +453,23 @@ class FormEntryC extends Controller
             );
         }
 
-        $formEntry->load(['template.fields', 'rows.values', 'user.group', 'revisionRequests.reviewer', 'revisionRequests.user', 'approver.role', 'versions.user', 'children.rows', 'children.revisionRequests', 'parent']);
+        $formEntry->load([
+            'template.fields',
+            'rows.values',
+            'user.group',
+            'user.managedGroups',
+            'user.role',
+            'revisionRequests.reviewer',
+            'revisionRequests.user',
+            'approver.role',
+            'versions.user',
+            'children.rows',
+            'children.user.group',
+            'children.user.managedGroups',
+            'children.user.role',
+            'children.revisionRequests',
+            'parent'
+        ]);
 
         // Onay Yetkisi & Grup İzolasyonu Kontrolü (view_all yoksa yalnızca sorumlu olduğu grup onaylanabilir)
         $hasGlobalApprove = $this->permissionService->hasPermission($user, 'form_entries.approve');

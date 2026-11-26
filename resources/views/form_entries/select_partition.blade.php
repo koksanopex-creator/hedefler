@@ -106,11 +106,13 @@
                     </div>
                 </div>
 
-                <div class="flex flex-wrap items-center gap-2.5 w-full md:w-auto shrink-0" x-data="{ clicking: false }">
+                <div class="flex flex-wrap items-center gap-2.5 w-full md:w-auto shrink-0" 
+                     x-data="{ clicking: false }"
+                     @pageshow.window="clicking = false"
+                     @page-restored.window="clicking = false">
                     @if(isset($latestFullDraft) && $latestFullDraft)
                         <a href="{{ route('form-entries.edit', $latestFullDraft) }}"
-                            @click="if(clicking) { $event.preventDefault(); return false; } clicking = true;"
-                            onclick="if(this.dataset.clicked === 'true'){ return false; } this.dataset.clicked = 'true'; this.classList.add('pointer-events-none', 'opacity-70', 'cursor-not-allowed');"
+                            @click="if(clicking) { $event.preventDefault(); return false; } clicking = true; setTimeout(() => { clicking = false; }, 8000);"
                             :class="clicking ? 'pointer-events-none opacity-70 cursor-not-allowed' : ''"
                             class="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 transition active:scale-98 select-none">
                             <svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -122,8 +124,7 @@
                     @endif
 
                     <a href="{{ route('form-entries.create', ['formTemplate' => $formTemplate, 'full_entry' => 1]) }}"
-                        @click="if(clicking) { $event.preventDefault(); return false; } clicking = true;"
-                        onclick="if(this.dataset.clicked === 'true'){ return false; } this.dataset.clicked = 'true'; this.classList.add('pointer-events-none', 'opacity-70', 'cursor-not-allowed');"
+                        @click="if(clicking) { $event.preventDefault(); return false; } clicking = true; setTimeout(() => { clicking = false; }, 8000);"
                         :class="clicking ? 'pointer-events-none opacity-70 cursor-not-allowed' : ''"
                         class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm shadow-indigo-500/20 transition active:scale-98 select-none">
                         <svg class="w-4 h-4 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -224,11 +225,12 @@
 
                         <!-- AKSİYON BUTONLARI -->
                         <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-2"
-                            x-data="{ clicking: false }">
+                            x-data="{ clicking: false }"
+                            @pageshow.window="clicking = false"
+                            @page-restored.window="clicking = false">
                             @if($hasDraft)
                                 <a href="{{ route('form-entries.edit', $entry) }}"
-                                    @click="if(clicking) { $event.preventDefault(); return false; } clicking = true;"
-                                    onclick="if(this.dataset.clicked === 'true'){ return false; } this.dataset.clicked = 'true'; this.classList.add('pointer-events-none', 'opacity-70', 'cursor-not-allowed');"
+                                    @click="if(clicking) { $event.preventDefault(); return false; } clicking = true; setTimeout(() => { clicking = false; }, 8000);"
                                     :class="clicking ? 'pointer-events-none opacity-70 cursor-not-allowed' : ''"
                                     class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black bg-slate-800 hover:bg-slate-900 text-white shadow-sm shadow-slate-800/20 transition active:scale-98 select-none">
                                     <svg class="w-4 h-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -240,8 +242,7 @@
                                 </a>
                             @elseif($hasSubmitted)
                                 <a href="{{ route('form-entries.show', $entry) }}"
-                                    @click="if(clicking) { $event.preventDefault(); return false; } clicking = true;"
-                                    onclick="if(this.dataset.clicked === 'true'){ return false; } this.dataset.clicked = 'true'; this.classList.add('pointer-events-none', 'opacity-70', 'cursor-not-allowed');"
+                                    @click="if(clicking) { $event.preventDefault(); return false; } clicking = true; setTimeout(() => { clicking = false; }, 8000);"
                                     :class="clicking ? 'pointer-events-none opacity-70 cursor-not-allowed' : ''"
                                     class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black bg-amber-500 hover:bg-amber-600 text-white shadow-sm shadow-amber-500/25 transition active:scale-98 select-none ring-1 ring-amber-400">
                                     <svg class="w-4 h-4 text-amber-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -253,8 +254,7 @@
                             @elseif($hasApproved)
                                 <div class="w-full flex items-center gap-2">
                                     <a href="{{ route('form-entries.show', $entry) }}"
-                                        @click="if(clicking) { $event.preventDefault(); return false; } clicking = true;"
-                                        onclick="if(this.dataset.clicked === 'true'){ return false; } this.dataset.clicked = 'true'; this.classList.add('pointer-events-none', 'opacity-70', 'cursor-not-allowed');"
+                                        @click="if(clicking) { $event.preventDefault(); return false; } clicking = true; setTimeout(() => { clicking = false; }, 8000);"
                                         :class="clicking ? 'pointer-events-none opacity-70 cursor-not-allowed' : ''"
                                         class="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-black bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition active:scale-98 select-none">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -266,8 +266,7 @@
                                 </div>
                             @else
                                 <a href="{{ route('form-entries.create', ['formTemplate' => $formTemplate, 'partition_value' => $option['name']]) }}"
-                                    @click="if(clicking) { $event.preventDefault(); return false; } clicking = true;"
-                                    onclick="if(this.dataset.clicked === 'true'){ return false; } this.dataset.clicked = 'true'; this.classList.add('pointer-events-none', 'opacity-70', 'cursor-not-allowed');"
+                                    @click="if(clicking) { $event.preventDefault(); return false; } clicking = true; setTimeout(() => { clicking = false; }, 8000);"
                                     :class="clicking ? 'pointer-events-none opacity-70 cursor-not-allowed' : ''"
                                     class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm shadow-indigo-500/20 transition active:scale-98 select-none">
                                     <svg class="w-4 h-4 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">

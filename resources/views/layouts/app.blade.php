@@ -37,5 +37,30 @@
                 {{ $slot }}
             </main>
         </div>
+
+        <!-- BFCache & Geri/İleri Tuşu Kilit Sıfırlayıcı -->
+        <script>
+            window.addEventListener('pageshow', function (event) {
+                document.querySelectorAll('form').forEach(function(f) {
+                    delete f.dataset.submitting;
+                    f.querySelectorAll('button, input[type="submit"]').forEach(function(b) {
+                        b.classList.remove('pointer-events-none', 'opacity-70', 'cursor-not-allowed', 'cursor-wait');
+                    });
+                });
+                document.querySelectorAll('[data-click-locked], [data-clicked]').forEach(function(el) {
+                    delete el.dataset.clickLocked;
+                    delete el.dataset.clicked;
+                    el.classList.remove('pointer-events-none', 'opacity-70', 'cursor-not-allowed', 'cursor-wait', 'btn-loading');
+                    if (el.dataset.origHtml) {
+                        el.innerHTML = el.dataset.origHtml;
+                        delete el.dataset.origHtml;
+                    }
+                });
+                if (document.body) {
+                    document.body.classList.remove('cursor-wait');
+                }
+                window.dispatchEvent(new CustomEvent('page-restored', { detail: { persisted: event.persisted } }));
+            });
+        </script>
     </body>
 </html>

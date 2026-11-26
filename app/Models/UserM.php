@@ -166,4 +166,34 @@ class UserM extends Authenticatable
     {
         return app(\App\Services\PermissionS::class)->hasPermission($this, $permissionKey);
     }
+
+    public function isGroupManager(): bool
+    {
+        if ($this->relationLoaded('managedGroups')) {
+            return $this->managedGroups->isNotEmpty();
+        }
+        return $this->managedGroups()->exists();
+    }
+
+    public function getDisplayGroupNameAttribute(): string
+    {
+        if ($this->isGroupManager()) {
+            $managed = $this->relationLoaded('managedGroups') ? $this->managedGroups : $this->managedGroups()->get();
+            if ($managed->isNotEmpty()) {
+                $names = $managed->pluck('name')->implode(', ');
+                return "{$names} (" . __('Yönettiği Grup') . ")";
+            }
+        }
+
+        if ($this->group) {
+            return $this->group->name;
+        }
+
+        return __('Grup Yok');
+    }
+
+    public function getManagerTitleAttribute(): ?string
+    {
+        return $this->isGroupManager() ? __('Grup Yöneticisi') : null;
+    }
 }

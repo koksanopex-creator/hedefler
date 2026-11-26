@@ -114,6 +114,8 @@ class FormEntriesUserGroupingTest extends TestCase
         $response->assertSee('SERHAT TÜMER');
         $response->assertSee('1 Kayıt');
         $response->assertSee('2 Kayıt');
+        $response->assertSee('Hepsini Aç');
+        $response->assertSee('Hepsini Kapat');
 
         // En son işlem yapan SERHAT TÜMER (2 kaydı yan yana) en üstte, sonra HASSAN HUSSIEN olmalı
         $response->assertViewHas('entries', function ($entries) {
@@ -136,6 +138,42 @@ class FormEntriesUserGroupingTest extends TestCase
         $response->assertSee('SERHAT TÜMER');
         $response->assertDontSee('HASSAN HUSSIEN');
         $response->assertViewHas('canSeeMultipleUsers', false);
+    }
+
+    public function test_group_manager_without_direct_group_shows_managed_group_and_manager_badge(): void
+    {
+        $managerRole = RoleM::create([
+            'name' => 'Veri Giriş Yöneticisi',
+            'slug' => 'veri_giris_yoneticisi',
+        ]);
+
+        $groupOverseas = GroupM::create(['name' => 'YURT DIŞI', 'is_active' => true]);
+
+        // Serhat Tümer has group_id = null but is group manager of YURT DIŞI
+        $managerUser = UserM::create([
+            'name' => 'SERHAT TÜMER',
+            'email' => 'serhat-mgr@koksan.com',
+            'password' => bcrypt('password'),
+            'role_id' => $managerRole->id,
+            'group_id' => null,
+            'is_active' => true,
+            'approval_status' => 'approved',
+        ]);
+        $managerUser->managedGroups()->attach($groupOverseas->id);
+
+        $service = app(FormEntryS::class);
+        $service->saveEntry($this->template, $managerUser, '2026-11-26', [
+            [$this->valueField->id => '777'],
+        ], 'draft');
+
+        $response = $this->actingAs($this->admin)->get(route('form-entries.index'));
+        $response->assertOk();
+        $response->assertSee('SERHAT TÜMER');
+        $response->assertSee('YURT DIŞI (Yönettiği Grup)');
+        $response->assertSee('GRUP YÖNETİCİSİ');
+        $response->assertSee('Veri Giriş Yöneticisi');
+        $response->assertSee('26 Kas 2026, Perşembe');
+        $response->assertDontSee('26 Nov 2026');
     }
 
     private function createMinimalSqliteSchema(): void

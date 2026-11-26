@@ -95,10 +95,12 @@
                                 </div>
                             </div>
                             
-                            <div class="p-4 bg-gray-50 border-t border-gray-100 flex justify-end" x-data="{ clicking: false }">
+                            <div class="p-4 bg-gray-50 border-t border-gray-100 flex justify-end" 
+                                 x-data="{ clicking: false }"
+                                 @pageshow.window="clicking = false"
+                                 @page-restored.window="clicking = false">
                                 <a href="{{ route('form-entries.create', $template) }}"
-                                    @click="if(clicking) { $event.preventDefault(); return false; } clicking = true;"
-                                    onclick="if(this.dataset.clicked === 'true'){ return false; } this.dataset.clicked = 'true'; this.classList.add('pointer-events-none', 'opacity-70', 'cursor-not-allowed');"
+                                    @click="if(clicking) { $event.preventDefault(); return false; } clicking = true; setTimeout(() => { clicking = false; }, 8000);"
                                     :class="clicking ? 'pointer-events-none opacity-70 cursor-not-allowed' : ''"
                                     class="inline-flex items-center justify-center px-5 py-2.5 border border-transparent text-sm font-semibold rounded-xl text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 shadow-sm transition-all duration-200 w-full md:w-auto hover:shadow select-none">
                                     <svg x-show="clicking" style="display: none;" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">

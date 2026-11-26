@@ -66,5 +66,31 @@ document.addEventListener('DOMContentLoaded', () => {
             target.classList.remove('pointer-events-none');
         }, lockDuration);
     }, true);
+
+    // 3. Tarayıcı Geri/İleri (BFCache) ile dönüldüğünde takılı kalan kilitleri otomatik temizle
+    window.addEventListener('pageshow', (event) => {
+        document.querySelectorAll('form').forEach(form => {
+            delete form.dataset.submitting;
+            form.querySelectorAll('button, input[type="submit"]').forEach(btn => {
+                btn.classList.remove('pointer-events-none', 'opacity-70', 'cursor-not-allowed', 'cursor-wait');
+            });
+        });
+
+        document.querySelectorAll('[data-click-locked], [data-clicked]').forEach(el => {
+            delete el.dataset.clickLocked;
+            delete el.dataset.clicked;
+            el.classList.remove('pointer-events-none', 'opacity-70', 'cursor-not-allowed', 'cursor-wait', 'btn-loading');
+            if (el.dataset.origHtml) {
+                el.innerHTML = el.dataset.origHtml;
+                delete el.dataset.origHtml;
+            }
+        });
+
+        if (document.body) {
+            document.body.classList.remove('cursor-wait');
+        }
+
+        window.dispatchEvent(new CustomEvent('page-restored', { detail: { persisted: event.persisted } }));
+    });
 });
 

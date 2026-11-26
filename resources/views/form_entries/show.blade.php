@@ -70,7 +70,7 @@
                 <h2 class="font-extrabold text-xl sm:text-2xl text-gray-900 tracking-tight">
                     {{ $formEntry->template->name }} {{ __('Detayları') }}
                 </h2>
-                <p class="text-sm text-gray-500 mt-0.5">{{ $formEntry->entry_date->format('d.m.Y') }}</p>
+                <p class="text-sm text-gray-500 mt-0.5">{{ $formEntry->entry_date->translatedFormat('d F Y, l') }}</p>
             </div>
 
             <div class="flex items-center gap-3 flex-wrap">
@@ -794,7 +794,11 @@
                                 {{ $formEntry->user->name }}
                             </a>
                             <p class="text-xs text-gray-500 truncate">
-                                {{ $formEntry->user->group->name ?? __('Grup Yok') }}
+                                @if($formEntry->user->isGroupManager())
+                                    <span class="text-indigo-700 font-semibold">{{ $formEntry->user->display_group_name }}</span> &bull; <span class="text-amber-700 font-bold">👑 {{ __('Grup Yöneticisi') }}</span>
+                                @else
+                                    {{ $formEntry->user->display_group_name }}
+                                @endif
                             </p>
                         </div>
                     </div>
@@ -1810,7 +1814,7 @@
                             <h3 class="text-base font-bold text-indigo-950">Form Değerlendirme & Onay Modülü</h3>
                         </div>
                         <span class="text-xs text-indigo-600 font-semibold bg-indigo-100/80 px-2.5 py-1 rounded-md">
-                            {{ $formEntry->user->group->name ?? 'Bağımsız Grup' }} &bull; {{ $formEntry->user->name }}
+                            {{ $formEntry->user->display_group_name }} &bull; {{ $formEntry->user->name }}
                         </span>
                     </div>
                     <div class="p-6">
@@ -1898,7 +1902,7 @@
                         <div
                             class="bg-amber-50/70 p-4 rounded-xl border border-amber-200 text-xs text-amber-950 space-y-1.5">
                             <p><strong>Talep Eden Personel:</strong> {{ $pendingRevision->user->name }}
-                                ({{ $pendingRevision->user->group->name ?? 'Grup Yok' }})</p>
+                                ({{ $pendingRevision->user->display_group_name }})</p>
                             <p><strong>Belirtilen Düzenleme Gerekçesi:</strong> {{ $pendingRevision->reason }}</p>
                         </div>
 
@@ -2564,10 +2568,10 @@
                                                     <span class="text-xs font-bold text-gray-900">
                                                         {{ $item->user->name ?? 'Sistem' }}
                                                     </span>
-                                                    @if($item->user && $item->user->group)
+                                                    @if($item->user)
                                                         <span
                                                             class="text-[11px] text-gray-500 font-medium bg-gray-100 px-2 py-0.5 rounded-md">
-                                                            {{ $item->user->group->name }}
+                                                            {{ $item->user->display_group_name }}
                                                         </span>
                                                     @endif
                                                 </div>
