@@ -302,7 +302,7 @@ class FormEntryC extends Controller
                 }
 
                 foreach ($requiredFields as $reqField) {
-                    if (!empty($reqField->is_calculated)) {
+                    if (!empty($reqField->is_calculated) || !empty($reqField->is_disabled)) {
                         continue;
                     }
                     $v = $rowData[$reqField->id] ?? null;
@@ -608,7 +608,7 @@ class FormEntryC extends Controller
                 }
 
                 foreach ($requiredFields as $reqField) {
-                    if (!empty($reqField->is_calculated)) {
+                    if (!empty($reqField->is_calculated) || !empty($reqField->is_disabled)) {
                         continue;
                     }
                     $v = $rowData[$reqField->id] ?? null;
@@ -638,6 +638,10 @@ class FormEntryC extends Controller
                 $formEntry,
                 $partitionValue
             );
+
+            if ($formEntry->is_consolidated) {
+                $this->formEntryService->syncConsolidatedParentToChildren($formEntry, $status);
+            }
         } catch (\Exception $e) {
             return $this->handleSaveException($request, $e, 'update');
         }

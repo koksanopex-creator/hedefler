@@ -101,6 +101,7 @@ class UniqueConsolidationPerUserTest extends TestCase
             ->first();
 
         $this->assertNotNull($consolidated);
+        $this->assertEquals('draft', $consolidated->status);
         $response1->assertRedirect(route('form-entries.show', $consolidated));
         $this->assertEquals(2, $consolidated->rows()->count());
 

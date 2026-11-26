@@ -338,6 +338,10 @@ class FormEntryS
                     : now()->format('d.m.Y');
 
                 $existingConsolidated->title = "Konsolide Form ({$allPartsStr}) - {$template->name} ({$dateFormatted})";
+                if ($entries->contains(fn($e) => $e->status === 'draft')) {
+                    $existingConsolidated->status = 'draft';
+                    $existingConsolidated->submitted_at = null;
+                }
                 $existingConsolidated->save();
 
                 return $existingConsolidated;
@@ -356,9 +360,10 @@ class FormEntryS
             $entryDate = $firstEntry->entry_date ? $firstEntry->entry_date->format('Y-m-d') : now()->format('Y-m-d');
             $dateFormatted = \Carbon\Carbon::parse($entryDate)->format('d.m.Y');
 
-            // Durum tespiti: Eğer tüm parçalar 'approved' ise ana form da 'approved', aksi halde 'submitted'
+            // Durum tespiti: Tüm parçalar 'approved' ise 'approved', en az bir parça 'draft' ise 'draft', aksi halde 'submitted'
             $allApproved = $entries->every(fn($e) => $e->status === 'approved');
-            $status = $allApproved ? 'approved' : 'submitted';
+            $hasDraft = $entries->contains(fn($e) => $e->status === 'draft');
+            $status = $allApproved ? 'approved' : ($hasDraft ? 'draft' : 'submitted');
 
             // Konsolide Parent Entry Oluştur
             $parent = new FormEntryM([
@@ -371,7 +376,7 @@ class FormEntryS
                 'partition_value' => null,
                 'partition_field_id' => $template->partition_field_id,
                 'title' => "Konsolide Form ({$partsStr}) - {$template->name} ({$dateFormatted})",
-                'submitted_at' => now(),
+                'submitted_at' => $status === 'draft' ? null : now(),
             ]);
 
             if ($allApproved) {
@@ -412,6 +417,59 @@ class FormEntryS
             $childEntry->parent_id = $parent->id;
             $childEntry->save();
         }
+    }
+
+    /**
+     * Konsolide ana form düzenlendiğinde/onaya gönderildiğinde güncel satırları ve statüyü bağlı parçalara senkronize eder.
+     */
+    public function syncConsolidatedParentToChildren(FormEntryM $parent, string $status): void
+    {
+        if (!$parent->is_consolidated) {
+            return;
+        }
+
+        DB::transaction(function () use ($parent, $status) {
+            $parent->load(['children', 'rows.values', 'template']);
+            $partitionFieldId = $parent->partition_field_id ?: $parent->template?->partition_field_id;
+
+            $groupedRows = collect();
+            if ($partitionFieldId) {
+                $groupedRows = $parent->rows->groupBy(function ($row) use ($partitionFieldId) {
+                    $valObj = $row->values->firstWhere('form_field_id', $partitionFieldId);
+                    return mb_strtolower(trim((string) ($valObj?->value ?? '')), 'UTF-8');
+                });
+            }
+
+            foreach ($parent->children as $child) {
+                if ($partitionFieldId) {
+                    $childKey = mb_strtolower(trim((string) $child->partition_value), 'UTF-8');
+                    $matchingRows = $groupedRows->get($childKey, collect());
+
+                    if ($matchingRows->isNotEmpty()) {
+                        $child->rows()->delete();
+                        $rowOrder = 0;
+                        foreach ($matchingRows as $pRow) {
+                            $newChildRow = $child->rows()->create(['row_order' => $rowOrder++]);
+                            foreach ($pRow->values as $pVal) {
+                                $newChildRow->values()->create([
+                                    'form_field_id' => $pVal->form_field_id,
+                                    'value' => $pVal->value,
+                                ]);
+                            }
+                        }
+                    }
+                }
+
+                if ($status === 'submitted' && $child->status === 'draft') {
+                    $child->status = 'submitted';
+                    $child->submitted_at = now();
+                    $child->save();
+                } elseif ($status === 'draft' && $child->status === 'submitted') {
+                    $child->status = 'draft';
+                    $child->save();
+                }
+            }
+        });
     }
 
     /**

@@ -197,6 +197,73 @@ class ConsolidatedDraftSubmitValidationTest extends TestCase
         $this->assertEquals('submitted', $child2->fresh()->status);
     }
 
+    public function test_updating_consolidated_parent_to_submitted_syncs_rows_and_status_to_children(): void
+    {
+        $template = FormTemplateM::create([
+            'name' => 'HEDEFLER ŞABLONU',
+            'slug' => 'hedefler-sync-test',
+            'created_by' => $this->owner->id,
+            'is_active' => true,
+            'allow_partition_entry' => true,
+        ]);
+
+        $partitionField = FormFieldM::create([
+            'form_template_id' => $template->id,
+            'label' => 'İŞYERİ',
+            'field_key' => 'isyeri',
+            'type' => 'text',
+            'is_required' => true,
+            'sort_order' => 1,
+        ]);
+
+        $template->update(['partition_field_id' => $partitionField->id]);
+
+        $requiredField = FormFieldM::create([
+            'form_template_id' => $template->id,
+            'label' => 'BELGE TÜRÜ',
+            'field_key' => 'belge_turu',
+            'type' => 'text',
+            'is_required' => true,
+            'sort_order' => 2,
+        ]);
+
+        $service = app(FormEntryS::class);
+
+        // Eksik zorunlu alanlı 2 taslak parça oluştur ve birleştir
+        $child1 = $service->saveEntry($template, $this->owner, '2026-11-26', [
+            [$partitionField->id => 'KAPAK', $requiredField->id => ''],
+        ], 'draft', null, 'KAPAK');
+
+        $child2 = $service->saveEntry($template, $this->owner, '2026-11-26', [
+            [$partitionField->id => 'PREFORM', $requiredField->id => 'Y.İçi Sip.'],
+        ], 'draft', null, 'PREFORM');
+
+        $parent = $service->consolidateEntries([$child1->id, $child2->id], $this->owner);
+
+        // Taslak parçalardan oluşan konsolide ana form başlangıçta 'draft' olmalı ('submitted' değil)
+        $this->assertEquals('draft', $parent->status);
+
+        // Konsolide ana form Düzenle ekranından güncellenip onaya gönderildiğinde alt parçalar da senkronize olmalı
+        $response = $this->actingAs($this->owner)
+            ->put(route('form-entries.update', $parent), [
+                'entry_date' => '2026-11-26',
+                'action' => 'submit',
+                'rows' => [
+                    [$partitionField->id => 'KAPAK', $requiredField->id => 'İhracat'],
+                    [$partitionField->id => 'PREFORM', $requiredField->id => 'Y.İçi Sip.'],
+                ],
+            ]);
+
+        $response->assertSessionHasNoErrors();
+
+        $this->assertEquals('submitted', $parent->fresh()->status);
+        $this->assertEquals('submitted', $child1->fresh()->status);
+        $this->assertEquals('submitted', $child2->fresh()->status);
+
+        $child1Val = $child1->fresh()->rows->first()->values->firstWhere('form_field_id', $requiredField->id)?->value;
+        $this->assertSame('İhracat', $child1Val);
+    }
+
     public function test_conditional_required_field_is_enforced_only_when_condition_matches(): void
     {
         $template = FormTemplateM::create([
