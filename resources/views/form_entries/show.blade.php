@@ -116,7 +116,7 @@
                     </button>
                 @elseif(!empty($canRequestRevision) && $canRequestRevision)
                     <button type="button"
-                        onclick="if(this.dataset.clicked) return; this.dataset.clicked = 'true'; this.classList.add('btn-loading'); document.body.classList.add('cursor-wait'); window.dispatchEvent(new CustomEvent('open-revision-modal')); setTimeout(() => { delete this.dataset.clicked; this.classList.remove('btn-loading'); document.body.classList.remove('cursor-wait'); }, 800);"
+                        onclick="window.dispatchEvent(new CustomEvent('open-revision-modal'));"
                         @click="$dispatch('open-revision-modal')"
                         class="inline-flex items-center px-3.5 py-2 bg-amber-500 hover:bg-amber-600 active:scale-95 text-white text-xs font-bold rounded-lg shadow-sm transition gap-1.5 cursor-pointer"
                         title="{{ __('Düzenleme Talep Et (Revizyon)') }}">
@@ -131,7 +131,7 @@
 
                 @if(!empty($canRevert) && $canRevert)
                     <button type="button"
-                        onclick="if(this.dataset.clicked) return; this.dataset.clicked = 'true'; this.classList.add('btn-loading'); document.body.classList.add('cursor-wait'); window.dispatchEvent(new CustomEvent('open-revert-modal')); setTimeout(() => { delete this.dataset.clicked; this.classList.remove('btn-loading'); document.body.classList.remove('cursor-wait'); }, 800);"
+                        onclick="window.dispatchEvent(new CustomEvent('open-revert-modal'));"
                         @click="$dispatch('open-revert-modal')"
                         class="inline-flex items-center px-3.5 py-2 bg-slate-700 hover:bg-slate-800 active:scale-95 text-white text-xs font-bold rounded-lg shadow-sm transition gap-1.5 cursor-pointer"
                         title="{{ __('Onayı Geri Al') }}">
@@ -2727,6 +2727,7 @@
                     </form>
                 </div>
             </div>
+        </div>
     @endif
 
         {{-- Onayı Geri Al Modalı --}}
@@ -2761,6 +2762,14 @@
                                 </button>
                             </div>
                             <div class="p-6 space-y-3">
+                                @if(!empty($formEntry->approvedBy) && $formEntry->approved_by !== Auth::id())
+                                    <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-center gap-2.5 text-xs text-amber-900 mb-2">
+                                        <svg class="w-4 h-4 text-amber-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
+                                        <span><strong>{{ $formEntry->approvedBy->name }}</strong> adına bu {{ $formEntry->status === 'approved' ? 'onayı' : 'reddi' }} geri alacaksınız.</span>
+                                    </div>
+                                @endif
                                 <p class="text-sm font-semibold text-gray-800">
                                     Bu formun {{ $formEntry->status === 'approved' ? 'onayını' : 'reddini' }} geri almak
                                     istediğinize emin misiniz?
@@ -2794,6 +2803,7 @@
                         </form>
                     </div>
                 </div>
+            </div>
         @endif
 
             {{-- Onaya Gönder Modalı --}}

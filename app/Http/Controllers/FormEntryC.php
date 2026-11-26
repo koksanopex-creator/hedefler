@@ -963,6 +963,10 @@ class FormEntryC extends Controller
         }
 
         $prevStatus = $formEntry->status;
+        $formEntry->loadMissing(['template', 'user', 'approvedBy']);
+        $prevApprovedBy = $formEntry->approvedBy;
+        $prevApprovedById = $formEntry->approved_by;
+
         $formEntry->status = 'submitted';
         $formEntry->submitted_at = now();
         $formEntry->approved_at = null;
@@ -992,14 +996,19 @@ class FormEntryC extends Controller
             app(\App\Services\KpiTargetS::class)->recalculateForEntry($formEntry);
         }
 
-        $formEntry->loadMissing(['template', 'user']);
         $tName = $formEntry->template?->name ?? 'Dinamik Form';
         $eDate = $formEntry->entry_date ? $formEntry->entry_date->format('d.m.Y') : '-';
         $oName = $formEntry->user?->name ?? 'Kullanıcı';
 
+        if ($prevApprovedBy && $prevApprovedById && $prevApprovedById !== $user->id) {
+            $logMsg = "{$user->name} tarafından {$prevApprovedBy->name} adına form onay/red kararı geri alındı. Form: [{$tName}] (Giriş Tarihi: {$eDate}, Sahibi: {$oName}, Form ID: #{$formEntry->id}). Form durumu tekrar 'Onay Bekliyor (submitted)' seviyesine çekildi.";
+        } else {
+            $logMsg = "Form onay/red kararı geri alındı. Form: [{$tName}] (Giriş Tarihi: {$eDate}, Sahibi: {$oName}, Form ID: #{$formEntry->id}). Form durumu tekrar 'Onay Bekliyor (submitted)' seviyesine çekildi.";
+        }
+
         $this->activityLogService->log(
             'form_entry.revert',
-            "Form onay/red kararı geri alındı. Form: [{$tName}] (Giriş Tarihi: {$eDate}, Sahibi: {$oName}, Form ID: #{$formEntry->id}). Form durumu tekrar 'Onay Bekliyor (submitted)' seviyesine çekildi.",
+            $logMsg,
             $formEntry
         );
 

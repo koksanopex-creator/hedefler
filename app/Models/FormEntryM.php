@@ -84,6 +84,11 @@ class FormEntryM extends Model
         return $this->belongsTo(UserM::class, 'approved_by');
     }
 
+    public function approvedBy()
+    {
+        return $this->belongsTo(UserM::class, 'approved_by');
+    }
+
     public function rows()
     {
         return $this->hasMany(FormEntryRowM::class, 'form_entry_id')->orderBy('row_order');
