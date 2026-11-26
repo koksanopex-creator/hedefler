@@ -115,12 +115,24 @@ class FormEntryC extends Controller
         $query->with(['template', 'user.group', 'revisionRequests', 'approver', 'children.template', 'children.rows', 'children.versions', 'children.approver', 'children.user', 'children.revisionRequests', 'parent', 'partitionField', 'versions']);
 
         if ($canSeeMultipleUsers) {
-            $query->orderBy(
-                \App\Models\UserM::select('name')
-                    ->whereColumn('users.id', 'form_entries.user_id')
-                    ->limit(1),
-                'asc'
-            );
+            $latestForUser = FormEntryM::from('form_entries as fe_u')
+                ->selectRaw('MAX(COALESCE(fe_u.submitted_at, fe_u.updated_at))')
+                ->whereColumn('fe_u.user_id', 'form_entries.user_id');
+
+            if ($scope === 'consolidated') {
+                $latestForUser->where('fe_u.is_consolidated', true);
+            } elseif ($scope === 'partitions') {
+                $latestForUser->whereNotNull('fe_u.partition_value');
+            } else {
+                $latestForUser->whereNull('fe_u.parent_id');
+            }
+
+            if ($request->filled('status') && in_array($request->status, ['draft', 'submitted', 'approved', 'rejected'])) {
+                $latestForUser->where('fe_u.status', $request->status);
+            }
+
+            $query->orderByDesc($latestForUser)
+                ->orderBy('form_entries.user_id', 'asc');
         }
 
         $entries = $query->orderBy('updated_at', 'desc')

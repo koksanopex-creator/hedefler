@@ -17,6 +17,26 @@
     .revision-blink-badge {
         animation: revisionBadgeBlink 1.15s ease-in-out infinite;
     }
+    .user-group-spacer td {
+        height: 14px !important;
+        background-color: #f1f5f9 !important;
+        padding: 0 !important;
+        border: none !important;
+    }
+    .user-group-header {
+        background: linear-gradient(90deg, #1e293b 0%, #312e81 100%) !important;
+        color: #ffffff !important;
+        border-left: 5px solid #818cf8 !important;
+    }
+    .user-group-header:hover {
+        background: linear-gradient(90deg, #0f172a 0%, #3730a3 100%) !important;
+    }
+    .user-group-row {
+        border-left: 5px solid #a5b4fc !important;
+    }
+    .user-group-child-row {
+        border-left: 5px solid #6366f1 !important;
+    }
 </style>
 <x-app-layout>
     <div x-data="{ 
@@ -285,51 +305,62 @@
                                         $uDraftCount = $userEntries->where('status', 'draft')->count();
                                         $uSubmittedCount = $userEntries->where('status', 'submitted')->count();
                                         $uApprovedCount = $userEntries->where('status', 'approved')->count();
+                                        $uLatestAt = $userEntries->map(fn($e) => $e->submitted_at ?? $e->updated_at)->filter()->max();
                                     @endphp
-                                    <tr class="bg-indigo-50/75 hover:bg-indigo-100/70 border-y border-indigo-200/80 transition-colors cursor-pointer"
+                                    @if(!$loop->first)
+                                        <tr class="user-group-spacer">
+                                            <td colspan="{{ $groupColspan }}"></td>
+                                        </tr>
+                                    @endif
+                                    <tr class="user-group-header transition-colors cursor-pointer"
                                         @click="toggleUserGroup({{ (int) $groupUserId }})">
-                                        <td colspan="{{ $groupColspan }}" class="px-4 py-2.5">
+                                        <td colspan="{{ $groupColspan }}" class="px-4 py-3">
                                             <div class="flex flex-wrap items-center justify-between gap-2">
-                                                <div class="flex items-center gap-2.5 min-w-0">
-                                                    <span class="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-white border border-indigo-200 text-indigo-600 shadow-2xs transition-transform duration-200"
+                                                <div class="flex items-center gap-3 min-w-0">
+                                                    <span class="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-white/15 border border-white/25 text-white shadow-2xs transition-transform duration-200"
                                                         :class="collapsedUserIds.includes({{ (int) $groupUserId }}) ? '-rotate-90' : ''">
                                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/>
                                                         </svg>
                                                     </span>
-                                                    <div class="w-7 h-7 rounded-full bg-indigo-600 text-white font-black text-xs flex items-center justify-center shadow-xs shrink-0">
+                                                    <div class="w-8 h-8 rounded-full bg-amber-400 text-slate-950 font-black text-xs flex items-center justify-center shadow-sm shrink-0">
                                                         {{ mb_substr($groupUser?->name ?? '?', 0, 1) }}
                                                     </div>
                                                     <div class="flex items-center gap-2 flex-wrap min-w-0">
                                                         @if($groupUser)
                                                             <a href="{{ route('users.profile', $groupUser->id) }}" @click.stop
-                                                                class="text-xs sm:text-sm font-black text-slate-900 hover:text-indigo-700 hover:underline truncate">
+                                                                class="text-xs sm:text-sm font-black text-white hover:text-amber-300 hover:underline truncate">
                                                                 {{ $groupUser->name }}
                                                             </a>
                                                         @else
-                                                            <span class="text-xs sm:text-sm font-black text-slate-900">Bilinmeyen Kullanıcı</span>
+                                                            <span class="text-xs sm:text-sm font-black text-white">Bilinmeyen Kullanıcı</span>
                                                         @endif
-                                                        <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-white text-slate-600 border border-slate-200">
+                                                        <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-white/15 text-indigo-100 border border-white/25">
                                                             {{ $groupUser?->group?->name ?? 'Grup Yok' }}
                                                         </span>
+                                                        @if($uLatestAt)
+                                                            <span class="px-2 py-0.5 rounded-md text-[10px] font-mono font-semibold bg-slate-950/40 text-sky-200 border border-white/15">
+                                                                Son: {{ $uLatestAt->format('d.m.Y H:i') }}
+                                                            </span>
+                                                        @endif
                                                     </div>
                                                 </div>
                                                 <div class="flex items-center gap-1.5 flex-wrap text-[11px]">
-                                                    <span class="px-2.5 py-0.5 rounded-full font-extrabold bg-indigo-600 text-white shadow-2xs">
+                                                    <span class="px-2.5 py-0.5 rounded-full font-extrabold bg-white text-indigo-900 shadow-xs">
                                                         {{ $userEntries->count() }} Kayıt
                                                     </span>
                                                     @if($uDraftCount > 0)
-                                                        <span class="px-2 py-0.5 rounded-full font-bold bg-gray-200/80 text-gray-800">
+                                                        <span class="px-2 py-0.5 rounded-full font-bold bg-slate-200 text-slate-900">
                                                             {{ $uDraftCount }} Taslak
                                                         </span>
                                                     @endif
                                                     @if($uSubmittedCount > 0)
-                                                        <span class="px-2 py-0.5 rounded-full font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                                                        <span class="px-2 py-0.5 rounded-full font-bold bg-amber-400 text-slate-950">
                                                             {{ $uSubmittedCount }} Onay Bekliyor
                                                         </span>
                                                     @endif
                                                     @if($uApprovedCount > 0)
-                                                        <span class="px-2 py-0.5 rounded-full font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                                        <span class="px-2 py-0.5 rounded-full font-bold bg-emerald-400 text-slate-950">
                                                             {{ $uApprovedCount }} Onaylı
                                                         </span>
                                                     @endif
@@ -340,7 +371,7 @@
                                 @endif
                                 @foreach($userEntries as $entry)
                                 <tr @if($groupByUsers) x-show="!collapsedUserIds.includes({{ (int) $groupUserId }})" @endif
-                                    class="hover:bg-indigo-50/30 transition-colors group" :class="selectedDeleteIds.includes({{ $entry->id }}) ? 'bg-rose-50/40' : ''">
+                                    class="{{ $groupByUsers ? 'user-group-row' : '' }} hover:bg-indigo-50/30 transition-colors group" :class="selectedDeleteIds.includes({{ $entry->id }}) ? 'bg-rose-50/40' : ''">
                                     @if(!empty($canDelete) && $canDelete)
                                         <td class="w-10 px-3 py-3 text-center" @click.stop>
                                             <input type="checkbox" 
@@ -677,7 +708,7 @@
                                             x-transition:enter="transition ease-out duration-150"
                                             x-transition:enter-start="opacity-0 -translate-y-1"
                                             x-transition:enter-end="opacity-100 translate-y-0"
-                                            class="bg-slate-50/90 hover:bg-indigo-50/40 border-l-4 border-indigo-400 transition-colors">
+                                            class="{{ $groupByUsers ? 'user-group-child-row' : '' }} bg-slate-50/90 hover:bg-indigo-50/40 border-l-4 border-indigo-400 transition-colors">
                                             @if(!empty($canDelete) && $canDelete)
                                                 <td class="w-10 px-3 py-2 text-center text-slate-300 select-none">
                                                     <span class="text-xs text-indigo-400 font-black">↳</span>

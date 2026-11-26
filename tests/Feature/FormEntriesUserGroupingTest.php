@@ -97,10 +97,14 @@ class FormEntriesUserGroupingTest extends TestCase
     {
         $service = app(FormEntryS::class);
 
-        // Kullanıcıları karışık zamanlarda kaydet -> listede kullanıcıya göre yan yana gruplanmalı
-        $service->saveEntry($this->template, $this->userBeta, '2026-11-24', [[$this->valueField->id => '10']], 'draft');
-        $service->saveEntry($this->template, $this->userAlpha, '2026-11-25', [[$this->valueField->id => '20']], 'draft');
-        $service->saveEntry($this->template, $this->userBeta, '2026-11-26', [[$this->valueField->id => '30']], 'draft');
+        // Kullanıcıları karışık zamanlarda kaydet -> en son gönderen/güncelleyen (userBeta) en üstte ve kendi 2 kaydı yan yana gruplanmalı
+        $b1 = $service->saveEntry($this->template, $this->userBeta, '2026-11-24', [[$this->valueField->id => '10']], 'draft');
+        $a1 = $service->saveEntry($this->template, $this->userAlpha, '2026-11-25', [[$this->valueField->id => '20']], 'draft');
+        $b2 = $service->saveEntry($this->template, $this->userBeta, '2026-11-26', [[$this->valueField->id => '30']], 'draft');
+
+        \App\Models\FormEntryM::where('id', $b1->id)->update(['updated_at' => '2026-11-24 10:00:00']);
+        \App\Models\FormEntryM::where('id', $a1->id)->update(['updated_at' => '2026-11-25 11:00:00']);
+        \App\Models\FormEntryM::where('id', $b2->id)->update(['updated_at' => '2026-11-26 12:00:00']);
 
         $response = $this->actingAs($this->admin)
             ->get(route('form-entries.index', ['status' => 'draft']));
@@ -111,10 +115,10 @@ class FormEntriesUserGroupingTest extends TestCase
         $response->assertSee('1 Kayıt');
         $response->assertSee('2 Kayıt');
 
-        // Sıralama HASSAN HUSSIEN sonra SERHAT TÜMER (kendi iki kaydı yan yana) olmalı
+        // En son işlem yapan SERHAT TÜMER (2 kaydı yan yana) en üstte, sonra HASSAN HUSSIEN olmalı
         $response->assertViewHas('entries', function ($entries) {
             $userIds = $entries->pluck('user_id')->values()->toArray();
-            return $userIds === [$this->userAlpha->id, $this->userBeta->id, $this->userBeta->id];
+            return $userIds === [$this->userBeta->id, $this->userBeta->id, $this->userAlpha->id];
         });
     }
 
