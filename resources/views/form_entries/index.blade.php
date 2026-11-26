@@ -721,12 +721,14 @@
                                                                 ⚡ {{ $item->partition_value }}
                                                             </span>
                                                         </div>
-                                                        <div class="text-[11px] text-slate-400 mt-0.5 flex items-center gap-2">
+                                                        <div class="text-[11px] text-slate-400 mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5">
                                                             <span>#{{ $item->id }}</span>
                                                             <span>&bull;</span>
                                                             <span>{{ $item->rows->count() }} Satır</span>
                                                             <span>&bull;</span>
-                                                            <span>{{ $item->entry_date->format('d.m.Y') }}</span>
+                                                            <span>{{ $item->created_at ? $item->created_at->format('d.m.Y H:i') : $item->entry_date->format('d.m.Y') }}</span>
+                                                            <span>&bull;</span>
+                                                            <span class="font-semibold text-slate-600">{{ $item->user?->name ?? '-' }}</span>
                                                         </div>
                                                     </div>
                                                 </div>

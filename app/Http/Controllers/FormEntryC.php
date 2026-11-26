@@ -115,7 +115,8 @@ class FormEntryC extends Controller
                 ->whereNull('parent_id')
                 ->where('is_consolidated', false)
                 ->with(['template', 'rows', 'user'])
-                ->orderBy('entry_date', 'desc')
+                ->orderBy('created_at', 'desc')
+                ->orderBy('id', 'desc')
                 ->get()
             : collect();
 
@@ -911,36 +912,29 @@ class FormEntryC extends Controller
             return back()->with('error', 'Sadece taslak durumundaki formlar onaya gönderilebilir.');
         }
 
-        // Zorunlu alan kontrolü
-        $formEntry->loadMissing(['template.fields', 'rows.values']);
-        $requiredFields = $formEntry->template->fields->where('is_required', true);
-
-        $rowNum = 0;
-        foreach ($formEntry->rows as $row) {
-            $rowNum++;
-            $rowValues = $row->values->pluck('value', 'form_field_id')->toArray();
-
-            // Satır tamamen boşsa ve birden fazla satır varsa atla
-            $hasVal = false;
-            foreach ($rowValues as $val) {
-                if ($val !== null && trim((string) $val) !== '') {
-                    $hasVal = true;
-                    break;
+        // Zorunlu alan kontrolü (koşullu zorunlu alanlar ve konsolide taslak parçalar dahil)
+        $validationErrors = [];
+        if ($formEntry->is_consolidated) {
+            $formEntry->loadMissing(['children.template.fields.masterDataType', 'children.rows.values']);
+            $draftChildren = $formEntry->children->where('status', 'draft');
+            if ($draftChildren->isNotEmpty()) {
+                foreach ($draftChildren as $child) {
+                    $validationErrors = array_merge(
+                        $validationErrors,
+                        $this->formEntryService->validateEntryForSubmission($child)
+                    );
                 }
+            } else {
+                $validationErrors = $this->formEntryService->validateEntryForSubmission($formEntry);
             }
-            if (!$hasVal && $formEntry->rows->count() > 1) {
-                continue;
-            }
+        } else {
+            $validationErrors = $this->formEntryService->validateEntryForSubmission($formEntry);
+        }
 
-            foreach ($requiredFields as $reqField) {
-                if (!empty($reqField->is_calculated)) {
-                    continue;
-                }
-                $v = $rowValues[$reqField->id] ?? null;
-                if ($v === null || trim((string) $v) === '') {
-                    return back()->with('error', "Formu onaya gönderebilmek için tüm zorunlu alanlar doldurulmalıdır (Satır {$rowNum}: [{$reqField->label}] alanı boş bırakılamaz). Lütfen 'Düzenle' butonunu kullanarak eksik alanları tamamlayınız.");
-                }
-            }
+        if (!empty($validationErrors)) {
+            return back()->withErrors(
+                $this->formEntryService->formatValidationErrorsForFlash($validationErrors, (bool) $formEntry->is_consolidated)
+            );
         }
 
         $formEntry->status = 'submitted';
@@ -995,7 +989,7 @@ class FormEntryC extends Controller
             return back()->with('error', 'Bu form konsolide bir ana form değildir.');
         }
 
-        $formEntry->loadMissing(['children.template.fields', 'children.rows.values', 'children.user']);
+        $formEntry->loadMissing(['children.template.fields.masterDataType', 'children.rows.values', 'children.user']);
 
         // Eğer tek bir child_id parametresi gönderilmişse sadece o parçayı, gönderilmemişse tüm taslak parçaları filtrele
         $targetChildren = $formEntry->children->where('status', 'draft');
@@ -1005,6 +999,21 @@ class FormEntryC extends Controller
 
         if ($targetChildren->isEmpty()) {
             return back()->with('info', 'Onaya gönderilecek taslak durumda bir form parçası bulunamadı.');
+        }
+
+        // Hiçbir parçanın durumunu değiştirmeden önce tüm taslak parçalardaki zorunlu alanları doğrula
+        $validationErrors = [];
+        foreach ($targetChildren as $child) {
+            $validationErrors = array_merge(
+                $validationErrors,
+                $this->formEntryService->validateEntryForSubmission($child)
+            );
+        }
+
+        if (!empty($validationErrors)) {
+            return back()->withErrors(
+                $this->formEntryService->formatValidationErrorsForFlash($validationErrors, true)
+            );
         }
 
         $submittedCount = 0;

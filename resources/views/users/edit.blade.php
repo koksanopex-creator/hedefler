@@ -47,13 +47,13 @@
                                 🔒
                             </div>
                             <div>
-                                <h4 class="text-sm font-bold text-indigo-950">{{ __('Kimlik ve Şifre Merkezi API'den Yönetilir') }}</h4>
+                                <h4 class="text-sm font-bold text-indigo-950">{{ __('Kimlik ve Şifre Merkezi API\'den Yönetilir') }}</h4>
                                 <p class="text-xs text-indigo-800 mt-0.5">Ad Soyad, E-posta ve Şifre bilgileri Merkezi Yönetim Sisteminden çekilmektedir. Bu ekranda yalnızca <strong>Rol ve Grup</strong> yetkilerini düzenleyebilirsiniz.</p>
                             </div>
                         </div>
                         @if(!empty($user->central_user_id))
                             <a href="{{ $centralUrl ?? 'http://localhost:8001' }}/admin/users/{{ $user->central_user_id }}/edit" target="_blank" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 whitespace-nowrap">
-                                ↗ {{ __('Merkezi API'de Düzenle') }}
+                                ↗ {{ __('Merkezi API\'de Düzenle') }}
                             </a>
                         @else
                             <a href="{{ $centralUrl ?? 'http://localhost:8001' }}/admin/users" target="_blank" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 whitespace-nowrap">

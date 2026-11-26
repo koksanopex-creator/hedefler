@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\FormEntryM;
 use App\Models\FormEntryVersionM;
 use App\Models\FormTemplateM;
+use App\Models\MasterDataItemM;
 use App\Models\UserM;
 use Illuminate\Support\Facades\DB;
 
@@ -375,5 +376,249 @@ class FormEntryS
 
             return true;
         });
+    }
+
+    /**
+     * Form kaydının onaya gönderilmeden önce tüm zorunlu alanlarının (koşullu zorunluluk dahil)
+     * eksiksiz doldurulup doldurulmadığını backend seviyesinde doğrular.
+     *
+     * @return string[] Hata mesajları listesi (boşsa geçerlidir)
+     */
+    public function validateEntryForSubmission(FormEntryM $entry): array
+    {
+        $entry->loadMissing(['template.fields.masterDataType', 'rows.values']);
+
+        $fields = $entry->template?->fields ?? collect();
+        $partLabel = !empty($entry->partition_value) ? $entry->partition_value : null;
+        $prefix = $partLabel ? "[{$partLabel}] Parçası - " : '';
+
+        if ($entry->rows->isEmpty()) {
+            return [
+                $partLabel
+                    ? "[{$partLabel}] Parçası: Onaya gönderilecek kayıtlı veri satırı bulunmamaktadır."
+                    : "Formda onaya gönderilecek kayıtlı veri satırı bulunmamaktadır."
+            ];
+        }
+
+        // Bağlı (cascading) master_data alanları için tip öğelerini tek sorguda önden yükle (N+1 önlemi)
+        $masterTypeIds = $fields->where('type', 'master_data')
+            ->pluck('master_data_type_id')
+            ->filter()
+            ->unique();
+        $parentTypeIds = $fields->where('type', 'master_data')
+            ->map(fn($f) => $f->masterDataType?->parent_id)
+            ->filter()
+            ->unique();
+        $allNeededTypeIds = $masterTypeIds->merge($parentTypeIds)->unique()->values();
+
+        $itemsByType = $allNeededTypeIds->isNotEmpty()
+            ? MasterDataItemM::whereIn('type_id', $allNeededTypeIds)
+                ->get(['id', 'type_id', 'parent_id', 'name'])
+                ->groupBy('type_id')
+            : collect();
+
+        $partitionFieldId = $entry->partition_field_id ?: $entry->template?->partition_field_id;
+        $errors = [];
+        $rowCount = $entry->rows->count();
+        $rowNum = 0;
+
+        foreach ($entry->rows as $row) {
+            $rowNum++;
+            $rowValues = $row->values->pluck('value', 'form_field_id')->toArray();
+
+            // Satır tamamen boşsa ve birden fazla satır varsa atla
+            $hasVal = false;
+            foreach ($rowValues as $val) {
+                if ($val !== null && trim((string) $val) !== '') {
+                    $hasVal = true;
+                    break;
+                }
+            }
+            if (!$hasVal && $rowCount > 1) {
+                continue;
+            }
+
+            foreach ($fields as $field) {
+                if ($this->isFieldDisabledForRow($field, $rowValues, $entry, $partitionFieldId)) {
+                    continue;
+                }
+
+                if ($this->isFieldCalculatedForRow($field, $rowValues)) {
+                    continue;
+                }
+
+                if ($this->isMasterDataDisabledForRow($field, $fields, $rowValues, $entry, $partitionFieldId, $itemsByType)) {
+                    continue;
+                }
+
+                if (!$this->isFieldRequiredForRow($field, $rowValues, $entry, $partitionFieldId)) {
+                    continue;
+                }
+
+                $val = $rowValues[$field->id] ?? null;
+                if (($val === null || trim((string) $val) === '')
+                    && $partitionFieldId
+                    && (int) $field->id === (int) $partitionFieldId
+                    && !empty($entry->partition_value)
+                ) {
+                    $val = $entry->partition_value;
+                }
+
+                if ($val === null || trim((string) $val) === '') {
+                    $errors[] = "{$prefix}Satır {$rowNum}: [{$field->label}] alanı zorunludur ve boş bırakılamaz.";
+                }
+            }
+        }
+
+        return $errors;
+    }
+
+    /**
+     * Doğrulama hata listesini kullanıcıya gösterilecek okunabilir formata dönüştürür.
+     *
+     * @param string[] $errors
+     * @return string[]
+     */
+    public function formatValidationErrorsForFlash(array $errors, bool $isConsolidated = false): array
+    {
+        $maxErrors = 15;
+        $total = count($errors);
+        $displayErrors = array_slice($errors, 0, $maxErrors);
+
+        if ($total > $maxErrors) {
+            $remaining = $total - $maxErrors;
+            $displayErrors[] = "...ve {$remaining} adet daha eksik zorunlu alan bulunmaktadır.";
+        }
+
+        $displayErrors[] = $isConsolidated
+            ? "Onaya göndermeden önce ilgili parçaları açıp 'Düzenle' butonunu kullanarak eksik zorunlu alanları tamamlayınız."
+            : "Onaya göndermeden önce 'Düzenle' butonunu kullanarak eksik zorunlu alanları tamamlayınız.";
+
+        return $displayErrors;
+    }
+
+    private function isFieldDisabledForRow($field, array $rowValues, FormEntryM $entry, ?int $partitionFieldId): bool
+    {
+        if (!empty($field->is_disabled)) {
+            return true;
+        }
+
+        if (empty($field->is_disabled_on_condition) || empty($field->condition_field_id)) {
+            return false;
+        }
+
+        $targetVal = $this->resolveRowFieldValue((int) $field->condition_field_id, $rowValues, $entry, $partitionFieldId);
+        if ($targetVal === null || trim((string) $targetVal) === '') {
+            return false;
+        }
+
+        $targetValStr = mb_strtolower(trim((string) $targetVal), 'UTF-8');
+
+        if (!empty($field->disabled_condition_value)) {
+            $disabledList = array_map(
+                fn($s) => mb_strtolower(trim($s), 'UTF-8'),
+                explode(',', (string) $field->disabled_condition_value)
+            );
+            return in_array($targetValStr, $disabledList, true);
+        }
+
+        if (!empty($field->condition_value)) {
+            $conditionList = array_map(
+                fn($s) => mb_strtolower(trim($s), 'UTF-8'),
+                explode(',', (string) $field->condition_value)
+            );
+            return !in_array($targetValStr, $conditionList, true);
+        }
+
+        return false;
+    }
+
+    private function isFieldCalculatedForRow($field, array $rowValues): bool
+    {
+        if (empty($field->is_calculated)) {
+            return false;
+        }
+
+        if (!empty($field->calc_condition_field_id) && !empty($field->calc_condition_value)) {
+            $val = $rowValues[$field->calc_condition_field_id] ?? null;
+            if ($val === null || trim((string) $val) === '') {
+                return false;
+            }
+            $valStr = mb_strtolower(trim((string) $val), 'UTF-8');
+            $calcList = array_map(
+                fn($s) => mb_strtolower(trim($s), 'UTF-8'),
+                explode(',', (string) $field->calc_condition_value)
+            );
+            return in_array($valStr, $calcList, true);
+        }
+
+        return true;
+    }
+
+    private function isFieldRequiredForRow($field, array $rowValues, FormEntryM $entry, ?int $partitionFieldId): bool
+    {
+        if (!empty($field->is_required)) {
+            return true;
+        }
+
+        if (!empty($field->condition_field_id) && !empty($field->condition_value)) {
+            $targetVal = $this->resolveRowFieldValue((int) $field->condition_field_id, $rowValues, $entry, $partitionFieldId);
+            if ($targetVal !== null && trim((string) $targetVal) !== '') {
+                $targetValStr = mb_strtolower(trim((string) $targetVal), 'UTF-8');
+                $conditionList = array_map(
+                    fn($s) => mb_strtolower(trim($s), 'UTF-8'),
+                    explode(',', (string) $field->condition_value)
+                );
+                return in_array($targetValStr, $conditionList, true);
+            }
+        }
+
+        return false;
+    }
+
+    private function isMasterDataDisabledForRow($field, $allFields, array $rowValues, FormEntryM $entry, ?int $partitionFieldId, $itemsByType): bool
+    {
+        if (($field->type ?? null) !== 'master_data' || empty($field->master_data_type_id)) {
+            return false;
+        }
+
+        $masterType = $field->masterDataType;
+        if (!$masterType) {
+            return true;
+        }
+
+        $typeItems = $itemsByType->get($field->master_data_type_id, collect());
+
+        if (!empty($masterType->parent_id)) {
+            $parentField = $allFields->first(
+                fn($f) => ($f->type ?? null) === 'master_data' && (int) $f->master_data_type_id === (int) $masterType->parent_id
+            );
+
+            if ($parentField) {
+                $selectedParentName = $this->resolveRowFieldValue((int) $parentField->id, $rowValues, $entry, $partitionFieldId);
+                if ($selectedParentName === null || trim((string) $selectedParentName) === '') {
+                    return true;
+                }
+
+                $parentItems = $itemsByType->get($masterType->parent_id, collect());
+                $selectedParentItem = $parentItems->first(fn($i) => $i->name === $selectedParentName);
+                if (!$selectedParentItem) {
+                    return true;
+                }
+
+                return $typeItems->where('parent_id', $selectedParentItem->id)->isEmpty();
+            }
+        }
+
+        return $typeItems->isEmpty();
+    }
+
+    private function resolveRowFieldValue(int $fieldId, array $rowValues, FormEntryM $entry, ?int $partitionFieldId): mixed
+    {
+        if ($partitionFieldId && $fieldId === (int) $partitionFieldId && !empty($entry->partition_value)) {
+            return $entry->partition_value;
+        }
+
+        return $rowValues[$fieldId] ?? null;
     }
 }
