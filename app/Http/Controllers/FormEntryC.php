@@ -1509,6 +1509,10 @@ class FormEntryC extends Controller
             $highestRow = $sheet->getHighestDataRow();
 
             $fields = $formTemplate->fields;
+            $userScope = $this->getUserScope($request->user());
+            $allowedNames = array_values(array_filter(array_map('trim', $userScope['allowed_user_names'] ?? [])));
+            $singleAllowedUserName = (!$userScope['is_admin'] && count($allowedNames) === 1) ? $allowedNames[0] : null;
+
             // İlk sütun Sıra No mu yoksa doğrudan ilk form alanı mı kontrol et (Geriye dönük uyumluluk)
             $firstFieldLabel = $fields->first() ? mb_strtolower(trim((string) $fields->first()->label), 'UTF-8') : '';
             $firstHeaderVal = mb_strtolower(trim((string) $sheet->getCell('A' . $headerRow)->getValue()), 'UTF-8');
@@ -1517,6 +1521,7 @@ class FormEntryC extends Controller
             $startColIndex = $hasRowNumberCol ? 2 : 1;
 
             $rowsData = [];
+            $autoReplacedSalesCount = 0;
 
             for ($row = $startRow; $row <= $highestRow; $row++) {
                 // Eğer A sütununda 'TOPLAM:' veya 'Form Adı:' yazıyorsa okumayı bitir (metadata bölümü)
@@ -1528,6 +1533,7 @@ class FormEntryC extends Controller
                 $rowData = [];
                 $colIndex = $startColIndex;
                 $isEmptyRow = true;
+                $rowReplacedSales = false;
 
                 foreach ($fields as $field) {
                     // Pasif / Girişe Kapalı alana Excel'den veri yükleme (es geç)
@@ -1588,8 +1594,17 @@ class FormEntryC extends Controller
                         }
                     }
 
+                    $isAutoSelfUserField = (!empty($field->filter_by_user_group) && $singleAllowedUserName !== null);
+                    if ($isAutoSelfUserField) {
+                        $origVal = trim($val);
+                        if ($origVal !== '' && mb_strtolower($origVal, 'UTF-8') !== mb_strtolower($singleAllowedUserName, 'UTF-8')) {
+                            $rowReplacedSales = true;
+                        }
+                        $val = $singleAllowedUserName;
+                    }
+
                     $isLockedPartitionField = ($partitionField && !empty($partitionValue) && $field->id == $partitionField->id);
-                    if (trim($val) !== '' && !$isLockedPartitionField) {
+                    if (trim($val) !== '' && !$isLockedPartitionField && !$isAutoSelfUserField) {
                         $isEmptyRow = false;
                     }
 
@@ -1599,6 +1614,9 @@ class FormEntryC extends Controller
 
                 // Eğer satır tamamen boşsa ekleme
                 if (!$isEmptyRow) {
+                    if ($rowReplacedSales) {
+                        $autoReplacedSalesCount++;
+                    }
                     $rowsData[] = [
                         'id' => uniqid(),
                         'values' => $rowData
@@ -1608,7 +1626,9 @@ class FormEntryC extends Controller
 
             return response()->json([
                 'success' => true,
-                'rows' => $rowsData
+                'rows' => $rowsData,
+                'auto_replaced_sales_count' => $autoReplacedSalesCount,
+                'auto_replaced_sales_name' => $singleAllowedUserName,
             ]);
 
         } catch (\Throwable $e) {

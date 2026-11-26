@@ -58,25 +58,33 @@ class FormEntryS
             
             $entry->save();
 
-            // Güvenlik Doğrulaması: filter_by_user_group alanları için yetkisiz değer gönderilmiş mi?
+            // Güvenlik Doğrulaması & Otomatik Satışçı Ataması: filter_by_user_group alanları
             $template->loadMissing('fields');
             $restrictedFields = $template->fields->where('filter_by_user_group', true);
             if ($restrictedFields->isNotEmpty()) {
                 $formEntryC = app(\App\Http\Controllers\FormEntryC::class);
                 $userScope = $formEntryC->getUserScope($user);
-                
+
                 if (!$userScope['is_admin']) {
-                    $allowedNamesLower = array_map(fn($n) => mb_strtolower(trim($n)), $userScope['allowed_user_names']);
+                    $allowedNames = array_values(array_filter(array_map('trim', $userScope['allowed_user_names'] ?? [])));
+                    $singleAllowedName = count($allowedNames) === 1 ? $allowedNames[0] : null;
+                    $allowedNamesLower = array_map(fn($n) => mb_strtolower($n, 'UTF-8'), $allowedNames);
 
                     $checkRowNum = 0;
-                    foreach ($rowsData as $rowData) {
+                    foreach ($rowsData as $rowKey => $rowData) {
                         $checkRowNum++;
                         if (empty(array_filter($rowData))) continue;
 
                         foreach ($restrictedFields as $field) {
+                            // Yetki kapsamı sadece kullanıcının kendisi ise, hücrede ne yazarsa yazsın kendi adını otomatik ata
+                            if ($singleAllowedName !== null) {
+                                $rowsData[$rowKey][$field->id] = $singleAllowedName;
+                                continue;
+                            }
+
                             $val = $rowData[$field->id] ?? null;
                             if (!empty($val)) {
-                                $valLower = mb_strtolower(trim($val));
+                                $valLower = mb_strtolower(trim($val), 'UTF-8');
                                 $isPermitted = false;
                                 foreach ($allowedNamesLower as $allowed) {
                                     if ($valLower === $allowed || str_contains($valLower, $allowed) || str_contains($allowed, $valLower)) {

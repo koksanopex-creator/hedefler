@@ -1960,12 +1960,13 @@
                     return this.rows[rowOrIndex];
                 },
 
-                showToast(msg) {
+                showToast(msg, durationOrType = 3500) {
+                    const duration = typeof durationOrType === 'number' ? durationOrType : 3500;
                     this.toastMessage = msg;
                     if (this.toastTimeout) clearTimeout(this.toastTimeout);
                     this.toastTimeout = setTimeout(() => {
                         this.toastMessage = '';
-                    }, 3500);
+                    }, duration);
                 },
 
                 startLiveTimer(totalRows) {
@@ -4338,6 +4339,16 @@
                     }
                 },
 
+                getAutoSelfUserName(field) {
+                    if (!field || !field.filter_by_user_group || !this.currentUserScope || this.currentUserScope.is_admin) {
+                        return null;
+                    }
+                    const allowedNames = (this.currentUserScope.allowed_user_names || [])
+                        .map(n => String(n || '').trim())
+                        .filter(Boolean);
+                    return allowedNames.length === 1 ? allowedNames[0] : null;
+                },
+
                 handlePaste(event, startRowIndex, startColIndex) {
                     let clipboardData = event.clipboardData || window.clipboardData;
                     if (!clipboardData) return;
@@ -4467,6 +4478,8 @@
                             let currentBatchIndex = 0;
                             let partitionMismatches = [];
                             let unmatchedDropdowns = [];
+                            let autoReplacedSalesCount = 0;
+                            let autoReplacedTargetName = '';
 
                             const processPasteChunk = () => {
                                 let start = currentBatchIndex * CHUNK_SIZE;
@@ -4501,6 +4514,16 @@
 
                                                 if (this.isFieldCalculated(targetField, currentRow) || this.isFieldDisabled(targetField, currentRow)) {
                                                     currentRow.values[targetField.id] = '';
+                                                    continue;
+                                                }
+
+                                                const autoSelfName = this.getAutoSelfUserName(targetField);
+                                                if (autoSelfName) {
+                                                    if (pastedVal !== '' && this.toLocaleLower(pastedVal) !== this.toLocaleLower(autoSelfName)) {
+                                                        autoReplacedSalesCount++;
+                                                        autoReplacedTargetName = autoSelfName;
+                                                    }
+                                                    currentRow.values[targetField.id] = autoSelfName;
                                                     continue;
                                                 }
 
@@ -4632,7 +4655,11 @@
                                     setTimeout(() => {
                                         this.showUploadModal = false;
                                         this.isLargeDataset = false;
-                                        this.showToast(`✓ ${totalPasteRows} satır veri başarıyla yapıştırıldı.`);
+                                        if (autoReplacedSalesCount > 0) {
+                                            this.showToast(`⚠️ ${autoReplacedSalesCount} satırda farklı satışçı adı '${autoReplacedTargetName}' olarak otomatik dönüştürüldü. Verileri kontrol ediniz, kendi satış verileriniz olmayabilir!`, 4000);
+                                        } else {
+                                            this.showToast(`✓ ${totalPasteRows} satır veri başarıyla yapıştırıldı.`);
+                                        }
                                         // Yapıştırılan verileri arka planda sessizce hemen taslağa kaydet
                                         this.saveDraftAjax(true);
 
@@ -4842,6 +4869,8 @@
 
                                                     if (this.isFieldCalculated(f, r) || this.isFieldDisabled(f, r)) {
                                                         r.values[f.id] = '';
+                                                    } else if (this.getAutoSelfUserName(f)) {
+                                                        r.values[f.id] = this.getAutoSelfUserName(f);
                                                     } else if (r.values[f.id] !== undefined && r.values[f.id] !== null && String(r.values[f.id]).trim() !== '') {
                                                         let val = String(r.values[f.id]).trim();
                                                         if (f.type === 'user_list') {
@@ -4981,9 +5010,14 @@
                                                         }
                                                     }, 450);
 
+                                                    const replacedSalesCount = Number(data.auto_replaced_sales_count || 0);
+                                                    const replacedSalesName = data.auto_replaced_sales_name || '';
+
                                                     this.hasUnsavedChanges = true;
                                                     this.saveDraftAjax(true, (err, res) => {
-                                                        if (!err) {
+                                                        if (replacedSalesCount > 0) {
+                                                            this.showToast(`⚠️ ${replacedSalesCount} satırda farklı satışçı adı '${replacedSalesName}' olarak otomatik dönüştürüldü. Verileri kontrol ediniz, kendi satış verileriniz olmayabilir!`, 4000);
+                                                        } else if (!err) {
                                                             this.showToast(`✓ ${totalRows} satır içe aktarıldı ve taslak olarak kaydedildi.`);
                                                         } else {
                                                             this.showToast(`✓ ${totalRows} satır başarıyla içe aktarıldı.`);
