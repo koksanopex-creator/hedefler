@@ -920,7 +920,7 @@
                                                         </button>
                                                     </div>
                                                 @elseif ($fType === 'master_data')
-                                                    <div class="relative w-full" :title="getCellDisabledReason(fields[{{ $colIndex }}], row)">
+                                                    <div class="relative w-full" :title="getMasterDataParentMismatch(row, fields[{{ $colIndex }}])?.message || getCellDisabledReason(fields[{{ $colIndex }}], row)">
                                                         <button type="button"
                                                             :id="'cell_' + rIndex + '_{{ $fId }}'"
                                                             :data-field-id="'{{ $fId }}'"
@@ -933,13 +933,14 @@
                                                             @paste.stop="handlePaste($event, rIndex, {{ $colIndex }})"
                                                             @keydown.delete.prevent="if (!isFieldDisabled(fields[{{ $colIndex }}], row)) clearSelect(row, '{{ $fId }}', fields[{{ $colIndex }}])"
                                                             @keydown.backspace.prevent="if (!isFieldDisabled(fields[{{ $colIndex }}], row)) clearSelect(row, '{{ $fId }}', fields[{{ $colIndex }}])"
-                                                            :title="getCellDisabledReason(fields[{{ $colIndex }}], row)"
+                                                            :title="getMasterDataParentMismatch(row, fields[{{ $colIndex }}])?.message || getCellDisabledReason(fields[{{ $colIndex }}], row)"
                                                             class="w-full text-left rounded-md shadow-sm text-sm transition-colors pr-7 pl-3 py-1.5 flex items-center justify-between border select-none focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                                             :class="{ 
                                                                 'bg-slate-100 text-slate-400 border-dashed cursor-cell select-none opacity-80': isFieldDisabled(fields[{{ $colIndex }}], row),
-                                                                'bg-gray-100 text-gray-400 border-gray-200 cursor-cell': !isFieldDisabled(fields[{{ $colIndex }}], row) && isMasterDataDisabled(row, fields[{{ $colIndex }}]),
-                                                                'bg-indigo-50 border-indigo-300 text-indigo-700 font-bold cursor-pointer': !isFieldDisabled(fields[{{ $colIndex }}], row) && !isMasterDataDisabled(row, fields[{{ $colIndex }}]) && row.values['{{ $fId }}'], 
-                                                                'bg-white border-gray-300 text-gray-700 hover:border-indigo-400 cursor-pointer': !isFieldDisabled(fields[{{ $colIndex }}], row) && !isMasterDataDisabled(row, fields[{{ $colIndex }}]) && !row.values['{{ $fId }}'], 
+                                                                'bg-rose-50 border-rose-500 text-rose-700 font-bold ring-1 ring-rose-400 cursor-pointer': !isFieldDisabled(fields[{{ $colIndex }}], row) && getMasterDataParentMismatch(row, fields[{{ $colIndex }}]),
+                                                                'bg-gray-100 text-gray-400 border-gray-200 cursor-cell': !isFieldDisabled(fields[{{ $colIndex }}], row) && !getMasterDataParentMismatch(row, fields[{{ $colIndex }}]) && isMasterDataDisabled(row, fields[{{ $colIndex }}]),
+                                                                'bg-indigo-50 border-indigo-300 text-indigo-700 font-bold cursor-pointer': !isFieldDisabled(fields[{{ $colIndex }}], row) && !getMasterDataParentMismatch(row, fields[{{ $colIndex }}]) && !isMasterDataDisabled(row, fields[{{ $colIndex }}]) && row.values['{{ $fId }}'], 
+                                                                'bg-white border-gray-300 text-gray-700 hover:border-indigo-400 cursor-pointer': !isFieldDisabled(fields[{{ $colIndex }}], row) && !getMasterDataParentMismatch(row, fields[{{ $colIndex }}]) && !isMasterDataDisabled(row, fields[{{ $colIndex }}]) && !row.values['{{ $fId }}'], 
                                                                 'border-l-4 border-l-red-500': isFieldRequired(fields[{{ $colIndex }}], row) && !{{ $fRequired ? 'true' : 'false' }} && !isFieldDisabled(fields[{{ $colIndex }}], row) 
                                                             }">
                                                             <span class="truncate block flex-1" x-text="row.values['{{ $fId }}'] || (isFieldDisabled(fields[{{ $colIndex }}], row) ? '-' : getMasterDataPlaceholder(row, fields[{{ $colIndex }}]))"></span>
@@ -948,7 +949,7 @@
                                                             </svg>
                                                         </button>
                                                         <button type="button"
-                                                            x-show="row.values['{{ $fId }}'] && !isMasterDataDisabled(row, fields[{{ $colIndex }}]) && !isFieldDisabled(fields[{{ $colIndex }}], row)"
+                                                            x-show="row.values['{{ $fId }}'] && (!isMasterDataDisabled(row, fields[{{ $colIndex }}]) || getMasterDataParentMismatch(row, fields[{{ $colIndex }}])) && !isFieldDisabled(fields[{{ $colIndex }}], row)"
                                                             @click.stop.prevent="clearSelect(row, '{{ $fId }}', fields[{{ $colIndex }}])"
                                                             tabindex="-1"
                                                             title="{{ __('Seçimi Temizle (Delete veya Backspace ile de silebilirsiniz)') }}"
@@ -1577,8 +1578,9 @@
                                                     <span class="inline-block px-2 py-0.5 rounded bg-rose-50 text-rose-700 font-mono text-[11px] border border-rose-200 font-semibold" x-text="item.pastedVal"></span>
                                                 </td>
                                                 <td class="py-2 px-3 text-right">
-                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gray-100 text-gray-600 border border-gray-200">
-                                                        {{ __('Seçiniz... (Boş)') }}
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border"
+                                                          :class="item.reason ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-gray-100 text-gray-600 border-gray-200'"
+                                                          x-text="item.reason || '{{ __('Seçiniz... (Boş)') }}'">
                                                     </span>
                                                 </td>
                                             </tr>
@@ -3210,7 +3212,7 @@
                         return;
                     }
 
-                    // 1. Onaya Gönderiliyorsa (action === 'submit') zorunlu alan kontrolü yap:
+                    // 1. Onaya Gönderiliyorsa (action === 'submit') bağlı master_data eşleşme ve zorunlu alan kontrolü yap:
                     if (actionType === 'submit') {
                         let firstMissing = null;
                         for (let rIdx = 0; rIdx < this.rows.length; rIdx++) {
@@ -3231,6 +3233,24 @@
                                     continue;
                                 }
 
+                                // Bağlı (cascading) master_data tutarlılık kontrolü (Örn: ÜLKE -> ŞEHİR)
+                                const mismatch = this.getMasterDataParentMismatch(row, field);
+                                if (mismatch) {
+                                    firstMissing = {
+                                        rIndex: rIdx,
+                                        rowNum: rowNum,
+                                        label: field.label || field.name,
+                                        fieldId: field.id,
+                                        message: `Satır ${rowNum}: ${mismatch.message}`
+                                    };
+                                    break;
+                                }
+
+                                // Bağlı master_data alanı seçili üst değere göre pasifse zorunlu kontrolünü atla
+                                if (field.type === 'master_data' && this.isMasterDataDisabled(row, field)) {
+                                    continue;
+                                }
+
                                 // Bu alan bu satır için zorunlu mu?
                                 if (this.isFieldRequired(field, row)) {
                                     const val = row.values ? row.values[field.id] : null;
@@ -3241,7 +3261,8 @@
                                             rIndex: rIdx,
                                             rowNum: rowNum,
                                             label: field.label || field.name,
-                                            fieldId: field.id
+                                            fieldId: field.id,
+                                            message: `Satır ${rowNum}: [${field.label || field.name}] alanı zorunludur ve boş bırakılamaz.`
                                         };
                                         break; // İlk eksiği bulduk
                                     }
@@ -3254,6 +3275,10 @@
                         if (firstMissing) {
                             this.isSubmitting = false;
                             this.submittingAction = null;
+
+                            if (firstMissing.message) {
+                                this.showToast(firstMissing.message, 6000, 'warning');
+                            }
 
                             // Eğer aktif filtre varsa ve hedef satır gizlenmiş olabilirse, filtreyi temizle
                             let hasActiveFilters = false;
@@ -3279,19 +3304,28 @@
                                         targetEl.focus();
 
                                         const isSelect = targetEl.tagName === 'SELECT';
-                                        const validationMsg = isSelect
-                                            ? `Lütfen bu alanı seçiniz (${firstMissing.label})`
-                                            : `Lütfen bu alanı doldurunuz (${firstMissing.label})`;
+                                        const validationMsg = firstMissing.message
+                                            || (isSelect
+                                                ? `Lütfen bu alanı seçiniz (${firstMissing.label})`
+                                                : `Lütfen bu alanı doldurunuz (${firstMissing.label})`);
 
-                                        // Tarayıcının yerel doğrulama baloncuğunu göster
-                                        targetEl.setCustomValidity(validationMsg);
-                                        targetEl.reportValidity();
+                                        // Tarayıcının yerel doğrulama baloncuğunu göster (button üzerinde desteklenmezse hata verme)
+                                        try {
+                                            if (typeof targetEl.setCustomValidity === 'function') {
+                                                targetEl.setCustomValidity(validationMsg);
+                                                targetEl.reportValidity();
+                                            }
+                                        } catch (e) {}
 
                                         // Görsel dikkat çekici kırmızı ring ve sınır efekti
                                         targetEl.classList.add('ring-2', 'ring-red-500', 'border-red-500');
 
                                         const clearValidation = () => {
-                                            targetEl.setCustomValidity('');
+                                            try {
+                                                if (typeof targetEl.setCustomValidity === 'function') {
+                                                    targetEl.setCustomValidity('');
+                                                }
+                                            } catch (e) {}
                                             targetEl.classList.remove('ring-2', 'ring-red-500', 'border-red-500');
                                             targetEl.removeEventListener('input', clearValidation);
                                             targetEl.removeEventListener('change', clearValidation);
@@ -3671,6 +3705,111 @@
 
                 getMasterDataPlaceholder(rowOrIndex, field) {
                     return this.getMasterDataStatus(rowOrIndex, field).placeholder;
+                },
+
+                getMasterDataParentMismatch(rowOrIndex, field) {
+                    if (!field || field.type !== 'master_data' || !field.master_data_type_id) return null;
+                    if (this.isFieldDisabled(field, rowOrIndex) || this.isFieldCalculated(field, rowOrIndex)) return null;
+
+                    const row = this.getRow(rowOrIndex);
+                    const val = row && row.values ? row.values[field.id] : '';
+                    const valStr = val !== undefined && val !== null ? String(val).trim() : '';
+                    if (!valStr) return null;
+
+                    const typeObj = this.masterDataTree ? this.masterDataTree[field.master_data_type_id] : null;
+                    if (!typeObj || !typeObj.parent_id) return null;
+
+                    const parentField = this.fields.find(f => f.type === 'master_data' && f.master_data_type_id == typeObj.parent_id);
+                    if (!parentField) return null;
+
+                    let parentVal = row && row.values ? (row.values[parentField.id] || '') : '';
+                    if (!parentVal && this.partitionFieldId && parentField.id == this.partitionFieldId && this.partitionValue) {
+                        parentVal = this.partitionValue;
+                    }
+                    const parentStr = String(parentVal || '').trim();
+                    if (!parentStr) {
+                        return {
+                            message: `[${field.label}] değeri (${valStr}) için önce [${parentField.label}] seçilmelidir.`
+                        };
+                    }
+
+                    const allowedOptions = this.getMasterDataOptions(rowOrIndex, field) || [];
+                    const valLower = this.toLocaleLower(valStr);
+                    const isAllowed = allowedOptions.some(opt => this.toLocaleLower(String(opt.name || '').trim()) === valLower);
+                    if (!isAllowed) {
+                        return {
+                            message: `[${field.label}] değeri (${valStr}), seçili [${parentField.label}] (${parentStr}) ile eşleşmemektedir.`
+                        };
+                    }
+                    return null;
+                },
+
+                matchCascadingMasterDataValue(field, row, rawVal) {
+                    const valStr = String(rawVal || '').trim();
+                    if (!valStr) return { matched: '' };
+
+                    const typeObj = this.masterDataTree ? this.masterDataTree[field.master_data_type_id] : null;
+                    if (!typeObj || !typeObj.parent_id) return { matched: null, reason: 'Geçersiz tanım' };
+
+                    const parentField = this.fields.find(f => f.type === 'master_data' && f.master_data_type_id == typeObj.parent_id);
+                    if (!parentField) return { matched: null, reason: 'Üst alan bulunamadı' };
+
+                    let parentVal = row && row.values ? (row.values[parentField.id] || '') : '';
+                    if (!parentVal && this.partitionFieldId && parentField.id == this.partitionFieldId && this.partitionValue) {
+                        parentVal = this.partitionValue;
+                    }
+                    const parentStr = String(parentVal || '').trim();
+                    if (!parentStr) {
+                        return { matched: null, reason: `Önce [${parentField.label}] seçilmeli` };
+                    }
+
+                    const parentTypeObj = this.masterDataTree[typeObj.parent_id];
+                    const parentLower = this.toLocaleLower(parentStr);
+                    const parentItem = parentTypeObj && parentTypeObj.items
+                        ? parentTypeObj.items.find(i => this.toLocaleLower(String(i.name || '').trim()) === parentLower)
+                        : null;
+
+                    if (!parentItem) {
+                        return { matched: null, reason: `[${parentField.label}] değeri (${parentStr}) eşleşmedi` };
+                    }
+
+                    if (!this._cascadingLookupCache) this._cascadingLookupCache = {};
+                    const cacheKey = `${field.id}_${parentItem.id}`;
+                    let map = this._cascadingLookupCache[cacheKey];
+                    if (!map) {
+                        map = new Map();
+                        (typeObj.items || []).forEach(item => {
+                            if (item.parent_id != parentItem.id) return;
+                            const itemName = String(item.name || '').trim();
+                            map.set(this.toLocaleLower(itemName), itemName);
+                            map.set(this.normalizeSearch(itemName), itemName);
+                            if (itemName.includes(',')) {
+                                const dotName = itemName.replace(',', '.');
+                                map.set(this.toLocaleLower(dotName), itemName);
+                                map.set(this.normalizeSearch(dotName), itemName);
+                            }
+                            if (itemName.includes('.')) {
+                                const commaName = itemName.replace('.', ',');
+                                map.set(this.toLocaleLower(commaName), itemName);
+                                map.set(this.normalizeSearch(commaName), itemName);
+                            }
+                            this.registerNumericVariants(map, itemName, itemName);
+                        });
+                        this._cascadingLookupCache[cacheKey] = map;
+                    }
+
+                    const sVal = this.toLocaleLower(valStr);
+                    const nVal = this.normalizeSearch(valStr);
+                    const numKey = this.getNumericKey(valStr);
+
+                    if (map.has(sVal)) return { matched: map.get(sVal) };
+                    if (map.has(nVal)) return { matched: map.get(nVal) };
+                    if (numKey && map.has(numKey)) return { matched: map.get(numKey) };
+
+                    return {
+                        matched: null,
+                        reason: `[${parentItem.name}] ile eşleşmiyor`
+                    };
                 },
 
                 getUserListOptions(rowOrIndex, field) {
@@ -4664,6 +4803,32 @@
                                             }
                                         }
                                     }
+
+                                    // Yapıştırılan satırdaki bağlı (cascading) master_data alanlarını üst değerle (Örn: ÜLKE -> ŞEHİR) doğrula
+                                    this.fields.forEach(cf => {
+                                        if (cf.type !== 'master_data' || !cf.master_data_type_id) return;
+                                        const cType = this.masterDataTree ? this.masterDataTree[cf.master_data_type_id] : null;
+                                        if (!cType || !cType.parent_id) return;
+                                        if (this.isFieldCalculated(cf, currentRow) || this.isFieldDisabled(cf, currentRow)) return;
+
+                                        const rawChildVal = currentRow.values ? currentRow.values[cf.id] : '';
+                                        const childTrimmed = rawChildVal !== undefined && rawChildVal !== null ? String(rawChildVal).trim() : '';
+                                        if (!childTrimmed) return;
+
+                                        const check = this.matchCascadingMasterDataValue(cf, currentRow, childTrimmed);
+                                        if (check.matched) {
+                                            currentRow.values[cf.id] = check.matched;
+                                        } else {
+                                            currentRow.values[cf.id] = '';
+                                            unmatchedDropdowns.push({
+                                                rowNum: currentRowIndex + 1,
+                                                fieldLabel: cf.label || 'Master Data',
+                                                pastedVal: childTrimmed,
+                                                type: 'master_data',
+                                                reason: check.reason || 'Üst değerle eşleşmiyor'
+                                            });
+                                        }
+                                    });
                                 }
 
                                 let processed = end;
@@ -4897,7 +5062,8 @@
                                                     });
                                                 }
 
-                                                // Değer normalizasyonu, kilitli kriter koruması ve formül kontrolü
+                                                // Değer normalizasyonu, kilitli kriter koruması ve formül kontrolü (Pass 1: Bağımsız alanlar, Pass 2: Bağlı master_data alanları)
+                                                const cascadingChildFields = [];
                                                 this.fields.forEach(f => {
                                                     // Bölümlenmiş kriter uyuşmazlığı kontrolü (Örn: İŞYERİ)
                                                     if (this.partitionFieldId && f.id == this.partitionFieldId && this.partitionValue) {
@@ -4912,6 +5078,14 @@
                                                         }
                                                         r.values[f.id] = this.partitionValue;
                                                         return;
+                                                    }
+
+                                                    if (f.type === 'master_data' && f.master_data_type_id) {
+                                                        const mType = this.masterDataTree ? this.masterDataTree[f.master_data_type_id] : null;
+                                                        if (mType && mType.parent_id) {
+                                                            cascadingChildFields.push(f);
+                                                            return;
+                                                        }
                                                     }
 
                                                     if (this.isFieldCalculated(f, r) || this.isFieldDisabled(f, r)) {
@@ -4995,6 +5169,30 @@
                                                             } else {
                                                                 r.values[f.id] = clean;
                                                             }
+                                                        }
+                                                    }
+                                                });
+
+                                                // Pass 2: Bağlı (cascading) master_data alanlarını üst değerle (Örn: ÜLKE -> ŞEHİR) eşleştir
+                                                cascadingChildFields.forEach(f => {
+                                                    if (this.isFieldCalculated(f, r) || this.isFieldDisabled(f, r)) {
+                                                        r.values[f.id] = '';
+                                                        return;
+                                                    }
+                                                    if (r.values[f.id] !== undefined && r.values[f.id] !== null && String(r.values[f.id]).trim() !== '') {
+                                                        const val = String(r.values[f.id]).trim();
+                                                        const check = this.matchCascadingMasterDataValue(f, r, val);
+                                                        if (check.matched) {
+                                                            r.values[f.id] = check.matched;
+                                                        } else {
+                                                            r.values[f.id] = '';
+                                                            unmatchedDropdowns.push({
+                                                                rowNum: rIdx + 1,
+                                                                fieldLabel: f.label || 'Master Data',
+                                                                pastedVal: val,
+                                                                type: 'master_data',
+                                                                reason: check.reason || 'Üst değerle eşleşmiyor'
+                                                            });
                                                         }
                                                     }
                                                 });

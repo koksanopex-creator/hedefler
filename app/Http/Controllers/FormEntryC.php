@@ -399,42 +399,23 @@ class FormEntryC extends Controller
         }
 
         $status = $request->action === 'submit' ? 'submitted' : 'draft';
+        $partitionValue = $request->filled('partition_value') ? trim($request->input('partition_value')) : null;
 
-        // Onaya gönderme durumunda zorunlu alan doğrulaması (Backend koruması)
+        // Onaya gönderme durumunda zorunlu alan ve bağlı (cascading) master_data doğrulaması (Backend koruması)
         if ($status === 'submitted') {
-            $formTemplate->loadMissing('fields');
-            $requiredFields = $formTemplate->fields->where('is_required', true);
+            $validationErrors = $this->formEntryService->validateRowsForSubmission(
+                $formTemplate,
+                $request->rows,
+                $partitionValue,
+                $formTemplate->partition_field_id
+            );
 
-            $rowNum = 0;
-            foreach ($request->rows as $rowData) {
-                $rowNum++;
-                // Satır tamamen boşsa atla
-                $hasVal = false;
-                foreach ($rowData as $val) {
-                    if ($val !== null && trim((string) $val) !== '') {
-                        $hasVal = true;
-                        break;
-                    }
-                }
-                if (!$hasVal && count($request->rows) > 1) {
-                    continue;
-                }
-
-                foreach ($requiredFields as $reqField) {
-                    if (!empty($reqField->is_calculated) || !empty($reqField->is_disabled)) {
-                        continue;
-                    }
-                    $v = $rowData[$reqField->id] ?? null;
-                    if ($v === null || trim((string) $v) === '') {
-                        return back()->withInput()->withErrors([
-                            'rows' => "Formu onaya gönderebilmek için tüm zorunlu alanlar doldurulmalıdır (Satır {$rowNum}: [{$reqField->label}] alanı boş bırakılamaz)."
-                        ]);
-                    }
-                }
+            if (!empty($validationErrors)) {
+                return back()->withInput()->withErrors([
+                    'rows' => $this->formEntryService->formatValidationErrorsForFlash($validationErrors)
+                ]);
             }
         }
-
-        $partitionValue = $request->filled('partition_value') ? trim($request->input('partition_value')) : null;
 
         // Bölümlenmiş (Partitioned) şablonlarda Tek Parça vs Parçalı karşılıklı kilit kontrolü
         $formTemplate->loadMissing('partitionField');
@@ -828,47 +809,28 @@ class FormEntryC extends Controller
         }
 
         $status = $request->action === 'submit' ? 'submitted' : 'draft';
+        $partitionValue = $request->filled('partition_value')
+            ? trim($request->input('partition_value'))
+            : $formEntry->partition_value;
 
-        // Onaya gönderme durumunda zorunlu alan doğrulaması (Backend koruması)
+        // Onaya gönderme durumunda zorunlu alan ve bağlı (cascading) master_data doğrulaması (Backend koruması)
         if ($status === 'submitted') {
-            $formEntry->loadMissing('template.fields');
-            $requiredFields = $formEntry->template->fields->where('is_required', true);
+            $validationErrors = $this->formEntryService->validateRowsForSubmission(
+                $formEntry->template,
+                $request->rows,
+                $partitionValue,
+                $formEntry->partition_field_id ?: $formEntry->template?->partition_field_id
+            );
 
-            $rowNum = 0;
-            foreach ($request->rows as $rowData) {
-                $rowNum++;
-                // Satır tamamen boşsa atla
-                $hasVal = false;
-                foreach ($rowData as $val) {
-                    if ($val !== null && trim((string) $val) !== '') {
-                        $hasVal = true;
-                        break;
-                    }
-                }
-                if (!$hasVal && count($request->rows) > 1) {
-                    continue;
-                }
-
-                foreach ($requiredFields as $reqField) {
-                    if (!empty($reqField->is_calculated) || !empty($reqField->is_disabled)) {
-                        continue;
-                    }
-                    $v = $rowData[$reqField->id] ?? null;
-                    if ($v === null || trim((string) $v) === '') {
-                        return back()->withInput()->withErrors([
-                            'rows' => "Formu onaya gönderebilmek için tüm zorunlu alanlar doldurulmalıdır (Satır {$rowNum}: [{$reqField->label}] alanı boş bırakılamaz)."
-                        ]);
-                    }
-                }
+            if (!empty($validationErrors)) {
+                return back()->withInput()->withErrors([
+                    'rows' => $this->formEntryService->formatValidationErrorsForFlash($validationErrors)
+                ]);
             }
         }
         if ($formEntry->status === 'approved' && $isSuperAdmin) {
             $status = 'approved';
         }
-
-        $partitionValue = $request->filled('partition_value')
-            ? trim($request->input('partition_value'))
-            : $formEntry->partition_value;
 
         try {
             $this->formEntryService->saveEntry(

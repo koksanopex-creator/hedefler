@@ -62,6 +62,56 @@
     .revision-blink-badge {
         animation: revisionBadgeBlink 1.15s ease-in-out infinite;
     }
+
+    /* Veri Detayı Tablo Yatay ve Dikey Scrollbar */
+    .table-scroll-container {
+        scrollbar-width: auto;
+        scrollbar-color: #4f46e5 #e2e8f0;
+        overflow-x: scroll !important;
+        overflow-y: auto !important;
+    }
+    .table-scroll-container::-webkit-scrollbar {
+        height: 16px !important;
+        width: 12px !important;
+        display: block !important;
+    }
+    .table-scroll-container::-webkit-scrollbar-track {
+        background: #f1f5f9 !important;
+        border-top: 2px solid #cbd5e1 !important;
+        border-bottom: 1px solid #e2e8f0 !important;
+    }
+    .table-scroll-container::-webkit-scrollbar-thumb {
+        background: #4f46e5 !important;
+        border-radius: 8px !important;
+        border: 2px solid #f1f5f9 !important;
+    }
+    .table-scroll-container::-webkit-scrollbar-thumb:hover {
+        background: #3730a3 !important;
+    }
+
+    .top-table-scrollbar {
+        scrollbar-width: auto;
+        scrollbar-color: #4f46e5 #e2e8f0;
+        overflow-x: scroll !important;
+        overflow-y: hidden !important;
+        height: 16px;
+    }
+    .top-table-scrollbar::-webkit-scrollbar {
+        height: 14px !important;
+        display: block !important;
+    }
+    .top-table-scrollbar::-webkit-scrollbar-track {
+        background: #f1f5f9 !important;
+        border-bottom: 1px solid #cbd5e1 !important;
+    }
+    .top-table-scrollbar::-webkit-scrollbar-thumb {
+        background: #4f46e5 !important;
+        border-radius: 7px !important;
+        border: 2px solid #f1f5f9 !important;
+    }
+    .top-table-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: #3730a3 !important;
+    }
 </style>
 <x-app-layout>
     <x-slot name="header">
@@ -1405,7 +1455,16 @@
                     </div>
                 </div>
 
-                <div class="overflow-auto min-h-[200px] pb-2 flex-1" :class="isFullscreen ? 'h-full' : ''">
+                <!-- Üst Senkronize Yatay Scrollbar (Sadece tablo sağa taştığında görünür) -->
+                <div x-ref="topScrollContainer" x-show="hasHorizontalOverflow" @scroll="syncScrollFromTop()"
+                    class="top-table-scrollbar w-full bg-slate-100 border-b border-gray-200 flex-shrink-0"
+                    style="display: none;">
+                    <div :style="'width: ' + tableScrollWidth + 'px; height: 1px;'"></div>
+                </div>
+
+                <div x-ref="tableScrollContainer" @scroll="syncScrollFromTable()"
+                    class="overflow-auto min-h-[200px] pb-2 flex-1 table-scroll-container"
+                    :class="isFullscreen ? 'h-full' : 'max-h-[70vh]'">
                     <!-- Gizli form (Excel Export için) -->
                     <form id="exportForm" action="{{ route('form-entries.export', $formEntry) }}" method="GET"
                         style="display:none;">
@@ -1417,7 +1476,7 @@
                         <button type="submit" id="exportExcelBtn">Export</button>
                     </form>
 
-                    <table class="min-w-full divide-y divide-gray-200">
+                    <table x-ref="dataTable" class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-800 sticky top-0 z-20 shadow-md">
                             <tr>
                                 <th
@@ -3091,6 +3150,9 @@
                         filters: {},
                         uniqueValues: {},
                         isFullscreen: false,
+                        hasHorizontalOverflow: false,
+                        tableScrollWidth: 0,
+                        _isSyncingScroll: false,
                         compareMode: false,
                         selectedVersionIds: [],
                         compareMap: {},
@@ -3468,7 +3530,40 @@
                                     }
                                 }
                                 this.pinnedRightOffsets = rightOffsets;
+                                this.updateTableScrollMetrics();
                             });
+                        },
+
+                        updateTableScrollMetrics() {
+                            this.$nextTick(() => {
+                                const sc = this.$refs.tableScrollContainer;
+                                const tbl = this.$refs.dataTable;
+                                if (!sc || !tbl) return;
+                                const scrollW = Math.max(sc.scrollWidth || 0, tbl.scrollWidth || 0);
+                                const clientW = sc.clientWidth || 0;
+                                this.tableScrollWidth = scrollW;
+                                this.hasHorizontalOverflow = scrollW > (clientW + 2);
+                            });
+                        },
+
+                        syncScrollFromTop() {
+                            if (this._isSyncingScroll) return;
+                            const top = this.$refs.topScrollContainer;
+                            const sc = this.$refs.tableScrollContainer;
+                            if (!top || !sc) return;
+                            this._isSyncingScroll = true;
+                            sc.scrollLeft = top.scrollLeft;
+                            requestAnimationFrame(() => { this._isSyncingScroll = false; });
+                        },
+
+                        syncScrollFromTable() {
+                            if (this._isSyncingScroll) return;
+                            const top = this.$refs.topScrollContainer;
+                            const sc = this.$refs.tableScrollContainer;
+                            if (!top || !sc) return;
+                            this._isSyncingScroll = true;
+                            top.scrollLeft = sc.scrollLeft;
+                            requestAnimationFrame(() => { this._isSyncingScroll = false; });
                         },
 
                         setColumnPin(fieldId, side) {
@@ -3624,8 +3719,17 @@
 
                             this.calculateTotals();
                             this.updatePinnedOffsets();
+                            this.updateTableScrollMetrics();
+                            if (typeof ResizeObserver !== 'undefined') {
+                                const ro = new ResizeObserver(() => this.updateTableScrollMetrics());
+                                this.$nextTick(() => {
+                                    if (this.$refs.tableScrollContainer) ro.observe(this.$refs.tableScrollContainer);
+                                    if (this.$refs.dataTable) ro.observe(this.$refs.dataTable);
+                                });
+                            }
                             window.addEventListener('resize', () => {
                                 this.updatePinnedOffsets();
+                                this.updateTableScrollMetrics();
                             });
                         },
 

@@ -544,7 +544,7 @@ class FormEntryS
 
     /**
      * Form kaydının onaya gönderilmeden önce tüm zorunlu alanlarının (koşullu zorunluluk dahil)
-     * eksiksiz doldurulup doldurulmadığını backend seviyesinde doğrular.
+     * ve hiyerarşik (cascading) master_data eşleşmelerinin eksiksiz/geçerli olup olmadığını doğrular.
      *
      * @return string[] Hata mesajları listesi (boşsa geçerlidir)
      */
@@ -552,11 +552,46 @@ class FormEntryS
     {
         $entry->loadMissing(['template.fields.masterDataType', 'rows.values']);
 
-        $fields = $entry->template?->fields ?? collect();
         $partLabel = !empty($entry->partition_value) ? $entry->partition_value : null;
+        $partitionFieldId = $entry->partition_field_id ?: $entry->template?->partition_field_id;
+
+        $rows = [];
+        foreach ($entry->rows as $row) {
+            $rows[] = $row->values->pluck('value', 'form_field_id')->toArray();
+        }
+
+        if (!$entry->template) {
+            return ['Form şablonu bulunamadı.'];
+        }
+
+        return $this->validateRowsForSubmission(
+            $entry->template,
+            $rows,
+            $partLabel,
+            $partitionFieldId,
+            $partLabel
+        );
+    }
+
+    /**
+     * Ham satır dizisi üzerinde zorunlu alan ve bağlı (cascading) master_data
+     * (örn. ÜLKE -> ŞEHİR, İŞYERİ -> RENK) tutarlılık kontrollerini çalıştırır.
+     *
+     * @return string[] Hata mesajları listesi (boşsa geçerlidir)
+     */
+    public function validateRowsForSubmission(
+        FormTemplateM $template,
+        array $rows,
+        ?string $partitionValue = null,
+        ?int $partitionFieldId = null,
+        ?string $partLabel = null
+    ): array {
+        $template->loadMissing('fields.masterDataType');
+
+        $fields = $template->fields ?? collect();
         $prefix = $partLabel ? "[{$partLabel}] Parçası - " : '';
 
-        if ($entry->rows->isEmpty()) {
+        if (empty($rows)) {
             return [
                 $partLabel
                     ? "[{$partLabel}] Parçası: Onaya gönderilecek kayıtlı veri satırı bulunmamaktadır."
@@ -581,14 +616,16 @@ class FormEntryS
                 ->groupBy('type_id')
             : collect();
 
-        $partitionFieldId = $entry->partition_field_id ?: $entry->template?->partition_field_id;
+        $effectivePartitionFieldId = $partitionFieldId ?: $template->partition_field_id;
         $errors = [];
-        $rowCount = $entry->rows->count();
+        $rowCount = count($rows);
         $rowNum = 0;
 
-        foreach ($entry->rows as $row) {
+        foreach ($rows as $rawRow) {
             $rowNum++;
-            $rowValues = $row->values->pluck('value', 'form_field_id')->toArray();
+            $rowValues = is_array($rawRow) && isset($rawRow['values']) && is_array($rawRow['values'])
+                ? $rawRow['values']
+                : (is_array($rawRow) ? $rawRow : []);
 
             // Satır tamamen boşsa ve birden fazla satır varsa atla
             $hasVal = false;
@@ -603,7 +640,7 @@ class FormEntryS
             }
 
             foreach ($fields as $field) {
-                if ($this->isFieldDisabledForRow($field, $rowValues, $entry, $partitionFieldId)) {
+                if ($this->isFieldDisabledForRow($field, $rowValues, $partitionValue, $effectivePartitionFieldId)) {
                     continue;
                 }
 
@@ -611,24 +648,61 @@ class FormEntryS
                     continue;
                 }
 
-                if ($this->isMasterDataDisabledForRow($field, $fields, $rowValues, $entry, $partitionFieldId, $itemsByType)) {
+                $val = $this->resolveRowFieldValue((int) $field->id, $rowValues, $partitionValue, $effectivePartitionFieldId);
+                $valTrimmed = $val !== null ? trim((string) $val) : '';
+
+                // Bağlı (cascading) master_data tutarlılık kontrolü (Örn: ÜLKE -> ŞEHİR)
+                if (($field->type ?? null) === 'master_data' && !empty($field->master_data_type_id) && $valTrimmed !== '') {
+                    $masterType = $field->masterDataType;
+                    if ($masterType && !empty($masterType->parent_id)) {
+                        $parentField = $fields->first(
+                            fn($f) => ($f->type ?? null) === 'master_data' && (int) $f->master_data_type_id === (int) $masterType->parent_id
+                        );
+
+                        if ($parentField) {
+                            $parentVal = $this->resolveRowFieldValue((int) $parentField->id, $rowValues, $partitionValue, $effectivePartitionFieldId);
+                            $parentTrimmed = $parentVal !== null ? trim((string) $parentVal) : '';
+
+                            if ($parentTrimmed === '') {
+                                $errors[] = "{$prefix}Satır {$rowNum}: [{$field->label}] alanı için önce [{$parentField->label}] seçilmelidir.";
+                                continue;
+                            }
+
+                            $parentLower = mb_strtolower($parentTrimmed, 'UTF-8');
+                            $parentItems = $itemsByType->get($masterType->parent_id, collect());
+                            $selectedParentItem = $parentItems->first(
+                                fn($i) => mb_strtolower(trim((string) $i->name), 'UTF-8') === $parentLower
+                            );
+
+                            if (!$selectedParentItem) {
+                                $errors[] = "{$prefix}Satır {$rowNum}: [{$parentField->label}] alanında geçersiz değer ({$parentTrimmed}) bulunmaktadır.";
+                                continue;
+                            }
+
+                            $valLower = mb_strtolower($valTrimmed, 'UTF-8');
+                            $typeItems = $itemsByType->get($field->master_data_type_id, collect());
+                            $matchedChild = $typeItems->first(
+                                fn($i) => (int) $i->parent_id === (int) $selectedParentItem->id
+                                    && mb_strtolower(trim((string) $i->name), 'UTF-8') === $valLower
+                            );
+
+                            if (!$matchedChild) {
+                                $errors[] = "{$prefix}Satır {$rowNum}: [{$field->label}] değeri ({$valTrimmed}), seçili [{$parentField->label}] ({$selectedParentItem->name}) ile eşleşmemektedir.";
+                                continue;
+                            }
+                        }
+                    }
+                }
+
+                if ($this->isMasterDataDisabledForRow($field, $fields, $rowValues, $partitionValue, $effectivePartitionFieldId, $itemsByType)) {
                     continue;
                 }
 
-                if (!$this->isFieldRequiredForRow($field, $rowValues, $entry, $partitionFieldId)) {
+                if (!$this->isFieldRequiredForRow($field, $rowValues, $partitionValue, $effectivePartitionFieldId)) {
                     continue;
                 }
 
-                $val = $rowValues[$field->id] ?? null;
-                if (($val === null || trim((string) $val) === '')
-                    && $partitionFieldId
-                    && (int) $field->id === (int) $partitionFieldId
-                    && !empty($entry->partition_value)
-                ) {
-                    $val = $entry->partition_value;
-                }
-
-                if ($val === null || trim((string) $val) === '') {
+                if ($valTrimmed === '') {
                     $errors[] = "{$prefix}Satır {$rowNum}: [{$field->label}] alanı zorunludur ve boş bırakılamaz.";
                 }
             }
@@ -651,17 +725,17 @@ class FormEntryS
 
         if ($total > $maxErrors) {
             $remaining = $total - $maxErrors;
-            $displayErrors[] = "...ve {$remaining} adet daha eksik zorunlu alan bulunmaktadır.";
+            $displayErrors[] = "...ve {$remaining} adet daha eksik veya hatalı alan bulunmaktadır.";
         }
 
         $displayErrors[] = $isConsolidated
-            ? "Onaya göndermeden önce ilgili parçaları açıp 'Düzenle' butonunu kullanarak eksik zorunlu alanları tamamlayınız."
-            : "Onaya göndermeden önce 'Düzenle' butonunu kullanarak eksik zorunlu alanları tamamlayınız.";
+            ? "Onaya göndermeden önce ilgili parçaları açıp 'Düzenle' butonunu kullanarak eksik veya hatalı alanları düzeltiniz."
+            : "Onaya göndermeden önce 'Düzenle' butonunu kullanarak eksik veya hatalı alanları düzeltiniz.";
 
         return $displayErrors;
     }
 
-    private function isFieldDisabledForRow($field, array $rowValues, FormEntryM $entry, ?int $partitionFieldId): bool
+    private function isFieldDisabledForRow($field, array $rowValues, ?string $partitionValue, ?int $partitionFieldId): bool
     {
         if (!empty($field->is_disabled)) {
             return true;
@@ -671,7 +745,7 @@ class FormEntryS
             return false;
         }
 
-        $targetVal = $this->resolveRowFieldValue((int) $field->condition_field_id, $rowValues, $entry, $partitionFieldId);
+        $targetVal = $this->resolveRowFieldValue((int) $field->condition_field_id, $rowValues, $partitionValue, $partitionFieldId);
         if ($targetVal === null || trim((string) $targetVal) === '') {
             return false;
         }
@@ -719,14 +793,14 @@ class FormEntryS
         return true;
     }
 
-    private function isFieldRequiredForRow($field, array $rowValues, FormEntryM $entry, ?int $partitionFieldId): bool
+    private function isFieldRequiredForRow($field, array $rowValues, ?string $partitionValue, ?int $partitionFieldId): bool
     {
         if (!empty($field->is_required)) {
             return true;
         }
 
         if (!empty($field->condition_field_id) && !empty($field->condition_value)) {
-            $targetVal = $this->resolveRowFieldValue((int) $field->condition_field_id, $rowValues, $entry, $partitionFieldId);
+            $targetVal = $this->resolveRowFieldValue((int) $field->condition_field_id, $rowValues, $partitionValue, $partitionFieldId);
             if ($targetVal !== null && trim((string) $targetVal) !== '') {
                 $targetValStr = mb_strtolower(trim((string) $targetVal), 'UTF-8');
                 $conditionList = array_map(
@@ -740,7 +814,7 @@ class FormEntryS
         return false;
     }
 
-    private function isMasterDataDisabledForRow($field, $allFields, array $rowValues, FormEntryM $entry, ?int $partitionFieldId, $itemsByType): bool
+    private function isMasterDataDisabledForRow($field, $allFields, array $rowValues, ?string $partitionValue, ?int $partitionFieldId, $itemsByType): bool
     {
         if (($field->type ?? null) !== 'master_data' || empty($field->master_data_type_id)) {
             return false;
@@ -759,13 +833,16 @@ class FormEntryS
             );
 
             if ($parentField) {
-                $selectedParentName = $this->resolveRowFieldValue((int) $parentField->id, $rowValues, $entry, $partitionFieldId);
+                $selectedParentName = $this->resolveRowFieldValue((int) $parentField->id, $rowValues, $partitionValue, $partitionFieldId);
                 if ($selectedParentName === null || trim((string) $selectedParentName) === '') {
                     return true;
                 }
 
+                $parentLower = mb_strtolower(trim((string) $selectedParentName), 'UTF-8');
                 $parentItems = $itemsByType->get($masterType->parent_id, collect());
-                $selectedParentItem = $parentItems->first(fn($i) => $i->name === $selectedParentName);
+                $selectedParentItem = $parentItems->first(
+                    fn($i) => mb_strtolower(trim((string) $i->name), 'UTF-8') === $parentLower
+                );
                 if (!$selectedParentItem) {
                     return true;
                 }
@@ -777,10 +854,10 @@ class FormEntryS
         return $typeItems->isEmpty();
     }
 
-    private function resolveRowFieldValue(int $fieldId, array $rowValues, FormEntryM $entry, ?int $partitionFieldId): mixed
+    private function resolveRowFieldValue(int $fieldId, array $rowValues, ?string $partitionValue, ?int $partitionFieldId): mixed
     {
-        if ($partitionFieldId && $fieldId === (int) $partitionFieldId && !empty($entry->partition_value)) {
-            return $entry->partition_value;
+        if ($partitionFieldId && $fieldId === (int) $partitionFieldId && !empty($partitionValue)) {
+            return $partitionValue;
         }
 
         return $rowValues[$fieldId] ?? null;
